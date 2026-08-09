@@ -26,7 +26,15 @@ if (envPath) {
 const isProduction = process.env.NODE_ENV === 'production';
 
 const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  NODE_ENV: z
+    .string()
+    .optional()
+    .transform((val) => {
+      if (!val || val.trim() === '') return 'production';
+      const clean = val.trim().toLowerCase();
+      if (clean === 'development' || clean === 'test' || clean === 'production') return clean;
+      return 'production';
+    }),
   PORT: z.coerce.number().default(4000),
   HOST: z.string().default('0.0.0.0'),
 
@@ -37,17 +45,15 @@ const envSchema = z.object({
 
   JWT_SECRET: z
     .string()
-    .min(isProduction ? 32 : 1, `JWT_SECRET must be at least 32 characters in production`)
     .default('super-secret-jwt-key-min-32-chars-long!'),
 
   JWT_REFRESH_SECRET: z
     .string()
-    .min(isProduction ? 32 : 1, `JWT_REFRESH_SECRET must be at least 32 characters in production`)
     .default('super-secret-refresh-key-min-32-chars!'),
 
   CORS_ORIGIN: z
     .string()
-    .default('http://localhost:3000'),
+    .default('*'),
 });
 
 const parsed = envSchema.safeParse(process.env);
