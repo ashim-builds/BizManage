@@ -20,6 +20,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@bizmanage/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@bizmanage/database':
         specifier: workspace:*
         version: link:../../packages/database
@@ -54,9 +57,6 @@ importers:
         specifier: ^3.23.8
         version: 3.25.76
     devDependencies:
-      '@bizmanage/config':
-        specifier: workspace:*
-        version: link:../../packages/config
       '@types/node':
         specifier: ^20.12.7
         version: 20.19.43
@@ -72,6 +72,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@bizmanage/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@bizmanage/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -124,9 +127,6 @@ importers:
         specifier: ^3.23.8
         version: 3.25.76
     devDependencies:
-      '@bizmanage/config':
-        specifier: workspace:*
-        version: link:../../packages/config
       '@types/node':
         specifier: ^20.12.7
         version: 20.19.43

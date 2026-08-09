@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@bizmanage/config": "workspace:*",
     "@bizmanage/types": "workspace:*",
     "@bizmanage/validation": "workspace:*",
     "@hookform/resolvers": "^3.3.4",
@@ -28,7 +29,6 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@bizmanage/config": "workspace:*",
     "@types/node": "^20.12.7",
     "@types/react": "^18.2.79",
     "@types/react-dom": "^18.2.25",
