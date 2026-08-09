@@ -1,53 +1,60 @@
-export enum Role {
-  OWNER = 'OWNER',
-  ADMIN = 'ADMIN',
-  MANAGER = 'MANAGER',
-  BILLER = 'BILLER',
-  ACCOUNTANT = 'ACCOUNTANT',
-}
+export const Role = {
+  OWNER: 'OWNER',
+  ADMIN: 'ADMIN',
+  MANAGER: 'MANAGER',
+  BILLER: 'BILLER',
+  ACCOUNTANT: 'ACCOUNTANT',
+} as const;
+export type Role = (typeof Role)[keyof typeof Role];
 
-export enum PartyType {
-  CUSTOMER = 'CUSTOMER',
-  SUPPLIER = 'SUPPLIER',
-  BOTH = 'BOTH',
-}
+export const PartyType = {
+  CUSTOMER: 'CUSTOMER',
+  SUPPLIER: 'SUPPLIER',
+  BOTH: 'BOTH',
+} as const;
+export type PartyType = (typeof PartyType)[keyof typeof PartyType];
 
-export enum ItemType {
-  PRODUCT = 'PRODUCT',
-  SERVICE = 'SERVICE',
-}
+export const ItemType = {
+  PRODUCT: 'PRODUCT',
+  SERVICE: 'SERVICE',
+} as const;
+export type ItemType = (typeof ItemType)[keyof typeof ItemType];
 
-export enum PaymentMode {
-  CASH = 'CASH',
-  BANK = 'BANK',
-  CHEQUE = 'CHEQUE',
-  ONLINE = 'ONLINE',
-}
+export const PaymentMode = {
+  CASH: 'CASH',
+  BANK: 'BANK',
+  CHEQUE: 'CHEQUE',
+  ONLINE: 'ONLINE',
+} as const;
+export type PaymentMode = (typeof PaymentMode)[keyof typeof PaymentMode];
 
-export enum StockMovementType {
-  INITIAL = 'INITIAL',
-  SALE = 'SALE',
-  PURCHASE = 'PURCHASE',
-  SALE_RETURN = 'SALE_RETURN',
-  PURCHASE_RETURN = 'PURCHASE_RETURN',
-  ADJUSTMENT = 'ADJUSTMENT',
-}
+export const StockMovementType = {
+  INITIAL: 'INITIAL',
+  SALE: 'SALE',
+  PURCHASE: 'PURCHASE',
+  SALE_RETURN: 'SALE_RETURN',
+  PURCHASE_RETURN: 'PURCHASE_RETURN',
+  ADJUSTMENT: 'ADJUSTMENT',
+} as const;
+export type StockMovementType = (typeof StockMovementType)[keyof typeof StockMovementType];
 
-export enum InvoiceStatus {
-  DRAFT = 'DRAFT',
-  UNPAID = 'UNPAID',
-  PARTIAL = 'PARTIAL',
-  PAID = 'PAID',
-  CANCELLED = 'CANCELLED',
-}
+export const InvoiceStatus = {
+  DRAFT: 'DRAFT',
+  UNPAID: 'UNPAID',
+  PARTIAL: 'PARTIAL',
+  PAID: 'PAID',
+  CANCELLED: 'CANCELLED',
+} as const;
+export type InvoiceStatus = (typeof InvoiceStatus)[keyof typeof InvoiceStatus];
 
-export enum QuotationStatus {
-  DRAFT = 'DRAFT',
-  SENT = 'SENT',
-  ACCEPTED = 'ACCEPTED',
-  REJECTED = 'REJECTED',
-  CONVERTED = 'CONVERTED',
-}
+export const QuotationStatus = {
+  DRAFT: 'DRAFT',
+  SENT: 'SENT',
+  ACCEPTED: 'ACCEPTED',
+  REJECTED: 'REJECTED',
+  CONVERTED: 'CONVERTED',
+} as const;
+export type QuotationStatus = (typeof QuotationStatus)[keyof typeof QuotationStatus];
 
 export interface ApiSuccessResponse<T> {
   success: true;
