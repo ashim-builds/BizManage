@@ -112,6 +112,8 @@ async function fetchGoogleUserProfile(code: string, codeVerifier?: string) {
   });
 
   if (!tokenRes.ok) {
+    const errBody = await tokenRes.text().catch(() => '');
+    console.error(`❌ Google OAuth Token Exchange Error [HTTP ${tokenRes.status}]:`, errBody);
     throw new AppError('Invalid or expired Google authorization code', 400, 'INVALID_OAUTH_CODE');
   }
 

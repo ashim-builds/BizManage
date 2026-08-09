@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/providers/AuthProvider';
@@ -10,6 +10,7 @@ function GoogleCallbackHandler() {
   const searchParams = useSearchParams();
   const { refreshUser } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const calledRef = useRef(false);
 
   useEffect(() => {
     const code = searchParams.get('code');
@@ -19,6 +20,9 @@ function GoogleCallbackHandler() {
       setError('Missing authorization code from Google.');
       return;
     }
+
+    if (calledRef.current) return;
+    calledRef.current = true;
 
     const processCallback = async () => {
       try {
