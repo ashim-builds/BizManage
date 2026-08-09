@@ -8,6 +8,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
     "db:generate": "pnpm --filter @bizmanage/database db:generate",
     "db:migrate": "pnpm --filter @bizmanage/database db:migrate",
+    "db:push": "pnpm --filter @bizmanage/database db:push",
     "db:studio": "pnpm --filter @bizmanage/database db:studio"
   },
   "devDependencies": {

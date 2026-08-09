@@ -48,7 +48,7 @@ git push origin main
    - **Root Directory**: Leave blank (monorepo root)
    - **Build Command**:
      ```bash
-     pnpm install && pnpm --filter @bizmanage/database exec prisma migrate deploy && pnpm build
+     pnpm install && pnpm db:push && pnpm build
      ```
    - **Start Command**:
      ```bash
