@@ -122,8 +122,8 @@ export async function partyRoutes(fastify: FastifyInstance) {
   fastify.get('/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
 
-    const party = await request.db!.party.findUnique({
-      where: { id },
+    const party = await request.db!.party.findFirst({
+      where: { id, businessId: request.tenant!.businessId },
       include: {
         category: true,
         sales: {
@@ -206,8 +206,8 @@ export async function partyRoutes(fastify: FastifyInstance) {
     const { id } = request.params as { id: string };
     const body = updatePartySchema.parse(request.body);
 
-    const existing = await request.db!.party.findUnique({
-      where: { id },
+    const existing = await request.db!.party.findFirst({
+      where: { id, businessId: request.tenant!.businessId },
     });
 
     if (!existing) {
@@ -246,8 +246,8 @@ export async function partyRoutes(fastify: FastifyInstance) {
   fastify.delete('/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
 
-    const party = await request.db!.party.findUnique({
-      where: { id },
+    const party = await request.db!.party.findFirst({
+      where: { id, businessId: request.tenant!.businessId },
       include: {
         _count: {
           select: {

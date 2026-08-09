@@ -132,8 +132,8 @@ export async function itemRoutes(fastify: FastifyInstance) {
   fastify.get('/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
 
-    const item = await request.db!.item.findUnique({
-      where: { id },
+    const item = await request.db!.item.findFirst({
+      where: { id, businessId: request.tenant!.businessId },
       include: {
         category: true,
         stockMovements: {
@@ -207,7 +207,7 @@ export async function itemRoutes(fastify: FastifyInstance) {
     const { id } = request.params as { id: string };
     const body = updateItemSchema.parse(request.body);
 
-    const existing = await request.db!.item.findUnique({ where: { id } });
+    const existing = await request.db!.item.findFirst({ where: { id, businessId: request.tenant!.businessId } });
     if (!existing) {
       throw new AppError('Item not found', 404, 'NOT_FOUND');
     }
@@ -291,8 +291,8 @@ export async function itemRoutes(fastify: FastifyInstance) {
   fastify.delete('/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
 
-    const item = await request.db!.item.findUnique({
-      where: { id },
+    const item = await request.db!.item.findFirst({
+      where: { id, businessId: request.tenant!.businessId },
       include: {
         _count: {
           select: {
