@@ -29,6 +29,7 @@
 ## 📋 Prerequisites
 
 Before running the application, make sure you have installed:
+
 - **Node.js** (v18.x or v20.x recommended)
 - **pnpm** (Install globally via `npm install -g pnpm`)
 - **PostgreSQL Database** (Local PostgreSQL server, Docker container, or free cloud DB like [Neon.tech](https://neon.tech) / [Supabase](https://supabase.com))
@@ -94,10 +95,10 @@ pnpm dev
 
 Once the development server is running:
 
-| Service | URL | Description |
-|---|---|---|
-| **Web UI App** | [http://localhost:3000](http://localhost:3000) | Main Dashboard & Portal |
-| **Backend API** | [http://localhost:4000/api/v1](http://localhost:4000/api/v1) | Fastify REST API |
+| Service         | URL                                                          | Description             |
+| --------------- | ------------------------------------------------------------ | ----------------------- |
+| **Web UI App**  | [http://localhost:3000](http://localhost:3000)               | Main Dashboard & Portal |
+| **Backend API** | [http://localhost:4000/api/v1](http://localhost:4000/api/v1) | Fastify REST API        |
 
 ---
 
@@ -131,12 +132,12 @@ bizmanage/
 
 ## 🔧 Useful CLI Commands
 
-| Command | Description |
-|---|---|
-| `pnpm dev` | Starts frontend (3000) and backend (4000) concurrently |
-| `pnpm build` | Builds production bundles for all packages |
-| `pnpm --filter @bizmanage/database exec prisma studio` | Opens Prisma GUI Database Inspector |
-| `pnpm --filter @bizmanage/database exec prisma db push` | Syncs Prisma schema with database |
+| Command                                                 | Description                                            |
+| ------------------------------------------------------- | ------------------------------------------------------ |
+| `pnpm dev`                                              | Starts frontend (3000) and backend (4000) concurrently |
+| `pnpm build`                                            | Builds production bundles for all packages             |
+| `pnpm --filter @bizmanage/database exec prisma studio`  | Opens Prisma GUI Database Inspector                    |
+| `pnpm --filter @bizmanage/database exec prisma db push` | Syncs Prisma schema with database                      |
 
 ---
 
