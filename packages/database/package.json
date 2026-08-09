@@ -1,0 +1,30 @@
+{
+  "name": "@bizmanage/database",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "prisma generate && tsc --build",
+    "dev": "tsc --build --watch",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@bizmanage/types": "workspace:*",
+    "@prisma/client": "^5.13.0"
+  },
+  "devDependencies": {
+    "@bizmanage/config": "workspace:*",
+    "prisma": "^5.13.0",
+    "typescript": "^5.4.5"
+  }
+}
