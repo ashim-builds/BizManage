@@ -1,0 +1,487 @@
+import { FastifyInstance } from 'fastify';
+import { requireBusinessTenant } from '../../middleware/auth.js';
+import { createPaymentInSchema, createPaymentOutSchema } from '@bizmanage/validation';
+import { PaymentMode, TransactionCategory, AccountType, Prisma } from '@bizmanage/database';
+import { AppError } from '../../plugins/error-handler.js';
+
+export async function paymentRoutes(fastify: FastifyInstance) {
+  fastify.addHook('preHandler', requireBusinessTenant);
+
+  // ====================================================
+  // PAYMENT IN (Customer Collections)
+  // ====================================================
+
+  // GET PAYMENT IN SUMMARY
+  fastify.get('/in/summary', async (request, reply) => {
+    const payments = await request.db!.paymentIn.findMany({
+      select: { amount: true, date: true },
+    });
+
+    let totalCollected = new Prisma.Decimal(0);
+    let todayCollected = new Prisma.Decimal(0);
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    for (const p of payments) {
+      const amt = new Prisma.Decimal(p.amount || 0);
+      totalCollected = totalCollected.add(amt);
+
+      if (p.date && !isNaN(new Date(p.date).getTime())) {
+        if (new Date(p.date).toISOString().split('T')[0] === todayStr) {
+          todayCollected = todayCollected.add(amt);
+        }
+      }
+    }
+
+    return reply.send({
+      success: true,
+      data: {
+        totalVouchersCount: payments.length,
+        totalCollectedAmount: totalCollected.toNumber(),
+        todayCollectedAmount: todayCollected.toNumber(),
+      },
+    });
+  });
+
+  // LIST PAYMENT IN RECORDS
+  fastify.get('/in', async (request, reply) => {
+    const { search, partyId, mode, startDate, endDate, page = '1', limit = '50' } = request.query as {
+      search?: string;
+      partyId?: string;
+      mode?: PaymentMode;
+      startDate?: string;
+      endDate?: string;
+      page?: string;
+      limit?: string;
+    };
+
+    const pageNum = Math.max(1, parseInt(page, 10));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
+    const skip = (pageNum - 1) * limitNum;
+
+    const whereClause: Prisma.PaymentInWhereInput = {
+      businessId: request.tenant!.businessId,
+    };
+
+    if (partyId) {
+      whereClause.partyId = partyId;
+    }
+
+    if (mode) {
+      whereClause.mode = mode;
+    }
+
+    if (startDate || endDate) {
+      whereClause.date = {};
+      if (startDate) whereClause.date.gte = new Date(startDate);
+      if (endDate) whereClause.date.lte = new Date(endDate);
+    }
+
+    if (search && search.trim()) {
+      const q = search.trim();
+      whereClause.OR = [
+        { referenceNumber: { contains: q, mode: 'insensitive' } },
+        { party: { name: { contains: q, mode: 'insensitive' } } },
+        { notes: { contains: q, mode: 'insensitive' } },
+      ];
+    }
+
+    const [payments, total] = await Promise.all([
+      request.db!.paymentIn.findMany({
+        where: whereClause,
+        include: {
+          party: { select: { id: true, name: true, phone: true } },
+          account: { select: { id: true, accountName: true } },
+        },
+        orderBy: { date: 'desc' },
+        skip,
+        take: limitNum,
+      }),
+      request.db!.paymentIn.count({ where: whereClause }),
+    ]);
+
+    return reply.send({
+      success: true,
+      data: payments,
+      meta: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum),
+      },
+    });
+  });
+
+  // CREATE PAYMENT IN (Transaction-Safe)
+  fastify.post('/in', async (request, reply) => {
+    const body = createPaymentInSchema.parse(request.body);
+
+    const paymentIn = await request.db!.$transaction(async (tx) => {
+      const party = await tx.party.findUnique({ where: { id: body.partyId } });
+      if (!party) {
+        throw new AppError('Customer party not found', 404, 'NOT_FOUND');
+      }
+
+      const amt = new Prisma.Decimal(body.amount);
+
+      const desiredType =
+        body.mode === PaymentMode.BANK || body.mode === PaymentMode.CHEQUE
+          ? AccountType.BANK
+          : body.mode === PaymentMode.ONLINE
+          ? AccountType.MOBILE_WALLET
+          : AccountType.CASH;
+
+      let targetAccount = body.accountId
+        ? await tx.account.findUnique({ where: { id: body.accountId } })
+        : await tx.account.findFirst({
+            where: { businessId: request.tenant!.businessId, accountType: desiredType },
+          });
+
+      if (!targetAccount || (body.mode !== PaymentMode.CASH && targetAccount.accountType === AccountType.CASH && !body.accountId)) {
+        const defaultName =
+          desiredType === AccountType.BANK
+            ? 'Main Bank Account'
+            : desiredType === AccountType.MOBILE_WALLET
+            ? 'Mobile Wallet Account'
+            : 'Main Cash Account';
+
+        targetAccount = await tx.account.create({
+          data: {
+            businessId: request.tenant!.businessId,
+            accountName: defaultName,
+            accountType: desiredType,
+            balance: new Prisma.Decimal(0),
+          },
+        });
+      }
+
+      // 1. Create PaymentIn Record
+      const newPayment = await tx.paymentIn.create({
+        data: {
+          businessId: request.tenant!.businessId,
+          partyId: body.partyId,
+          accountId: targetAccount.id,
+          amount: amt,
+          mode: body.mode,
+          date: new Date(body.date),
+          referenceNumber: body.referenceNumber || null,
+          notes: body.notes || null,
+        },
+        include: {
+          party: { select: { id: true, name: true, phone: true } },
+          account: { select: { id: true, accountName: true } },
+        },
+      });
+
+      // 2. Reduce Customer Receivable Balance
+      const curBal = new Prisma.Decimal(party.currentBalance || 0);
+      const newBal = curBal.sub(amt);
+      await tx.party.update({
+        where: { id: body.partyId },
+        data: { currentBalance: newBal },
+      });
+
+      // 3. Increase Cash/Bank Account Balance
+      const curAccBal = new Prisma.Decimal(targetAccount.balance || 0);
+      const newAccBal = curAccBal.add(amt);
+      await tx.account.update({
+        where: { id: targetAccount.id },
+        data: { balance: newAccBal },
+      });
+
+      // 4. Reduce dueAmount on linked UNPAID/PARTIAL sales invoices (FIFO)
+      const unpaidSales = await tx.sale.findMany({
+        where: {
+          businessId: request.tenant!.businessId,
+          partyId: body.partyId,
+          status: { in: ['UNPAID', 'PARTIAL'] },
+          dueAmount: { gt: 0 },
+        },
+        orderBy: { date: 'asc' }, // oldest first
+      });
+
+      let remainingPayment = new Prisma.Decimal(amt);
+      for (const sale of unpaidSales) {
+        if (remainingPayment.lessThanOrEqualTo(0)) break;
+
+        const saleDue = new Prisma.Decimal(sale.dueAmount || 0);
+        const reduction = remainingPayment.greaterThanOrEqualTo(saleDue)
+          ? saleDue
+          : remainingPayment;
+
+        const newDue = saleDue.sub(reduction);
+        const newPaid = new Prisma.Decimal(sale.paidAmount || 0).add(reduction);
+        const newStatus = newDue.lessThanOrEqualTo(0) ? 'PAID' : 'PARTIAL';
+
+        await tx.sale.update({
+          where: { id: sale.id },
+          data: {
+            dueAmount: newDue,
+            paidAmount: newPaid,
+            status: newStatus as any,
+          },
+        });
+
+        remainingPayment = remainingPayment.sub(reduction);
+      }
+
+      // 5. Create Transaction Entry
+      await tx.transaction.create({
+        data: {
+          businessId: request.tenant!.businessId,
+          accountId: targetAccount.id,
+          category: TransactionCategory.PAYMENT_IN,
+          amount: amt,
+          referenceId: newPayment.id,
+          description: body.notes || `Payment received from ${party.name}`,
+          date: new Date(body.date),
+        },
+      });
+
+      return newPayment;
+    });
+
+    return reply.status(201).send({
+      success: true,
+      data: paymentIn,
+    });
+  });
+
+  // ====================================================
+  // PAYMENT OUT (Supplier Payouts)
+  // ====================================================
+
+  // GET PAYMENT OUT SUMMARY
+  fastify.get('/out/summary', async (request, reply) => {
+    const payments = await request.db!.paymentOut.findMany({
+      select: { amount: true, date: true },
+    });
+
+    let totalPaidOut = new Prisma.Decimal(0);
+    let todayPaidOut = new Prisma.Decimal(0);
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    for (const p of payments) {
+      const amt = new Prisma.Decimal(p.amount || 0);
+      totalPaidOut = totalPaidOut.add(amt);
+
+      if (p.date && !isNaN(new Date(p.date).getTime())) {
+        if (new Date(p.date).toISOString().split('T')[0] === todayStr) {
+          todayPaidOut = todayPaidOut.add(amt);
+        }
+      }
+    }
+
+    return reply.send({
+      success: true,
+      data: {
+        totalVouchersCount: payments.length,
+        totalPaidAmount: totalPaidOut.toNumber(),
+        todayPaidAmount: todayPaidOut.toNumber(),
+      },
+    });
+  });
+
+  // LIST PAYMENT OUT RECORDS
+  fastify.get('/out', async (request, reply) => {
+    const { search, partyId, mode, startDate, endDate, page = '1', limit = '50' } = request.query as {
+      search?: string;
+      partyId?: string;
+      mode?: PaymentMode;
+      startDate?: string;
+      endDate?: string;
+      page?: string;
+      limit?: string;
+    };
+
+    const pageNum = Math.max(1, parseInt(page, 10));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
+    const skip = (pageNum - 1) * limitNum;
+
+    const whereClause: Prisma.PaymentOutWhereInput = {
+      businessId: request.tenant!.businessId,
+    };
+
+    if (partyId) {
+      whereClause.partyId = partyId;
+    }
+
+    if (mode) {
+      whereClause.mode = mode;
+    }
+
+    if (startDate || endDate) {
+      whereClause.date = {};
+      if (startDate) whereClause.date.gte = new Date(startDate);
+      if (endDate) whereClause.date.lte = new Date(endDate);
+    }
+
+    if (search && search.trim()) {
+      const q = search.trim();
+      whereClause.OR = [
+        { referenceNumber: { contains: q, mode: 'insensitive' } },
+        { party: { name: { contains: q, mode: 'insensitive' } } },
+        { notes: { contains: q, mode: 'insensitive' } },
+      ];
+    }
+
+    const [payments, total] = await Promise.all([
+      request.db!.paymentOut.findMany({
+        where: whereClause,
+        include: {
+          party: { select: { id: true, name: true, phone: true } },
+          account: { select: { id: true, accountName: true } },
+        },
+        orderBy: { date: 'desc' },
+        skip,
+        take: limitNum,
+      }),
+      request.db!.paymentOut.count({ where: whereClause }),
+    ]);
+
+    return reply.send({
+      success: true,
+      data: payments,
+      meta: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum),
+      },
+    });
+  });
+
+  // CREATE PAYMENT OUT (Transaction-Safe)
+  fastify.post('/out', async (request, reply) => {
+    const body = createPaymentOutSchema.parse(request.body);
+
+    const paymentOut = await request.db!.$transaction(async (tx) => {
+      const party = await tx.party.findUnique({ where: { id: body.partyId } });
+      if (!party) {
+        throw new AppError('Supplier party not found', 404, 'NOT_FOUND');
+      }
+
+      const amt = new Prisma.Decimal(body.amount);
+
+      const desiredType =
+        body.mode === PaymentMode.BANK || body.mode === PaymentMode.CHEQUE
+          ? AccountType.BANK
+          : body.mode === PaymentMode.ONLINE
+          ? AccountType.MOBILE_WALLET
+          : AccountType.CASH;
+
+      let targetAccount = body.accountId
+        ? await tx.account.findUnique({ where: { id: body.accountId } })
+        : await tx.account.findFirst({
+            where: { businessId: request.tenant!.businessId, accountType: desiredType },
+          });
+
+      if (!targetAccount || (body.mode !== PaymentMode.CASH && targetAccount.accountType === AccountType.CASH && !body.accountId)) {
+        const defaultName =
+          desiredType === AccountType.BANK
+            ? 'Main Bank Account'
+            : desiredType === AccountType.MOBILE_WALLET
+            ? 'Mobile Wallet Account'
+            : 'Main Cash Account';
+
+        targetAccount = await tx.account.create({
+          data: {
+            businessId: request.tenant!.businessId,
+            accountName: defaultName,
+            accountType: desiredType,
+            balance: new Prisma.Decimal(0),
+          },
+        });
+      }
+
+      // 1. Create PaymentOut Record
+      const newPayment = await tx.paymentOut.create({
+        data: {
+          businessId: request.tenant!.businessId,
+          partyId: body.partyId,
+          accountId: targetAccount.id,
+          amount: amt,
+          mode: body.mode,
+          date: new Date(body.date),
+          referenceNumber: body.referenceNumber || null,
+          notes: body.notes || null,
+        },
+        include: {
+          party: { select: { id: true, name: true, phone: true } },
+          account: { select: { id: true, accountName: true } },
+        },
+      });
+
+      // 2. Reduce Supplier Payable Balance (Increase balance towards 0 / positive)
+      const curBal = new Prisma.Decimal(party.currentBalance || 0);
+      const newBal = curBal.add(amt);
+      await tx.party.update({
+        where: { id: body.partyId },
+        data: { currentBalance: newBal },
+      });
+
+      // 3. Decrease Cash/Bank Account Balance
+      const curAccBal = new Prisma.Decimal(targetAccount.balance || 0);
+      const newAccBal = curAccBal.sub(amt);
+      await tx.account.update({
+        where: { id: targetAccount.id },
+        data: { balance: newAccBal },
+      });
+
+      // 4. Reduce dueAmount on linked UNPAID/PARTIAL purchase bills (FIFO)
+      const unpaidBills = await tx.purchase.findMany({
+        where: {
+          businessId: request.tenant!.businessId,
+          partyId: body.partyId,
+          status: { in: ['UNPAID', 'PARTIAL'] },
+          dueAmount: { gt: 0 },
+        },
+        orderBy: { date: 'asc' }, // oldest first
+      });
+
+      let remainingPayment = new Prisma.Decimal(amt);
+      for (const bill of unpaidBills) {
+        if (remainingPayment.lessThanOrEqualTo(0)) break;
+
+        const billDue = new Prisma.Decimal(bill.dueAmount || 0);
+        const reduction = remainingPayment.greaterThanOrEqualTo(billDue)
+          ? billDue
+          : remainingPayment;
+
+        const newDue = billDue.sub(reduction);
+        const newPaid = new Prisma.Decimal(bill.paidAmount || 0).add(reduction);
+        const newStatus = newDue.lessThanOrEqualTo(0) ? 'PAID' : 'PARTIAL';
+
+        await tx.purchase.update({
+          where: { id: bill.id },
+          data: {
+            dueAmount: newDue,
+            paidAmount: newPaid,
+            status: newStatus as any,
+          },
+        });
+
+        remainingPayment = remainingPayment.sub(reduction);
+      }
+
+      // 5. Create Transaction Entry
+      await tx.transaction.create({
+        data: {
+          businessId: request.tenant!.businessId,
+          accountId: targetAccount.id,
+          category: TransactionCategory.PAYMENT_OUT,
+          amount: amt,
+          referenceId: newPayment.id,
+          description: body.notes || `Payment made to ${party.name}`,
+          date: new Date(body.date),
+        },
+      });
+
+      return newPayment;
+    });
+
+    return reply.status(201).send({
+      success: true,
+      data: paymentOut,
+    });
+  });
+}
