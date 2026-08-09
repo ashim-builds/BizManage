@@ -56,6 +56,7 @@ export const updateBusinessSettingsSchema = z.object({
 // Category Schemas
 export const categorySchema = z.object({
   name: z.string().min(1, 'Category name is required'),
+  description: z.string().optional(),
 });
 
 // Party Schemas
