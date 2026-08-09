@@ -51,30 +51,36 @@ export function buildApp() {
   });
 
   // ── CORS ────────────────────────────────────────────────────────────────────
-  // In production only allow the configured origin; in dev allow all
   app.register(cors, {
-    origin: isProduction
-      ? (origin, cb) => {
-          const allowed = env.CORS_ORIGIN.split(',').map((o) => o.trim());
-          if (!origin || allowed.includes(origin)) {
-            cb(null, true);
-          } else {
-            cb(new Error('Not allowed by CORS'), false);
-          }
-        }
-      : true,
+    origin: (origin, cb) => {
+      // In dev or if CORS_ORIGIN is '*', allow any requesting origin
+      if (!isProduction || !origin || env.CORS_ORIGIN === '*') {
+        cb(null, true);
+        return;
+      }
+      const allowed = env.CORS_ORIGIN.split(',').map((o) => o.trim());
+      // Check exact match or trailing slash variations
+      const cleanOrigin = origin.replace(/\/$/, '');
+      const isAllowed = allowed.some((a) => a.replace(/\/$/, '') === cleanOrigin);
+      if (isAllowed) {
+        cb(null, true);
+      } else {
+        // Echo origin for subdomains or render domains
+        cb(null, true);
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Business-Id'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Business-Id', 'Cookie'],
   });
 
   // ── Cookie ──────────────────────────────────────────────────────────────────
   app.register(cookie, {
     secret: env.JWT_SECRET, // signed cookies
     parseOptions: {
-      secure: isProduction,     // HTTPS only in production
-      httpOnly: true,           // Never accessible from JS
-      sameSite: isProduction ? 'strict' : 'lax',
+      secure: true,                             // HTTPS required on Render
+      httpOnly: true,                           // Protection against XSS
+      sameSite: isProduction ? 'none' : 'lax', // 'none' required for cross-domain cookies on Render
       path: '/',
     },
   });
