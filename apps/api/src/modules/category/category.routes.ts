@@ -13,16 +13,18 @@ export async function categoryRoutes(fastify: FastifyInstance) {
   // List Party Categories with search
   fastify.get('/party', async (request, reply) => {
     const { search } = request.query as { search?: string };
+    const businessId = request.tenant!.businessId;
 
     const categories = await request.db!.partyCategory.findMany({
       where: search
         ? {
+            businessId,
             name: {
               contains: search,
               mode: 'insensitive',
             },
           }
-        : undefined,
+        : { businessId },
       orderBy: { name: 'asc' },
       include: {
         _count: {
@@ -40,9 +42,10 @@ export async function categoryRoutes(fastify: FastifyInstance) {
   // Create Party Category
   fastify.post('/party', async (request, reply) => {
     const body = categorySchema.parse(request.body);
+    const businessId = request.tenant!.businessId;
 
     const existing = await request.db!.partyCategory.findFirst({
-      where: { name: body.name },
+      where: { businessId, name: body.name },
     });
     if (existing) {
       throw new AppError('Party category with this name already exists', 409, 'CONFLICT');
@@ -50,7 +53,7 @@ export async function categoryRoutes(fastify: FastifyInstance) {
 
     const category = await request.db!.partyCategory.create({
       data: {
-        businessId: request.tenant!.businessId,
+        businessId,
         name: body.name,
       },
     });
@@ -65,6 +68,14 @@ export async function categoryRoutes(fastify: FastifyInstance) {
   fastify.put('/party/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
     const body = categorySchema.parse(request.body);
+    const businessId = request.tenant!.businessId;
+
+    const existing = await request.db!.partyCategory.findFirst({
+      where: { id, businessId },
+    });
+    if (!existing) {
+      throw new AppError('Party category not found', 404, 'NOT_FOUND');
+    }
 
     const updated = await request.db!.partyCategory.update({
       where: { id },
@@ -80,6 +91,14 @@ export async function categoryRoutes(fastify: FastifyInstance) {
   // Delete Party Category
   fastify.delete('/party/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
+    const businessId = request.tenant!.businessId;
+
+    const existing = await request.db!.partyCategory.findFirst({
+      where: { id, businessId },
+    });
+    if (!existing) {
+      throw new AppError('Party category not found', 404, 'NOT_FOUND');
+    }
 
     await request.db!.partyCategory.delete({
       where: { id },
@@ -98,16 +117,18 @@ export async function categoryRoutes(fastify: FastifyInstance) {
   // List Item Categories with search
   fastify.get('/item', async (request, reply) => {
     const { search } = request.query as { search?: string };
+    const businessId = request.tenant!.businessId;
 
     const categories = await request.db!.itemCategory.findMany({
       where: search
         ? {
+            businessId,
             name: {
               contains: search,
               mode: 'insensitive',
             },
           }
-        : undefined,
+        : { businessId },
       orderBy: { name: 'asc' },
       include: {
         _count: {
@@ -125,9 +146,10 @@ export async function categoryRoutes(fastify: FastifyInstance) {
   // Create Item Category
   fastify.post('/item', async (request, reply) => {
     const body = categorySchema.parse(request.body);
+    const businessId = request.tenant!.businessId;
 
     const existing = await request.db!.itemCategory.findFirst({
-      where: { name: body.name },
+      where: { businessId, name: body.name },
     });
     if (existing) {
       throw new AppError('Item category with this name already exists', 409, 'CONFLICT');
@@ -135,7 +157,7 @@ export async function categoryRoutes(fastify: FastifyInstance) {
 
     const category = await request.db!.itemCategory.create({
       data: {
-        businessId: request.tenant!.businessId,
+        businessId,
         name: body.name,
       },
     });
@@ -150,6 +172,14 @@ export async function categoryRoutes(fastify: FastifyInstance) {
   fastify.put('/item/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
     const body = categorySchema.parse(request.body);
+    const businessId = request.tenant!.businessId;
+
+    const existing = await request.db!.itemCategory.findFirst({
+      where: { id, businessId },
+    });
+    if (!existing) {
+      throw new AppError('Item category not found', 404, 'NOT_FOUND');
+    }
 
     const updated = await request.db!.itemCategory.update({
       where: { id },
@@ -165,6 +195,14 @@ export async function categoryRoutes(fastify: FastifyInstance) {
   // Delete Item Category
   fastify.delete('/item/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
+    const businessId = request.tenant!.businessId;
+
+    const existing = await request.db!.itemCategory.findFirst({
+      where: { id, businessId },
+    });
+    if (!existing) {
+      throw new AppError('Item category not found', 404, 'NOT_FOUND');
+    }
 
     await request.db!.itemCategory.delete({
       where: { id },
@@ -181,7 +219,9 @@ export async function categoryRoutes(fastify: FastifyInstance) {
   // ----------------------------------------------------
 
   fastify.get('/expense', async (request, reply) => {
+    const businessId = request.tenant!.businessId;
     const expenses = await request.db!.expense.findMany({
+      where: { businessId },
       select: { category: true },
       distinct: ['category'],
       orderBy: { category: 'asc' },
@@ -202,7 +242,9 @@ export async function categoryRoutes(fastify: FastifyInstance) {
   // ----------------------------------------------------
 
   fastify.get('/income', async (request, reply) => {
+    const businessId = request.tenant!.businessId;
     const incomes = await request.db!.income.findMany({
+      where: { businessId },
       select: { category: true },
       distinct: ['category'],
       orderBy: { category: 'asc' },

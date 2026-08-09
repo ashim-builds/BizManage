@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { requireBusinessTenant } from '../../middleware/auth.js';
+import { requireBusinessTenant, requireRole } from '../../middleware/auth.js';
 import { partySchema, updatePartySchema } from '@bizmanage/validation';
 import { PartyType, Prisma } from '@bizmanage/database';
 import { AppError } from '../../plugins/error-handler.js';
@@ -122,8 +122,8 @@ export async function partyRoutes(fastify: FastifyInstance) {
   fastify.get('/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
 
-    const party = await request.db!.party.findUnique({
-      where: { id },
+    const party = await request.db!.party.findFirst({
+      where: { id, businessId: request.tenant!.businessId },
       include: {
         category: true,
         sales: {
@@ -206,8 +206,8 @@ export async function partyRoutes(fastify: FastifyInstance) {
     const { id } = request.params as { id: string };
     const body = updatePartySchema.parse(request.body);
 
-    const existing = await request.db!.party.findUnique({
-      where: { id },
+    const existing = await request.db!.party.findFirst({
+      where: { id, businessId: request.tenant!.businessId },
     });
 
     if (!existing) {
@@ -241,13 +241,13 @@ export async function partyRoutes(fastify: FastifyInstance) {
   });
 
   // ----------------------------------------------------
-  // DELETE PARTY
+  // DELETE PARTY (Restricted to OWNER / ADMIN)
   // ----------------------------------------------------
-  fastify.delete('/:id', async (request, reply) => {
+  fastify.delete('/:id', { preHandler: [requireRole('OWNER', 'ADMIN')] }, async (request, reply) => {
     const { id } = request.params as { id: string };
 
-    const party = await request.db!.party.findUnique({
-      where: { id },
+    const party = await request.db!.party.findFirst({
+      where: { id, businessId: request.tenant!.businessId },
       include: {
         _count: {
           select: {

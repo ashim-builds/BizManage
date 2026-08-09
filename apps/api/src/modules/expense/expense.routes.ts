@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { requireBusinessTenant } from '../../middleware/auth.js';
+import { requireBusinessTenant, requireRole } from '../../middleware/auth.js';
 import { createExpenseSchema } from '@bizmanage/validation';
 import { PaymentMode, TransactionCategory, Prisma } from '@bizmanage/database';
 import { AppError } from '../../plugins/error-handler.js';
@@ -10,6 +10,7 @@ export async function expenseRoutes(fastify: FastifyInstance) {
   // GET EXPENSES SUMMARY
   fastify.get('/summary', async (request, reply) => {
     const expenses = await request.db!.expense.findMany({
+      where: { businessId: request.tenant!.businessId },
       select: { amount: true, date: true, category: true },
     });
 
@@ -111,7 +112,7 @@ export async function expenseRoutes(fastify: FastifyInstance) {
       const amt = new Prisma.Decimal(body.amount);
 
       let targetAccount = body.accountId
-        ? await tx.account.findUnique({ where: { id: body.accountId } })
+        ? await tx.account.findFirst({ where: { id: body.accountId, businessId: request.tenant!.businessId } })
         : await tx.account.findFirst({ where: { businessId: request.tenant!.businessId } });
 
       if (!targetAccount) {
@@ -170,12 +171,14 @@ export async function expenseRoutes(fastify: FastifyInstance) {
     });
   });
 
-  // DELETE EXPENSE (Transaction-Safe Restore)
-  fastify.delete('/:id', async (request, reply) => {
+  // DELETE EXPENSE (Restricted to OWNER / ADMIN)
+  fastify.delete('/:id', { preHandler: [requireRole('OWNER', 'ADMIN')] }, async (request, reply) => {
     const { id } = request.params as { id: string };
 
     await request.db!.$transaction(async (tx) => {
-      const expense = await tx.expense.findUnique({ where: { id } });
+      const expense = await tx.expense.findFirst({
+        where: { id, businessId: request.tenant!.businessId },
+      });
       if (!expense) {
         throw new AppError('Expense record not found', 404, 'NOT_FOUND');
       }
@@ -183,7 +186,9 @@ export async function expenseRoutes(fastify: FastifyInstance) {
       const amt = new Prisma.Decimal(expense.amount || 0);
 
       // Restore account balance
-      const account = await tx.account.findUnique({ where: { id: expense.accountId } });
+      const account = await tx.account.findFirst({
+        where: { id: expense.accountId, businessId: request.tenant!.businessId },
+      });
       if (account) {
         const curBal = new Prisma.Decimal(account.balance || 0);
         await tx.account.update({
@@ -192,7 +197,9 @@ export async function expenseRoutes(fastify: FastifyInstance) {
         });
       }
 
-      await tx.transaction.deleteMany({ where: { referenceId: id } });
+      await tx.transaction.deleteMany({
+        where: { referenceId: id, businessId: request.tenant!.businessId },
+      });
       await tx.expense.delete({ where: { id } });
     });
 

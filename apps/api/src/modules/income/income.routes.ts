@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { requireBusinessTenant } from '../../middleware/auth.js';
+import { requireBusinessTenant, requireRole } from '../../middleware/auth.js';
 import { createIncomeSchema } from '@bizmanage/validation';
 import { PaymentMode, TransactionCategory, Prisma } from '@bizmanage/database';
 import { AppError } from '../../plugins/error-handler.js';
@@ -10,6 +10,7 @@ export async function incomeRoutes(fastify: FastifyInstance) {
   // GET INCOME SUMMARY
   fastify.get('/summary', async (request, reply) => {
     const incomes = await request.db!.income.findMany({
+      where: { businessId: request.tenant!.businessId },
       select: { amount: true, date: true, category: true },
     });
 
@@ -111,7 +112,7 @@ export async function incomeRoutes(fastify: FastifyInstance) {
       const amt = new Prisma.Decimal(body.amount);
 
       let targetAccount = body.accountId
-        ? await tx.account.findUnique({ where: { id: body.accountId } })
+        ? await tx.account.findFirst({ where: { id: body.accountId, businessId: request.tenant!.businessId } })
         : await tx.account.findFirst({ where: { businessId: request.tenant!.businessId } });
 
       if (!targetAccount) {
@@ -170,19 +171,23 @@ export async function incomeRoutes(fastify: FastifyInstance) {
     });
   });
 
-  // DELETE OTHER INCOME (Transaction-Safe Deduct)
-  fastify.delete('/:id', async (request, reply) => {
+  // DELETE OTHER INCOME (Restricted to OWNER / ADMIN)
+  fastify.delete('/:id', { preHandler: [requireRole('OWNER', 'ADMIN')] }, async (request, reply) => {
     const { id } = request.params as { id: string };
 
     await request.db!.$transaction(async (tx) => {
-      const income = await tx.income.findUnique({ where: { id } });
+      const income = await tx.income.findFirst({
+        where: { id, businessId: request.tenant!.businessId },
+      });
       if (!income) {
         throw new AppError('Income record not found', 404, 'NOT_FOUND');
       }
 
       const amt = new Prisma.Decimal(income.amount || 0);
 
-      const account = await tx.account.findUnique({ where: { id: income.accountId } });
+      const account = await tx.account.findFirst({
+        where: { id: income.accountId, businessId: request.tenant!.businessId },
+      });
       if (account) {
         const curBal = new Prisma.Decimal(account.balance || 0);
         await tx.account.update({
@@ -191,7 +196,9 @@ export async function incomeRoutes(fastify: FastifyInstance) {
         });
       }
 
-      await tx.transaction.deleteMany({ where: { referenceId: id } });
+      await tx.transaction.deleteMany({
+        where: { referenceId: id, businessId: request.tenant!.businessId },
+      });
       await tx.income.delete({ where: { id } });
     });
 

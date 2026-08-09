@@ -74,3 +74,35 @@ export async function requireBusinessTenant(request: FastifyRequest, _reply: Fas
   request.membership = { role: membership.role as Role };
   request.db = createTenantClient(businessId);
 }
+
+export function requireRole(...allowedRoles: Role[]) {
+  return async function (request: FastifyRequest, _reply: FastifyReply) {
+    if (!request.membership || !allowedRoles.includes(request.membership.role)) {
+      throw new AppError(
+        `Insufficient permissions. Role '${request.membership?.role || 'UNKNOWN'}' is not authorized for this action.`,
+        403,
+        'FORBIDDEN'
+      );
+    }
+  };
+}
+
+export function sanitizeInput(input: any): any {
+  if (typeof input === 'string') {
+    return input
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/on\w+="[^"]*"/gi, '')
+      .replace(/javascript:[^\s'"]*/gi, '');
+  }
+  if (Array.isArray(input)) {
+    return input.map(sanitizeInput);
+  }
+  if (typeof input === 'object' && input !== null) {
+    const cleaned: Record<string, any> = {};
+    for (const [key, value] of Object.entries(input)) {
+      cleaned[key] = sanitizeInput(value);
+    }
+    return cleaned;
+  }
+  return input;
+}
