@@ -1,5 +1,6 @@
+import { createAuditLog } from '../../services/audit-log.service.js';
 import { FastifyInstance } from 'fastify';
-import { requireBusinessTenant } from '../../middleware/auth.js';
+import { requireBusinessTenant, requireRole } from '../../middleware/auth.js';
 import { itemSchema, updateItemSchema, stockAdjustmentSchema } from '@bizmanage/validation';
 import { ItemType, StockMovementType, Prisma } from '@bizmanage/database';
 import { AppError } from '../../plugins/error-handler.js';
@@ -132,8 +133,8 @@ export async function itemRoutes(fastify: FastifyInstance) {
   fastify.get('/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
 
-    const item = await request.db!.item.findUnique({
-      where: { id },
+    const item = await request.db!.item.findFirst({
+      where: { id, businessId: request.tenant!.businessId },
       include: {
         category: true,
         stockMovements: {
@@ -194,6 +195,14 @@ export async function itemRoutes(fastify: FastifyInstance) {
       return newItem;
     });
 
+    createAuditLog({
+      request,
+      action: 'CREATE_ITEM',
+      module: 'ITEM',
+      recordId: item.id,
+      newValue: { name: item.name, salePrice: Number(item.salePrice), openingStock: Number(item.openingStock) },
+    }).catch(() => {});
+
     return reply.status(201).send({
       success: true,
       data: item,
@@ -207,7 +216,9 @@ export async function itemRoutes(fastify: FastifyInstance) {
     const { id } = request.params as { id: string };
     const body = updateItemSchema.parse(request.body);
 
-    const existing = await request.db!.item.findUnique({ where: { id } });
+    const existing = await request.db!.item.findFirst({
+      where: { id, businessId: request.tenant!.businessId },
+    });
     if (!existing) {
       throw new AppError('Item not found', 404, 'NOT_FOUND');
     }
@@ -232,6 +243,15 @@ export async function itemRoutes(fastify: FastifyInstance) {
       },
     });
 
+    createAuditLog({
+      request,
+      action: 'UPDATE_ITEM',
+      module: 'ITEM',
+      recordId: id,
+      oldValue: { name: existing.name, salePrice: Number(existing.salePrice) },
+      newValue: { name: updated.name, salePrice: Number(updated.salePrice) },
+    }).catch(() => {});
+
     return reply.send({
       success: true,
       data: updated,
@@ -246,7 +266,9 @@ export async function itemRoutes(fastify: FastifyInstance) {
     const body = stockAdjustmentSchema.parse(request.body);
 
     const updatedItem = await request.db!.$transaction(async (tx) => {
-      const item = await tx.item.findUnique({ where: { id } });
+      const item = await tx.item.findFirst({
+        where: { id, businessId: request.tenant!.businessId },
+      });
       if (!item) {
         throw new AppError('Item not found', 404, 'NOT_FOUND');
       }
@@ -279,6 +301,14 @@ export async function itemRoutes(fastify: FastifyInstance) {
       return newItemRecord;
     });
 
+    createAuditLog({
+      request,
+      action: 'ADJUST_STOCK',
+      module: 'ITEM',
+      recordId: id,
+      newValue: { adjustmentType: body.adjustmentType, quantity: body.quantity, newStock: Number(updatedItem.currentStock) },
+    }).catch(() => {});
+
     return reply.send({
       success: true,
       data: updatedItem,
@@ -286,13 +316,13 @@ export async function itemRoutes(fastify: FastifyInstance) {
   });
 
   // ----------------------------------------------------
-  // DELETE ITEM
+  // DELETE ITEM (Restricted to OWNER / ADMIN)
   // ----------------------------------------------------
-  fastify.delete('/:id', async (request, reply) => {
+  fastify.delete('/:id', { preHandler: [requireRole('OWNER', 'ADMIN')] }, async (request, reply) => {
     const { id } = request.params as { id: string };
 
-    const item = await request.db!.item.findUnique({
-      where: { id },
+    const item = await request.db!.item.findFirst({
+      where: { id, businessId: request.tenant!.businessId },
       include: {
         _count: {
           select: {
@@ -317,9 +347,17 @@ export async function itemRoutes(fastify: FastifyInstance) {
     }
 
     await request.db!.$transaction([
-      request.db!.stockMovement.deleteMany({ where: { itemId: id } }),
+      request.db!.stockMovement.deleteMany({ where: { itemId: id, businessId: request.tenant!.businessId } }),
       request.db!.item.delete({ where: { id } }),
     ]);
+
+    createAuditLog({
+      request,
+      action: 'DELETE_ITEM',
+      module: 'ITEM',
+      recordId: id,
+      oldValue: { name: item.name },
+    }).catch(() => {});
 
     return reply.send({
       success: true,

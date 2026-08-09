@@ -54,6 +54,17 @@ const envSchema = z.object({
   CORS_ORIGIN: z
     .string()
     .default('*'),
+
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().default(587),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
+  SMTP_FROM: z.string().default('noreply@bizmanage.com'),
+  SMTP_FROM_NAME: z.string().default('BizManage System'),
+
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_CALLBACK_URL: z.string().default('http://localhost:3000/auth/google/callback'),
 });
 
 const parsed = envSchema.safeParse(process.env);

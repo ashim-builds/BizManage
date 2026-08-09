@@ -9,6 +9,10 @@ if (!process.env.DATABASE_URL) {
 import { runAuthTests } from './auth.test.js';
 import { runMultiTenantTests } from './multi-tenant.test.js';
 import { runFinancialEngineTests } from './financial-engine.test.js';
+import { runEmailOtpTests } from './email-otp.test.js';
+import { runGoogleOAuthTests } from './google-oauth.test.js';
+import { runSecurityHardeningTests } from './security-hardening.test.js';
+import { runFinalSecurityAuditTests } from './final-security-audit.test.js';
 
 async function executeCompleteTestSuite() {
   console.log('============ BIZMANAGE FULL MONOREPO INTEGRATION SUITE ============');
@@ -20,9 +24,17 @@ async function executeCompleteTestSuite() {
     await runMultiTenantTests();
     console.log('');
     await runFinancialEngineTests();
+    console.log('');
+    await runEmailOtpTests();
+    console.log('');
+    await runGoogleOAuthTests();
+    console.log('');
+    await runSecurityHardeningTests();
+    console.log('');
+    await runFinalSecurityAuditTests();
 
     console.log('\n================================================================');
-    console.log('🎉 ALL INTEGRATION & BUSINESS LOGIC TEST SUITES PASSED (100%)!');
+    console.log('🎉 ALL 7 INTEGRATION & SECURITY TEST SUITES PASSED (100%)!');
     console.log('================================================================\n');
   } catch (err: any) {
     console.error('\n❌ TEST SUITE FAILURE DETECTED:');
