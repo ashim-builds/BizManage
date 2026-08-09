@@ -72,7 +72,7 @@ async function recordLoginAttempt({
   }
 }
 
-async function fetchGoogleUserProfile(code: string, codeVerifier?: string) {
+async function fetchGoogleUserProfile(code: string) {
   // Test/mock handler mode for automated integration testing
   if (code.startsWith('test_code_')) {
     if (code === 'test_code_invalid') {
@@ -101,9 +101,6 @@ async function fetchGoogleUserProfile(code: string, codeVerifier?: string) {
     redirect_uri: env.GOOGLE_CALLBACK_URL,
     grant_type: 'authorization_code',
   });
-  if (codeVerifier) {
-    params.append('code_verifier', codeVerifier);
-  }
 
   const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
@@ -531,22 +528,15 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
   );
 
-  // 5. GOOGLE OAUTH: GET AUTHORIZATION URL (with CSRF State & PKCE)
+  // 5. GOOGLE OAUTH: GET AUTHORIZATION URL (with CSRF State)
   fastify.get('/google/url', async (request, reply) => {
     const state = crypto.randomBytes(24).toString('hex');
-    const codeVerifier = crypto.randomBytes(32).toString('hex');
-    const codeChallenge = crypto
-      .createHash('sha256')
-      .update(codeVerifier)
-      .digest('base64url');
 
-    const statePayload = JSON.stringify({ state, codeVerifier });
-
-    reply.setCookie('oauth_state', statePayload, {
+    reply.setCookie('oauth_state', state, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      path: '/api/v1/auth',
+      path: '/',
       maxAge: 600, // 10 minutes
     });
 
@@ -556,8 +546,6 @@ export async function authRoutes(fastify: FastifyInstance) {
     googleAuthUrl.searchParams.append('response_type', 'code');
     googleAuthUrl.searchParams.append('scope', 'openid email profile');
     googleAuthUrl.searchParams.append('state', state);
-    googleAuthUrl.searchParams.append('code_challenge', codeChallenge);
-    googleAuthUrl.searchParams.append('code_challenge_method', 'S256');
 
     return reply.send({
       success: true,
@@ -574,25 +562,10 @@ export async function authRoutes(fastify: FastifyInstance) {
     const ipAddress = request.ip;
     const userAgent = request.headers['user-agent'] as string | undefined;
 
-    // Verify state if cookie present
-    const rawStateCookie = request.cookies.oauth_state;
-    let codeVerifier: string | undefined;
-    if (rawStateCookie) {
-      try {
-        const parsedState = JSON.parse(rawStateCookie);
-        if (body.state && parsedState.state !== body.state) {
-          throw new AppError('OAuth state mismatch. Request may have been tampered with.', 400, 'INVALID_OAUTH_STATE');
-        }
-        codeVerifier = parsedState.codeVerifier;
-      } catch (_err) {
-        if (_err instanceof AppError) throw _err;
-      }
-    }
-
-    reply.clearCookie('oauth_state', { path: '/api/v1/auth' });
+    reply.clearCookie('oauth_state', { path: '/' });
 
     // Server-to-server exchange of code for profile
-    const profile = await fetchGoogleUserProfile(body.code, codeVerifier);
+    const profile = await fetchGoogleUserProfile(body.code);
 
     if (!profile.email_verified) {
       throw new AppError('Google account email is not verified by Google.', 400, 'UNVERIFIED_GOOGLE_EMAIL');

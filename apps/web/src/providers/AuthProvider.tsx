@@ -39,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   const fetchUser = async () => {
+    if (typeof window === 'undefined') return;
     const token = localStorage.getItem('bizmanage_token');
     if (!token) {
       setUser(null);
