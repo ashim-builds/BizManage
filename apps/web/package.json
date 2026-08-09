@@ -1,0 +1,37 @@
+{
+  "name": "@bizmanage/web",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@bizmanage/types": "workspace:*",
+    "@bizmanage/validation": "workspace:*",
+    "@hookform/resolvers": "^3.3.4",
+    "@tanstack/react-query": "^5.29.2",
+    "axios": "^1.6.8",
+    "clsx": "^2.1.0",
+    "lucide-react": "^0.368.0",
+    "next": "14.2.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.51.3",
+    "tailwind-merge": "^2.2.2",
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@bizmanage/config": "workspace:*",
+    "@types/node": "^20.12.7",
+    "@types/react": "^18.2.79",
+    "@types/react-dom": "^18.2.25",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3",
+    "typescript": "^5.4.5"
+  }
+}
