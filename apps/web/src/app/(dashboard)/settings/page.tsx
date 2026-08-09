@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
+import { api } from '@/lib/api';
 import { useCurrentBusiness, useUpdateBusiness, useUpdateBusinessSettings } from '@/services/businessService';
 import { useImportParties, useImportItems, useDownloadBackup, useChangePassword } from '@/services/utilityService';
 import { LoadingState } from '@/components/common/LoadingState';
@@ -72,6 +73,38 @@ export default function SettingsPage() {
   const [pwdSuccess, setPwdSuccess] = useState('');
   const [pwdError, setPwdError] = useState('');
   const [pwdPending, setPwdPending] = useState(false);
+
+  // Google Connection States & Handlers
+  const [googleSuccess, setGoogleSuccess] = useState('');
+  const [googleError, setGoogleError] = useState('');
+
+  const handleConnectGoogle = async () => {
+    setGoogleError('');
+    try {
+      const res = await api.get('/auth/google/url');
+      if (res.data.success && res.data.data.url) {
+        window.location.href = res.data.data.url;
+      }
+    } catch (err: any) {
+      setGoogleError(err.response?.data?.error?.message || 'Failed to initiate Google connection.');
+    }
+  };
+
+  const handleDisconnectGoogle = async () => {
+    setGoogleError('');
+    setGoogleSuccess('');
+    try {
+      const res = await api.post('/auth/google/disconnect');
+      if (res.data.success) {
+        setGoogleSuccess(res.data.message || 'Google account disconnected.');
+        if (user) {
+          (user as any).googleId = null;
+        }
+      }
+    } catch (err: any) {
+      setGoogleError(err.response?.data?.error?.message || 'Failed to disconnect Google account.');
+    }
+  };
 
   // Import States
   const [importJsonText, setImportJsonText] = useState('');
@@ -535,6 +568,67 @@ export default function SettingsPage() {
               <p className="text-[10px] text-slate-500">
                 🔒 All active sessions will be revoked after changing password.
               </p>
+            </div>
+          </div>
+
+          {/* Google OAuth Connection Section */}
+          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-5">
+            <h3 className="text-base font-bold text-white border-b border-slate-800 pb-3 flex items-center gap-2">
+              <svg className="w-4 h-4" viewBox="0 0 24 24">
+                <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z" />
+                <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z" />
+                <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.4 0 15.3c0 2.9.7 5.6 1.9 8l3.7-2.9c-.2-.7-.4-1.5-.4-2.3z" />
+                <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z" />
+              </svg>
+              Google Account Connection
+            </h3>
+
+            {googleSuccess && (
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 shrink-0" /> {googleSuccess}
+              </div>
+            )}
+            {googleError && (
+              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0" /> {googleError}
+              </div>
+            )}
+
+            <div className="space-y-4 text-xs">
+              <div className="flex items-center justify-between p-4 rounded-xl bg-slate-800/60 border border-slate-700">
+                <div>
+                  <p className="font-semibold text-white">Google Connection Status</p>
+                  <p className="text-slate-400 text-[11px] mt-0.5">
+                    {(user as any)?.googleId
+                      ? 'Your account is linked to Google OAuth.'
+                      : 'Connect your Google account for 1-click authentication.'}
+                  </p>
+                </div>
+                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${(user as any)?.googleId ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-700 text-slate-400 border-slate-600'}`}>
+                  {(user as any)?.googleId ? 'CONNECTED' : 'NOT CONNECTED'}
+                </span>
+              </div>
+
+              {(user as any)?.googleId ? (
+                <div>
+                  <button
+                    onClick={handleDisconnectGoogle}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white font-semibold transition-all border border-red-500/30 text-xs"
+                  >
+                    Disconnect Google Account
+                  </button>
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    ⚠️ Lockout Protection: Google account can only be disconnected if a password is set on your account.
+                  </p>
+                </div>
+              ) : (
+                <button
+                  onClick={handleConnectGoogle}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all text-xs shadow-lg shadow-blue-600/20"
+                >
+                  Connect Google Account
+                </button>
+              )}
             </div>
           </div>
         </div>
