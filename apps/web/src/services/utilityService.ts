@@ -14,9 +14,15 @@ export function useNotifications() {
   return useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
-      const res = await api.get('/utilities/notifications');
-      return res.data.data as { unreadCount: number; notifications: NotificationItem[] };
+      if (typeof window === 'undefined') return { unreadCount: 0, notifications: [] };
+      try {
+        const res = await api.get('/utilities/notifications');
+        return res.data.data as { unreadCount: number; notifications: NotificationItem[] };
+      } catch (_) {
+        return { unreadCount: 0, notifications: [] };
+      }
     },
+    enabled: typeof window !== 'undefined',
     refetchInterval: 30000,
   });
 }
