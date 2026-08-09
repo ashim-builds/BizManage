@@ -306,12 +306,12 @@ export async function saleRoutes(fastify: FastifyInstance) {
 
       // 7. Update Customer Balance (Increase Receivable if dueAmount > 0)
       if (dueAmount.greaterThan(0)) {
-        const party = await tx.party.findUnique({ where: { id: body.partyId } });
+        const party = await tx.party.findUnique({ where: { id: body.partyId ?? undefined } });
         if (party) {
           const curBal = new Prisma.Decimal(party.currentBalance || 0);
           const newBal = curBal.add(dueAmount); // Positive balance = customer owes business
           await tx.party.update({
-            where: { id: body.partyId },
+            where: { id: body.partyId ?? undefined },
             data: { currentBalance: newBal },
           });
         }
@@ -357,18 +357,20 @@ export async function saleRoutes(fastify: FastifyInstance) {
           data: { balance: newAccBal },
         });
 
-        await tx.paymentIn.create({
-          data: {
-            businessId: request.tenant!.businessId,
-            partyId: body.partyId,
-            accountId: targetAccount.id,
-            amount: paidAmount,
-            mode: body.paymentMode,
-            date: new Date(body.date),
-            referenceNumber: invoiceNumber,
-            notes: `Payment for Sale Invoice ${invoiceNumber}`,
-          },
-        });
+        if (body.partyId) {
+          await tx.paymentIn.create({
+            data: {
+              businessId: request.tenant!.businessId,
+              partyId: body.partyId,
+              accountId: targetAccount.id,
+              amount: paidAmount,
+              mode: body.paymentMode,
+              date: new Date(body.date),
+              referenceNumber: invoiceNumber,
+              notes: `Payment for Sale Invoice ${invoiceNumber}`,
+            },
+          });
+        }
 
         await tx.transaction.create({
           data: {
