@@ -11,7 +11,7 @@ import { api } from '@/lib/api';
 function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const tokenParam = searchParams.get('token') || '';
+  const tokenParam = searchParams?.get('token') || '';
 
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

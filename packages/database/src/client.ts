@@ -25,7 +25,6 @@ export const createTenantClient = (businessId: string) => {
             'Income',
             'Transaction',
             'BusinessSetting',
-            'AuditLog',
           ];
 
           if (tenantModels.includes(model)) {

@@ -11,8 +11,6 @@ export const metadata: Metadata = {
   description: 'Manage sales, purchases, inventory, cashflow, and financial reports in one place.',
 };
 
-export const dynamic = 'force-dynamic';
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">

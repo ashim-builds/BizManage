@@ -20,7 +20,6 @@ import { dashboardRoutes } from './modules/dashboard/dashboard.routes.js';
 import { reportRoutes } from './modules/report/report.routes.js';
 import { utilityRoutes } from './modules/utility/utility.routes.js';
 import { accountRoutes } from './modules/account/account.routes.js';
-import { auditRoutes } from './modules/audit/audit.routes.js';
 import { globalPrisma as prisma } from '@bizmanage/database';
 
 const isProduction = env.NODE_ENV === 'production';
@@ -49,16 +48,6 @@ export function buildApp() {
     trustProxy: isProduction,
     // Remove X-Powered-By header
     disableRequestLogging: false,
-    bodyLimit: 1048576, // 1MB payload limit
-  });
-
-  // ── SECURITY HEADERS ────────────────────────────────────────────────────────
-  app.addHook('onRequest', async (_request, reply) => {
-    reply.header('X-Content-Type-Options', 'nosniff');
-    reply.header('X-Frame-Options', 'DENY');
-    reply.header('X-XSS-Protection', '1; mode=block');
-    reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
-    reply.header('Content-Security-Policy', "default-src 'self'");
   });
 
   // ── CORS ────────────────────────────────────────────────────────────────────
@@ -164,7 +153,6 @@ export function buildApp() {
   app.register(reportRoutes,   { prefix: '/api/v1/reports' });
   app.register(utilityRoutes,  { prefix: '/api/v1/utilities' });
   app.register(accountRoutes,  { prefix: '/api/v1/accounts' });
-  app.register(auditRoutes,    { prefix: '/api/v1/audit-logs' });
 
   return app;
 }

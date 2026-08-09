@@ -1,4 +1,3 @@
-import { createAuditLog } from '../../services/audit-log.service.js';
 import { FastifyInstance } from 'fastify';
 import { requireBusinessTenant } from '../../middleware/auth.js';
 import {
@@ -16,7 +15,6 @@ import {
   Prisma,
 } from '@bizmanage/database';
 import { AppError } from '../../plugins/error-handler.js';
-import { emailService } from '../../services/email/email.service.js';
 
 export async function saleRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', requireBusinessTenant);
@@ -127,8 +125,8 @@ export async function saleRoutes(fastify: FastifyInstance) {
   fastify.get('/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
 
-    const sale = await request.db!.sale.findFirst({
-      where: { id, businessId: request.tenant!.businessId },
+    const sale = await request.db!.sale.findUnique({
+      where: { id },
       include: {
         party: true,
         items: {
@@ -390,26 +388,6 @@ export async function saleRoutes(fastify: FastifyInstance) {
       return sale;
     });
 
-    createAuditLog({
-      request,
-      action: 'CREATE_SALE',
-      module: 'SALE',
-      recordId: newSale.id,
-      newValue: { invoiceNumber: newSale.invoiceNumber, totalAmount: Number(newSale.totalAmount) },
-    }).catch(() => {});
-
-    if (newSale.party?.email) {
-      const biz = await request.db!.business.findUnique({ where: { id: request.tenant!.businessId } });
-      emailService.sendInvoiceNotification(
-        newSale.party.email,
-        newSale.party.name,
-        newSale.invoiceNumber,
-        Number(newSale.totalAmount),
-        new Date(newSale.date).toISOString().split('T')[0]!,
-        biz?.name || 'BizManage'
-      ).catch(() => {});
-    }
-
     return reply.status(201).send({
       success: true,
       data: newSale,
@@ -429,7 +407,7 @@ export async function saleRoutes(fastify: FastifyInstance) {
     };
 
     const updatedSale = await request.db!.$transaction(async (tx) => {
-      const sale = await tx.sale.findFirst({
+      const sale = await tx.sale.findUnique({
         where: { id, businessId: request.tenant!.businessId },
         include: { party: true },
       });
@@ -443,20 +421,8 @@ export async function saleRoutes(fastify: FastifyInstance) {
         throw new AppError('This invoice is already fully paid', 400, 'ALREADY_PAID');
       }
 
-      if (amount && amount <= 0) {
-        throw new AppError('Payment amount must be greater than 0', 400, 'INVALID_AMOUNT');
-      }
-
-      if (amount && new Prisma.Decimal(amount).greaterThan(curDue)) {
-        throw new AppError(
-          `Payment amount (Rs. ${amount}) exceeds remaining invoice balance due (Rs. ${curDue.toNumber()})`,
-          400,
-          'OVER_PAYMENT'
-        );
-      }
-
       const payAmt = amount && amount > 0 ? new Prisma.Decimal(amount) : curDue;
-      const actualPay = payAmt;
+      const actualPay = payAmt.greaterThan(curDue) ? curDue : payAmt;
 
       const newDue = curDue.sub(actualPay);
       const newPaid = new Prisma.Decimal(sale.paidAmount || 0).add(actualPay);
@@ -556,14 +522,6 @@ export async function saleRoutes(fastify: FastifyInstance) {
       return updated;
     });
 
-    createAuditLog({
-      request,
-      action: 'PAY_SALE',
-      module: 'SALE',
-      recordId: updatedSale.id,
-      newValue: { invoiceNumber: updatedSale.invoiceNumber, paidAmount: Number(updatedSale.paidAmount), dueAmount: Number(updatedSale.dueAmount) },
-    }).catch(() => {});
-
     return reply.send({ success: true, data: updatedSale });
   });
 
@@ -572,7 +530,6 @@ export async function saleRoutes(fastify: FastifyInstance) {
   // ----------------------------------------------------
   fastify.get('/returns/list', async (request, reply) => {
     const returns = await request.db!.saleReturn.findMany({
-      where: { businessId: request.tenant!.businessId },
       include: {
         party: { select: { id: true, name: true, phone: true } },
         items: { include: { item: { select: { id: true, name: true, unit: true } } } },
@@ -593,53 +550,6 @@ export async function saleRoutes(fastify: FastifyInstance) {
     const body = createSaleReturnSchema.parse(request.body);
 
     const saleReturn = await request.db!.$transaction(async (tx) => {
-      // 0. Over-Return Validation against Original Sale Invoice (if linked)
-      if (body.saleId) {
-        const originalSale = await tx.sale.findFirst({
-          where: { id: body.saleId, businessId: request.tenant!.businessId },
-          include: { items: true },
-        });
-
-        if (!originalSale) {
-          throw new AppError('Original sale invoice not found for this business tenant', 404, 'NOT_FOUND');
-        }
-
-        const previousReturns = await tx.saleReturn.findMany({
-          where: { saleId: body.saleId, businessId: request.tenant!.businessId },
-          include: { items: true },
-        });
-
-        const returnedMap = new Map<string, number>();
-        for (const prevReturn of previousReturns) {
-          for (const prevItem of prevReturn.items) {
-            returnedMap.set(prevItem.itemId, (returnedMap.get(prevItem.itemId) || 0) + Number(prevItem.quantity));
-          }
-        }
-
-        for (const line of body.items) {
-          if (line.quantity <= 0) {
-            throw new AppError('Return quantity must be greater than 0', 400, 'INVALID_QUANTITY');
-          }
-          const originalLine = originalSale.items.find((i) => i.itemId === line.itemId);
-          if (!originalLine) {
-            throw new AppError(
-              `Item (ID: ${line.itemId}) was not included in original sale invoice #${originalSale.invoiceNumber}`,
-              400,
-              'INVALID_RETURN_ITEM'
-            );
-          }
-          const alreadyReturned = returnedMap.get(line.itemId) || 0;
-          const maxReturnable = Number(originalLine.quantity) - alreadyReturned;
-          if (line.quantity > maxReturnable) {
-            throw new AppError(
-              `Over-return error: Cannot return ${line.quantity} units for item. Only ${maxReturnable} units remain returnable on Invoice #${originalSale.invoiceNumber}.`,
-              400,
-              'OVER_RETURN'
-            );
-          }
-        }
-      }
-
       const settings = await tx.businessSetting.findUnique({
         where: { businessId: request.tenant!.businessId },
       });
@@ -794,14 +704,6 @@ export async function saleRoutes(fastify: FastifyInstance) {
 
       return newReturn;
     });
-
-    createAuditLog({
-      request,
-      action: 'CREATE_SALE_RETURN',
-      module: 'SALE',
-      recordId: saleReturn.id,
-      newValue: { returnNumber: saleReturn.returnNumber, totalAmount: Number(saleReturn.totalAmount) },
-    }).catch(() => {});
 
     return reply.status(201).send({
       success: true,

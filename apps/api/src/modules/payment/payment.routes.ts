@@ -1,4 +1,3 @@
-import { createAuditLog } from '../../services/audit-log.service.js';
 import { FastifyInstance } from 'fastify';
 import { requireBusinessTenant } from '../../middleware/auth.js';
 import { createPaymentInSchema, createPaymentOutSchema } from '@bizmanage/validation';
@@ -14,9 +13,7 @@ export async function paymentRoutes(fastify: FastifyInstance) {
 
   // GET PAYMENT IN SUMMARY
   fastify.get('/in/summary', async (request, reply) => {
-    const businessId = request.tenant!.businessId;
     const payments = await request.db!.paymentIn.findMany({
-      where: { businessId },
       select: { amount: true, date: true },
     });
 
@@ -119,9 +116,7 @@ export async function paymentRoutes(fastify: FastifyInstance) {
     const body = createPaymentInSchema.parse(request.body);
 
     const paymentIn = await request.db!.$transaction(async (tx) => {
-      const party = await tx.party.findFirst({
-        where: { id: body.partyId, businessId: request.tenant!.businessId },
-      });
+      const party = await tx.party.findUnique({ where: { id: body.partyId } });
       if (!party) {
         throw new AppError('Customer party not found', 404, 'NOT_FOUND');
       }
@@ -136,7 +131,7 @@ export async function paymentRoutes(fastify: FastifyInstance) {
           : AccountType.CASH;
 
       let targetAccount = body.accountId
-        ? await tx.account.findFirst({ where: { id: body.accountId, businessId: request.tenant!.businessId } })
+        ? await tx.account.findUnique({ where: { id: body.accountId } })
         : await tx.account.findFirst({
             where: { businessId: request.tenant!.businessId, accountType: desiredType },
           });
@@ -245,14 +240,6 @@ export async function paymentRoutes(fastify: FastifyInstance) {
       return newPayment;
     });
 
-    createAuditLog({
-      request,
-      action: 'CREATE_PAYMENT_IN',
-      module: 'PAYMENT',
-      recordId: paymentIn.id,
-      newValue: { partyId: paymentIn.partyId, amount: Number(paymentIn.amount), mode: paymentIn.mode },
-    }).catch(() => {});
-
     return reply.status(201).send({
       success: true,
       data: paymentIn,
@@ -265,9 +252,7 @@ export async function paymentRoutes(fastify: FastifyInstance) {
 
   // GET PAYMENT OUT SUMMARY
   fastify.get('/out/summary', async (request, reply) => {
-    const businessId = request.tenant!.businessId;
     const payments = await request.db!.paymentOut.findMany({
-      where: { businessId },
       select: { amount: true, date: true },
     });
 
@@ -370,9 +355,7 @@ export async function paymentRoutes(fastify: FastifyInstance) {
     const body = createPaymentOutSchema.parse(request.body);
 
     const paymentOut = await request.db!.$transaction(async (tx) => {
-      const party = await tx.party.findFirst({
-        where: { id: body.partyId, businessId: request.tenant!.businessId },
-      });
+      const party = await tx.party.findUnique({ where: { id: body.partyId } });
       if (!party) {
         throw new AppError('Supplier party not found', 404, 'NOT_FOUND');
       }
@@ -387,7 +370,7 @@ export async function paymentRoutes(fastify: FastifyInstance) {
           : AccountType.CASH;
 
       let targetAccount = body.accountId
-        ? await tx.account.findFirst({ where: { id: body.accountId, businessId: request.tenant!.businessId } })
+        ? await tx.account.findUnique({ where: { id: body.accountId } })
         : await tx.account.findFirst({
             where: { businessId: request.tenant!.businessId, accountType: desiredType },
           });
@@ -495,14 +478,6 @@ export async function paymentRoutes(fastify: FastifyInstance) {
 
       return newPayment;
     });
-
-    createAuditLog({
-      request,
-      action: 'CREATE_PAYMENT_OUT',
-      module: 'PAYMENT',
-      recordId: paymentOut.id,
-      newValue: { partyId: paymentOut.partyId, amount: Number(paymentOut.amount), mode: paymentOut.mode },
-    }).catch(() => {});
 
     return reply.status(201).send({
       success: true,

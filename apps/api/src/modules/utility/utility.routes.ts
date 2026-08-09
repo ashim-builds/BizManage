@@ -1,16 +1,16 @@
 import { FastifyInstance } from 'fastify';
-import { requireBusinessTenant, requireRole } from '../../middleware/auth.js';
+import { requireBusinessTenant } from '../../middleware/auth.js';
 import { partySchema, itemSchema } from '@bizmanage/validation';
 import { PartyType, ItemType, Prisma } from '@bizmanage/database';
-import { AppError } from '../../plugins/error-handler.js';
+import { z } from 'zod';
 
 export async function utilityRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', requireBusinessTenant);
 
   // ----------------------------------------------------
-  // 1. IMPORT PARTIES (Validate & Transaction Import - Restricted to OWNER / ADMIN)
+  // 1. IMPORT PARTIES (Validate & Transaction Import)
   // ----------------------------------------------------
-  fastify.post('/import-parties', { preHandler: [requireRole('OWNER', 'ADMIN')] }, async (request, reply) => {
+  fastify.post('/import-parties', async (request, reply) => {
     const { rows } = request.body as { rows: any[] };
 
     if (!Array.isArray(rows) || rows.length === 0) {
@@ -90,9 +90,9 @@ export async function utilityRoutes(fastify: FastifyInstance) {
   });
 
   // ----------------------------------------------------
-  // 2. IMPORT ITEMS (Validate & Transaction Import - Restricted to OWNER / ADMIN)
+  // 2. IMPORT ITEMS (Validate & Transaction Import)
   // ----------------------------------------------------
-  fastify.post('/import-items', { preHandler: [requireRole('OWNER', 'ADMIN')] }, async (request, reply) => {
+  fastify.post('/import-items', async (request, reply) => {
     const { rows } = request.body as { rows: any[] };
 
     if (!Array.isArray(rows) || rows.length === 0) {
@@ -170,9 +170,9 @@ export async function utilityRoutes(fastify: FastifyInstance) {
   });
 
   // ----------------------------------------------------
-  // 3. SECURE BUSINESS BACKUP DATA EXPORT (Restricted to OWNER / ADMIN)
+  // 3. SECURE BUSINESS BACKUP DATA EXPORT
   // ----------------------------------------------------
-  fastify.get('/backup', { preHandler: [requireRole('OWNER', 'ADMIN')] }, async (request, reply) => {
+  fastify.get('/backup', async (request, reply) => {
     const businessId = request.tenant!.businessId;
 
     const [
@@ -231,11 +231,11 @@ export async function utilityRoutes(fastify: FastifyInstance) {
     const [business, items, pendingSales] = await Promise.all([
       request.db!.business.findUnique({ where: { id: businessId } }),
       request.db!.item.findMany({
-        where: { businessId, type: 'PRODUCT' },
+        where: { type: 'PRODUCT' },
         select: { id: true, name: true, unit: true, currentStock: true, minStockAlert: true, updatedAt: true },
       }),
       request.db!.sale.findMany({
-        where: { businessId, status: { in: ['UNPAID', 'PARTIAL'] } },
+        where: { status: { in: ['UNPAID', 'PARTIAL'] } },
         select: { id: true, invoiceNumber: true, dueAmount: true, createdAt: true, party: { select: { name: true } } },
         orderBy: { createdAt: 'desc' },
         take: 5,

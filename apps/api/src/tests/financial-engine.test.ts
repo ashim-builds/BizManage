@@ -1,5 +1,4 @@
 import { buildApp } from '../app.js';
-import { globalPrisma } from '@bizmanage/database';
 
 export async function runFinancialEngineTests() {
   console.log('🧪 [TEST SUITE 3/4] Running Financial & Stock Double-Entry Calculation Tests...');
@@ -16,16 +15,7 @@ export async function runFinancialEngineTests() {
     url: '/api/v1/auth/register',
     payload: { name: 'CFO Tester', email, password, businessName: 'FinEngine Corp' },
   });
-  const regData = JSON.parse(regRes.body).data;
-  await globalPrisma.user.update({ where: { id: regData.userId }, data: { isEmailVerified: true } });
-  const loginRes = await app.inject({
-    method: 'POST',
-    url: '/api/v1/auth/login',
-    payload: { email, password },
-  });
-  const loginData = JSON.parse(loginRes.body).data;
-  const accessToken = loginData.accessToken;
-  const business = loginData.businesses[0];
+  const { accessToken, business } = JSON.parse(regRes.body).data;
   const headers = { authorization: `Bearer ${accessToken}`, 'x-business-id': business.id };
 
   // 2. Setup Party & Item

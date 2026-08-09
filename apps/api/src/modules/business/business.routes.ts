@@ -1,6 +1,5 @@
-import { createAuditLog } from '../../services/audit-log.service.js';
 import { FastifyInstance } from 'fastify';
-import { requireBusinessTenant, authenticateUser, requireRole } from '../../middleware/auth.js';
+import { requireBusinessTenant, authenticateUser } from '../../middleware/auth.js';
 import { createBusinessSchema, updateBusinessSchema, updateBusinessSettingsSchema } from '@bizmanage/validation';
 import { globalPrisma } from '@bizmanage/database';
 import { AppError } from '../../plugins/error-handler.js';
@@ -82,8 +81,8 @@ export async function businessRoutes(fastify: FastifyInstance) {
     });
   });
 
-  // Update active business profile (Restricted to OWNER / ADMIN)
-  fastify.put('/current', { preHandler: [requireBusinessTenant, requireRole('OWNER', 'ADMIN')] }, async (request, reply) => {
+  // Update active business profile (Name, Phone, Address, PAN/VAT, Logo, Currency)
+  fastify.put('/current', { preHandler: [requireBusinessTenant] }, async (request, reply) => {
     const body = updateBusinessSchema.parse(request.body);
 
     const updated = await globalPrisma.business.update({
@@ -100,21 +99,14 @@ export async function businessRoutes(fastify: FastifyInstance) {
       include: { settings: true },
     });
 
-    createAuditLog({
-      request,
-      action: 'UPDATE_BUSINESS_PROFILE',
-      module: 'BUSINESS',
-      newValue: { name: updated.name, phone: updated.phone, currency: updated.currency },
-    }).catch(() => {});
-
     return reply.send({
       success: true,
       data: updated,
     });
   });
 
-  // Update active business settings (Restricted to OWNER / ADMIN)
-  fastify.put('/current/settings', { preHandler: [requireBusinessTenant, requireRole('OWNER', 'ADMIN')] }, async (request, reply) => {
+  // Update active business settings (Tax rates, document prefixes)
+  fastify.put('/current/settings', { preHandler: [requireBusinessTenant] }, async (request, reply) => {
     const body = updateBusinessSettingsSchema.parse(request.body);
 
     const updatedSettings = await globalPrisma.businessSetting.upsert({
@@ -141,13 +133,6 @@ export async function businessRoutes(fastify: FastifyInstance) {
         lowStockAlert: body.lowStockAlert,
       },
     });
-
-    createAuditLog({
-      request,
-      action: 'UPDATE_BUSINESS_SETTINGS',
-      module: 'BUSINESS',
-      newValue: { enableTax: updatedSettings.enableTax, taxRate: Number(updatedSettings.taxRate) },
-    }).catch(() => {});
 
     return reply.send({
       success: true,

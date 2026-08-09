@@ -9,6 +9,7 @@ import { api } from '@/lib/api';
 
 export default function ForgotPasswordPage() {
   const [message, setMessage] = useState<string | null>(null);
+  const [resetToken, setResetToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -28,6 +29,9 @@ export default function ForgotPasswordPage() {
       const res = await api.post('/auth/forgot-password', data);
       if (res.data.success) {
         setMessage(res.data.data.message);
+        if (res.data.data.resetToken) {
+          setResetToken(res.data.data.resetToken);
+        }
       }
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to request password reset.');
@@ -54,8 +58,16 @@ export default function ForgotPasswordPage() {
         )}
 
         {message && (
-          <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm">
+          <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm space-y-3">
             <p>{message}</p>
+            {resetToken && (
+              <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs font-mono text-slate-300 break-all">
+                <p className="text-slate-400 font-sans mb-1">Development Reset Link:</p>
+                <Link href={`/reset-password?token=${resetToken}`} className="text-blue-400 underline">
+                  /reset-password?token={resetToken}
+                </Link>
+              </div>
+            )}
           </div>
         )}
 

@@ -77,56 +77,22 @@ enum TransactionCategory {
 }
 
 model User {
-  id               String                 @id @default(uuid())
-  email            String                 @unique
-  passwordHash     String?
-  googleId         String?                @unique
-  name             String
-  phone            String?
-  isEmailVerified  Boolean                @default(false)
-  createdAt        DateTime               @default(now())
-  updatedAt        DateTime               @updatedAt
-  memberships      UserBusinessRole[]
-  sessions         Session[]
-  resetTokens      PasswordResetToken[]
-  loginHistories   LoginHistory[]
-  verificationOtps EmailVerificationOtp[]
-  auditLogs        AuditLog[]
-}
-
-model EmailVerificationOtp {
-  id          String   @id @default(uuid())
-  userId      String
-  otpHash     String
-  attempts    Int      @default(0)
-  maxAttempts Int      @default(5)
-  expiresAt   DateTime
-  used        Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
+  id           String               @id @default(uuid())
+  email        String               @unique
+  passwordHash String
+  name         String
+  phone        String?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  memberships  UserBusinessRole[]
+  sessions     Session[]
+  resetTokens  PasswordResetToken[]
 }
 
 model Session {
-  id           String   @id @default(uuid())
-  userId       String
-  tokenHash    String   @unique
-  ipAddress    String?
-  userAgent    String?
-  lastActiveAt DateTime @default(now()) @updatedAt
-  expiresAt    DateTime
-  createdAt    DateTime @default(now())
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-}
-
-model PasswordResetToken {
   id        String   @id @default(uuid())
   userId    String
-  tokenHash String   @unique
-  used      Boolean  @default(false)
+  token     String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -134,19 +100,15 @@ model PasswordResetToken {
   @@index([userId])
 }
 
-model LoginHistory {
+model PasswordResetToken {
   id        String   @id @default(uuid())
-  userId    String?
-  email     String
-  ipAddress String?
-  userAgent String?
-  status    String
-  reason    String?
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
   createdAt DateTime @default(now())
-  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([email])
 }
 
 model Business {
@@ -178,7 +140,6 @@ model Business {
   incomes         Income[]
   accounts        Account[]
   transactions    Transaction[]
-  auditLogs       AuditLog[]
 }
 
 model UserBusinessRole {
@@ -617,25 +578,4 @@ model Transaction {
   @@index([businessId, category])
   @@index([businessId, date])
   @@index([businessId, accountId])
-}
-
-model AuditLog {
-  id         String   @id @default(uuid())
-  userId     String?
-  businessId String?
-  action     String
-  module     String
-  recordId   String?
-  ipAddress  String?
-  userAgent  String?
-  oldValue   Json?
-  newValue   Json?
-  createdAt  DateTime @default(now())
-
-  user     User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  business Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  @@index([businessId, createdAt])
-  @@index([userId, createdAt])
-  @@index([module, action])
 }

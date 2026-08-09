@@ -1,5 +1,4 @@
 import { buildApp } from '../app.js';
-import { globalPrisma } from '@bizmanage/database';
 
 export async function runMultiTenantTests() {
   console.log('🧪 [TEST SUITE 2/4] Running Multi-Business Tenant Isolation Tests...');
@@ -18,15 +17,8 @@ export async function runMultiTenantTests() {
     payload: { name: 'Owner A', email: emailA, password, businessName: 'Business A' },
   });
   const dataA = JSON.parse(regA.body).data;
-  await globalPrisma.user.update({ where: { id: dataA.userId }, data: { isEmailVerified: true } });
-  const loginA = await app.inject({
-    method: 'POST',
-    url: '/api/v1/auth/login',
-    payload: { email: emailA, password },
-  });
-  const loginDataA = JSON.parse(loginA.body).data;
-  const tokenA = loginDataA.accessToken;
-  const bizIdA = loginDataA.businesses[0].id;
+  const tokenA = dataA.accessToken;
+  const bizIdA = dataA.business.id;
   const headersA = { authorization: `Bearer ${tokenA}`, 'x-business-id': bizIdA };
 
   // 2. Create Business B
@@ -36,15 +28,8 @@ export async function runMultiTenantTests() {
     payload: { name: 'Owner B', email: emailB, password, businessName: 'Business B' },
   });
   const dataB = JSON.parse(regB.body).data;
-  await globalPrisma.user.update({ where: { id: dataB.userId }, data: { isEmailVerified: true } });
-  const loginB = await app.inject({
-    method: 'POST',
-    url: '/api/v1/auth/login',
-    payload: { email: emailB, password },
-  });
-  const loginDataB = JSON.parse(loginB.body).data;
-  const tokenB = loginDataB.accessToken;
-  const bizIdB = loginDataB.businesses[0].id;
+  const tokenB = dataB.accessToken;
+  const bizIdB = dataB.business.id;
   const headersB = { authorization: `Bearer ${tokenB}`, 'x-business-id': bizIdB };
 
   // 3. Create Private Party in Business B

@@ -106,7 +106,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   };
 
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [transactionsOpen, setTransactionsOpen] = useState(pathname.startsWith('/transactions'));
+  const [transactionsOpen, setTransactionsOpen] = useState(pathname?.startsWith('/transactions') ?? false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [quickEntryOpen, setQuickEntryOpen] = useState(false);
@@ -118,7 +118,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   }, [loading, user, router]);
 
   useEffect(() => {
-    if (pathname.startsWith('/transactions')) {
+    if (pathname?.startsWith('/transactions')) {
       setTransactionsOpen(true);
     }
     setMobileOpen(false);
@@ -216,7 +216,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               );
             }
 
-            const isGroupActive = pathname.startsWith('/transactions');
+            const isGroupActive = pathname?.startsWith('/transactions') ?? false;
             return (
               <div key={section.name} className="space-y-1">
                 <button

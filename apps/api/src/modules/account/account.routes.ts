@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { requireBusinessTenant, requireRole } from '../../middleware/auth.js';
+import { requireBusinessTenant } from '../../middleware/auth.js';
 import { AccountType, Prisma } from '@bizmanage/database';
 import { AppError } from '../../plugins/error-handler.js';
 import { z } from 'zod';
@@ -92,8 +92,8 @@ export async function accountRoutes(fastify: FastifyInstance) {
     return reply.send({ success: true, data: updated });
   });
 
-  // DELETE ACCOUNT (Restricted to OWNER / ADMIN)
-  fastify.delete('/:id', { preHandler: [requireRole('OWNER', 'ADMIN')] }, async (request, reply) => {
+  // DELETE ACCOUNT
+  fastify.delete('/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
 
     const account = await request.db!.account.findFirst({
@@ -105,9 +105,7 @@ export async function accountRoutes(fastify: FastifyInstance) {
     }
 
     // Safety check — don't delete accounts with active transactions
-    const txCount = await request.db!.transaction.count({
-      where: { accountId: id, businessId: request.tenant!.businessId },
-    });
+    const txCount = await request.db!.transaction.count({ where: { accountId: id } });
     if (txCount > 0) {
       throw new AppError(
         `Cannot delete this account — it has ${txCount} transaction(s) linked to it.`,

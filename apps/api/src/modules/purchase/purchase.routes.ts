@@ -1,4 +1,3 @@
-import { createAuditLog } from '../../services/audit-log.service.js';
 import { FastifyInstance } from 'fastify';
 import { requireBusinessTenant } from '../../middleware/auth.js';
 import { createPurchaseSchema, createPurchaseReturnSchema } from '@bizmanage/validation';
@@ -122,8 +121,8 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
   fastify.get('/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
 
-    const purchase = await request.db!.purchase.findFirst({
-      where: { id, businessId: request.tenant!.businessId },
+    const purchase = await request.db!.purchase.findUnique({
+      where: { id },
       include: {
         party: true,
         items: {
@@ -327,14 +326,6 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
       return purchase;
     });
 
-    createAuditLog({
-      request,
-      action: 'CREATE_PURCHASE',
-      module: 'PURCHASE',
-      recordId: newPurchase.id,
-      newValue: { billNumber: newPurchase.billNumber, totalAmount: Number(newPurchase.totalAmount) },
-    }).catch(() => {});
-
     return reply.status(201).send({
       success: true,
       data: newPurchase,
@@ -354,7 +345,7 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
     };
 
     const updatedPurchase = await request.db!.$transaction(async (tx) => {
-      const purchase = await tx.purchase.findFirst({
+      const purchase = await tx.purchase.findUnique({
         where: { id, businessId: request.tenant!.businessId },
         include: { party: true },
       });
@@ -368,20 +359,8 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
         throw new AppError('This bill is already fully paid', 400, 'ALREADY_PAID');
       }
 
-      if (amount && amount <= 0) {
-        throw new AppError('Payment amount must be greater than 0', 400, 'INVALID_AMOUNT');
-      }
-
-      if (amount && new Prisma.Decimal(amount).greaterThan(curDue)) {
-        throw new AppError(
-          `Payment amount (Rs. ${amount}) exceeds remaining purchase bill balance due (Rs. ${curDue.toNumber()})`,
-          400,
-          'OVER_PAYMENT'
-        );
-      }
-
       const payAmt = amount && amount > 0 ? new Prisma.Decimal(amount) : curDue;
-      const actualPay = payAmt;
+      const actualPay = payAmt.greaterThan(curDue) ? curDue : payAmt;
 
       const newDue = curDue.sub(actualPay);
       const newPaid = new Prisma.Decimal(purchase.paidAmount || 0).add(actualPay);
@@ -419,7 +398,7 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
           : AccountType.CASH;
 
       let targetAccount = accountId
-        ? await tx.account.findFirst({ where: { id: accountId, businessId: request.tenant!.businessId } })
+        ? await tx.account.findUnique({ where: { id: accountId } })
         : await tx.account.findFirst({
             where: { businessId: request.tenant!.businessId, accountType: desiredType },
           });
@@ -481,14 +460,6 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
       return updated;
     });
 
-    createAuditLog({
-      request,
-      action: 'PAY_PURCHASE',
-      module: 'PURCHASE',
-      recordId: updatedPurchase.id,
-      newValue: { billNumber: updatedPurchase.billNumber, paidAmount: Number(updatedPurchase.paidAmount), dueAmount: Number(updatedPurchase.dueAmount) },
-    }).catch(() => {});
-
     return reply.send({ success: true, data: updatedPurchase });
   });
 
@@ -497,7 +468,6 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
   // ----------------------------------------------------
   fastify.get('/returns/list', async (request, reply) => {
     const returns = await request.db!.purchaseReturn.findMany({
-      where: { businessId: request.tenant!.businessId },
       include: {
         party: { select: { id: true, name: true, phone: true } },
         items: { include: { item: { select: { id: true, name: true, unit: true } } } },
@@ -518,53 +488,6 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
     const body = createPurchaseReturnSchema.parse(request.body);
 
     const purchaseReturn = await request.db!.$transaction(async (tx) => {
-      // 0. Over-Return Validation against Original Purchase Bill (if linked)
-      if (body.purchaseId) {
-        const originalPurchase = await tx.purchase.findFirst({
-          where: { id: body.purchaseId, businessId: request.tenant!.businessId },
-          include: { items: true },
-        });
-
-        if (!originalPurchase) {
-          throw new AppError('Original purchase bill not found for this business tenant', 404, 'NOT_FOUND');
-        }
-
-        const previousReturns = await tx.purchaseReturn.findMany({
-          where: { purchaseId: body.purchaseId, businessId: request.tenant!.businessId },
-          include: { items: true },
-        });
-
-        const returnedMap = new Map<string, number>();
-        for (const prevReturn of previousReturns) {
-          for (const prevItem of prevReturn.items) {
-            returnedMap.set(prevItem.itemId, (returnedMap.get(prevItem.itemId) || 0) + Number(prevItem.quantity));
-          }
-        }
-
-        for (const line of body.items) {
-          if (line.quantity <= 0) {
-            throw new AppError('Return quantity must be greater than 0', 400, 'INVALID_QUANTITY');
-          }
-          const originalLine = originalPurchase.items.find((i) => i.itemId === line.itemId);
-          if (!originalLine) {
-            throw new AppError(
-              `Item (ID: ${line.itemId}) was not included in original purchase bill #${originalPurchase.billNumber}`,
-              400,
-              'INVALID_RETURN_ITEM'
-            );
-          }
-          const alreadyReturned = returnedMap.get(line.itemId) || 0;
-          const maxReturnable = Number(originalLine.quantity) - alreadyReturned;
-          if (line.quantity > maxReturnable) {
-            throw new AppError(
-              `Over-return error: Cannot return ${line.quantity} units for item. Only ${maxReturnable} units remain returnable on Bill #${originalPurchase.billNumber}.`,
-              400,
-              'OVER_RETURN'
-            );
-          }
-        }
-      }
-
       const settings = await tx.businessSetting.findUnique({
         where: { businessId: request.tenant!.businessId },
       });
@@ -719,14 +642,6 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
 
       return newReturn;
     });
-
-    createAuditLog({
-      request,
-      action: 'CREATE_PURCHASE_RETURN',
-      module: 'PURCHASE',
-      recordId: purchaseReturn.id,
-      newValue: { returnNumber: purchaseReturn.returnNumber, totalAmount: Number(purchaseReturn.totalAmount) },
-    }).catch(() => {});
 
     return reply.status(201).send({
       success: true,
