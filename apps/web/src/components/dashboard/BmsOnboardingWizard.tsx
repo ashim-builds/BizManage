@@ -25,6 +25,7 @@ export function BmsOnboardingWizard({
 }: OnboardingWizardProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [subscriptionSelected, setSubscriptionSelected] = useState(hasSubscription);
+  const [profileComplete, setProfileComplete] = useState(hasProfileComplete);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -32,8 +33,12 @@ export function BmsOnboardingWizard({
       if (selected) {
         setSubscriptionSelected(true);
       }
+      const savedProfile = localStorage.getItem('bizmanage_profile_completed');
+      if (savedProfile === 'true') {
+        setProfileComplete(true);
+      }
     }
-  }, [hasSubscription]);
+  }, [hasSubscription, hasProfileComplete]);
 
   const steps = [
     {
@@ -42,7 +47,7 @@ export function BmsOnboardingWizard({
       description: 'Add your business name, address, contact number, tax ID, and logo.',
       href: '/settings',
       actionText: 'Go to Settings',
-      isCompleted: hasProfileComplete,
+      isCompleted: profileComplete,
       icon: Building2,
     },
     {

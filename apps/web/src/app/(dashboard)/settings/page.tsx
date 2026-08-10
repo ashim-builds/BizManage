@@ -197,6 +197,9 @@ function SettingsPageContent() {
         taxRate,
         lowStockAlert: true,
       });
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('bizmanage_profile_completed', 'true');
+      }
       setProfileSuccess('Business profile & logo saved successfully!');
     } catch (err: any) {
       setProfileError(err.response?.data?.error?.message || 'Failed to update settings.');
@@ -457,7 +460,7 @@ function SettingsPageContent() {
 
                 <div>
                   <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all cursor-pointer shadow-md shadow-blue-600/20">
-                    <Upload className="w-3.5 h-3.5" /> Choose Photo from Laptop
+                    <Upload className="w-3.5 h-3.5" /> Choose Photo
                     <input
                       type="file"
                       accept="image/png, image/jpeg, image/webp"
