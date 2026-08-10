@@ -217,7 +217,11 @@ function SettingsPageContent() {
         lowStockAlert: true,
       });
       if (typeof window !== 'undefined') {
-        localStorage.setItem('bizmanage_profile_completed', 'true');
+        if (name && address && phone && taxNumber && logoUrl) {
+          localStorage.setItem('bizmanage_profile_completed', 'true');
+        } else {
+          localStorage.removeItem('bizmanage_profile_completed');
+        }
       }
       setProfileSuccess('Business profile & logo saved successfully!');
     } catch (err: any) {

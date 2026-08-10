@@ -36,7 +36,11 @@ export function BmsOnboardingWizard({
       const savedProfile = localStorage.getItem('bizmanage_profile_completed');
       if (savedProfile === 'true') {
         setProfileComplete(true);
+      } else {
+        setProfileComplete(hasProfileComplete);
       }
+    } else {
+      setProfileComplete(hasProfileComplete);
     }
   }, [hasSubscription, hasProfileComplete]);
 

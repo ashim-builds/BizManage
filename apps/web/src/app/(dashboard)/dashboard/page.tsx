@@ -90,11 +90,18 @@ export default function ExecutiveDashboardPage() {
 
   const currentBiz = user?.memberships?.[0]?.business;
   const hasItems = (metrics?.totalItemsCount || 0) > 0;
+  const hasParties = (metrics?.totalPartiesCount || 0) > 0;
   const hasTransactions = (metrics?.totalSales || 0) > 0 || (metrics?.totalPurchases || 0) > 0 || (metrics?.totalExpenses || 0) > 0;
-  const hasProfileComplete = !!(currentBiz?.name && (currentBiz?.taxNumber || currentBiz?.logoUrl));
+  const hasProfileComplete = !!(
+    currentBiz?.name &&
+    currentBiz?.address &&
+    currentBiz?.phone &&
+    currentBiz?.taxNumber &&
+    currentBiz?.logoUrl
+  );
 
   // Auto-complete setup if all steps done
-  const allStepsFinished = hasItems && hasTransactions && !!selectedPlan && hasProfileComplete;
+  const allStepsFinished = hasItems && hasParties && hasTransactions && !!selectedPlan && hasProfileComplete;
 
   return (
     <div className="space-y-8 font-sans">
@@ -141,6 +148,7 @@ export default function ExecutiveDashboardPage() {
             businessName={user?.memberships?.[0]?.business?.name || 'My Business'}
             hasProfileComplete={hasProfileComplete}
             hasItems={hasItems}
+            hasParties={hasParties}
             hasTransactions={hasTransactions}
           />
 

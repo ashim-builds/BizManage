@@ -91,9 +91,10 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
         take: 20,
       }),
 
-      // 8. Total Items & Total Products count
+      // 8. Total Items, Products & Parties count
       request.db!.item.count({ where: { businessId } }),
       request.db!.item.count({ where: { businessId, type: 'PRODUCT' } }),
+      request.db!.party.count({ where: { businessId } }),
     ]);
 
     // Calculate To Receive & To Give from party aggregate
@@ -147,6 +148,7 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
         purchasesCount: purchasesAgg._count.id,
         totalItemsCount: totalItems,
         totalProductsCount: totalProducts,
+        totalPartiesCount: totalParties,
       },
     });
   });
