@@ -6,6 +6,7 @@ import { useCurrentBusiness, useUpdateBusiness, useUpdateBusinessSettings } from
 import { useImportParties, useImportItems, useDownloadBackup, useChangePassword } from '@/services/utilityService';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
+import { BmsOnboardingWizard } from '@/components/dashboard/BmsOnboardingWizard';
 import {
   Settings,
   Building2,
@@ -31,6 +32,7 @@ import {
 
 type SettingsTab =
   | 'profile'
+  | 'guide'
   | 'account'
   | 'categories'
   | 'subscription'
@@ -286,6 +288,17 @@ export default function SettingsPage() {
         </button>
 
         <button
+          onClick={() => setActiveTab('guide')}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
+            activeTab === 'guide'
+              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <BookOpen className="w-3.5 h-3.5" /> Setup Guide
+        </button>
+
+        <button
           onClick={() => setActiveTab('account')}
           className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
             activeTab === 'account'
@@ -431,27 +444,6 @@ export default function SettingsPage() {
               />
             </div>
 
-            {/* BMS SETUP GUIDE REVISIT PREFERENCE */}
-            <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/80 space-y-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <label className="block text-slate-200 font-bold">BMS Setup Guide on Dashboard</label>
-                  <p className="text-[11px] text-slate-400">Display the 5-step onboarding guide on your main executive dashboard page.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => toggleOnboardingGuide(!showOnboarding)}
-                  className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all ${
-                    showOnboarding
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                      : 'bg-slate-700 text-slate-400 border border-slate-600'
-                  }`}
-                >
-                  {showOnboarding ? 'Guide Enabled' : 'Guide Hidden'}
-                </button>
-              </div>
-            </div>
-
             {/* FIXED PREFIXES - Read-only */}
             <div>
               <label className="block text-slate-300 font-semibold mb-2">Document Number Prefixes</label>
@@ -485,6 +477,47 @@ export default function SettingsPage() {
             >
               <Save className="w-4 h-4" /> {updateBusiness.isPending ? 'Saving...' : 'Save Profile & Logo'}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: SETUP GUIDE */}
+      {activeTab === 'guide' && (
+        <div className="space-y-6 max-w-4xl font-sans">
+          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-4">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-blue-400" /> BMS Setup & Onboarding Guide
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  Revisit all 5 step-by-step setup guides to finish setting up your business management system.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    localStorage.removeItem('bizmanage_setup_completed');
+                    localStorage.setItem('bizmanage_show_onboarding', 'true');
+                  }
+                  setProfileSuccess('Setup Guide has been re-opened on your Dashboard!');
+                }}
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all shadow-md shadow-blue-600/20 shrink-0"
+              >
+                Re-open Guide on Dashboard
+              </button>
+            </div>
+
+            {profileSuccess && (
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" /> {profileSuccess}
+              </div>
+            )}
+
+            <BmsOnboardingWizard
+              userName={user?.name || 'Owner'}
+              businessName={user?.memberships?.[0]?.business?.name || 'My Business'}
+            />
           </div>
         </div>
       )}

@@ -113,6 +113,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [quickEntryOpen, setQuickEntryOpen] = useState(false);
   const [hasSelectedPlan, setHasSelectedPlan] = useState<boolean>(true);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -121,6 +122,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   }, [loading, user, router]);
 
   useEffect(() => {
+    setMounted(true);
     if (pathname?.startsWith('/transactions')) {
       setTransactionsOpen(true);
     }
@@ -483,7 +485,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
         {/* Page Content */}
         <div className="p-6 md:p-8 flex-1">
-          {!hasSelectedPlan && pathname !== '/subscription' && pathname !== '/settings' && pathname !== '/dashboard' ? (
+          {mounted && !hasSelectedPlan && pathname !== '/subscription' && pathname !== '/settings' && pathname !== '/dashboard' ? (
             <div className="max-w-xl mx-auto my-12 p-8 rounded-3xl bg-slate-900 border border-amber-500/30 text-center space-y-6 shadow-2xl font-sans">
               <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto">
                 <Crown className="w-8 h-8" />

@@ -66,7 +66,7 @@ export function BmsOnboardingWizard({
     {
       id: 4,
       title: 'Add parties (Customers & Suppliers)',
-      description: 'Create contacts for customers and suppliers to0 manage94-balances and auto-ledgers.',
+      description: 'Create contacts for customers and suppliers to manage balances and auto-ledgers.',
       href: '/parties',
       actionText: 'Add Party',
       isCompleted: hasParties,
@@ -75,7 +75,7 @@ export function BmsOnboardingWizard({
     {
       id: 5,
       title: 'Record your first transaction',
-      description: 'Create your first sales invoice or0 payment entry to start0 tracking real-time cashflow.',
+      description: 'Create your first sales invoice or payment entry to start tracking real-time cashflow.',
       href: '/transactions/sales',
       actionText: 'Create Invoice',
       isCompleted: hasTransactions,
@@ -88,7 +88,7 @@ export function BmsOnboardingWizard({
   const userInitial = (userName || 'U').substring(0, 1).toUpperCase();
 
   return (
-    <div className="w-full max-w-4xl mx-auto mb-8 space-y-4 font-sans">
+    <div className="w-full max-w-4xl mx-auto space-y-4 font-sans">
       {/* Welcome Banner Card - Blue/White/Dark Theme */}
       <div className="p-6 rounded-2xl bg-slate-900 border border-blue-500/30 text-white shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
@@ -103,7 +103,7 @@ export function BmsOnboardingWizard({
                 Welcome, {userName}! Let's set up your business.
               </h2>
               <p className="text-xs text-slate-300 mt-0.5">
-                <span className="font-semibold text-blue-400">{completedCount} of 5 steps0 complete</span> —24-finish them to open your full94-dashboard features.
+                <span className="font-semibold text-blue-400">{completedCount} of 5 steps complete</span> — finish them to open your full Executive Dashboard.
               </p>
             </div>
           </div>
@@ -189,7 +189,7 @@ export function BmsOnboardingWizard({
           })}
 
           <p className="text-center text-xs text-slate-400 pt-2">
-            You can always94-revisit these setup guides from <Link href="/settings" className="text-blue-400 hover:underline font-semibold">Settings</Link>.
+            You can always revisit these setup guides from <Link href="/settings" className="text-blue-400 hover:underline font-semibold">Settings</Link>.
           </p>
         </div>
       )}
