@@ -28,6 +28,7 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
       lowStockItems,
       totalItems,
       totalProducts,
+      totalParties,
     ] = await Promise.all([
       // 1. To Receive / To Give — two fast aggregate queries instead of fetching all rows
       request.db!.party.aggregate({

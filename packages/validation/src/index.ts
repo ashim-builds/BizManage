@@ -50,7 +50,7 @@ export const updateBusinessSchema = z.object({
 
 export const updateBusinessSettingsSchema = z.object({
   enableTax: z.boolean().default(false),
-  taxRate: z.number().min(0).max(100).default(0),
+  taxRate: z.coerce.number().min(0).max(100).default(0),
   invoicePrefix: z.string().min(1).default('INV-'),
   purchasePrefix: z.string().min(1).default('PUR-'),
   quotationPrefix: z.string().min(1).default('QT-'),

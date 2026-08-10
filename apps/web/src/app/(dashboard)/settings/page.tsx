@@ -213,7 +213,7 @@ function SettingsPageContent() {
         saleReturnPrefix: 'CN-',
         purchaseReturnPrefix: 'DN-',
         enableTax,
-        taxRate,
+        taxRate: Number(taxRate) || 0,
         lowStockAlert: true,
       });
       if (typeof window !== 'undefined') {
