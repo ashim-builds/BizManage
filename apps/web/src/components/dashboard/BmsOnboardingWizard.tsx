@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Check, ChevronDown, ChevronUp, Lock, Sparkles, Building2, Crown, Package, Users, Receipt } from 'lucide-react';
 
@@ -24,6 +24,16 @@ export function BmsOnboardingWizard({
   hasTransactions = false,
 }: OnboardingWizardProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [subscriptionSelected, setSubscriptionSelected] = useState(hasSubscription);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const selected = localStorage.getItem('bizmanage_selected_plan');
+      if (selected) {
+        setSubscriptionSelected(true);
+      }
+    }
+  }, [hasSubscription]);
 
   const steps = [
     {
@@ -38,16 +48,16 @@ export function BmsOnboardingWizard({
     {
       id: 2,
       title: 'Choose a subscription',
-      description: 'Pick a plan to unlock your full ERP features. Our team activates it after payment.',
+      description: 'Pick a plan (Free, Pro, or Enterprise) to unlock your full ERP features.',
       href: '/subscription',
       actionText: 'Choose Plan',
-      isCompleted: hasSubscription,
+      isCompleted: subscriptionSelected,
       icon: Crown,
     },
     {
       id: 3,
       title: 'Set up inventory & items',
-      description: 'Create the membership or product/service items you offer with initial stock levels.',
+      description: 'Create the product or service items you offer with initial stock levels.',
       href: '/inventory',
       actionText: 'Add Items',
       isCompleted: hasItems,
@@ -56,7 +66,7 @@ export function BmsOnboardingWizard({
     {
       id: 4,
       title: 'Add parties (Customers & Suppliers)',
-      description: 'Create contacts for customers and suppliers to manage balances and auto-ledgers.',
+      description: 'Create contacts for customers and suppliers to0 manage94-balances and auto-ledgers.',
       href: '/parties',
       actionText: 'Add Party',
       isCompleted: hasParties,
@@ -65,7 +75,7 @@ export function BmsOnboardingWizard({
     {
       id: 5,
       title: 'Record your first transaction',
-      description: 'Create your first sales invoice or payment entry to start tracking real-time cashflow.',
+      description: 'Create your first sales invoice or0 payment entry to start0 tracking real-time cashflow.',
       href: '/transactions/sales',
       actionText: 'Create Invoice',
       isCompleted: hasTransactions,
@@ -75,31 +85,32 @@ export function BmsOnboardingWizard({
 
   const completedCount = steps.filter((s) => s.isCompleted).length;
   const progressPercent = Math.round((completedCount / steps.length) * 100);
-
   const userInitial = (userName || 'U').substring(0, 1).toUpperCase();
 
   return (
     <div className="w-full max-w-4xl mx-auto mb-8 space-y-4 font-sans">
-      {/* Welcome Banner Card */}
-      <div className="p-6 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-white shadow-xl relative overflow-hidden">
-        <div className="flex items-center justify-between gap-4">
+      {/* Welcome Banner Card - Blue/White/Dark Theme */}
+      <div className="p-6 rounded-2xl bg-slate-900 border border-blue-500/30 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="flex items-center justify-between gap-4 relative z-10">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-amber-600/30 border border-amber-500/40 flex items-center justify-center font-black text-xl text-amber-300 shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center font-black text-xl text-blue-400 shrink-0">
               {userInitial}
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
                 Welcome, {userName}! Let's set up your business.
               </h2>
-              <p className="text-xs text-amber-200/80 mt-0.5">
-                <span className="font-semibold text-amber-300">{completedCount} of 5 steps complete</span> — finish them to open your full dashboard features.
+              <p className="text-xs text-slate-300 mt-0.5">
+                <span className="font-semibold text-blue-400">{completedCount} of 5 steps0 complete</span> —24-finish them to open your full94-dashboard features.
               </p>
             </div>
           </div>
 
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="p-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 transition-colors shrink-0"
+            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-blue-400 border border-slate-700 transition-colors shrink-0"
             title={collapsed ? 'Expand setup guide' : 'Collapse setup guide'}
           >
             {collapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
@@ -107,10 +118,10 @@ export function BmsOnboardingWizard({
         </div>
 
         {/* Progress Bar */}
-        <div className="mt-4 w-full h-2 rounded-full bg-slate-900/60 overflow-hidden border border-amber-500/20">
+        <div className="mt-4 w-full h-2.5 rounded-full bg-slate-950/80 overflow-hidden border border-slate-800 relative z-10">
           <div
-            className="h-full bg-gradient-to-r from-amber-500 to-amber-400 transition-all duration-500 rounded-full"
-            style={{ width: `${Math.max(8, progressPercent)}%` }}
+            className="h-full bg-gradient-to-r from-blue-600 to-indigo-500 transition-all duration-500 rounded-full"
+            style={{ width: `${Math.max(5, progressPercent)}%` }}
           />
         </div>
       </div>
@@ -119,7 +130,6 @@ export function BmsOnboardingWizard({
       {!collapsed && (
         <div className="space-y-3">
           {steps.map((step, index) => {
-            const Icon = step.icon;
             const isCurrentStep = !step.isCompleted && (index === 0 || steps[index - 1]!.isCompleted);
 
             return (
@@ -127,9 +137,9 @@ export function BmsOnboardingWizard({
                 key={step.id}
                 className={`p-5 rounded-2xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
                   step.isCompleted
-                    ? 'bg-slate-900/40 border-slate-800/80 text-slate-400'
+                    ? 'bg-slate-900/40 border-slate-800 text-slate-400'
                     : isCurrentStep
-                    ? 'bg-slate-900 border-amber-500/40 shadow-lg ring-1 ring-amber-500/20 text-white'
+                    ? 'bg-slate-900 border-blue-500/50 shadow-lg shadow-blue-950/40 ring-1 ring-blue-500/20 text-white'
                     : 'bg-slate-900/60 border-slate-800/60 text-slate-500 opacity-80'
                 }`}
               >
@@ -137,13 +147,13 @@ export function BmsOnboardingWizard({
                   <div
                     className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 ${
                       step.isCompleted
-                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
                         : isCurrentStep
-                        ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30'
-                        : 'bg-slate-800 text-slate-500 border border-slate-700/50'
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                        : 'bg-slate-800 text-slate-400 border border-slate-700/50'
                     }`}
                   >
-                    {step.isCompleted ? <Check className="w-4 h-4 text-amber-400" /> : step.id}
+                    {step.isCompleted ? <Check className="w-4 h-4 text-emerald-400" /> : step.id}
                   </div>
 
                   <div>
@@ -158,7 +168,7 @@ export function BmsOnboardingWizard({
 
                 <div className="self-end sm:self-center shrink-0">
                   {step.isCompleted ? (
-                    <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold inline-flex items-center gap-1">
+                    <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold inline-flex items-center gap-1">
                       <Check className="w-3.5 h-3.5" /> Done
                     </span>
                   ) : (
@@ -166,7 +176,7 @@ export function BmsOnboardingWizard({
                       href={step.href}
                       className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                         isCurrentStep
-                          ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-lg shadow-amber-500/25'
+                          ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/25'
                           : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
                       }`}
                     >
@@ -178,8 +188,8 @@ export function BmsOnboardingWizard({
             );
           })}
 
-          <p className="text-center text-xs text-slate-500 pt-2">
-            You can always revisit these setup guides from <Link href="/settings" className="text-amber-400 hover:underline font-semibold">Settings</Link>.
+          <p className="text-center text-xs text-slate-400 pt-2">
+            You can always94-revisit these setup guides from <Link href="/settings" className="text-blue-400 hover:underline font-semibold">Settings</Link>.
           </p>
         </div>
       )}

@@ -112,6 +112,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [quickEntryOpen, setQuickEntryOpen] = useState(false);
+  const [hasSelectedPlan, setHasSelectedPlan] = useState<boolean>(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -124,6 +125,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       setTransactionsOpen(true);
     }
     setMobileOpen(false);
+
+    if (typeof window !== 'undefined') {
+      const plan = localStorage.getItem('bizmanage_selected_plan');
+      setHasSelectedPlan(!!plan);
+    }
   }, [pathname]);
 
   if (loading) {
@@ -164,11 +170,19 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         {/* Brand & Business Switcher Header */}
         <div className="p-4 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-600/30">
-              BM
-            </div>
+            {currentBusiness?.logoUrl ? (
+              <img
+                src={currentBusiness.logoUrl}
+                alt="Business Logo"
+                className="w-8 h-8 rounded-xl object-contain bg-slate-950 border border-slate-700 p-0.5 shrink-0"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-600/30 shrink-0">
+                BM
+              </div>
+            )}
             <div className="overflow-hidden">
-              <h2 className="text-lg font-bold text-white truncate">BizManage</h2>
+              <h2 className="text-lg font-bold text-white truncate font-sans">BizManage</h2>
               <p className="text-[10px] text-slate-400 font-medium truncate">ERP Edition</p>
             </div>
           </div>
@@ -468,7 +482,29 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </header>
 
         {/* Page Content */}
-        <div className="p-6 md:p-8 flex-1">{children}</div>
+        <div className="p-6 md:p-8 flex-1">
+          {!hasSelectedPlan && pathname !== '/subscription' && pathname !== '/settings' && pathname !== '/dashboard' ? (
+            <div className="max-w-xl mx-auto my-12 p-8 rounded-3xl bg-slate-900 border border-amber-500/30 text-center space-y-6 shadow-2xl font-sans">
+              <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto">
+                <Crown className="w-8 h-8" />
+              </div>
+              <div>
+                <h2 className="text-xl font-extrabold text-white">Subscription Selection Required</h2>
+                <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                  You must select a subscription plan (including the <span className="font-bold text-emerald-400">Free Starter plan</span>) before accessing this feature.
+                </p>
+              </div>
+              <Link
+                href="/subscription"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-600/25 transition-all"
+              >
+                <Crown className="w-4 h-4" /> Go to Subscription Page & Choose Plan
+              </Link>
+            </div>
+          ) : (
+            children
+          )}
+        </div>
       </main>
     </div>
   );

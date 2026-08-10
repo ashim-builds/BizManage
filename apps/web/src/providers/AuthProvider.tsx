@@ -16,6 +16,7 @@ export interface UserProfile {
       name: string;
       currency: string;
       taxNumber?: string;
+      logoUrl?: string;
     };
   }>;
 }

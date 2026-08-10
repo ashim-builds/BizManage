@@ -246,6 +246,7 @@ export async function authRoutes(fastify: FastifyInstance) {
                 name: true,
                 currency: true,
                 taxNumber: true,
+                logoUrl: true,
               },
             },
           },

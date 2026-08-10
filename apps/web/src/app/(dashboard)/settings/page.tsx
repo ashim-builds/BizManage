@@ -56,6 +56,14 @@ export default function SettingsPage() {
   // Business Profile Form States
   const [name, setName] = useState(user?.memberships?.[0]?.business?.name || '');
   const [taxNumber, setTaxNumber] = useState(user?.memberships?.[0]?.business?.taxNumber || '');
+  const [logoUrl, setLogoUrl] = useState<string>(user?.memberships?.[0]?.business?.logoUrl || '');
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const val = localStorage.getItem('bizmanage_show_onboarding');
+      return val !== 'false';
+    }
+    return true;
+  });
   const [enableTax, setEnableTax] = useState(false);
   const [taxRate, setTaxRate] = useState(13);
   const [profileSuccess, setProfileSuccess] = useState('');
@@ -103,11 +111,33 @@ export default function SettingsPage() {
     return '';
   });
 
+  const toggleOnboardingGuide = (val: boolean) => {
+    setShowOnboarding(val);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('bizmanage_show_onboarding', val ? 'true' : 'false');
+    }
+    setProfileSuccess(`BMS Setup Guide on Dashboard set to ${val ? 'Visible' : 'Hidden'}.`);
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setProfileError('Logo file size must be less than 2MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setLogoUrl(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSaveProfile = async () => {
     setProfileSuccess('');
     setProfileError('');
     try {
-      await updateBusiness.mutateAsync({ name, taxNumber, currency: 'NPR' });
+      await updateBusiness.mutateAsync({ name, taxNumber, currency: 'NPR', logoUrl });
       await updateSettings.mutateAsync({
         invoicePrefix: 'INV-',
         purchasePrefix: 'PUR-',
@@ -118,7 +148,7 @@ export default function SettingsPage() {
         taxRate,
         lowStockAlert: true,
       });
-      setProfileSuccess('Business profile saved successfully!');
+      setProfileSuccess('Business profile & logo saved successfully!');
     } catch (err: any) {
       setProfileError(err.response?.data?.error?.message || 'Failed to update settings.');
     }
@@ -338,7 +368,48 @@ export default function SettingsPage() {
             </div>
           )}
 
-          <div className="space-y-4 text-xs">
+          <div className="space-y-5 text-xs">
+            {/* BUSINESS LOGO UPLOAD */}
+            <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/80 space-y-3">
+              <label className="block text-slate-300 font-semibold">Business Logo (Upload from Computer)</label>
+              <div className="flex items-center gap-4">
+                {logoUrl ? (
+                  <div className="relative group">
+                    <img
+                      src={logoUrl}
+                      alt="Business Logo"
+                      className="w-16 h-16 rounded-xl object-contain bg-slate-900 border border-slate-700 p-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setLogoUrl('')}
+                      className="absolute -top-1.5 -right-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-md text-[10px]"
+                      title="Remove Logo"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 rounded-xl bg-slate-900 border border-dashed border-slate-700 flex items-center justify-center text-slate-500 font-bold text-xs">
+                    No Logo
+                  </div>
+                )}
+
+                <div>
+                  <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all cursor-pointer shadow-md shadow-blue-600/20">
+                    <Upload className="w-3.5 h-3.5" /> Choose Photo from Laptop
+                    <input
+                      type="file"
+                      accept="image/png, image/jpeg, image/webp"
+                      onChange={handleLogoUpload}
+                      className="hidden"
+                    />
+                  </label>
+                  <p className="text-[10px] text-slate-400 mt-1">PNG, JPG or WEBP up to 2MB.</p>
+                </div>
+              </div>
+            </div>
+
             <div>
               <label className="block text-slate-300 font-semibold mb-1">Business Name *</label>
               <input
@@ -358,6 +429,27 @@ export default function SettingsPage() {
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono"
                 placeholder="e.g. 601928374"
               />
+            </div>
+
+            {/* BMS SETUP GUIDE REVISIT PREFERENCE */}
+            <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/80 space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="block text-slate-200 font-bold">BMS Setup Guide on Dashboard</label>
+                  <p className="text-[11px] text-slate-400">Display the 5-step onboarding guide on your main executive dashboard page.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => toggleOnboardingGuide(!showOnboarding)}
+                  className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all ${
+                    showOnboarding
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      : 'bg-slate-700 text-slate-400 border border-slate-600'
+                  }`}
+                >
+                  {showOnboarding ? 'Guide Enabled' : 'Guide Hidden'}
+                </button>
+              </div>
             </div>
 
             {/* FIXED PREFIXES - Read-only */}
@@ -391,7 +483,7 @@ export default function SettingsPage() {
               disabled={updateBusiness.isPending || updateSettings.isPending}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50"
             >
-              <Save className="w-4 h-4" /> {updateBusiness.isPending ? 'Saving...' : 'Save Profile Settings'}
+              <Save className="w-4 h-4" /> {updateBusiness.isPending ? 'Saving...' : 'Save Profile & Logo'}
             </button>
           </div>
         </div>
