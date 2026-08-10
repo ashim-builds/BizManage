@@ -74,8 +74,27 @@ function SettingsPageContent() {
 
   // Business Profile Form States
   const [name, setName] = useState(user?.memberships?.[0]?.business?.name || '');
+  const [phone, setPhone] = useState(user?.memberships?.[0]?.business?.phone || '');
+  const [email, setEmail] = useState(user?.memberships?.[0]?.business?.email || '');
+  const [address, setAddress] = useState(user?.memberships?.[0]?.business?.address || '');
   const [taxNumber, setTaxNumber] = useState(user?.memberships?.[0]?.business?.taxNumber || '');
   const [logoUrl, setLogoUrl] = useState<string>(user?.memberships?.[0]?.business?.logoUrl || '');
+
+  useEffect(() => {
+    if (business) {
+      setName(business.name || '');
+      setPhone(business.phone || '');
+      setEmail(business.email || '');
+      setAddress(business.address || '');
+      setTaxNumber(business.taxNumber || '');
+      if (business.logoUrl) setLogoUrl(business.logoUrl);
+      if (business.settings) {
+        setEnableTax(business.settings.enableTax ?? false);
+        setTaxRate(business.settings.taxRate ?? 13);
+      }
+    }
+  }, [business]);
+
   const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const val = localStorage.getItem('bizmanage_show_onboarding');
@@ -186,7 +205,7 @@ function SettingsPageContent() {
     setProfileSuccess('');
     setProfileError('');
     try {
-      await updateBusiness.mutateAsync({ name, taxNumber, currency: 'NPR', logoUrl });
+      await updateBusiness.mutateAsync({ name, phone, email, address, taxNumber, currency: 'NPR', logoUrl });
       await updateSettings.mutateAsync({
         invoicePrefix: 'INV-',
         purchasePrefix: 'PUR-',
@@ -480,7 +499,43 @@ function SettingsPageContent() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white font-bold"
+                placeholder="e.g. RB Hardware & Sanitary House"
               />
+            </div>
+
+            <div>
+              <label className="block text-slate-300 font-semibold mb-1">Business Address</label>
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white"
+                placeholder="e.g. New Road, Kathmandu, Nepal"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Contact Number (Phone)</label>
+                <input
+                  type="text"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono"
+                  placeholder="e.g. +977 9800000000"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Business Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono"
+                  placeholder="e.g. contact@mybusiness.com"
+                />
+              </div>
             </div>
 
             <div>

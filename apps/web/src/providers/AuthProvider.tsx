@@ -15,6 +15,9 @@ export interface UserProfile {
       id: string;
       name: string;
       currency: string;
+      phone?: string;
+      email?: string;
+      address?: string;
       taxNumber?: string;
       logoUrl?: string;
     };
