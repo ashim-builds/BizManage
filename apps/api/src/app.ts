@@ -26,6 +26,7 @@ const isProduction = env.NODE_ENV === 'production';
 
 export function buildApp() {
   const app = fastify({
+    bodyLimit: 10 * 1024 * 1024, // 10MB body limit for base64 logo uploads & data imports
     // Pino logger: structured JSON in production, human-readable in development
     logger: isProduction
       ? {

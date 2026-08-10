@@ -189,7 +189,7 @@ export function BmsOnboardingWizard({
           })}
 
           <p className="text-center text-xs text-slate-400 pt-2">
-            You can always revisit these setup guides from <Link href="/settings" className="text-blue-400 hover:underline font-semibold">Settings</Link>.
+            You can always revisit these setup guides from <Link href="/settings?tab=guide" className="text-blue-400 hover:underline font-semibold">Settings</Link>.
           </p>
         </div>
       )}

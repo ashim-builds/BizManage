@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/providers/AuthProvider';
 import { useCurrentBusiness, useUpdateBusiness, useUpdateBusinessSettings } from '@/services/businessService';
 import { useImportParties, useImportItems, useDownloadBackup, useChangePassword } from '@/services/utilityService';
@@ -42,8 +43,24 @@ type SettingsTab =
   | 'about';
 
 export default function SettingsPage() {
+  return (
+    <Suspense fallback={<LoadingState message="Loading settings..." />}>
+      <SettingsPageContent />
+    </Suspense>
+  );
+}
+
+function SettingsPageContent() {
   const { user, logout } = useAuth();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+
+  useEffect(() => {
+    const tabParam = searchParams?.get('tab') as SettingsTab;
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   // Business Profile & Settings Queries
   const { data: business, isLoading: settingsLoading, refetch } = useCurrentBusiness();
@@ -124,13 +141,43 @@ export default function SettingsPage() {
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      setProfileError('Logo file size must be less than 2MB.');
+    if (file.size > 5 * 1024 * 1024) {
+      setProfileError('Logo file size must be less than 5MB.');
       return;
     }
     const reader = new FileReader();
     reader.onload = (event) => {
-      setLogoUrl(event.target?.result as string);
+      const rawDataUrl = event.target?.result as string;
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 300;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          setLogoUrl(canvas.toDataURL('image/png', 0.9));
+        } else {
+          setLogoUrl(rawDataUrl);
+        }
+      };
+      img.src = rawDataUrl;
     };
     reader.readAsDataURL(file);
   };
