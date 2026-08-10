@@ -17,6 +17,7 @@ import {
   Wallet,
   FileBarChart,
   Settings,
+  Crown,
   LogOut,
   Building2,
   ChevronDown,
@@ -46,7 +47,7 @@ interface NavGroupItem {
 
 interface NavSection {
   name: string;
-  icon?: any;
+  icon: any;
   href?: string;
   children?: NavGroupItem[];
 }
@@ -72,6 +73,7 @@ const sidebarSections: NavSection[] = [
   { name: 'Other Income', href: '/income', icon: TrendingUp },
   { name: 'Cashflow', href: '/cashflow', icon: Wallet },
   { name: 'Reports', href: '/reports', icon: FileBarChart },
+  { name: 'Subscription', href: '/subscription', icon: Crown },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 

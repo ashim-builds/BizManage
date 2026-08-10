@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useDashboardMetrics } from '@/services/dashboardService';
+import { useAuth } from '@/providers/AuthProvider';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
+import { BmsOnboardingWizard } from '@/components/dashboard/BmsOnboardingWizard';
 import {
   TrendingUp,
   ArrowDownLeft,
@@ -23,6 +25,7 @@ import {
 } from 'lucide-react';
 
 export default function ExecutiveDashboardPage() {
+  const { user } = useAuth();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [preset, setPreset] = useState<'all' | 'today' | 'week' | 'month' | 'custom'>('all');
@@ -62,8 +65,19 @@ export default function ExecutiveDashboardPage() {
     }
   };
 
+  const hasItems = (metrics?.totalItemsCount || 0) > 0;
+  const hasTransactions = (metrics?.totalSales || 0) > 0 || (metrics?.totalPurchases || 0) > 0 || (metrics?.totalExpenses || 0) > 0;
+
   return (
     <div className="space-y-8">
+      {/* BMS Setup Onboarding Wizard */}
+      <BmsOnboardingWizard
+        userName={user?.name || 'Owner'}
+        businessName={user?.memberships?.[0]?.business?.name || 'My Business'}
+        hasItems={hasItems}
+        hasTransactions={hasTransactions}
+      />
+
       {/* Header & Date Range Filter */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-5">
         <div>

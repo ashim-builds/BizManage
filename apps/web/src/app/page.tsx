@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, BarChart3, Building2, LayoutDashboard, Receipt, ShieldCheck } from 'lucide-react';
+import { ArrowRight, BarChart3, Building2, LayoutDashboard, Receipt, ShieldCheck, Check, Crown, Sparkles, Zap } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 
 export default function Home() {
@@ -127,6 +127,163 @@ export default function Home() {
               <p className="text-slate-400 text-sm leading-relaxed">
                 Automated Profit & Loss statements, Daybook, Stock Summary, Party Statements, and Tax (GST/VAT) reporting.
               </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Pricing & Plans Section */}
+        <section className="py-20 px-6 max-w-7xl mx-auto border-t border-slate-800/80">
+          <div className="text-center mb-16">
+            <span className="px-3.5 py-1.5 rounded-full bg-blue-500/10 text-blue-400 text-xs font-bold uppercase tracking-wider border border-blue-500/20 inline-flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" /> Transparent Pricing
+            </span>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white mt-4">
+              Flexible Plans for Growing Businesses
+            </h2>
+            <p className="text-slate-400 text-sm md:text-base mt-2 max-w-2xl mx-auto">
+              Start with our free starter tier or upgrade to unlock advanced financial reports, multi-branch setup, and custom branding.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+            {/* Free Starter Plan */}
+            <div className="p-8 rounded-3xl border border-slate-800 bg-slate-900/60 flex flex-col justify-between hover:border-slate-700 transition-all">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-white">Free Starter</h3>
+                  <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 text-xs font-semibold">Starter</span>
+                </div>
+                <p className="text-xs text-slate-400 mb-6">Essential ERP features for single shop owners.</p>
+
+                <div className="mb-6">
+                  <span className="text-4xl font-extrabold text-white font-mono">Rs. 0</span>
+                  <span className="text-xs text-slate-400"> / forever free</span>
+                </div>
+
+                <ul className="space-y-3 text-xs text-slate-300 mb-8 border-t border-slate-800/80 pt-6">
+                  <li className="flex items-center gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Unlimited Invoices & Purchases</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Full Stock & Inventory Tracking</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Customer & Supplier Auto-Ledgers</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Cash & Bank Management</span>
+                  </li>
+                </ul>
+              </div>
+
+              <Link
+                href="/register"
+                className="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold text-center transition-all border border-slate-700"
+              >
+                Get Started Free
+              </Link>
+            </div>
+
+            {/* Pro Business Plan (Featured) */}
+            <div className="relative p-8 rounded-3xl border-2 border-blue-600 bg-slate-900/90 flex flex-col justify-between shadow-2xl shadow-blue-600/10">
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[11px] font-bold uppercase tracking-wider shadow-lg">
+                Most Popular
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-4 mt-2">
+                  <div className="flex items-center gap-2">
+                    <Crown className="w-5 h-5 text-amber-400" />
+                    <h3 className="text-xl font-bold text-white">Pro Business</h3>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs font-semibold">Pro</span>
+                </div>
+                <p className="text-xs text-slate-400 mb-6">Complete accounting suite for growing businesses.</p>
+
+                <div className="mb-6">
+                  <span className="text-4xl font-extrabold text-white font-mono">Rs. 999</span>
+                  <span className="text-xs text-slate-400"> / month</span>
+                </div>
+
+                <ul className="space-y-3 text-xs text-slate-300 mb-8 border-t border-slate-800/80 pt-6">
+                  <li className="flex items-center gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Everything in Free Starter</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Custom Logo & Invoice Branding</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Advanced P&L & Daybook Reports</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Multi-Account Cash & Wallet Sync</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Priority Technical Support</span>
+                  </li>
+                </ul>
+              </div>
+
+              <Link
+                href="/register"
+                className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold text-center transition-all shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2"
+              >
+                Choose Pro Plan <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+            {/* Enterprise Growth Plan */}
+            <div className="p-8 rounded-3xl border border-slate-800 bg-slate-900/60 flex flex-col justify-between hover:border-slate-700 transition-all">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-amber-300" />
+                    <h3 className="text-xl font-bold text-white">Enterprise Growth</h3>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 text-xs font-semibold">Scale</span>
+                </div>
+                <p className="text-xs text-slate-400 mb-6">Multi-branch operations & team collaboration.</p>
+
+                <div className="mb-6">
+                  <span className="text-4xl font-extrabold text-white font-mono">Rs. 2,499</span>
+                  <span className="text-xs text-slate-400"> / month</span>
+                </div>
+
+                <ul className="space-y-3 text-xs text-slate-300 mb-8 border-t border-slate-800/80 pt-6">
+                  <li className="flex items-center gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Everything in Pro Business</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Multi-Branch Operations</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Unlimited Staff Roles & Granular Permissions</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Dedicated Account Manager</span>
+                  </li>
+                </ul>
+              </div>
+
+              <Link
+                href="/register"
+                className="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold text-center transition-all border border-slate-700"
+              >
+                Contact Enterprise
+              </Link>
             </div>
           </div>
         </section>
