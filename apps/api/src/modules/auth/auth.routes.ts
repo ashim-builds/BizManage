@@ -36,6 +36,7 @@ export async function authRoutes(fastify: FastifyInstance) {
           email: body.email,
           name: body.name,
           passwordHash,
+          isVerified: false,
         },
       });
 
@@ -97,7 +98,12 @@ export async function authRoutes(fastify: FastifyInstance) {
       success: true,
       data: {
         accessToken,
-        user: { id: result.user.id, email: result.user.email, name: result.user.name },
+        user: {
+          id: result.user.id,
+          email: result.user.email,
+          name: result.user.name,
+          isVerified: result.user.isVerified,
+        },
         business: { id: result.business.id, name: result.business.name },
       },
     });
@@ -229,6 +235,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         email: true,
         name: true,
         phone: true,
+        isVerified: true,
         createdAt: true,
         memberships: {
           select: {

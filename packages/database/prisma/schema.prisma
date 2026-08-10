@@ -82,6 +82,7 @@ model User {
   passwordHash String
   name         String
   phone        String?
+  isVerified   Boolean              @default(false)
   createdAt    DateTime             @default(now())
   updatedAt    DateTime             @updatedAt
   memberships  UserBusinessRole[]
