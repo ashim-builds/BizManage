@@ -92,7 +92,8 @@ export default function ExecutiveDashboardPage() {
   const hasItems = (metrics?.totalItemsCount || 0) > 0;
   const hasParties = (metrics?.totalPartiesCount || 0) > 0;
   const hasTransactions = (metrics?.totalSales || 0) > 0 || (metrics?.totalPurchases || 0) > 0 || (metrics?.totalExpenses || 0) > 0;
-  const hasProfileComplete = !!(
+  const savedProfileDone = typeof window !== 'undefined' && localStorage.getItem('bizmanage_profile_completed') === 'true';
+  const hasProfileComplete = savedProfileDone || !!(
     currentBiz?.name &&
     currentBiz?.address &&
     currentBiz?.phone &&
@@ -102,6 +103,21 @@ export default function ExecutiveDashboardPage() {
 
   // Auto-complete setup if all steps done
   const allStepsFinished = hasItems && hasParties && hasTransactions && !!selectedPlan && hasProfileComplete;
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const plan = localStorage.getItem('bizmanage_selected_plan');
+      setSelectedPlan(plan);
+
+      const setupDone = localStorage.getItem('bizmanage_setup_completed');
+      if (setupDone === 'true' || allStepsFinished) {
+        setIsSetupCompleted(true);
+        if (allStepsFinished) {
+          localStorage.setItem('bizmanage_setup_completed', 'true');
+        }
+      }
+    }
+  }, [allStepsFinished]);
 
   return (
     <div className="space-y-8 font-sans">
@@ -165,6 +181,36 @@ export default function ExecutiveDashboardPage() {
       ) : (
         /* COMPLETED SETUP PHASE: Show Executive Dashboard */
         <div className="space-y-8">
+          {/* Top Glowing Banner with Business Name */}
+          <div className="p-6 md:p-8 rounded-3xl bg-gradient-to-r from-blue-950 via-slate-900 to-slate-950 border border-blue-500/30 text-white shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20 shadow-sm">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Live ERP Workspace Active
+                </div>
+                <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight flex items-center gap-3 flex-wrap">
+                  {user?.memberships?.[0]?.business?.name || 'My Business'}
+                  <span className="text-slate-400 text-lg md:text-xl font-medium">— Executive Dashboard</span>
+                </h1>
+                <p className="text-xs md:text-sm text-slate-300 max-w-2xl leading-relaxed">
+                  Real-time double-entry ledgers, party balance tracking, cashflow liquidity, and sales analytics.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 shrink-0">
+                <span className="px-4 py-2 rounded-xl bg-blue-600/20 text-blue-300 font-extrabold text-xs border border-blue-500/30 uppercase tracking-wider shadow-inner">
+                  {selectedPlan ? `${selectedPlan.toUpperCase()} PLAN` : 'FREE STARTER'}
+                </span>
+                <Link
+                  href="/settings?tab=guide"
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 transition-all shadow-md flex items-center gap-1.5"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-blue-400" /> Setup Guide
+                </Link>
+              </div>
+            </div>
+          </div>
           {/* Header & Date Range Filter */}
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-5">
             <div>

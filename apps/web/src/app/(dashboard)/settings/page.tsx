@@ -62,6 +62,24 @@ function SettingsPageContent() {
     }
   }, [searchParams]);
 
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const plan = localStorage.getItem('bizmanage_selected_plan');
+      setSelectedPlan(plan);
+    }
+  }, []);
+
+  const handleSelectPlan = (plan: string) => {
+    setSelectedPlan(plan);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('bizmanage_selected_plan', plan);
+    }
+    setProfileSuccess('Subscription plan updated successfully!');
+    setTimeout(() => setProfileSuccess(''), 3000);
+  };
+
   // Business Profile & Settings Queries
   const { data: business, isLoading: settingsLoading, refetch } = useCurrentBusiness();
   const updateSettings = useUpdateBusinessSettings();
@@ -776,24 +794,89 @@ function SettingsPageContent() {
 
       {/* TAB 3: SUBSCRIPTION PLAN */}
       {activeTab === 'subscription' && (
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6 max-w-2xl">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <div>
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Crown className="w-5 h-5 text-amber-400" /> Subscription & SaaS Plan
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5">Active multi-tenant SaaS workspace license.</p>
+        <div className="space-y-6 max-w-3xl">
+          {profileSuccess && (
+            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0" /> {profileSuccess}
             </div>
-            <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 font-bold text-xs border border-emerald-500/20">
-              Enterprise Active
-            </span>
-          </div>
+          )}
 
-          <div className="p-5 rounded-xl bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-500/20 space-y-3">
-            <h4 className="text-sm font-bold text-white">Full Commercial ERP License</h4>
-            <p className="text-xs text-slate-300">
-              Includes unlimited transaction volume, multi-business isolation, real-time double-entry ledgers, and export-ready reporting.
-            </p>
+          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <Crown className="w-5 h-5 text-amber-400" /> Subscription & SaaS Plan
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">Manage your active workspace license and features.</p>
+              </div>
+              <span className={`px-4 py-1.5 rounded-full font-bold text-xs border ${
+                selectedPlan === 'enterprise' 
+                  ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                  : selectedPlan === 'pro'
+                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+              }`}>
+                {selectedPlan === 'enterprise' ? 'Enterprise Active' : selectedPlan === 'pro' ? 'Pro Plan Active' : 'Free Starter Active'}
+              </span>
+            </div>
+
+            <div className={`p-6 rounded-xl border space-y-3 ${
+                selectedPlan === 'enterprise'
+                  ? 'bg-gradient-to-r from-amber-900/20 to-orange-900/20 border-amber-500/20'
+                  : selectedPlan === 'pro'
+                  ? 'bg-gradient-to-r from-blue-900/20 to-indigo-900/20 border-blue-500/20'
+                  : 'bg-gradient-to-r from-emerald-900/20 to-teal-900/20 border-emerald-500/20'
+            }`}>
+              <h4 className="text-lg font-bold text-white">
+                {selectedPlan === 'enterprise' ? 'Enterprise License' : selectedPlan === 'pro' ? 'Pro Business License' : 'Free Starter License'}
+              </h4>
+              <p className="text-sm text-slate-300">
+                {selectedPlan === 'enterprise' 
+                  ? 'Unlimited transaction volume, multi-business isolation, real-time double-entry ledgers, and priority support.'
+                  : selectedPlan === 'pro'
+                  ? 'Advanced reporting, unlimited parties, up to 10,000 transactions/mo, and automated backups.'
+                  : 'Basic double-entry accounting, up to 100 transactions/mo, and single business management.'}
+              </p>
+            </div>
+            
+            <div className="pt-4 border-t border-slate-800 space-y-4">
+              <h4 className="text-sm font-semibold text-white">Change Subscription Plan</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <button
+                  onClick={() => handleSelectPlan('free')}
+                  className={`p-4 rounded-xl border text-left transition-all ${
+                    selectedPlan === 'free' 
+                      ? 'bg-emerald-500/10 border-emerald-500/50 ring-1 ring-emerald-500/50' 
+                      : 'bg-slate-800 border-slate-700 hover:border-slate-500 opacity-70 hover:opacity-100'
+                  }`}
+                >
+                  <div className="font-bold text-white mb-1">Free Starter</div>
+                  <div className="text-xs text-slate-400">$0 / forever</div>
+                </button>
+                <button
+                  onClick={() => handleSelectPlan('pro')}
+                  className={`p-4 rounded-xl border text-left transition-all ${
+                    selectedPlan === 'pro' 
+                      ? 'bg-blue-500/10 border-blue-500/50 ring-1 ring-blue-500/50' 
+                      : 'bg-slate-800 border-slate-700 hover:border-slate-500 opacity-70 hover:opacity-100'
+                  }`}
+                >
+                  <div className="font-bold text-white mb-1">Pro Business</div>
+                  <div className="text-xs text-slate-400">$29 / month</div>
+                </button>
+                <button
+                  onClick={() => handleSelectPlan('enterprise')}
+                  className={`p-4 rounded-xl border text-left transition-all ${
+                    selectedPlan === 'enterprise' 
+                      ? 'bg-amber-500/10 border-amber-500/50 ring-1 ring-amber-500/50' 
+                      : 'bg-slate-800 border-slate-700 hover:border-slate-500 opacity-70 hover:opacity-100'
+                  }`}
+                >
+                  <div className="font-bold text-white mb-1">Enterprise</div>
+                  <div className="text-xs text-slate-400">$99 / month</div>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
