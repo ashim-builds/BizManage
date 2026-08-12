@@ -834,30 +834,30 @@ function SettingsPageContent() {
                 <p className="text-xs text-slate-400 mt-1">Manage your active workspace license and features.</p>
               </div>
               <span className={`px-4 py-1.5 rounded-full font-bold text-xs border ${
-                selectedPlan === 'enterprise' 
+                selectedPlan?.toLowerCase() === 'enterprise' 
                   ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                  : selectedPlan === 'pro'
+                  : selectedPlan?.toLowerCase() === 'pro'
                   ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
                   : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
               }`}>
-                {selectedPlan === 'enterprise' ? 'Enterprise Active' : selectedPlan === 'pro' ? 'Pro Plan Active' : 'Free Starter Active'}
+                {selectedPlan?.toLowerCase() === 'enterprise' ? 'Enterprise Active' : selectedPlan?.toLowerCase() === 'pro' ? 'Pro Plan Active' : 'Free Starter Active'}
               </span>
             </div>
 
             <div className={`p-6 rounded-xl border space-y-3 ${
-                selectedPlan === 'enterprise'
+                selectedPlan?.toLowerCase() === 'enterprise'
                   ? 'bg-gradient-to-r from-amber-900/20 to-orange-900/20 border-amber-500/20'
-                  : selectedPlan === 'pro'
+                  : selectedPlan?.toLowerCase() === 'pro'
                   ? 'bg-gradient-to-r from-blue-900/20 to-indigo-900/20 border-blue-500/20'
                   : 'bg-gradient-to-r from-emerald-900/20 to-teal-900/20 border-emerald-500/20'
             }`}>
               <h4 className="text-lg font-bold text-white">
-                {selectedPlan === 'enterprise' ? 'Enterprise License' : selectedPlan === 'pro' ? 'Pro Business License' : 'Free Starter License'}
+                {selectedPlan?.toLowerCase() === 'enterprise' ? 'Enterprise License' : selectedPlan?.toLowerCase() === 'pro' ? 'Pro Business License' : 'Free Starter License'}
               </h4>
               <p className="text-sm text-slate-300">
-                {selectedPlan === 'enterprise' 
+                {selectedPlan?.toLowerCase() === 'enterprise' 
                   ? 'Unlimited transaction volume, multi-business isolation, real-time double-entry ledgers, and priority support.'
-                  : selectedPlan === 'pro'
+                  : selectedPlan?.toLowerCase() === 'pro'
                   ? 'Advanced reporting, unlimited parties, up to 10,000 transactions/mo, and automated backups.'
                   : 'Basic double-entry accounting, up to 100 transactions/mo, and single business management.'}
               </p>
