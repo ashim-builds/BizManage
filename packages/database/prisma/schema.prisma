@@ -121,6 +121,9 @@ model Business {
   taxNumber       String?
   currency        String             @default("NPR")
   logoUrl         String?
+  subscriptionPlan String            @default("FREE")
+  profileCompleted Boolean           @default(false)
+  setupCompleted   Boolean           @default(false)
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
   memberships     UserBusinessRole[]

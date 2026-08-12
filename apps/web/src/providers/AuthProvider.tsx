@@ -20,6 +20,9 @@ export interface UserProfile {
       address?: string;
       taxNumber?: string;
       logoUrl?: string;
+      subscriptionPlan: string;
+      profileCompleted: boolean;
+      setupCompleted: boolean;
     };
   }>;
 }

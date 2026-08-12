@@ -4,31 +4,41 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 import { Crown, Check, Lock, Sparkles, Zap, ShieldCheck, ArrowRight } from 'lucide-react';
 
+import { useUpdateBusiness } from '@/services/businessService';
+
 export default function SubscriptionPage() {
-  const { user } = useAuth();
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const { user, refreshUser } = useAuth();
+  const updateBusiness = useUpdateBusiness();
+  const currentBiz = user?.memberships?.[0]?.business;
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(currentBiz?.subscriptionPlan || null);
   const [msg, setMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedPlan = localStorage.getItem('bizmanage_selected_plan');
-      if (savedPlan) {
-        setSelectedPlan(savedPlan);
-      }
+    if (currentBiz?.subscriptionPlan) {
+      setSelectedPlan(currentBiz.subscriptionPlan);
     }
-  }, []);
+  }, [currentBiz?.subscriptionPlan]);
 
-  const handleSelectPlan = (plan: 'FREE' | 'PRO' | 'ENTERPRISE') => {
-    setSelectedPlan(plan);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('bizmanage_selected_plan', plan);
-    }
+  const handleSelectPlan = async (plan: 'FREE' | 'PRO' | 'ENTERPRISE') => {
+    try {
+      setSelectedPlan(plan);
+      // We must provide the required fields for updateBusiness (name) 
+      // but since they are already set we can just pass them back, or API needs to handle partial updates.
+      // Wait, updateBusinessSchema requires name.
+      await updateBusiness.mutateAsync({ 
+        name: currentBiz?.name || 'My Business',
+        subscriptionPlan: plan 
+      });
+      await refreshUser();
     if (plan === 'FREE') {
       setMsg('Free Starter Plan activated! You now have full access to core BMS features.');
     } else if (plan === 'PRO') {
       setMsg('Pro Business Plan selected! Our team will verify and activate all premium features shortly.');
     } else {
       setMsg('Enterprise Growth Plan selected! Our team will contact you to configure multi-branch features.');
+    }
+    } catch (error) {
+      setMsg('Failed to update subscription plan.');
     }
   };
 

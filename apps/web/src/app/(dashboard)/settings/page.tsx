@@ -66,26 +66,16 @@ function SettingsPageContent() {
 
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
-  useEffect(() => {
-    const updatePlan = () => {
-      if (typeof window !== 'undefined') {
-        const plan = localStorage.getItem('bizmanage_selected_plan');
-        setSelectedPlan(plan);
-      }
-    };
-    
-    updatePlan();
-    
-    if (typeof window !== 'undefined') {
-      window.addEventListener('focus', updatePlan);
-      return () => window.removeEventListener('focus', updatePlan);
-    }
-  }, [activeTab]);
-
   // Business Profile & Settings Queries
   const { data: business, isLoading: settingsLoading, refetch } = useCurrentBusiness();
   const updateSettings = useUpdateBusinessSettings();
   const updateBusiness = useUpdateBusiness();
+
+  useEffect(() => {
+    if (business?.subscriptionPlan) {
+      setSelectedPlan(business.subscriptionPlan);
+    }
+  }, [business?.subscriptionPlan]);
 
   // Utilities Mutations
   const importParties = useImportParties();
@@ -243,7 +233,8 @@ function SettingsPageContent() {
     setProfileSuccess('');
     setProfileError('');
     try {
-      await updateBusiness.mutateAsync({ name, phone, email, address, taxNumber, currency: 'NPR', logoUrl });
+      const isProfileCompleted = Boolean(name && address && phone && taxNumber && logoUrl);
+      await updateBusiness.mutateAsync({ name, phone, email, address, taxNumber, currency: 'NPR', logoUrl, profileCompleted: isProfileCompleted });
       await updateSettings.mutateAsync({
         invoicePrefix: 'INV-',
         purchasePrefix: 'PUR-',
@@ -255,11 +246,7 @@ function SettingsPageContent() {
         lowStockAlert: true,
       });
       if (typeof window !== 'undefined') {
-        if (name && address && phone && taxNumber && logoUrl) {
-          localStorage.setItem('bizmanage_profile_completed', 'true');
-        } else {
-          localStorage.removeItem('bizmanage_profile_completed');
-        }
+        localStorage.removeItem('bizmanage_profile_completed'); // cleanup old item
       }
       setProfileSuccess('Business profile & logo saved successfully!');
     } catch (err: any) {

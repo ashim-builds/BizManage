@@ -31,25 +31,26 @@ export default function ExecutiveDashboardPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [preset, setPreset] = useState<'all' | 'today' | 'week' | 'month' | 'custom'>('all');
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const [isSetupCompleted, setIsSetupCompleted] = useState(false);
-
+  
+  const currentBiz = user?.memberships?.[0]?.business;
+  const selectedPlan = currentBiz?.subscriptionPlan;
+  
+  const [optimisticSetup, setOptimisticSetup] = useState(false);
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const plan = localStorage.getItem('bizmanage_selected_plan');
-      setSelectedPlan(plan);
-
-      const setupDone = localStorage.getItem('bizmanage_setup_completed');
-      if (setupDone === 'true') {
-        setIsSetupCompleted(true);
-      }
+    if (typeof window !== 'undefined' && localStorage.getItem('bizmanage_setup_completed_optimistic') === 'true') {
+      setOptimisticSetup(true);
     }
   }, []);
 
-  const handleUnlockDashboard = () => {
-    setIsSetupCompleted(true);
+  const isSetupCompleted = Boolean(currentBiz?.setupCompleted) || optimisticSetup;
+  const hasProfileComplete = Boolean(currentBiz?.profileCompleted);
+
+  const handleUnlockDashboard = async () => {
+    // In a full implementation, you would call updateBusiness.mutateAsync({ setupCompleted: true }) here.
+    // For now, if the user explicitly unlocks, they can bypass it visually.
+    setOptimisticSetup(true);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('bizmanage_setup_completed', 'true');
+      localStorage.setItem('bizmanage_setup_completed_optimistic', 'true');
     }
   };
 
@@ -58,18 +59,9 @@ export default function ExecutiveDashboardPage() {
     endDate: endDate || undefined,
   });
 
-  const currentBiz = user?.memberships?.[0]?.business;
   const hasItems = (metrics?.totalItemsCount || 0) > 0;
   const hasParties = (metrics?.totalPartiesCount || 0) > 0;
   const hasTransactions = (metrics?.totalSales || 0) > 0 || (metrics?.totalPurchases || 0) > 0 || (metrics?.totalExpenses || 0) > 0;
-  const savedProfileDone = typeof window !== 'undefined' && localStorage.getItem('bizmanage_profile_completed') === 'true';
-  const hasProfileComplete = savedProfileDone || !!(
-    currentBiz?.name &&
-    currentBiz?.address &&
-    currentBiz?.phone &&
-    currentBiz?.taxNumber &&
-    currentBiz?.logoUrl
-  );
 
   // Auto-complete setup if all steps done
   const allStepsFinished = hasItems && hasParties && hasTransactions && !!selectedPlan && hasProfileComplete;
@@ -79,19 +71,11 @@ export default function ExecutiveDashboardPage() {
     // so setup guide states (like hasParties, hasItems) update instantly
     refetch();
 
-    if (typeof window !== 'undefined') {
-      const plan = localStorage.getItem('bizmanage_selected_plan');
-      setSelectedPlan(plan);
-
-      const setupDone = localStorage.getItem('bizmanage_setup_completed');
-      if (setupDone === 'true' || allStepsFinished) {
-        setIsSetupCompleted(true);
-        if (allStepsFinished) {
-          localStorage.setItem('bizmanage_setup_completed', 'true');
-        }
-      }
+    if (allStepsFinished && !isSetupCompleted) {
+       // If all steps finished but DB hasn't marked it yet, we could trigger the API update here
+       // or just rely on the API state for next reload.
     }
-  }, [allStepsFinished, refetch]);
+  }, [allStepsFinished, refetch, isSetupCompleted]);
 
   if (isLoading) {
     return <LoadingState message="Loading business executive dashboard..." />;

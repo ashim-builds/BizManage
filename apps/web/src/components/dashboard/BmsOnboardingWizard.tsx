@@ -24,34 +24,15 @@ export function BmsOnboardingWizard({
   hasTransactions = false,
 }: OnboardingWizardProps) {
   const [collapsed, setCollapsed] = useState(false);
-  const [subscriptionSelected, setSubscriptionSelected] = useState(hasSubscription);
-  const [profileComplete, setProfileComplete] = useState(hasProfileComplete);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const selected = localStorage.getItem('bizmanage_selected_plan');
-      if (selected) {
-        setSubscriptionSelected(true);
-      }
-      const savedProfile = localStorage.getItem('bizmanage_profile_completed');
-      if (savedProfile === 'true') {
-        setProfileComplete(true);
-      } else {
-        setProfileComplete(hasProfileComplete);
-      }
-    } else {
-      setProfileComplete(hasProfileComplete);
-    }
-  }, [hasSubscription, hasProfileComplete]);
 
   const steps = [
     {
       id: 1,
       title: 'Complete your business profile',
       description: 'Add your business name, address, contact number, tax ID, and logo.',
-      href: '/settings',
+      href: '/settings?tab=profile',
       actionText: 'Go to Settings',
-      isCompleted: profileComplete,
+      isCompleted: hasProfileComplete,
       icon: Building2,
     },
     {
@@ -60,7 +41,7 @@ export function BmsOnboardingWizard({
       description: 'Pick a plan (Free, Pro, or Enterprise) to unlock your full ERP features.',
       href: '/subscription',
       actionText: 'Choose Plan',
-      isCompleted: subscriptionSelected,
+      isCompleted: hasSubscription,
       icon: Crown,
     },
     {

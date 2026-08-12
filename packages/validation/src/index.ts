@@ -46,6 +46,9 @@ export const updateBusinessSchema = z.object({
   taxNumber: z.string().optional().nullable(),
   currency: z.string().default('NPR'),
   logoUrl: z.string().optional().nullable(),
+  subscriptionPlan: z.string().optional(),
+  profileCompleted: z.boolean().optional(),
+  setupCompleted: z.boolean().optional(),
 });
 
 export const updateBusinessSettingsSchema = z.object({

@@ -95,6 +95,9 @@ export async function businessRoutes(fastify: FastifyInstance) {
         taxNumber: body.taxNumber,
         currency: body.currency,
         logoUrl: body.logoUrl,
+        subscriptionPlan: body.subscriptionPlan,
+        profileCompleted: body.profileCompleted,
+        setupCompleted: body.setupCompleted,
       },
       include: { settings: true },
     });
