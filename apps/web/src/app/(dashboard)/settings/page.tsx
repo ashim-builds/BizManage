@@ -67,20 +67,20 @@ function SettingsPageContent() {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
   useEffect(() => {
+    const updatePlan = () => {
+      if (typeof window !== 'undefined') {
+        const plan = localStorage.getItem('bizmanage_selected_plan');
+        setSelectedPlan(plan);
+      }
+    };
+    
+    updatePlan();
+    
     if (typeof window !== 'undefined') {
-      const plan = localStorage.getItem('bizmanage_selected_plan');
-      setSelectedPlan(plan);
+      window.addEventListener('focus', updatePlan);
+      return () => window.removeEventListener('focus', updatePlan);
     }
-  }, []);
-
-  const handleSelectPlan = (plan: string) => {
-    setSelectedPlan(plan);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('bizmanage_selected_plan', plan);
-    }
-    setProfileSuccess('Subscription plan updated successfully!');
-    setTimeout(() => setProfileSuccess(''), 3000);
-  };
+  }, [activeTab]);
 
   // Business Profile & Settings Queries
   const { data: business, isLoading: settingsLoading, refetch } = useCurrentBusiness();
