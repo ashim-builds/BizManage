@@ -2,9 +2,11 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/providers/AuthProvider';
 import { useCurrentBusiness, useUpdateBusiness, useUpdateBusinessSettings } from '@/services/businessService';
 import { useImportParties, useImportItems, useDownloadBackup, useChangePassword } from '@/services/utilityService';
+import { useDashboardMetrics } from '@/services/dashboardService';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { BmsOnboardingWizard } from '@/components/dashboard/BmsOnboardingWizard';
@@ -97,6 +99,24 @@ function SettingsPageContent() {
   const [address, setAddress] = useState(user?.memberships?.[0]?.business?.address || '');
   const [taxNumber, setTaxNumber] = useState(user?.memberships?.[0]?.business?.taxNumber || '');
   const [logoUrl, setLogoUrl] = useState<string>(user?.memberships?.[0]?.business?.logoUrl || '');
+
+  const { data: metrics, refetch: refetchMetrics } = useDashboardMetrics();
+
+  useEffect(() => {
+    refetchMetrics();
+  }, [refetchMetrics, activeTab]);
+
+  const hasItems = (metrics?.totalItemsCount || 0) > 0;
+  const hasParties = (metrics?.totalPartiesCount || 0) > 0;
+  const hasTransactions = (metrics?.totalSales || 0) > 0 || (metrics?.totalPurchases || 0) > 0 || (metrics?.totalExpenses || 0) > 0;
+  const savedProfileDone = typeof window !== 'undefined' && localStorage.getItem('bizmanage_profile_completed') === 'true';
+  const hasProfileComplete = savedProfileDone || !!(
+    business?.name &&
+    business?.address &&
+    business?.phone &&
+    business?.taxNumber &&
+    business?.logoUrl
+  );
 
   useEffect(() => {
     if (business) {
@@ -644,6 +664,10 @@ function SettingsPageContent() {
             <BmsOnboardingWizard
               userName={user?.name || 'Owner'}
               businessName={user?.memberships?.[0]?.business?.name || 'My Business'}
+              hasProfileComplete={hasProfileComplete}
+              hasItems={hasItems}
+              hasParties={hasParties}
+              hasTransactions={hasTransactions}
             />
           </div>
         </div>
@@ -838,44 +862,15 @@ function SettingsPageContent() {
                   : 'Basic double-entry accounting, up to 100 transactions/mo, and single business management.'}
               </p>
             </div>
-            
             <div className="pt-4 border-t border-slate-800 space-y-4">
-              <h4 className="text-sm font-semibold text-white">Change Subscription Plan</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <button
-                  onClick={() => handleSelectPlan('free')}
-                  className={`p-4 rounded-xl border text-left transition-all ${
-                    selectedPlan === 'free' 
-                      ? 'bg-emerald-500/10 border-emerald-500/50 ring-1 ring-emerald-500/50' 
-                      : 'bg-slate-800 border-slate-700 hover:border-slate-500 opacity-70 hover:opacity-100'
-                  }`}
-                >
-                  <div className="font-bold text-white mb-1">Free Starter</div>
-                  <div className="text-xs text-slate-400">$0 / forever</div>
-                </button>
-                <button
-                  onClick={() => handleSelectPlan('pro')}
-                  className={`p-4 rounded-xl border text-left transition-all ${
-                    selectedPlan === 'pro' 
-                      ? 'bg-blue-500/10 border-blue-500/50 ring-1 ring-blue-500/50' 
-                      : 'bg-slate-800 border-slate-700 hover:border-slate-500 opacity-70 hover:opacity-100'
-                  }`}
-                >
-                  <div className="font-bold text-white mb-1">Pro Business</div>
-                  <div className="text-xs text-slate-400">$29 / month</div>
-                </button>
-                <button
-                  onClick={() => handleSelectPlan('enterprise')}
-                  className={`p-4 rounded-xl border text-left transition-all ${
-                    selectedPlan === 'enterprise' 
-                      ? 'bg-amber-500/10 border-amber-500/50 ring-1 ring-amber-500/50' 
-                      : 'bg-slate-800 border-slate-700 hover:border-slate-500 opacity-70 hover:opacity-100'
-                  }`}
-                >
-                  <div className="font-bold text-white mb-1">Enterprise</div>
-                  <div className="text-xs text-slate-400">$99 / month</div>
-                </button>
-              </div>
+              <h4 className="text-sm font-semibold text-white">Need to upgrade or downgrade?</h4>
+              <Link
+                href="/subscription"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all shadow-lg shadow-blue-600/20"
+              >
+                <Crown className="w-4 h-4" />
+                View Subscription Plans
+              </Link>
             </div>
           </div>
         </div>
