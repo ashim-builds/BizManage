@@ -58,6 +58,41 @@ export default function ExecutiveDashboardPage() {
     endDate: endDate || undefined,
   });
 
+  const currentBiz = user?.memberships?.[0]?.business;
+  const hasItems = (metrics?.totalItemsCount || 0) > 0;
+  const hasParties = (metrics?.totalPartiesCount || 0) > 0;
+  const hasTransactions = (metrics?.totalSales || 0) > 0 || (metrics?.totalPurchases || 0) > 0 || (metrics?.totalExpenses || 0) > 0;
+  const savedProfileDone = typeof window !== 'undefined' && localStorage.getItem('bizmanage_profile_completed') === 'true';
+  const hasProfileComplete = savedProfileDone || !!(
+    currentBiz?.name &&
+    currentBiz?.address &&
+    currentBiz?.phone &&
+    currentBiz?.taxNumber &&
+    currentBiz?.logoUrl
+  );
+
+  // Auto-complete setup if all steps done
+  const allStepsFinished = hasItems && hasParties && hasTransactions && !!selectedPlan && hasProfileComplete;
+
+  useEffect(() => {
+    // Force a fresh fetch of metrics every time dashboard is opened
+    // so setup guide states (like hasParties, hasItems) update instantly
+    refetch();
+
+    if (typeof window !== 'undefined') {
+      const plan = localStorage.getItem('bizmanage_selected_plan');
+      setSelectedPlan(plan);
+
+      const setupDone = localStorage.getItem('bizmanage_setup_completed');
+      if (setupDone === 'true' || allStepsFinished) {
+        setIsSetupCompleted(true);
+        if (allStepsFinished) {
+          localStorage.setItem('bizmanage_setup_completed', 'true');
+        }
+      }
+    }
+  }, [allStepsFinished, refetch]);
+
   if (isLoading) {
     return <LoadingState message="Loading business executive dashboard..." />;
   }
@@ -88,36 +123,6 @@ export default function ExecutiveDashboardPage() {
     }
   };
 
-  const currentBiz = user?.memberships?.[0]?.business;
-  const hasItems = (metrics?.totalItemsCount || 0) > 0;
-  const hasParties = (metrics?.totalPartiesCount || 0) > 0;
-  const hasTransactions = (metrics?.totalSales || 0) > 0 || (metrics?.totalPurchases || 0) > 0 || (metrics?.totalExpenses || 0) > 0;
-  const savedProfileDone = typeof window !== 'undefined' && localStorage.getItem('bizmanage_profile_completed') === 'true';
-  const hasProfileComplete = savedProfileDone || !!(
-    currentBiz?.name &&
-    currentBiz?.address &&
-    currentBiz?.phone &&
-    currentBiz?.taxNumber &&
-    currentBiz?.logoUrl
-  );
-
-  // Auto-complete setup if all steps done
-  const allStepsFinished = hasItems && hasParties && hasTransactions && !!selectedPlan && hasProfileComplete;
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const plan = localStorage.getItem('bizmanage_selected_plan');
-      setSelectedPlan(plan);
-
-      const setupDone = localStorage.getItem('bizmanage_setup_completed');
-      if (setupDone === 'true' || allStepsFinished) {
-        setIsSetupCompleted(true);
-        if (allStepsFinished) {
-          localStorage.setItem('bizmanage_setup_completed', 'true');
-        }
-      }
-    }
-  }, [allStepsFinished]);
 
   return (
     <div className="space-y-8 font-sans">
