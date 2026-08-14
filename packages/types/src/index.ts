@@ -44,6 +44,7 @@ export const InvoiceStatus = {
   PARTIAL: 'PARTIAL',
   PAID: 'PAID',
   CANCELLED: 'CANCELLED',
+  RETURNED: 'RETURNED',
 } as const;
 export type InvoiceStatus = (typeof InvoiceStatus)[keyof typeof InvoiceStatus];
 

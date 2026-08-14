@@ -2,27 +2,45 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { api } from '@/lib/api';
+import { api, setApiBusinessId } from '@/lib/api';
 
 export interface UserProfile {
   id: string;
   email: string;
   name: string;
   phone?: string;
+  isSystemAdmin?: boolean;
+  readNotifications: string[];
+  activeBusinessId: string | null;
   memberships: Array<{
     role: string;
     business: {
       id: string;
       name: string;
       currency: string;
+      phone?: string;
+      email?: string;
+      address?: string;
       taxNumber?: string;
+      logoUrl?: string;
+      profileCompleted: boolean;
+      setupCompleted: boolean;
+      isActive: boolean;
+      subscriptionStatus: string;
+      planOverrides: any | null;
+      subscriptionPackage: any | null;
     };
   }>;
+}
+
+export interface BusinessLimits {
+  // Add any future limits here
 }
 
 interface AuthContextType {
   user: UserProfile | null;
   activeBusinessId: string | null;
+  activeBusinessLimits: BusinessLimits | null;
   loading: boolean;
   setActiveBusinessId: (id: string) => void;
   logout: () => Promise<void>;
@@ -36,33 +54,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [activeBusinessId, setActiveBusinessIdState] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const pathname = usePathname();
 
-  const fetchUser = async () => {
-    const token = localStorage.getItem('bizmanage_token');
-    if (!token) {
-      setUser(null);
-      setLoading(false);
+  const [activeBusinessLimits, setActiveBusinessLimits] = useState<BusinessLimits | null>(null);
+
+  const computeLimits = (userData: UserProfile, bizId: string | null) => {
+    if (!bizId) {
+      setActiveBusinessLimits(null);
+      return;
+    }
+    const membership = userData.memberships.find(m => m.business.id === bizId);
+    if (!membership) {
+      setActiveBusinessLimits(null);
       return;
     }
 
+    setActiveBusinessLimits({});
+  };
+
+  const fetchUser = async () => {
     try {
       const res = await api.get('/auth/me');
-      if (res.data.success) {
-        const userData: UserProfile = res.data.data;
+      if (res.data.success && res.data.data) {
+        let userData: UserProfile = res.data.data;
+        userData.memberships = userData.memberships.map((m: any) => {
+          if (m.business?.subscriptionPackage) {
+            const pkg = m.business.subscriptionPackage;
+            pkg.features = typeof pkg.features === 'string' ? JSON.parse(pkg.features) : (pkg.features || []);
+          }
+          return m;
+        });
         setUser(userData);
 
-        let savedBizId = localStorage.getItem('bizmanage_active_business_id');
-        if (!savedBizId && userData.memberships.length > 0) {
-          savedBizId = userData.memberships[0]!.business.id;
-          localStorage.setItem('bizmanage_active_business_id', savedBizId);
+        let bizId = userData.activeBusinessId;
+        if (!bizId && userData.memberships.length > 0) {
+          bizId = userData.memberships[0]!.business.id;
+          // Optimistically update the backend
+          api.patch('/auth/me/preferences', { activeBusinessId: bizId }).catch(() => {});
         }
-        setActiveBusinessIdState(savedBizId);
+        setActiveBusinessIdState(bizId || null);
+        setApiBusinessId(bizId || null);
+        computeLimits(userData, bizId || null);
+      } else {
+        setUser(null);
+        setActiveBusinessIdState(null);
+        setActiveBusinessLimits(null);
+        setApiBusinessId(null);
       }
     } catch (err) {
-      localStorage.removeItem('bizmanage_token');
-      localStorage.removeItem('bizmanage_active_business_id');
       setUser(null);
+      setActiveBusinessIdState(null);
+      setActiveBusinessLimits(null);
+      setApiBusinessId(null);
     } finally {
       setLoading(false);
     }
@@ -73,8 +115,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setActiveBusinessId = (id: string) => {
-    localStorage.setItem('bizmanage_active_business_id', id);
     setActiveBusinessIdState(id);
+    setApiBusinessId(id);
+    if (user) {
+      computeLimits(user, id);
+    }
+    api.patch('/auth/me/preferences', { activeBusinessId: id }).catch(() => {});
   };
 
   const logout = async () => {
@@ -83,10 +129,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (_) {
       // Ignore network errors on logout
     } finally {
-      localStorage.removeItem('bizmanage_token');
-      localStorage.removeItem('bizmanage_active_business_id');
       setUser(null);
       setActiveBusinessIdState(null);
+      setActiveBusinessLimits(null);
+      setApiBusinessId(null);
       router.push('/login');
     }
   };
@@ -96,6 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         activeBusinessId,
+        activeBusinessLimits,
         loading,
         setActiveBusinessId,
         logout,

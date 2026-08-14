@@ -88,6 +88,17 @@ export function useSaleReturns() {
   });
 }
 
+export function useSaleReturn(id: string) {
+  return useQuery({
+    queryKey: ['sales', 'returns', id],
+    queryFn: async () => {
+      const res = await api.get(`/sales/returns/${id}`);
+      return res.data.data;
+    },
+    enabled: !!id,
+  });
+}
+
 export function useCreateSaleReturn() {
   const queryClient = useQueryClient();
   return useMutation({

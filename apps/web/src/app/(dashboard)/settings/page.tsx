@@ -1,11 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/providers/AuthProvider';
 import { useCurrentBusiness, useUpdateBusiness, useUpdateBusinessSettings } from '@/services/businessService';
 import { useImportParties, useImportItems, useDownloadBackup, useChangePassword } from '@/services/utilityService';
+import { useDashboardMetrics } from '@/services/dashboardService';
+import { useSessions, useDeleteSession, useDeleteOtherSessions } from '@/services/sessionService';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
+import { BmsOnboardingWizard } from '@/components/dashboard/BmsOnboardingWizard';
+import { toast } from 'react-hot-toast';
 import {
   Settings,
   Building2,
@@ -27,10 +33,16 @@ import {
   EyeOff,
   KeyRound,
   ShieldCheck,
+  Monitor,
+  Smartphone,
+  MapPin,
+  Clock,
+  Trash2,
 } from 'lucide-react';
 
 type SettingsTab =
   | 'profile'
+  | 'guide'
   | 'account'
   | 'categories'
   | 'subscription'
@@ -40,13 +52,37 @@ type SettingsTab =
   | 'about';
 
 export default function SettingsPage() {
+  return (
+    <Suspense fallback={<LoadingState message="Loading settings..." />}>
+      <SettingsPageContent />
+    </Suspense>
+  );
+}
+
+function SettingsPageContent() {
   const { user, logout } = useAuth();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+
+  useEffect(() => {
+    const tabParam = searchParams?.get('tab') as SettingsTab;
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
   // Business Profile & Settings Queries
   const { data: business, isLoading: settingsLoading, refetch } = useCurrentBusiness();
   const updateSettings = useUpdateBusinessSettings();
   const updateBusiness = useUpdateBusiness();
+
+  useEffect(() => {
+    if (business?.subscriptionPackage?.name) {
+      setSelectedPlan(business.subscriptionPackage.name);
+    }
+  }, [business?.subscriptionPackage?.name]);
 
   // Utilities Mutations
   const importParties = useImportParties();
@@ -55,8 +91,57 @@ export default function SettingsPage() {
 
   // Business Profile Form States
   const [name, setName] = useState(user?.memberships?.[0]?.business?.name || '');
+  const [phone, setPhone] = useState(user?.memberships?.[0]?.business?.phone || '');
+  const [email, setEmail] = useState(user?.memberships?.[0]?.business?.email || '');
+  const [address, setAddress] = useState(user?.memberships?.[0]?.business?.address || '');
   const [taxNumber, setTaxNumber] = useState(user?.memberships?.[0]?.business?.taxNumber || '');
+  const [logoUrl, setLogoUrl] = useState<string>(user?.memberships?.[0]?.business?.logoUrl || '');
+
+  const { data: metrics, refetch: refetchMetrics } = useDashboardMetrics();
+
+  useEffect(() => {
+    refetchMetrics();
+  }, [refetchMetrics, activeTab]);
+
+  const hasItems = (metrics?.totalItemsCount || 0) > 0;
+  const hasParties = (metrics?.totalPartiesCount || 0) > 0;
+  const hasTransactions = (metrics?.totalSales || 0) > 0 || (metrics?.totalPurchases || 0) > 0 || (metrics?.totalExpenses || 0) > 0;
+  const savedProfileDone = typeof window !== 'undefined' && localStorage.getItem('bizmanage_profile_completed') === 'true';
+  const hasProfileComplete = savedProfileDone || !!(
+    business?.name &&
+    business?.address &&
+    business?.phone &&
+    business?.taxNumber &&
+    business?.logoUrl
+  );
+
+  useEffect(() => {
+    if (business) {
+      setName(business.name || '');
+      setPhone(business.phone || '');
+      setEmail(business.email || '');
+      setAddress(business.address || '');
+      setTaxNumber(business.taxNumber || '');
+      if (business.logoUrl) setLogoUrl(business.logoUrl);
+      if (business.settings) {
+        setEnableTax(business.settings.enableTax ?? false);
+        setTaxRate(business.settings.taxRate ?? 13);
+      }
+    }
+  }, [business]);
+
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const val = localStorage.getItem('bizmanage_show_onboarding');
+      return val !== 'false';
+    }
+    return true;
+  });
   const [enableTax, setEnableTax] = useState(false);
+  
+  const rawFeatures = business?.subscriptionPackage?.features;
+  const userFeatures = typeof rawFeatures === 'string' ? JSON.parse(rawFeatures) : (rawFeatures || []);
+  const canCustomBranding = userFeatures.includes('CUSTOM_BRANDING');
   const [taxRate, setTaxRate] = useState(13);
   const [profileSuccess, setProfileSuccess] = useState('');
   const [profileError, setProfileError] = useState('');
@@ -72,6 +157,11 @@ export default function SettingsPage() {
   const [pwdSuccess, setPwdSuccess] = useState('');
   const [pwdError, setPwdError] = useState('');
   const [pwdPending, setPwdPending] = useState(false);
+
+  // Session States
+  const { data: sessions, isLoading: sessionsLoading } = useSessions();
+  const deleteSession = useDeleteSession();
+  const deleteOtherSessions = useDeleteOtherSessions();
 
   // Import States
   const [importJsonText, setImportJsonText] = useState('');
@@ -103,11 +193,64 @@ export default function SettingsPage() {
     return '';
   });
 
+  const toggleOnboardingGuide = (val: boolean) => {
+    setShowOnboarding(val);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('bizmanage_show_onboarding', val ? 'true' : 'false');
+    }
+    setProfileSuccess(`BMS Setup Guide on Dashboard set to ${val ? 'Visible' : 'Hidden'}.`);
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setProfileError('Logo file size must be less than 5MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const rawDataUrl = event.target?.result as string;
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 300;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          setLogoUrl(canvas.toDataURL('image/png', 0.9));
+        } else {
+          setLogoUrl(rawDataUrl);
+        }
+      };
+      img.src = rawDataUrl;
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSaveProfile = async () => {
     setProfileSuccess('');
     setProfileError('');
     try {
-      await updateBusiness.mutateAsync({ name, taxNumber, currency: 'NPR' });
+      const isProfileCompleted = Boolean(name && address && phone && taxNumber && logoUrl);
+      await updateBusiness.mutateAsync({ name, phone, email, address, taxNumber, currency: 'NPR', logoUrl, profileCompleted: isProfileCompleted });
       await updateSettings.mutateAsync({
         invoicePrefix: 'INV-',
         purchasePrefix: 'PUR-',
@@ -115,10 +258,13 @@ export default function SettingsPage() {
         saleReturnPrefix: 'CN-',
         purchaseReturnPrefix: 'DN-',
         enableTax,
-        taxRate,
+        taxRate: Number(taxRate) || 0,
         lowStockAlert: true,
       });
-      setProfileSuccess('Business profile saved successfully!');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('bizmanage_profile_completed'); // cleanup old item
+      }
+      setProfileSuccess('Business profile & logo saved successfully!');
     } catch (err: any) {
       setProfileError(err.response?.data?.error?.message || 'Failed to update settings.');
     }
@@ -202,8 +348,10 @@ export default function SettingsPage() {
       a.href = url;
       a.download = `bizmanage_backup_${new Date().toISOString().split('T')[0]}.json`;
       a.click();
-    } catch (err: any) {
-      alert('Failed to generate backup dump.');
+      toast.success('Backup downloaded successfully!');
+    } catch (error) {
+      console.error('Backup error:', error);
+      toast.error('Failed to generate backup dump.');
     }
   };
 
@@ -256,6 +404,17 @@ export default function SettingsPage() {
         </button>
 
         <button
+          onClick={() => setActiveTab('guide')}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
+            activeTab === 'guide'
+              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <BookOpen className="w-3.5 h-3.5" /> Setup Guide
+        </button>
+
+        <button
           onClick={() => setActiveTab('account')}
           className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
             activeTab === 'account'
@@ -263,7 +422,7 @@ export default function SettingsPage() {
               : 'text-slate-400 hover:text-white'
           }`}
         >
-          <User className="w-3.5 h-3.5" /> My Account
+          <User className="w-3.5 h-3.5" /> Account & Security
         </button>
 
         <button
@@ -338,7 +497,55 @@ export default function SettingsPage() {
             </div>
           )}
 
-          <div className="space-y-4 text-xs">
+          <div className="space-y-5 text-xs">
+            {/* BUSINESS LOGO UPLOAD */}
+            <div className={`p-4 rounded-xl border space-y-3 ${canCustomBranding ? 'bg-slate-800/60 border-slate-700/80' : 'bg-slate-900/40 border-slate-800 opacity-75'}`}>
+              <div className="flex items-center justify-between">
+                <label className="block text-slate-300 font-semibold">Business Logo</label>
+                {!canCustomBranding && (
+                  <span className="text-[10px] bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded border border-amber-500/20 font-bold flex items-center gap-1">
+                    <Lock className="w-3 h-3" /> Requires Pro Plan
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-4">
+                {logoUrl ? (
+                  <div className="relative group">
+                    <img
+                      src={logoUrl}
+                      alt="Business Logo"
+                      className={`w-16 h-16 rounded-xl object-contain bg-slate-900 border p-1 ${!canCustomBranding ? 'border-slate-800 opacity-50 grayscale' : 'border-slate-700'}`}
+                    />
+                    {canCustomBranding && (
+                      <button
+                        type="button"
+                        onClick={() => setLogoUrl('')}
+                        className="absolute -top-1.5 -right-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-md text-[10px]"
+                        title="Remove Logo"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 rounded-xl bg-slate-900 border border-dashed border-slate-700 flex items-center justify-center text-slate-500 font-bold text-xs">
+                    No Logo
+                  </div>
+                )}
+                
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    disabled={!canCustomBranding}
+                    className={`block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-500/10 file:text-blue-500 ${canCustomBranding ? 'hover:file:bg-blue-500/20 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
+                  />
+                  <p className="text-[10px] text-slate-500 mt-1">Recommended: Square image, max 5MB (PNG/JPG).</p>
+                </div>
+              </div>
+            </div>
+
             <div>
               <label className="block text-slate-300 font-semibold mb-1">Business Name *</label>
               <input
@@ -346,7 +553,43 @@ export default function SettingsPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white font-bold"
+                placeholder="e.g. RB Hardware & Sanitary House"
               />
+            </div>
+
+            <div>
+              <label className="block text-slate-300 font-semibold mb-1">Business Address</label>
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white"
+                placeholder="e.g. New Road, Kathmandu, Nepal"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Contact Number (Phone)</label>
+                <input
+                  type="text"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono"
+                  placeholder="e.g. +977 9800000000"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Business Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono"
+                  placeholder="e.g. contact@mybusiness.com"
+                />
+              </div>
             </div>
 
             <div>
@@ -391,8 +634,55 @@ export default function SettingsPage() {
               disabled={updateBusiness.isPending || updateSettings.isPending}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50"
             >
-              <Save className="w-4 h-4" /> {updateBusiness.isPending ? 'Saving...' : 'Save Profile Settings'}
+              <Save className="w-4 h-4" /> {updateBusiness.isPending ? 'Saving...' : 'Save Profile & Logo'}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: SETUP GUIDE */}
+      {activeTab === 'guide' && (
+        <div className="space-y-6 max-w-4xl font-sans">
+          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-4">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-blue-400" /> BMS Setup & Onboarding Guide
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  Revisit all 5 step-by-step setup guides to finish setting up your business management system.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    localStorage.removeItem('bizmanage_setup_completed');
+                    localStorage.setItem('bizmanage_show_onboarding', 'true');
+                  }
+                  setProfileSuccess('Setup Guide has been re-opened on your Dashboard!');
+                }}
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all shadow-md shadow-blue-600/20 shrink-0"
+              >
+                Re-open Guide on Dashboard
+              </button>
+            </div>
+
+            {profileSuccess && (
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" /> {profileSuccess}
+              </div>
+            )}
+
+            <BmsOnboardingWizard
+              userName={user?.name || 'Owner'}
+              businessName={user?.memberships?.[0]?.business?.name || 'My Business'}
+              hasProfileComplete={hasProfileComplete}
+              hasSubscription={!!business?.subscriptionPackage}
+              hasItems={hasItems}
+              hasParties={hasParties}
+              hasTransactions={hasTransactions}
+              userFeatures={userFeatures}
+            />
           </div>
         </div>
       )}
@@ -537,29 +827,150 @@ export default function SettingsPage() {
               </p>
             </div>
           </div>
+
+          {/* Active Sessions Section */}
+          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <Monitor className="w-5 h-5 text-indigo-400" /> Active Sessions
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">Manage the devices that are currently logged in to your account.</p>
+              </div>
+              <button
+                onClick={() => {
+                  toast.promise(deleteOtherSessions.mutateAsync(), {
+                    loading: 'Logging out other devices...',
+                    success: 'All other devices logged out!',
+                    error: 'Failed to log out other devices.',
+                  });
+                }}
+                disabled={deleteOtherSessions.isPending || sessionsLoading || sessions?.length === 1}
+                className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all font-semibold disabled:opacity-50"
+              >
+                Log out all other devices
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {sessionsLoading ? (
+                <div className="text-center py-6 text-slate-500 text-xs">Loading sessions...</div>
+              ) : sessions?.length === 0 ? (
+                <div className="text-center py-6 text-slate-500 text-xs">No active sessions found.</div>
+              ) : (
+                sessions?.map((session) => (
+                  <div key={session.id} className={`flex items-center justify-between p-4 rounded-xl border ${session.isCurrent ? 'bg-indigo-500/5 border-indigo-500/20' : 'bg-slate-800/50 border-slate-700/50'}`}>
+                    <div className="flex items-start gap-4">
+                      <div className={`p-3 rounded-xl ${session.isCurrent ? 'bg-indigo-500/20 text-indigo-400' : 'bg-slate-700 text-slate-300'}`}>
+                        {session.device?.toLowerCase().includes('mobile') || session.device?.toLowerCase().includes('android') || session.device?.toLowerCase().includes('iphone') ? (
+                          <Smartphone className="w-5 h-5" />
+                        ) : (
+                          <Monitor className="w-5 h-5" />
+                        )}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-bold text-white">
+                            {session.device || 'Unknown Device'}
+                          </h4>
+                          {session.isCurrent && (
+                            <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-bold">
+                              Current Session
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-400 mt-1 flex items-center gap-2">
+                          <span>{session.browser || 'Unknown Browser'}</span>
+                          <span className="w-1 h-1 rounded-full bg-slate-600"></span>
+                          <span>{session.os || 'Unknown OS'}</span>
+                        </p>
+                        <div className="flex items-center gap-3 mt-2 text-[11px] text-slate-500">
+                          <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {session.ipAddress || 'Unknown IP'}</span>
+                          <span className="w-1 h-1 rounded-full bg-slate-700"></span>
+                          <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Active: {new Date(session.lastActiveAt).toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                    {!session.isCurrent && (
+                      <button
+                        onClick={() => {
+                          toast.promise(deleteSession.mutateAsync(session.id), {
+                            loading: 'Logging out...',
+                            success: 'Session logged out!',
+                            error: 'Failed to log out session.',
+                          });
+                        }}
+                        disabled={deleteSession.isPending}
+                        className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all group disabled:opacity-50"
+                        title="Log out this device"
+                      >
+                        <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       )}
 
       {/* TAB 3: SUBSCRIPTION PLAN */}
       {activeTab === 'subscription' && (
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6 max-w-2xl">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <div>
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Crown className="w-5 h-5 text-amber-400" /> Subscription & SaaS Plan
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5">Active multi-tenant SaaS workspace license.</p>
+        <div className="space-y-6 max-w-3xl">
+          {profileSuccess && (
+            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0" /> {profileSuccess}
             </div>
-            <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 font-bold text-xs border border-emerald-500/20">
-              Enterprise Active
-            </span>
-          </div>
+          )}
 
-          <div className="p-5 rounded-xl bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-500/20 space-y-3">
-            <h4 className="text-sm font-bold text-white">Full Commercial ERP License</h4>
-            <p className="text-xs text-slate-300">
-              Includes unlimited transaction volume, multi-business isolation, real-time double-entry ledgers, and export-ready reporting.
-            </p>
+          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <Crown className="w-5 h-5 text-amber-400" /> Subscription & SaaS Plan
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">Manage your active workspace license and features.</p>
+              </div>
+              <span className={`px-4 py-1.5 rounded-full font-bold text-xs border ${
+                selectedPlan?.toLowerCase() === 'enterprise' 
+                  ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                  : selectedPlan?.toLowerCase() === 'pro'
+                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+              }`}>
+                {selectedPlan?.toLowerCase() === 'enterprise' ? 'Enterprise Active' : selectedPlan?.toLowerCase() === 'pro' ? 'Pro Plan Active' : 'Free Starter Active'}
+              </span>
+            </div>
+
+            <div className={`p-6 rounded-xl border space-y-3 ${
+                selectedPlan?.toLowerCase() === 'enterprise'
+                  ? 'bg-gradient-to-r from-amber-900/20 to-orange-900/20 border-amber-500/20'
+                  : selectedPlan?.toLowerCase() === 'pro'
+                  ? 'bg-gradient-to-r from-blue-900/20 to-indigo-900/20 border-blue-500/20'
+                  : 'bg-gradient-to-r from-emerald-900/20 to-teal-900/20 border-emerald-500/20'
+            }`}>
+              <h4 className="text-lg font-bold text-white">
+                {selectedPlan?.toLowerCase() === 'enterprise' ? 'Enterprise License' : selectedPlan?.toLowerCase() === 'pro' ? 'Pro Business License' : 'Free Starter License'}
+              </h4>
+              <p className="text-sm text-slate-300">
+                {selectedPlan?.toLowerCase() === 'enterprise' 
+                  ? 'Unlimited transaction volume, multi-business isolation, real-time double-entry ledgers, and priority support.'
+                  : selectedPlan?.toLowerCase() === 'pro'
+                  ? 'Advanced reporting, unlimited parties, up to 10,000 transactions/mo, and automated backups.'
+                  : 'Basic double-entry accounting, up to 100 transactions/mo, and single business management.'}
+              </p>
+            </div>
+            <div className="pt-4 border-t border-slate-800 space-y-4">
+              <h4 className="text-sm font-semibold text-white">Need to upgrade or downgrade?</h4>
+              <Link
+                href="/subscription"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all shadow-lg shadow-blue-600/20"
+              >
+                <Crown className="w-4 h-4" />
+                View Subscription Plans
+              </Link>
+            </div>
           </div>
         </div>
       )}

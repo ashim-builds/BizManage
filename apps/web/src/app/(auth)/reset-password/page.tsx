@@ -55,11 +55,15 @@ function ResetPasswordForm() {
   };
 
   return (
-    <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl">
+    <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl relative z-10">
       <div className="text-center mb-8">
-        <div className="inline-flex w-12 h-12 rounded-xl bg-blue-600 items-center justify-center font-bold text-xl text-white mb-3">
-          B
-        </div>
+        <Link href="/" onClick={() => window.scrollTo(0, 0)} className="inline-block cursor-pointer">
+          <img
+            src="/logo-transparent.png"
+            alt="BizManage Logo"
+            className="w-14 h-14 object-contain mx-auto mb-3 drop-shadow-2xl hover:scale-105 transition-transform"
+          />
+        </Link>
         <h2 className="text-2xl font-bold text-white">Set New Password</h2>
         <p className="text-sm text-slate-400 mt-1">Please enter your new password below</p>
       </div>

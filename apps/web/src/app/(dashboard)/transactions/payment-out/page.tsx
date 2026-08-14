@@ -1,20 +1,22 @@
 'use client';
 
+import Link from 'next/link';
+
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createPaymentOutSchema, CreatePaymentOutInput } from '@bizmanage/validation';
 import { PaymentMode } from '@bizmanage/types';
-import {
-  usePaymentsOut,
-  usePaymentsOutSummary,
-  useCreatePaymentOut,
-} from '@/services/paymentService';
+import { usePaymentsOut, usePaymentsOutSummary, useCreatePaymentOut, useVoidPaymentOut } from '@/services/paymentService';
 import { useParties } from '@/services/partyService';
+import { useAccounts } from '@/services/accountService';
+import { getPartyBalanceDisplay } from '@/lib/balance';
+import { formatCurrency } from '@/lib/accounting';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
-import { EmptyState } from '@/components/common/EmptyState';
 import { ModalPortal } from '@/components/common/ModalPortal';
+import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
+import { toast } from 'react-hot-toast';
 import {
   ArrowUpRight,
   Plus,
@@ -23,6 +25,7 @@ import {
   Wallet,
   Building2,
   UserCheck,
+  Eye,
 } from 'lucide-react';
 
 export default function PaymentOutPage() {
@@ -31,10 +34,13 @@ export default function PaymentOutPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [voidingPaymentId, setVoidingPaymentId] = useState<string | null>(null);
+  const [voidError, setVoidError] = useState('');
 
   // Queries
   const { data: summary, isLoading: summaryLoading } = usePaymentsOutSummary();
   const { data: partiesData } = useParties({ limit: 100 });
+  const { data: accountsData } = useAccounts();
   const {
     data: paymentsResponse,
     isLoading: paymentsLoading,
@@ -49,10 +55,14 @@ export default function PaymentOutPage() {
 
   // Mutations
   const createPaymentOut = useCreatePaymentOut();
+  const voidPaymentOut = useVoidPaymentOut();
 
-  const suppliers = (partiesData?.data || []).filter(
-    (p: any) => p.type === 'SUPPLIER' || p.type === 'BOTH'
-  );
+  const handleVoid = (id: string) => {
+    setVoidingPaymentId(id);
+  };
+
+  const parties = partiesData?.data || [];
+  const accounts = accountsData?.data || [];
 
   const form = useForm<CreatePaymentOutInput>({
     resolver: zodResolver(createPaymentOutSchema),
@@ -63,6 +73,16 @@ export default function PaymentOutPage() {
     },
   });
 
+  const watchPaymentMode = form.watch('mode');
+  const desiredAccountType =
+    watchPaymentMode === PaymentMode.BANK || watchPaymentMode === PaymentMode.CHEQUE
+      ? 'BANK'
+      : watchPaymentMode === PaymentMode.ONLINE
+      ? 'MOBILE_WALLET'
+      : 'CASH';
+
+  const filteredAccounts = accounts.filter((a: any) => a.accountType === desiredAccountType);
+
   const handleCreateSubmit = async (data: CreatePaymentOutInput) => {
     try {
       await createPaymentOut.mutateAsync(data);
@@ -72,8 +92,9 @@ export default function PaymentOutPage() {
         amount: 0,
         mode: PaymentMode.CASH,
       });
+      toast.success('Payment recorded successfully');
     } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Failed to record supplier payment.');
+      toast.error(err.response?.data?.error?.message || 'Failed to record supplier payment.');
     }
   };
 
@@ -100,7 +121,7 @@ export default function PaymentOutPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-1 md:grid-cols-3 gap-6">
         <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Supplier Payouts</p>
@@ -142,8 +163,8 @@ export default function PaymentOutPage() {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900 border border-slate-800">
-        <div className="flex items-center gap-3 flex-1 min-w-[280px]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900 border border-slate-800">
+        <div className="flex flex-col sm:flex-row gap-3 flex-1">
           <div className="relative flex-1">
             <Search className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
             <input
@@ -151,32 +172,34 @@ export default function PaymentOutPage() {
               placeholder="Search supplier name, ref number, notes..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-rose-500"
+              className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-rose-500"
             />
           </div>
 
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs focus:outline-none"
-            title="Start Date"
-          />
+          <div className="flex flex-col min-[400px]:flex-row gap-3 w-full sm:w-auto">
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full sm:w-auto px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs focus:outline-none focus:ring-1 focus:ring-rose-500"
+              title="Start Date"
+            />
 
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs focus:outline-none"
-            title="End Date"
-          />
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full sm:w-auto px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs focus:outline-none focus:ring-1 focus:ring-rose-500"
+              title="End Date"
+            />
+          </div>
         </div>
 
         {/* Payment Mode Filters */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold">
+        <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold w-full md:w-auto">
           <button
             onClick={() => setSelectedMode('')}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
+            className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg transition-all ${
               selectedMode === '' ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -184,7 +207,7 @@ export default function PaymentOutPage() {
           </button>
           <button
             onClick={() => setSelectedMode(PaymentMode.CASH)}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
+            className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg transition-all ${
               selectedMode === PaymentMode.CASH ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -192,7 +215,7 @@ export default function PaymentOutPage() {
           </button>
           <button
             onClick={() => setSelectedMode(PaymentMode.BANK)}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
+            className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg transition-all ${
               selectedMode === PaymentMode.BANK ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -200,7 +223,7 @@ export default function PaymentOutPage() {
           </button>
           <button
             onClick={() => setSelectedMode(PaymentMode.ONLINE)}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
+            className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg transition-all ${
               selectedMode === PaymentMode.ONLINE ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -223,50 +246,139 @@ export default function PaymentOutPage() {
           onAction={() => setIsCreateOpen(true)}
         />
       ) : (
-        <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-900 shadow-xl">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-800/70 text-slate-400 font-semibold border-b border-slate-800">
-              <tr>
-                <th className="px-6 py-4">Date</th>
-                <th className="px-6 py-4">Supplier Party</th>
-                <th className="px-6 py-4">Payment Mode</th>
-                <th className="px-6 py-4">Account / Ref</th>
-                <th className="px-6 py-4 text-right">Amount Paid</th>
-                <th className="px-6 py-4 text-right">Notes</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60">
-              {payments.map((p: any) => (
-                <tr key={p.id} className="hover:bg-slate-800/40 transition-colors">
-                  <td className="px-6 py-4 font-semibold text-white font-mono">
+        <>
+          {/* Mobile Card Layout */}
+          <div className="grid gap-4 md:hidden">
+            {payments.map((p: any) => (
+              <div key={p.id} className={`p-4 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col gap-3 shadow-sm ${p.status === 'VOIDED' ? 'opacity-50' : ''}`}>
+                {/* Header */}
+                <div className="flex items-start justify-between border-b border-slate-800/60 pb-3">
+                  <div className="font-semibold text-white font-mono text-sm">
                     {new Date(p.date).toLocaleDateString()}
-                  </td>
-
-                  <td className="px-6 py-4 text-slate-300 font-semibold">{p.party?.name}</td>
-
-                  <td className="px-6 py-4">
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {p.status === 'VOIDED' && (
+                      <span className="px-1.5 py-0.5 rounded-md bg-slate-700 text-slate-300 text-[10px] uppercase font-bold tracking-wider">
+                        Voided
+                      </span>
+                    )}
                     <span className="px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-400 font-bold uppercase text-[10px] border border-rose-500/20">
                       {p.mode}
                     </span>
-                  </td>
+                  </div>
+                </div>
 
-                  <td className="px-6 py-4 text-slate-400 font-mono">
-                    {p.account?.accountName || 'Cash'}
-                    {p.referenceNumber && (
-                      <span className="text-[10px] text-slate-500 block">Ref: {p.referenceNumber}</span>
-                    )}
-                  </td>
+                {/* Body */}
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-200">{p.party?.name}</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5 font-mono">
+                      Acct: {p.account?.accountName || 'Cash'}
+                      {p.referenceNumber ? ` • Ref: ${p.referenceNumber}` : ''}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className={`font-mono font-bold text-base ${p.status === 'VOIDED' ? 'line-through text-slate-500' : 'text-rose-400'}`}>
+                      - Rs. {Number(p.amount || 0).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
 
-                  <td className="px-6 py-4 text-right font-mono font-bold text-rose-400 text-sm">
-                    - Rs. {Number(p.amount || 0).toLocaleString()}
-                  </td>
+                {/* Footer Actions */}
+                <div className="flex justify-end items-center gap-1.5 pt-1">
+                  <Link href={`/transactions/payment-out/${p.id}`} className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 text-[11px] font-bold flex items-center gap-1.5">
+                    <Eye className="w-3.5 h-3.5" /> View
+                  </Link>
+                  {p.status !== 'VOIDED' && (
+                    <button
+                      onClick={() => handleVoid(p.id)}
+                      disabled={voidPaymentOut.isPending}
+                      className="px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 text-[11px] font-bold uppercase disabled:opacity-50 transition-all"
+                    >
+                      Void
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
 
-                  <td className="px-6 py-4 text-right text-slate-400 font-sans">{p.notes || '-'}</td>
+          {/* Desktop Table Layout */}
+          <div className="hidden md:block border border-slate-800 rounded-2xl overflow-x-auto overflow-y-hidden bg-slate-900 shadow-xl">
+            <table className="w-full text-left text-xs min-w-[800px]">
+              <thead className="bg-slate-800/70 text-slate-400 font-semibold border-b border-slate-800">
+                <tr>
+                  <th className="px-6 py-4">Date</th>
+                  <th className="px-6 py-4">Supplier Party</th>
+                  <th className="px-6 py-4">Payment Mode</th>
+                  <th className="px-6 py-4">Account / Ref</th>
+                  <th className="px-6 py-4 text-right">Amount Paid</th>
+                  <th className="px-6 py-4 text-right">Notes</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+            <tbody className="divide-y divide-slate-800/60">
+              {payments.map((p: any) => (
+                <tr key={p.id} className={`hover:bg-slate-800/40 transition-colors ${p.status === 'VOIDED' ? 'opacity-50' : ''}`}>
+                    <td className="px-6 py-4 font-semibold text-white font-mono">
+                      {new Date(p.date).toLocaleDateString()}
+                    </td>
+
+                    <td className="px-6 py-4 text-slate-300 font-semibold">
+                      {p.party?.name}
+                      {p.status === 'VOIDED' && (
+                        <span className="ml-2 px-1.5 py-0.5 rounded-md bg-slate-700 text-slate-300 text-[10px] uppercase font-bold tracking-wider">
+                          Voided
+                        </span>
+                      )}
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <span className="px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-400 font-bold uppercase text-[10px] border border-rose-500/20">
+                        {p.mode}
+                      </span>
+                    </td>
+
+                    <td className="px-6 py-4 text-slate-400 font-mono">
+                      {p.account?.accountName || 'Cash'}
+                      {p.referenceNumber && (
+                        <span className="text-[10px] text-slate-500 block">Ref: {p.referenceNumber}</span>
+                      )}
+                    </td>
+
+                    <td className={`px-6 py-4 text-right font-mono font-bold text-sm ${p.status === 'VOIDED' ? 'line-through text-slate-500' : 'text-rose-400'}`}>
+                      - Rs. {Number(p.amount || 0).toLocaleString()}
+                    </td>
+
+                    <td className="px-6 py-4 text-right text-slate-400 font-sans">{p.notes || '-'}</td>
+                    
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Link
+                          href={`/transactions/payment-out/${p.id}`}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 inline-block"
+                          title="View Payment Voucher"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Link>
+                        {p.status !== 'VOIDED' && (
+                          <button
+                            onClick={() => handleVoid(p.id)}
+                            disabled={voidPaymentOut.isPending}
+                            className="px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 text-[10px] font-bold uppercase disabled:opacity-50 transition-all"
+                            title="Void Payment (Restore Balances)"
+                          >
+                            Void
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {/* RECORD PAYMENT OUT MODAL */}
@@ -290,19 +402,22 @@ export default function PaymentOutPage() {
                   {...form.register('partyId')}
                   className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-rose-500"
                 >
-                  <option value="">Select Supplier</option>
-                  {suppliers.map((s: any) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} (Payable: Rs. {Math.abs(Number(s.currentBalance || 0)).toLocaleString()})
-                    </option>
-                  ))}
+                  <option value="">Select Party</option>
+                  {parties.filter((s: any) => s.type === 'SUPPLIER').map((s: any) => {
+                      const balLabel = getPartyBalanceDisplay(s.currentBalance, s.type);
+                      return (
+                        <option key={s.id} value={s.id}>
+                          {s.name} ({balLabel})
+                        </option>
+                      );
+                    })}
                 </select>
                 {form.formState.errors.partyId && (
                   <p className="text-xs text-red-400 mt-1">{form.formState.errors.partyId.message}</p>
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">Payment Date *</label>
                   <input
@@ -322,6 +437,21 @@ export default function PaymentOutPage() {
                     <option value={PaymentMode.BANK}>Bank Transfer</option>
                     <option value={PaymentMode.ONLINE}>Mobile Wallet / Online</option>
                     <option value={PaymentMode.CHEQUE}>Cheque</option>
+                  </select>
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Account</label>
+                  <select
+                    {...form.register('accountId')}
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-rose-500"
+                  >
+                    <option value="">Default {desiredAccountType.replace('_', ' ')} Account</option>
+                    {filteredAccounts.map((a: any) => (
+                      <option key={a.id} value={a.id}>
+                        {a.bankName || a.accountName} — Rs. {formatCurrency(a.balance)} Available
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -383,6 +513,29 @@ export default function PaymentOutPage() {
         </div>
         </ModalPortal>
       )}
+
+      <ConfirmActionModal
+        isOpen={!!voidingPaymentId}
+        onClose={() => { setVoidingPaymentId(null); setVoidError(''); }}
+        title="Void Payment Out"
+        description="Are you sure you want to void this payment? This will reverse the account deduction and update the supplier balance."
+        actionText="Void Payment"
+        variant="warning"
+        error={voidError}
+        isProcessing={voidPaymentOut.isPending}
+        onConfirm={async () => {
+          if (!voidingPaymentId) return;
+          setVoidError('');
+          try {
+            await voidPaymentOut.mutateAsync(voidingPaymentId);
+            setVoidingPaymentId(null);
+            toast.success('Payment voided successfully');
+            refetch();
+          } catch (err: any) {
+            setVoidError(err.response?.data?.error?.message || 'Failed to void payment.');
+          }
+        }}
+      />
     </div>
   );
 }

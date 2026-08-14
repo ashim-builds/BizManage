@@ -14,6 +14,7 @@ import {
   itemSchema,
 } from '@bizmanage/validation';
 import { PaymentMode, PartyType, ItemType } from '@bizmanage/types';
+import { toast } from 'react-hot-toast';
 import { useCreateSale } from '@/services/saleService';
 import { useCreatePurchase } from '@/services/purchaseService';
 import { useCreatePaymentIn, useCreatePaymentOut } from '@/services/paymentService';
@@ -21,6 +22,10 @@ import { useCreateExpense } from '@/services/expenseService';
 import { useCreateIncome } from '@/services/incomeService';
 import { useCreateParty, useParties } from '@/services/partyService';
 import { useCreateItem, useItems } from '@/services/itemService';
+import { useAccounts } from '@/services/accountService';
+import { getPartyBalanceDisplay } from '@/lib/balance';
+import { calculateInvoiceTotals, formatCurrency } from '@/lib/accounting';
+import { ModalPortal } from '@/components/ui/ModalPortal';
 import {
   Zap,
   X,
@@ -73,9 +78,11 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
   // Shared Queries
   const { data: partiesData } = useParties({ limit: 100 });
   const { data: itemsData } = useItems({ limit: 100 });
+  const { data: accountsData } = useAccounts();
 
   const parties = partiesData?.data || [];
   const items = itemsData?.data || [];
+  const accounts = accountsData?.data || [];
 
   const customers = parties.filter((p: any) => p.type === 'CUSTOMER' || p.type === 'BOTH');
   const suppliers = parties.filter((p: any) => p.type === 'SUPPLIER' || p.type === 'BOTH');
@@ -98,7 +105,8 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
       date: new Date().toISOString().split('T')[0],
       paidAmount: 0,
       paymentMode: PaymentMode.CASH,
-      items: [{ itemId: '', quantity: 1, unitPrice: 0, discount: 0, taxAmount: 0 }],
+      isVatBill: false,
+      items: [{ itemId: '', quantity: 1, unitPrice: 0, discountPercent: 0, discount: 0, taxAmount: 0 }],
     },
   });
 
@@ -109,7 +117,8 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
       date: new Date().toISOString().split('T')[0],
       paidAmount: 0,
       paymentMode: PaymentMode.CASH,
-      items: [{ itemId: '', quantity: 1, unitPrice: 0, discount: 0, taxAmount: 0 }],
+      isVatBill: false,
+      items: [{ itemId: '', quantity: 1, unitPrice: 0, discountPercent: 0, discount: 0, taxAmount: 0 }],
     },
   });
 
@@ -179,14 +188,59 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
     setTimeout(() => setSuccessMsg(''), 2500);
   };
 
+  // Watchers & Auto-fill
+  const saleWatchItems = saleForm.watch('items');
+  const saleWatchIsVatBill = saleForm.watch('isVatBill');
+  
+  const saleTotals = calculateInvoiceTotals(
+    saleWatchItems.map((i) => ({ unitPrice: Number(i.unitPrice) || 0, quantity: Number(i.quantity) || 0, discountPercent: Number(i.discountPercent) || 0 })),
+    saleWatchIsVatBill
+  );
+
+  useEffect(() => {
+    if (activeType === 'sale') saleForm.setValue('paidAmount', saleTotals.totalAmount);
+  }, [saleTotals.totalAmount, activeType]);
+
+  const purchaseWatchItems = purchaseForm.watch('items');
+  const purchaseWatchIsVatBill = purchaseForm.watch('isVatBill');
+
+  const purchaseTotals = calculateInvoiceTotals(
+    purchaseWatchItems.map((i) => ({ unitPrice: Number(i.unitPrice) || 0, quantity: Number(i.quantity) || 0, discountPercent: Number(i.discountPercent) || 0 })),
+    purchaseWatchIsVatBill
+  );
+
+  useEffect(() => {
+    if (activeType === 'purchase') purchaseForm.setValue('paidAmount', purchaseTotals.totalAmount);
+  }, [purchaseTotals.totalAmount, activeType]);
+
+  const getAccountType = (mode: string) => {
+    return mode === PaymentMode.BANK || mode === PaymentMode.CHEQUE
+      ? 'BANK'
+      : mode === PaymentMode.ONLINE
+      ? 'MOBILE_WALLET'
+      : 'CASH';
+  };
+
+  const salePaymentMode = saleForm.watch('paymentMode');
+  const purchasePaymentMode = purchaseForm.watch('paymentMode');
+  const paymentInMode = paymentInForm.watch('mode');
+  const paymentOutMode = paymentOutForm.watch('mode');
+
+  const saleAccounts = accounts.filter((a: any) => a.accountType === getAccountType(salePaymentMode));
+  const purchaseAccounts = accounts.filter((a: any) => a.accountType === getAccountType(purchasePaymentMode));
+  const paymentInAccounts = accounts.filter((a: any) => a.accountType === getAccountType(paymentInMode));
+  const paymentOutAccounts = accounts.filter((a: any) => a.accountType === getAccountType(paymentOutMode));
+
   // Form Submit Handlers
   const handleSaleSubmit = async (data: any) => {
     try {
       await createSale.mutateAsync(data);
       showSuccess('Quick Sale recorded successfully!');
+      toast.success('Sale invoice created successfully');
       saleForm.reset();
+      onClose();
     } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Failed to record sale.');
+      toast.error(err.response?.data?.error?.message || 'Failed to record sale.');
     }
   };
 
@@ -194,9 +248,11 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
     try {
       await createPurchase.mutateAsync(data);
       showSuccess('Quick Purchase recorded successfully!');
+      toast.success('Purchase bill recorded successfully');
       purchaseForm.reset();
+      onClose();
     } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Failed to record purchase.');
+      toast.error(err.response?.data?.error?.message || 'Failed to record purchase.');
     }
   };
 
@@ -204,9 +260,11 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
     try {
       await createPaymentIn.mutateAsync(data);
       showSuccess('Quick Payment In recorded!');
+      toast.success('Payment in recorded successfully');
       paymentInForm.reset();
+      onClose();
     } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Failed to record payment in.');
+      toast.error(err.response?.data?.error?.message || 'Failed to record payment in.');
     }
   };
 
@@ -214,9 +272,11 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
     try {
       await createPaymentOut.mutateAsync(data);
       showSuccess('Quick Payment Out recorded!');
+      toast.success('Payment out recorded successfully');
       paymentOutForm.reset();
+      onClose();
     } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Failed to record payment out.');
+      toast.error(err.response?.data?.error?.message || 'Failed to record payment out.');
     }
   };
 
@@ -224,9 +284,11 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
     try {
       await createExpense.mutateAsync(data);
       showSuccess('Quick Expense recorded!');
+      toast.success('Expense recorded successfully');
       expenseForm.reset();
+      onClose();
     } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Failed to record expense.');
+      toast.error(err.response?.data?.error?.message || 'Failed to record expense.');
     }
   };
 
@@ -234,19 +296,29 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
     try {
       await createIncome.mutateAsync(data);
       showSuccess('Quick Income recorded!');
+      toast.success('Income recorded successfully');
       incomeForm.reset();
+      onClose();
     } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Failed to record income.');
+      toast.error(err.response?.data?.error?.message || 'Failed to record income.');
     }
   };
 
   const handlePartySubmit = async (data: any) => {
     try {
-      await createParty.mutateAsync(data);
+      const payload = { ...data };
+      if (payload.type === PartyType.SUPPLIER) {
+        payload.openingBalanceType = 'PAYABLE';
+      } else {
+        payload.openingBalanceType = 'RECEIVABLE';
+      }
+      await createParty.mutateAsync(payload);
       showSuccess(`Party "${data.name}" added successfully!`);
+      toast.success('Party created successfully');
       partyForm.reset();
+      onClose();
     } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Failed to create party.');
+      toast.error(err.response?.data?.error?.message || 'Failed to create party.');
     }
   };
 
@@ -254,16 +326,18 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
     try {
       await createItem.mutateAsync(data);
       showSuccess(`Item "${data.name}" added successfully!`);
+      toast.success('Item created successfully');
       itemForm.reset();
+      onClose();
     } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Failed to create item.');
+      toast.error(err.response?.data?.error?.message || 'Failed to create item.');
     }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+    <ModalPortal><div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
       <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden space-y-0 max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800">
         {/* MODAL HEADER WITH TYPE SWITCHER */}
         <div className="p-6 bg-slate-800/60 border-b border-slate-800 flex items-center justify-between">
@@ -371,7 +445,7 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
           {/* 1. QUICK SALE */}
           {activeType === 'sale' && (
             <form onSubmit={saleForm.handleSubmit(handleSaleSubmit)} className="space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-slate-300 font-semibold mb-1">Customer Party *</label>
                   <select
@@ -379,11 +453,14 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
                     className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
                   >
                     <option value="">Select Customer</option>
-                    {customers.map((c: any) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
+                    {customers.map((c: any) => {
+                      const balLabel = getPartyBalanceDisplay(c.currentBalance, 'CUSTOMER');
+                      return (
+                        <option key={c.id} value={c.id}>
+                          {c.name} ({balLabel})
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
                 <div>
@@ -398,7 +475,7 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
 
               <div>
                 <label className="block text-slate-300 font-semibold mb-1">Item & Quantity *</label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <select
                     {...saleForm.register('items.0.itemId')}
                     onChange={(e) => {
@@ -426,7 +503,7 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-slate-300 font-semibold mb-1">Unit Price (Rs.) *</label>
                   <input
@@ -437,13 +514,65 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Paid Amount (Rs.)</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Discount %</label>
+                  <input
+                    type="number"
+                    step="any"
+                    {...saleForm.register('items.0.discountPercent', { valueAsNumber: true })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center gap-2 mt-4">
+                  <input
+                    type="checkbox"
+                    id="saleIsVatBill"
+                    {...saleForm.register('isVatBill')}
+                    className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-blue-600 focus:ring-blue-500"
+                  />
+                  <label htmlFor="saleIsVatBill" className="text-slate-300 font-semibold">Generate VAT Bill (13%)</label>
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">
+                    Paid Amount (Rs.) 
+                    <span className="text-[10px] text-slate-500 font-normal ml-2">Total: Rs. {formatCurrency(saleTotals.totalAmount)}</span>
+                  </label>
                   <input
                     type="number"
                     step="any"
                     {...saleForm.register('paidAmount', { valueAsNumber: true })}
                     className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-emerald-400 font-mono font-bold"
                   />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Payment Mode</label>
+                  <select
+                    {...saleForm.register('paymentMode')}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
+                  >
+                    <option value={PaymentMode.CASH}>Cash</option>
+                    <option value={PaymentMode.BANK}>Bank</option>
+                    <option value={PaymentMode.ONLINE}>Online Wallet</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Account</label>
+                  <select
+                    {...saleForm.register('accountId')}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
+                  >
+                    <option value="">Default Account</option>
+                    {saleAccounts.map((a: any) => (
+                      <option key={a.id} value={a.id}>
+                        {a.bankName || a.accountName} — Rs. {formatCurrency(a.balance)}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -460,7 +589,7 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
           {/* 2. QUICK PURCHASE */}
           {activeType === 'purchase' && (
             <form onSubmit={purchaseForm.handleSubmit(handlePurchaseSubmit)} className="space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-slate-300 font-semibold mb-1">Supplier Party *</label>
                   <select
@@ -468,11 +597,14 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
                     className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
                   >
                     <option value="">Select Supplier</option>
-                    {suppliers.map((s: any) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
+                    {suppliers.map((s: any) => {
+                      const balLabel = getPartyBalanceDisplay(s.currentBalance, 'SUPPLIER');
+                      return (
+                        <option key={s.id} value={s.id}>
+                          {s.name} ({balLabel})
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
                 <div>
@@ -487,7 +619,7 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
 
               <div>
                 <label className="block text-slate-300 font-semibold mb-1">Item & Quantity *</label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <select
                     {...purchaseForm.register('items.0.itemId')}
                     onChange={(e) => {
@@ -515,7 +647,7 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-slate-300 font-semibold mb-1">Purchase Cost (Rs.) *</label>
                   <input
@@ -526,13 +658,65 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Paid Amount (Rs.)</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Discount %</label>
+                  <input
+                    type="number"
+                    step="any"
+                    {...purchaseForm.register('items.0.discountPercent', { valueAsNumber: true })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center gap-2 mt-4">
+                  <input
+                    type="checkbox"
+                    id="purchaseIsVatBill"
+                    {...purchaseForm.register('isVatBill')}
+                    className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-purple-600 focus:ring-purple-500"
+                  />
+                  <label htmlFor="purchaseIsVatBill" className="text-slate-300 font-semibold">Generate VAT Bill (13%)</label>
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">
+                    Paid Amount (Rs.) 
+                    <span className="text-[10px] text-slate-500 font-normal ml-2">Total: Rs. {formatCurrency(purchaseTotals.totalAmount)}</span>
+                  </label>
                   <input
                     type="number"
                     step="any"
                     {...purchaseForm.register('paidAmount', { valueAsNumber: true })}
                     className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-rose-400 font-mono font-bold"
                   />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Payment Mode</label>
+                  <select
+                    {...purchaseForm.register('paymentMode')}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
+                  >
+                    <option value={PaymentMode.CASH}>Cash</option>
+                    <option value={PaymentMode.BANK}>Bank</option>
+                    <option value={PaymentMode.ONLINE}>Online Wallet</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Account</label>
+                  <select
+                    {...purchaseForm.register('accountId')}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
+                  >
+                    <option value="">Default Account</option>
+                    {purchaseAccounts.map((a: any) => (
+                      <option key={a.id} value={a.id}>
+                        {a.bankName || a.accountName} — Rs. {formatCurrency(a.balance)}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -555,16 +739,19 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
                   {...paymentInForm.register('partyId')}
                   className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
                 >
-                  <option value="">Select Customer</option>
-                  {customers.map((c: any) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
+                  <option value="">Select Party</option>
+                  {customers.map((c: any) => {
+                    const balLabel = getPartyBalanceDisplay(c.currentBalance, 'CUSTOMER');
+                    return (
+                      <option key={c.id} value={c.id}>
+                        {c.name} ({balLabel})
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-slate-300 font-semibold mb-1">Amount Received (Rs.) *</label>
                   <input
@@ -588,6 +775,21 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
                 </div>
               </div>
 
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Account</label>
+                <select
+                  {...paymentInForm.register('accountId')}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
+                >
+                  <option value="">Default Account</option>
+                  {paymentInAccounts.map((a: any) => (
+                    <option key={a.id} value={a.id}>
+                      {a.bankName || a.accountName} — Rs. {formatCurrency(a.balance)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <button
                 type="submit"
                 disabled={createPaymentIn.isPending}
@@ -607,16 +809,19 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
                   {...paymentOutForm.register('partyId')}
                   className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
                 >
-                  <option value="">Select Supplier</option>
-                  {suppliers.map((s: any) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
+                  <option value="">Select Party</option>
+                  {suppliers.map((s: any) => {
+                    const balLabel = getPartyBalanceDisplay(s.currentBalance, 'SUPPLIER');
+                    return (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({balLabel})
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-slate-300 font-semibold mb-1">Amount Paid (Rs.) *</label>
                   <input
@@ -638,6 +843,21 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
                     <option value={PaymentMode.ONLINE}>Online Wallet</option>
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Account</label>
+                <select
+                  {...paymentOutForm.register('accountId')}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
+                >
+                  <option value="">Default Account</option>
+                  {paymentOutAccounts.map((a: any) => (
+                    <option key={a.id} value={a.id}>
+                      {a.bankName || a.accountName} — Rs. {formatCurrency(a.balance)}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <button
@@ -729,7 +949,7 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-slate-300 font-semibold mb-1">Party Type *</label>
                   <select
@@ -766,7 +986,7 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
           {/* 8. QUICK ADD ITEM */}
           {activeType === 'add_item' && (
             <form onSubmit={itemForm.handleSubmit(handleItemSubmit)} className="space-y-4 text-xs">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="col-span-2">
                   <label className="block text-slate-300 font-semibold mb-1">Item Name *</label>
                   <input
@@ -786,7 +1006,7 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-slate-300 font-semibold mb-1">Sale Price (Rs.)</label>
                   <input
@@ -829,6 +1049,6 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
           )}
         </div>
       </div>
-    </div>
+    </div></ModalPortal>
   );
 }

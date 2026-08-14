@@ -13,6 +13,7 @@ import { itemRoutes } from './modules/item/item.routes.js';
 import { purchaseRoutes } from './modules/purchase/purchase.routes.js';
 import { saleRoutes } from './modules/sale/sale.routes.js';
 import { paymentRoutes } from './modules/payment/payment.routes.js';
+import { esewaRoutes } from './modules/payment/esewa.routes.js';
 import { expenseRoutes } from './modules/expense/expense.routes.js';
 import { incomeRoutes } from './modules/income/income.routes.js';
 import { cashflowRoutes } from './modules/cashflow/cashflow.routes.js';
@@ -20,12 +21,16 @@ import { dashboardRoutes } from './modules/dashboard/dashboard.routes.js';
 import { reportRoutes } from './modules/report/report.routes.js';
 import { utilityRoutes } from './modules/utility/utility.routes.js';
 import { accountRoutes } from './modules/account/account.routes.js';
+import { transferRoutes } from './modules/transfer/transfer.routes.js';
+import { adminRoutes } from './modules/admin/admin.routes.js';
+import { publicPackageRoutes } from './modules/package/package.routes.js';
 import { globalPrisma as prisma } from '@bizmanage/database';
 
 const isProduction = env.NODE_ENV === 'production';
 
 export function buildApp() {
   const app = fastify({
+    bodyLimit: 10 * 1024 * 1024, // 10MB body limit for base64 logo uploads & data imports
     // Pino logger: structured JSON in production, human-readable in development
     logger: isProduction
       ? {
@@ -88,6 +93,10 @@ export function buildApp() {
   // ── JWT ──────────────────────────────────────────────────────────────────────
   app.register(jwt, {
     secret: env.JWT_SECRET,
+    cookie: {
+      cookieName: 'accessToken',
+      signed: false,
+    },
   });
 
   // ── Rate Limiting ─────────────────────────────────────────────────────────────
@@ -146,6 +155,7 @@ export function buildApp() {
   app.register(purchaseRoutes, { prefix: '/api/v1/purchases' });
   app.register(saleRoutes,     { prefix: '/api/v1/sales' });
   app.register(paymentRoutes,  { prefix: '/api/v1/payments' });
+  app.register(esewaRoutes,  { prefix: '/api/v1/esewa' });
   app.register(expenseRoutes,  { prefix: '/api/v1/expenses' });
   app.register(incomeRoutes,   { prefix: '/api/v1/income' });
   app.register(cashflowRoutes, { prefix: '/api/v1/cashflow' });
@@ -153,6 +163,9 @@ export function buildApp() {
   app.register(reportRoutes,   { prefix: '/api/v1/reports' });
   app.register(utilityRoutes,  { prefix: '/api/v1/utilities' });
   app.register(accountRoutes,  { prefix: '/api/v1/accounts' });
+  app.register(transferRoutes, { prefix: '/api/v1/transfers' });
+  app.register(adminRoutes,    { prefix: '/api/v1/admin' });
+  app.register(publicPackageRoutes, { prefix: '/api/v1/packages' });
 
   return app;
 }

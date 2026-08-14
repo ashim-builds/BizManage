@@ -21,6 +21,7 @@ export interface DashboardMetrics {
   purchasesCount: number;
   totalItemsCount: number;
   totalProductsCount: number;
+  totalPartiesCount?: number;
 }
 
 export function useDashboardMetrics(params?: DashboardQueryParams) {

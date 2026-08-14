@@ -3,10 +3,16 @@ import { PartyType, ItemType, PaymentMode } from '@bizmanage/types';
 
 // Auth Schemas
 export const registerSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  businessName: z.string().min(2, 'Business name must be at least 2 characters'),
+  name: z.string().trim().min(2, 'Name must be at least 2 characters'),
+  email: z.string().trim().toLowerCase().email('Invalid email address'),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters long')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number')
+    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
+  businessName: z.string().trim().min(2, 'Business name must be at least 2 characters'),
 });
 
 export const loginSchema = z.object({
@@ -40,11 +46,14 @@ export const updateBusinessSchema = z.object({
   taxNumber: z.string().optional().nullable(),
   currency: z.string().default('NPR'),
   logoUrl: z.string().optional().nullable(),
+  subscriptionPackageId: z.string().optional().nullable(),
+  profileCompleted: z.boolean().optional(),
+  setupCompleted: z.boolean().optional(),
 });
 
 export const updateBusinessSettingsSchema = z.object({
   enableTax: z.boolean().default(false),
-  taxRate: z.number().min(0).max(100).default(0),
+  taxRate: z.coerce.number().min(0).max(100).default(0),
   invoicePrefix: z.string().min(1).default('INV-'),
   purchasePrefix: z.string().min(1).default('PUR-'),
   quotationPrefix: z.string().min(1).default('QT-'),
@@ -108,6 +117,7 @@ export const invoiceItemSchema = z.object({
   itemId: z.string().min(1, 'Item selection is required'),
   quantity: z.number().positive('Quantity must be greater than 0'),
   unitPrice: z.number().min(0, 'Unit price cannot be negative'),
+  discountPercent: z.number().min(0).max(100).default(0),
   discount: z.number().min(0).default(0),
   taxAmount: z.number().min(0).default(0),
 });
@@ -118,6 +128,7 @@ export const createPurchaseSchema = z.object({
   billNumber: z.string().optional(),
   date: z.string().or(z.date()),
   items: z.array(invoiceItemSchema).min(1, 'At least one item is required'),
+  isVatBill: z.boolean().default(false),
   paidAmount: z.number().min(0).default(0),
   paymentMode: z.nativeEnum(PaymentMode).default(PaymentMode.CASH),
   accountId: z.string().optional().nullable(),
@@ -144,6 +155,7 @@ export const createSaleSchema = z.object({
   date: z.string().or(z.date()),
   dueDate: z.string().or(z.date()).optional().nullable(),
   items: z.array(invoiceItemSchema).min(1, 'At least one item is required'),
+  isVatBill: z.boolean().default(false),
   paidAmount: z.number().min(0).default(0),
   paymentMode: z.nativeEnum(PaymentMode).default(PaymentMode.CASH),
   accountId: z.string().optional().nullable(),

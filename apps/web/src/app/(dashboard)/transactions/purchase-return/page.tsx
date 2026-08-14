@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 import { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,11 +9,13 @@ import { createPurchaseReturnSchema, CreatePurchaseReturnInput } from '@bizmanag
 import { usePurchaseReturns, useCreatePurchaseReturn, usePurchases } from '@/services/purchaseService';
 import { useParties } from '@/services/partyService';
 import { useAccounts } from '@/services/accountService';
+import { getPartyBalanceDisplay } from '@/lib/balance';
+import { calculateInvoiceTotals, formatCurrency } from '@/lib/accounting';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ModalPortal } from '@/components/common/ModalPortal';
-import { RotateCcw, Plus, ShoppingBag, ArrowUpRight, X, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { RotateCcw, Plus, ShoppingBag, ArrowUpRight, X, Trash2, CheckCircle2, AlertTriangle, Eye } from 'lucide-react';
 import { PaymentMode } from '@bizmanage/types';
 
 export default function PurchaseReturnPage() {
@@ -85,13 +89,17 @@ export default function PurchaseReturnPage() {
     }
   };
 
-  const calculatedTotal = watchItems.reduce((acc, item) => {
-    const qty = Number(item.quantity) || 0;
-    const price = Number(item.unitPrice) || 0;
-    const disc = Number(item.discount) || 0;
-    const tax = Number(item.taxAmount) || 0;
-    return acc + (qty * price - disc + tax);
-  }, 0);
+  const selectedPurchase = supplierPurchases.find((p: any) => p.id === selectedPurchaseId);
+  const isVatBill = selectedPurchase?.isVatBill || false;
+
+  const mappedItems = watchItems.map((item) => ({
+    unitPrice: Number(item.unitPrice) || 0,
+    quantity: Number(item.quantity) || 0,
+    discountPercent: Number(item.discountPercent) || 0,
+  }));
+
+  const totals = calculateInvoiceTotals(mappedItems, isVatBill);
+  const calculatedTotal = totals.totalAmount;
 
   const handleCreateSubmit = async (data: CreatePurchaseReturnInput) => {
     setErrorBanner('');
@@ -134,7 +142,7 @@ export default function PurchaseReturnPage() {
       </div>
 
       {/* Summary Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-3 gap-4">
         <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
           <p className="text-xs text-slate-400 font-semibold">Total Debit Notes Issued</p>
           <p className="text-xl font-bold text-white font-mono">{returnsList.length}</p>
@@ -165,19 +173,58 @@ export default function PurchaseReturnPage() {
           onAction={() => setIsCreateOpen(true)}
         />
       ) : (
-        <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-900 shadow-xl">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-800/70 text-slate-400 font-semibold border-b border-slate-800">
-              <tr>
-                <th className="px-6 py-4">Return No / Date</th>
-                <th className="px-6 py-4">Supplier Party</th>
-                <th className="px-6 py-4">Original Bill</th>
-                <th className="px-6 py-4">Returned Items</th>
-                <th className="px-6 py-4 text-right">Return Amount</th>
-                <th className="px-6 py-4 text-center">Settlement Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60">
+        <>
+          {/* Mobile Card Layout */}
+          <div className="grid gap-4 md:hidden">
+            {returnsList.map((r: any) => (
+              <div key={r.id} className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col gap-3 shadow-sm">
+                <div className="flex items-start justify-between border-b border-slate-800/60 pb-3">
+                  <div>
+                    <span className="font-bold text-white font-mono text-sm">{r.returnNumber}</span>
+                    <p className="text-[11px] text-slate-500 mt-0.5">{new Date(r.date).toLocaleDateString()}</p>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                    Debit Note
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-200">{r.party?.name || '—'}</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      {r.purchase?.billNumber ? `Ref: ${r.purchase.billNumber} • ` : ''}
+                      {r.items?.length || 0} items
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-mono font-bold text-white text-base">Rs. {Number(r.totalAmount || 0).toLocaleString()}</p>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <Link href={`/transactions/purchase-return/${r.id}`} className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 text-[11px] font-bold flex items-center gap-1.5">
+                    <Eye className="w-3.5 h-3.5" /> View
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table Layout */}
+          <div className="hidden md:block border border-slate-800 rounded-2xl overflow-x-auto overflow-y-hidden bg-slate-900 shadow-xl">
+            <table className="w-full text-left text-xs min-w-[800px]">
+              <thead className="bg-slate-800/70 text-slate-400 font-semibold border-b border-slate-800">
+                <tr>
+                  <th className="px-6 py-4">Return No / Date</th>
+                  <th className="px-6 py-4">Supplier Party</th>
+                  <th className="px-6 py-4">Original Bill</th>
+                  <th className="px-6 py-4">Returned Items</th>
+                  <th className="px-6 py-4 text-right">Return Amount</th>
+                  <th className="px-6 py-4 text-center">Settlement Status</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
               {returnsList.map((r: any) => (
                 <tr key={r.id} className="hover:bg-slate-800/40 transition-colors">
                   <td className="px-6 py-4 font-semibold text-white font-mono">
@@ -214,11 +261,22 @@ export default function PurchaseReturnPage() {
                       Debit Note Issued
                     </span>
                   </td>
+
+                  <td className="px-6 py-4 text-right">
+                    <Link
+                      href={`/transactions/purchase-return/${r.id}`}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 inline-block"
+                      title="View Debit Note"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       {/* CREATE PURCHASE RETURN MODAL */}
@@ -250,7 +308,7 @@ export default function PurchaseReturnPage() {
               )}
 
               <form onSubmit={form.handleSubmit(handleCreateSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div className="grid grid-cols-1 md:grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                   <div>
                     <label className="block font-semibold text-slate-300 mb-1">Supplier Party *</label>
                     <select
@@ -258,11 +316,14 @@ export default function PurchaseReturnPage() {
                       className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white font-medium focus:outline-none focus:ring-1 focus:ring-purple-500"
                     >
                       <option value="">Select Supplier</option>
-                      {suppliers.map((s: any) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name}
-                        </option>
-                      ))}
+                      {suppliers.map((s: any) => {
+                        const balLabel = getPartyBalanceDisplay(s.currentBalance, 'SUPPLIER');
+                        return (
+                          <option key={s.id} value={s.id}>
+                            {s.name} ({balLabel})
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
 
@@ -307,11 +368,6 @@ export default function PurchaseReturnPage() {
                   ) : (
                     <div className="space-y-2">
                       {fields.map((field, idx) => {
-                        const lineQty = form.watch(`items.${idx}.quantity`) || 0;
-                        const linePrice = form.watch(`items.${idx}.unitPrice`) || 0;
-                        const lineDisc = form.watch(`items.${idx}.discount`) || 0;
-                        const lineTotal = lineQty * linePrice - lineDisc;
-
                         return (
                           <div
                             key={field.id}
@@ -335,7 +391,7 @@ export default function PurchaseReturnPage() {
                             </div>
 
                             <div className="col-span-3 text-right font-mono font-bold text-white text-xs">
-                              Rs. {lineTotal.toLocaleString()}
+                              Rs. {formatCurrency(totals.items[idx]?.total || 0)}
                             </div>
 
                             <div className="col-span-1 flex justify-center">

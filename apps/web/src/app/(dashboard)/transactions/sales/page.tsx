@@ -8,10 +8,15 @@ import { createSaleSchema, CreateSaleInput } from '@bizmanage/validation';
 import { InvoiceStatus, PaymentMode, PartyType } from '@bizmanage/types';
 import { useSales, useSalesSummary, useCreateSale, usePaySale } from '@/services/saleService';
 import { useParties, useCreateParty } from '@/services/partyService';
+import { getPartyBalanceDisplay } from '@/lib/balance';
 import { useItems } from '@/services/itemService';
+import { useAccounts } from '@/services/accountService';
+import { calculateInvoiceTotals, formatCurrency } from '@/lib/accounting';
+import { toast } from 'react-hot-toast';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
+import { ModalPortal } from '@/components/ui/ModalPortal';
 import {
   TrendingUp,
   Plus,
@@ -49,6 +54,7 @@ export default function SalesPage() {
   const { data: summary, isLoading: summaryLoading } = useSalesSummary();
   const { data: partiesData } = useParties({ limit: 100 });
   const { data: itemsData } = useItems({ limit: 100 });
+  const { data: accountsData } = useAccounts();
   const {
     data: salesResponse,
     isLoading: salesLoading,
@@ -71,8 +77,9 @@ export default function SalesPage() {
       await paySale.mutateAsync({ id: payDueId, amount: amt, paymentMode: payDueMode });
       setPayDueId(null);
       setPayDueCustomAmount('');
+      toast.success('Payment recorded successfully');
     } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Payment failed.');
+      toast.error(err.response?.data?.error?.message || 'Payment failed.');
     }
   };
 
@@ -86,6 +93,7 @@ export default function SalesPage() {
     resolver: zodResolver(createSaleSchema),
     defaultValues: {
       date: new Date().toISOString().split('T')[0],
+      isVatBill: false,
       paidAmount: 0,
       paymentMode: PaymentMode.CASH,
       items: [{ itemId: '', quantity: 1, unitPrice: 0, discount: 0, taxAmount: 0 }],
@@ -98,26 +106,34 @@ export default function SalesPage() {
   });
 
   const watchItems = form.watch('items');
+  const watchIsVatBill = form.watch('isVatBill');
 
-  // Live totals math (discount entered in % percentage)
-  const subTotal = watchItems.reduce(
-    (acc, item) => acc + (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0),
-    0
-  );
-  const totalDiscount = watchItems.reduce((acc, item) => {
-    const q = Number(item.quantity) || 0;
-    const p = Number(item.unitPrice) || 0;
-    const dPct = Number(item.discount) || 0;
-    return acc + (q * p * dPct) / 100;
-  }, 0);
-  const totalTax = watchItems.reduce((acc, item) => acc + (Number(item.taxAmount) || 0), 0);
-  const grandTotal = Math.max(0, subTotal - totalDiscount + totalTax);
+  const mappedItems = watchItems.map((item) => ({
+    unitPrice: Number(item.unitPrice) || 0,
+    quantity: Number(item.quantity) || 0,
+    discountPercent: Number(item.discount) || 0,
+  }));
+
+  const totals = calculateInvoiceTotals(mappedItems, watchIsVatBill);
+  const { subTotal, discount, taxableAmount, taxAmount, totalAmount } = totals;
 
   useEffect(() => {
     if (isCreateOpen) {
-      form.setValue('paidAmount', grandTotal);
+      form.setValue('paidAmount', totalAmount);
     }
-  }, [grandTotal, isCreateOpen]);
+  }, [totalAmount, isCreateOpen]);
+
+  const accounts = accountsData?.data || [];
+  const watchPaymentMode = form.watch('paymentMode');
+
+  const desiredAccountType =
+    watchPaymentMode === PaymentMode.BANK || watchPaymentMode === PaymentMode.CHEQUE
+      ? 'BANK'
+      : watchPaymentMode === PaymentMode.ONLINE
+      ? 'MOBILE_WALLET'
+      : 'CASH';
+
+  const filteredAccounts = accounts.filter((a: any) => a.accountType === desiredAccountType);
 
   const handleQuickAddPartySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,7 +141,7 @@ export default function SalesPage() {
 
     const phoneVal = quickPartyPhone.trim();
     if (phoneVal && !/^(97|98)\d{8}$/.test(phoneVal)) {
-      alert('Phone number must start with 97 or 98 and be exactly 10 digits (e.g. 9841234567).');
+      toast.error('Phone number must start with 97 or 98 and be exactly 10 digits (e.g. 9841234567).');
       return;
     }
 
@@ -141,21 +157,18 @@ export default function SalesPage() {
       setIsQuickAddPartyOpen(false);
       setQuickPartyName('');
       setQuickPartyPhone('');
+      toast.success('Customer added successfully');
     } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Failed to add customer.');
+      toast.error(err.response?.data?.error?.message || 'Failed to add customer.');
     }
   };
 
   const handleCreateSubmit = async (data: CreateSaleInput) => {
     try {
       const formattedItems = data.items.map((item) => {
-        const q = Number(item.quantity || 0);
-        const p = Number(item.unitPrice || 0);
-        const dPct = Number(item.discount || 0);
-        const dAmt = (q * p * dPct) / 100;
         return {
           ...item,
-          discount: dAmt,
+          discountPercent: Number(item.discount || 0),
         };
       });
 
@@ -166,12 +179,14 @@ export default function SalesPage() {
       setIsCreateOpen(false);
       form.reset({
         date: new Date().toISOString().split('T')[0],
+        isVatBill: false,
         paidAmount: 0,
         paymentMode: PaymentMode.CASH,
         items: [{ itemId: '', quantity: 1, unitPrice: 0, discount: 0, taxAmount: 0 }],
       });
+      toast.success('Sales invoice issued successfully');
     } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Failed to issue sales invoice.');
+      toast.error(err.response?.data?.error?.message || 'Failed to issue sales invoice.');
     }
   };
 
@@ -203,7 +218,7 @@ export default function SalesPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-1 md:grid-cols-3 gap-6">
         <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Sales Revenue</p>
@@ -249,23 +264,23 @@ export default function SalesPage() {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900 border border-slate-800">
-        <div className="relative flex-1 min-w-[280px]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900 border border-slate-800">
+        <div className="relative w-full md:flex-1">
           <Search className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
           <input
             type="text"
             placeholder="Search by invoice number or customer name..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>
 
         {/* Status Filter Tabs */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold">
+        <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold w-full md:w-auto">
           <button
             onClick={() => setSelectedStatus('')}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
+            className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg transition-all ${
               selectedStatus === '' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -273,7 +288,7 @@ export default function SalesPage() {
           </button>
           <button
             onClick={() => setSelectedStatus(InvoiceStatus.UNPAID)}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
+            className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg transition-all ${
               selectedStatus === InvoiceStatus.UNPAID ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -281,7 +296,7 @@ export default function SalesPage() {
           </button>
           <button
             onClick={() => setSelectedStatus(InvoiceStatus.PARTIAL)}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
+            className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg transition-all ${
               selectedStatus === InvoiceStatus.PARTIAL ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -289,11 +304,19 @@ export default function SalesPage() {
           </button>
           <button
             onClick={() => setSelectedStatus(InvoiceStatus.PAID)}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
+            className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg transition-all ${
               selectedStatus === InvoiceStatus.PAID ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
             Paid
+          </button>
+          <button
+            onClick={() => setSelectedStatus(InvoiceStatus.RETURNED)}
+            className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg transition-all ${
+              selectedStatus === InvoiceStatus.RETURNED ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            Returned
           </button>
         </div>
       </div>
@@ -312,19 +335,84 @@ export default function SalesPage() {
           onAction={() => setIsCreateOpen(true)}
         />
       ) : (
-        <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-900 shadow-xl">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-800/70 text-slate-400 font-semibold border-b border-slate-800">
-              <tr>
-                <th className="px-6 py-4">Invoice No / Date</th>
-                <th className="px-6 py-4">Customer Party</th>
-                <th className="px-6 py-4">Items Count</th>
-                <th className="px-6 py-4 text-right">Total Amount</th>
-                <th className="px-6 py-4 text-right">Collected / Due</th>
-                <th className="px-6 py-4 text-center">Status</th>
-                <th className="px-6 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
+        <>
+          {/* Mobile Card Layout */}
+          <div className="grid gap-4 md:hidden">
+            {sales.map((s: any) => {
+              const total = Number(s.totalAmount || 0);
+              const due = Number(s.dueAmount || 0);
+
+              return (
+                <div key={s.id} className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col gap-3 shadow-sm">
+                  {/* Header */}
+                  <div className="flex items-start justify-between border-b border-slate-800/60 pb-3">
+                    <div>
+                      <Link href={`/transactions/sales/${s.id}`} className="font-bold text-blue-400 hover:text-blue-300 font-mono text-sm">
+                        {s.invoiceNumber}
+                      </Link>
+                      <p className="text-[11px] text-slate-500 mt-0.5">{new Date(s.date).toLocaleDateString()}</p>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider ${
+                      s.status === InvoiceStatus.PAID ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      : s.status === InvoiceStatus.PARTIAL ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                      : s.status === InvoiceStatus.RETURNED ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+                      : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                    }`}>
+                      {s.status}
+                    </span>
+                  </div>
+                  
+                  {/* Body */}
+                  <div className="flex justify-between items-center">
+                     <div>
+                       <p className="text-sm font-semibold text-slate-200">{s.party?.name || 'Walk-in Customer'}</p>
+                       <p className="text-xs text-slate-500 mt-0.5">{s.items?.length || 0} items</p>
+                     </div>
+                     <div className="text-right">
+                       <p className="font-mono font-bold text-white text-base">Rs. {total.toLocaleString()}</p>
+                       {due > 0 ? (
+                         <p className="font-mono text-[10px] text-amber-400 mt-0.5">Due: Rs. {due.toLocaleString()}</p>
+                       ) : (
+                         <p className="font-mono text-[10px] text-emerald-400 mt-0.5">Paid In Full</p>
+                       )}
+                     </div>
+                  </div>
+
+                  {/* Footer Actions */}
+                  <div className="flex justify-end items-center gap-2 pt-1">
+                     {(s.status === InvoiceStatus.UNPAID || s.status === InvoiceStatus.PARTIAL) && (
+                       <button onClick={() => {
+                          setPayDueId(s.id);
+                          setPayDueAmount(Number(s.dueAmount || 0));
+                          setPayDueCustomAmount('');
+                          setPayDueMode(PaymentMode.CASH);
+                       }} className="px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-bold flex items-center gap-1.5 hover:bg-emerald-500/20">
+                         <BanknoteIcon className="w-3.5 h-3.5" /> Pay
+                       </button>
+                     )}
+                     <Link href={`/transactions/sales/${s.id}`} className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 text-[11px] font-bold flex items-center gap-1.5">
+                        <Eye className="w-3.5 h-3.5" /> View
+                     </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop Table Layout */}
+          <div className="hidden md:block border border-slate-800 rounded-2xl overflow-x-auto overflow-y-hidden bg-slate-900 shadow-xl">
+            <table className="w-full text-left text-xs min-w-[800px]">
+              <thead className="bg-slate-800/70 text-slate-400 font-semibold border-b border-slate-800">
+                <tr>
+                  <th className="px-6 py-4">Invoice No / Date</th>
+                  <th className="px-6 py-4">Customer Party</th>
+                  <th className="px-6 py-4">Items Count</th>
+                  <th className="px-6 py-4 text-right">Total Amount</th>
+                  <th className="px-6 py-4 text-right">Collected / Due</th>
+                  <th className="px-6 py-4 text-center">Status</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
+                </tr>
+              </thead>
             <tbody className="divide-y divide-slate-800/60">
               {sales.map((s: any) => {
                 const total = Number(s.totalAmount || 0);
@@ -371,6 +459,8 @@ export default function SalesPage() {
                             ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                             : s.status === InvoiceStatus.PARTIAL
                             ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                            : s.status === InvoiceStatus.RETURNED
+                            ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
                             : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                         }`}
                       >
@@ -409,11 +499,12 @@ export default function SalesPage() {
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       {/* CREATE SALE INVOICE MODAL */}
       {isCreateOpen && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+        <ModalPortal><div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
           <div className="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
             <div className="border-b border-slate-800 pb-4 flex items-center justify-between">
               <div>
@@ -429,7 +520,7 @@ export default function SalesPage() {
 
             <form onSubmit={form.handleSubmit(handleCreateSubmit)} className="space-y-6">
               {/* Header Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-xs font-semibold text-slate-300">Customer Party</label>
@@ -446,11 +537,14 @@ export default function SalesPage() {
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700/80 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
                   >
                     <option value="">Select Customer</option>
-                    {customers.map((c: any) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name} ({c.phone || 'No Phone'})
-                      </option>
-                    ))}
+                    {customers.map((c: any) => {
+                      const balLabel = getPartyBalanceDisplay(c.currentBalance, 'CUSTOMER');
+                      return (
+                        <option key={c.id} value={c.id}>
+                          {c.name} ({balLabel})
+                        </option>
+                      );
+                    })}
                   </select>
                   {form.formState.errors.partyId && (
                     <p className="text-xs text-red-400 mt-1">{form.formState.errors.partyId.message}</p>
@@ -464,6 +558,17 @@ export default function SalesPage() {
                     {...form.register('date')}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700/80 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Bill Type *</label>
+                  <select
+                    {...form.register('isVatBill', { setValueAs: (v) => v === 'true' || v === true })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700/80 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+                  >
+                    <option value="false">Normal Bill (No VAT)</option>
+                    <option value="true">VAT / Tax Invoice</option>
+                  </select>
                 </div>
 
                 <div>
@@ -602,7 +707,7 @@ export default function SalesPage() {
                         </div>
 
                         <div className="col-span-1 text-right font-mono font-bold text-white text-xs">
-                          Rs.{lineTotal.toLocaleString()}
+                          Rs. {formatCurrency(totals.items[idx]?.total || 0)}
                         </div>
 
                         <div className="col-span-1 text-right">
@@ -629,7 +734,7 @@ export default function SalesPage() {
                   <h4 className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                     <Wallet className="w-4 h-4 text-emerald-400" /> Immediate Payment Collection
                   </h4>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] text-slate-400 mb-1">Received Amount (Rs.)</label>
                       <input
@@ -652,6 +757,21 @@ export default function SalesPage() {
                         <option value={PaymentMode.CHEQUE}>Cheque</option>
                       </select>
                     </div>
+
+                    <div className="col-span-2">
+                      <label className="block text-[11px] text-slate-400 mb-1">Account</label>
+                      <select
+                        {...form.register('accountId')}
+                        className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      >
+                        <option value="">Default {desiredAccountType.replace('_', ' ')} Account</option>
+                        {filteredAccounts.map((a: any) => (
+                          <option key={a.id} value={a.id}>
+                            {a.bankName || a.accountName} — Rs. {formatCurrency(a.balance)} Available
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
 
@@ -659,23 +779,31 @@ export default function SalesPage() {
                 <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2 text-xs">
                   <div className="flex justify-between text-slate-400">
                     <span>Subtotal</span>
-                    <span className="font-mono">Rs. {subTotal.toLocaleString()}</span>
+                    <span className="font-mono">Rs. {formatCurrency(subTotal)}</span>
                   </div>
-                  {totalDiscount > 0 && (
+                  {discount > 0 && (
                     <div className="flex justify-between text-rose-400">
                       <span>Total Discount</span>
-                      <span className="font-mono">- Rs. {totalDiscount.toLocaleString()}</span>
+                      <span className="font-mono">- Rs. {formatCurrency(discount)}</span>
                     </div>
                   )}
-                  {totalTax > 0 && (
-                    <div className="flex justify-between text-blue-400">
-                      <span>Total Tax</span>
-                      <span className="font-mono">+ Rs. {totalTax.toLocaleString()}</span>
-                    </div>
+
+                  {watchIsVatBill && (
+                    <>
+                      <div className="flex justify-between text-slate-400 pt-1 border-t border-slate-800/60">
+                        <span>Taxable Amount</span>
+                        <span className="font-mono">Rs. {formatCurrency(taxableAmount)}</span>
+                      </div>
+                      <div className="flex justify-between text-blue-400">
+                        <span>VAT (13%)</span>
+                        <span className="font-mono">+ Rs. {formatCurrency(taxAmount)}</span>
+                      </div>
+                    </>
                   )}
+                  
                   <div className="flex justify-between text-base font-bold text-white pt-2 border-t border-slate-800">
                     <span>Grand Total</span>
-                    <span className="font-mono text-blue-400">Rs. {grandTotal.toLocaleString()}</span>
+                    <span className="font-mono text-blue-400">Rs. {formatCurrency(totalAmount)}</span>
                   </div>
                 </div>
               </div>
@@ -699,12 +827,12 @@ export default function SalesPage() {
               </div>
             </form>
           </div>
-        </div>
+        </div></ModalPortal>
       )}
 
       {/* QUICK ADD CUSTOMER MODAL */}
       {isQuickAddPartyOpen && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[110] flex items-center justify-center p-4">
+        <ModalPortal><div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[110] flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3.5">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
@@ -764,12 +892,12 @@ export default function SalesPage() {
               </div>
             </form>
           </div>
-        </div>
+        </div></ModalPortal>
       )}
 
       {/* PAY DUE MODAL */}
       {payDueId && (
-        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+        <ModalPortal><div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
           <div className="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
               <div className="flex items-center gap-2.5">
@@ -833,7 +961,7 @@ export default function SalesPage() {
               </div>
             </div>
           </div>
-        </div>
+        </div></ModalPortal>
       )}
     </div>
   );

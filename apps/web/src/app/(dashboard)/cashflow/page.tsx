@@ -210,9 +210,38 @@ export default function CashflowPage() {
               })}
             </div>
 
-            {/* Breakdown Table */}
-            <div className="border border-slate-800 rounded-xl overflow-hidden">
-              <table className="w-full text-left text-xs">
+            {/* Breakdown Table Mobile Card Layout */}
+            <div className="grid gap-3 md:hidden">
+              {activeData.map((row: any, idx: number) => {
+                const label = row.date || row.month;
+                const isPositive = row.net >= 0;
+
+                return (
+                  <div key={idx} className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col gap-2 shadow-sm">
+                    <div className="flex justify-between items-center border-b border-slate-800/60 pb-2">
+                      <span className="font-semibold text-white text-sm">{label}</span>
+                      <span className={`font-mono font-bold text-sm ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {isPositive ? '+' : ''} Rs. {row.net.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-[11px] font-mono mt-1">
+                      <div className="flex flex-col">
+                        <span className="text-slate-500 mb-0.5">Money In</span>
+                        <span className="text-emerald-400 font-bold">+ Rs. {row.moneyIn.toLocaleString()}</span>
+                      </div>
+                      <div className="flex flex-col text-right">
+                        <span className="text-slate-500 mb-0.5">Money Out</span>
+                        <span className="text-rose-400 font-bold">- Rs. {row.moneyOut.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Breakdown Table Desktop Layout */}
+            <div className="hidden md:block border border-slate-800 rounded-xl overflow-hidden mt-6">
+              <table className="w-full text-left text-xs min-w-[600px]">
                 <thead className="bg-slate-800/60 text-slate-400 font-semibold border-b border-slate-800">
                   <tr>
                     <th className="px-6 py-3.5">Period ({viewMode === 'daily' ? 'Date' : 'Month'})</th>

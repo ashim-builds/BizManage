@@ -6,7 +6,7 @@ import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ModalPortal } from '@/components/common/ModalPortal';
-import { ConfirmDeleteModal } from '@/components/common/ConfirmDeleteModal';
+import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
 import {
   Wallet,
   Building2,
@@ -359,12 +359,14 @@ export default function AccountsPage() {
         </ModalPortal>
       )}
 
-      <ConfirmDeleteModal
+      <ConfirmActionModal
         isOpen={!!deletingAccountInfo}
         onClose={() => { setDeletingAccountInfo(null); setDeleteError(''); }}
+        title="Delete Account"
         itemName={deletingAccountInfo?.name}
+        actionText="Delete Account"
         error={deleteError}
-        isDeleting={deleteAccount.isPending}
+        isProcessing={deleteAccount.isPending}
         onConfirm={async () => {
           if (!deletingAccountInfo) return;
           setDeleteError('');
@@ -372,7 +374,7 @@ export default function AccountsPage() {
             await deleteAccount.mutateAsync(deletingAccountInfo.id);
             setDeletingAccountInfo(null);
           } catch (err: any) {
-            setDeleteError(err.response?.data?.error?.message || 'Failed to delete account');
+            setDeleteError(err.response?.data?.error?.message || 'Failed to delete account.');
           }
         }}
       />

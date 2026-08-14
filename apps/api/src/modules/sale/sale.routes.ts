@@ -15,6 +15,12 @@ import {
   Prisma,
 } from '@bizmanage/database';
 import { AppError } from '../../plugins/error-handler.js';
+import {
+  calculateInvoiceTotals,
+  updatePartyBalance,
+  updateAccountBalance,
+  updateStock,
+} from '../../services/accounting.service.js';
 
 export async function saleRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', requireBusinessTenant);
@@ -159,33 +165,14 @@ export async function saleRoutes(fastify: FastifyInstance) {
     const body = createSaleSchema.parse(request.body);
 
     const newSale = await request.db!.$transaction(async (tx) => {
-      // 1. Stock Availability Check for all requested items
-      for (const line of body.items) {
-        const item = await tx.item.findUnique({ where: { id: line.itemId } });
-        if (!item) {
-          throw new AppError(`Item not found (ID: ${line.itemId})`, 404, 'NOT_FOUND');
-        }
-
-        if (item.type === 'PRODUCT') {
-          const curStock = new Prisma.Decimal(item.currentStock || 0);
-          const reqQty = new Prisma.Decimal(line.quantity);
-          if (curStock.lessThan(reqQty)) {
-            throw new AppError(
-              `Insufficient stock for "${item.name}". Available: ${curStock} ${item.unit}, Requested: ${reqQty} ${item.unit}.`,
-              400,
-              'INSUFFICIENT_STOCK'
-            );
-          }
-        }
-      }
-
-      // 2. Settings prefix
+      // 1. Settings prefix & Tax Rate
       const settings = await tx.businessSetting.findUnique({
         where: { businessId: request.tenant!.businessId },
       });
       const prefix = settings?.invoicePrefix || 'INV-';
+      const vatRate = settings?.taxRate || 13;
 
-      // 3. Generate unique Invoice Number
+      // 2. Generate unique Invoice Number
       let invoiceNumber = body.invoiceNumber;
       if (!invoiceNumber) {
         const count = await tx.sale.count({
@@ -194,38 +181,16 @@ export async function saleRoutes(fastify: FastifyInstance) {
         invoiceNumber = `${prefix}${String(count + 1).padStart(5, '0')}`;
       }
 
-      // 4. Line items math
-      let subTotal = new Prisma.Decimal(0);
-      let totalTax = new Prisma.Decimal(0);
-      let totalDiscount = new Prisma.Decimal(0);
-      const preparedItems = [];
+      // 3. Centralized Math Engine
+      const totals = calculateInvoiceTotals(
+        body.items.map(i => ({ ...i, discountPercent: i.discountPercent })),
+        body.isVatBill,
+        0, // global discount percent if we add it to schema later
+        vatRate
+      );
 
-      for (const line of body.items) {
-        const qty = new Prisma.Decimal(line.quantity);
-        const unitPrice = new Prisma.Decimal(line.unitPrice);
-        const disc = new Prisma.Decimal(line.discount || 0);
-        const tax = new Prisma.Decimal(line.taxAmount || 0);
-
-        const itemSubtotal = qty.mul(unitPrice);
-        const itemTotal = itemSubtotal.sub(disc).add(tax);
-
-        subTotal = subTotal.add(itemSubtotal);
-        totalDiscount = totalDiscount.add(disc);
-        totalTax = totalTax.add(tax);
-
-        preparedItems.push({
-          itemId: line.itemId,
-          quantity: qty,
-          unitPrice,
-          discount: disc,
-          taxAmount: tax,
-          total: itemTotal,
-        });
-      }
-
-      const totalAmount = subTotal.sub(totalDiscount).add(totalTax);
       const paidAmount = new Prisma.Decimal(body.paidAmount || 0);
-      const rawDue = totalAmount.sub(paidAmount);
+      const rawDue = totals.totalAmount.sub(paidAmount);
       const dueAmount = rawDue.isNegative() ? new Prisma.Decimal(0) : rawDue;
 
       let status: InvoiceStatus = InvoiceStatus.UNPAID;
@@ -253,7 +218,17 @@ export async function saleRoutes(fastify: FastifyInstance) {
         partyId = cashParty.id;
       }
 
-      // 5. Create Sale Record
+      const preparedItems = body.items.map((line, idx) => ({
+        itemId: line.itemId,
+        quantity: line.quantity,
+        unitPrice: line.unitPrice,
+        discountPercent: line.discountPercent,
+        discount: totals.items[idx].discountAmount,
+        taxAmount: totals.items[idx].taxAmount,
+        total: totals.items[idx].total,
+      }));
+
+      // 4. Create Sale Record
       const sale = await tx.sale.create({
         data: {
           businessId: request.tenant!.businessId,
@@ -262,10 +237,11 @@ export async function saleRoutes(fastify: FastifyInstance) {
           date: new Date(body.date),
           dueDate: body.dueDate ? new Date(body.dueDate) : null,
           status,
-          subTotal,
-          taxAmount: totalTax,
-          discount: totalDiscount,
-          totalAmount,
+          isVatBill: body.isVatBill,
+          subTotal: totals.subTotal,
+          taxAmount: totals.taxAmount,
+          discount: totals.discount,
+          totalAmount: totals.totalAmount,
           paidAmount,
           dueAmount,
           notes: body.notes || null,
@@ -279,46 +255,30 @@ export async function saleRoutes(fastify: FastifyInstance) {
         },
       });
 
-      // 6. Update Inventory (Decrease Stock & Log StockMovement)
+      // 5. Update Inventory
       for (const line of body.items) {
         const item = await tx.item.findUnique({ where: { id: line.itemId } });
         if (item && item.type === 'PRODUCT') {
-          const curStock = new Prisma.Decimal(item.currentStock || 0);
-          const qtyDecimal = new Prisma.Decimal(line.quantity);
-          const newStock = curStock.sub(qtyDecimal);
-
-          await tx.item.update({
-            where: { id: line.itemId },
-            data: { currentStock: newStock },
-          });
-
+          await updateStock(tx as any, line.itemId, line.quantity, 'REDUCE');
           await tx.stockMovement.create({
             data: {
               businessId: request.tenant!.businessId,
               itemId: line.itemId,
               type: StockMovementType.SALE,
-              quantity: qtyDecimal.negated(),
+              quantity: new Prisma.Decimal(line.quantity).negated(),
               reference: `Sale Invoice ${invoiceNumber}`,
             },
           });
         }
       }
 
-      // 7. Update Customer Balance (Increase Receivable if dueAmount > 0)
-      if (dueAmount.greaterThan(0)) {
-        const party = await tx.party.findUnique({ where: { id: body.partyId ?? undefined } });
-        if (party) {
-          const curBal = new Prisma.Decimal(party.currentBalance || 0);
-          const newBal = curBal.add(dueAmount); // Positive balance = customer owes business
-          await tx.party.update({
-            where: { id: body.partyId ?? undefined },
-            data: { currentBalance: newBal },
-          });
-        }
-      }
+      // 6. Update Customer Balance (Increase Receivable)
+      await updatePartyBalance(tx as any, partyId, totals.totalAmount, 'ADD_RECEIVABLE');
 
-      // 8. Payment In & Cash/Bank Account Balance Update
+      // 7. Handle Payment
       if (paidAmount.greaterThan(0)) {
+        await updatePartyBalance(tx as any, partyId, paidAmount, 'REDUCE_RECEIVABLE');
+
         const desiredType =
           body.paymentMode === PaymentMode.BANK || body.paymentMode === PaymentMode.CHEQUE
             ? AccountType.BANK
@@ -332,7 +292,7 @@ export async function saleRoutes(fastify: FastifyInstance) {
               where: { businessId: request.tenant!.businessId, accountType: desiredType },
             });
 
-        if (!targetAccount || (body.paymentMode !== PaymentMode.CASH && targetAccount.accountType === AccountType.CASH && !body.accountId)) {
+        if (!targetAccount) {
           const defaultName =
             desiredType === AccountType.BANK
               ? 'Main Bank Account'
@@ -345,32 +305,24 @@ export async function saleRoutes(fastify: FastifyInstance) {
               businessId: request.tenant!.businessId,
               accountName: defaultName,
               accountType: desiredType,
-              balance: new Prisma.Decimal(0),
             },
           });
         }
 
-        const curAccBal = new Prisma.Decimal(targetAccount.balance || 0);
-        const newAccBal = curAccBal.add(paidAmount);
-        await tx.account.update({
-          where: { id: targetAccount.id },
-          data: { balance: newAccBal },
+        await updateAccountBalance(tx as any, targetAccount.id, paidAmount, 'ADD');
+
+        await tx.paymentIn.create({
+          data: {
+            businessId: request.tenant!.businessId,
+            partyId,
+            accountId: targetAccount.id,
+            amount: paidAmount,
+            mode: body.paymentMode,
+            date: new Date(body.date),
+            referenceNumber: invoiceNumber,
+            notes: `Payment for Sale Invoice ${invoiceNumber}`,
+          },
         });
-
-        if (body.partyId) {
-          await tx.paymentIn.create({
-            data: {
-              businessId: request.tenant!.businessId,
-              partyId: body.partyId,
-              accountId: targetAccount.id,
-              amount: paidAmount,
-              mode: body.paymentMode,
-              date: new Date(body.date),
-              referenceNumber: invoiceNumber,
-              notes: `Payment for Sale Invoice ${invoiceNumber}`,
-            },
-          });
-        }
 
         await tx.transaction.create({
           data: {
@@ -543,6 +495,27 @@ export async function saleRoutes(fastify: FastifyInstance) {
     });
   });
 
+  // GET SINGLE SALES RETURN
+  fastify.get('/returns/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const saleReturn = await request.db!.saleReturn.findFirst({
+      where: { id, businessId: request.tenant!.businessId },
+      include: {
+        party: true,
+        items: { include: { item: true } },
+      },
+    });
+
+    if (!saleReturn) {
+      throw new AppError('Sales Return (Credit Note) not found', 404, 'NOT_FOUND');
+    }
+
+    return reply.send({
+      success: true,
+      data: saleReturn,
+    });
+  });
+
   // ----------------------------------------------------
   // CREATE SALES RETURN (Credit Note Transaction-Safe)
   // ----------------------------------------------------
@@ -554,6 +527,7 @@ export async function saleRoutes(fastify: FastifyInstance) {
         where: { businessId: request.tenant!.businessId },
       });
       const prefix = settings?.saleReturnPrefix || 'CN-';
+      const vatRate = settings?.enableTax ? Number(settings.taxRate) : 0;
 
       let returnNumber = body.returnNumber;
       if (!returnNumber) {
@@ -563,36 +537,33 @@ export async function saleRoutes(fastify: FastifyInstance) {
         returnNumber = `${prefix}${String(count + 1).padStart(5, '0')}`;
       }
 
-      let subTotal = new Prisma.Decimal(0);
-      let totalTax = new Prisma.Decimal(0);
-      let totalDiscount = new Prisma.Decimal(0);
-      const preparedItems = [];
-
-      for (const line of body.items) {
-        const qty = new Prisma.Decimal(line.quantity);
-        const unitPrice = new Prisma.Decimal(line.unitPrice);
-        const disc = new Prisma.Decimal(line.discount || 0);
-        const tax = new Prisma.Decimal(line.taxAmount || 0);
-
-        const itemSubtotal = qty.mul(unitPrice);
-        const itemTotal = itemSubtotal.sub(disc).add(tax);
-
-        subTotal = subTotal.add(itemSubtotal);
-        totalDiscount = totalDiscount.add(disc);
-        totalTax = totalTax.add(tax);
-
-        preparedItems.push({
-          itemId: line.itemId,
-          quantity: qty,
-          unitPrice,
-          discount: disc,
-          taxAmount: tax,
-          total: itemTotal,
-        });
+      // Check if it's returning against a specific sale
+      let isVatBill = false;
+      if (body.saleId) {
+        const sale = await tx.sale.findUnique({ where: { id: body.saleId } });
+        if (sale) {
+          isVatBill = sale.isVatBill;
+        }
       }
 
-      const totalAmount = subTotal.sub(totalDiscount).add(totalTax);
+      // 1. Calculate totals using centralized engine
+      const totals = calculateInvoiceTotals(body.items, isVatBill, 0, vatRate);
 
+      // 2. Prepare items
+      const preparedItems = body.items.map((line, index) => {
+        const lineTotals = totals.items[index]!;
+        return {
+          itemId: line.itemId,
+          quantity: new Prisma.Decimal(line.quantity),
+          unitPrice: new Prisma.Decimal(line.unitPrice),
+          discountPercent: new Prisma.Decimal(line.discountPercent || 0),
+          discount: lineTotals.discountAmount,
+          taxAmount: lineTotals.taxAmount,
+          total: lineTotals.total,
+        };
+      });
+
+      // 3. Create SaleReturn
       const newReturn = await tx.saleReturn.create({
         data: {
           businessId: request.tenant!.businessId,
@@ -600,10 +571,11 @@ export async function saleRoutes(fastify: FastifyInstance) {
           saleId: body.saleId || null,
           returnNumber,
           date: new Date(body.date),
-          subTotal,
-          taxAmount: totalTax,
-          discount: totalDiscount,
-          totalAmount,
+          subTotal: totals.subTotal,
+          taxAmount: totals.taxAmount,
+          discountPercent: 0,
+          discount: totals.discount,
+          totalAmount: totals.totalAmount,
           notes: body.notes || null,
           items: { create: preparedItems },
         },
@@ -613,34 +585,51 @@ export async function saleRoutes(fastify: FastifyInstance) {
         },
       });
 
-      // 1. Increase Stock & Log StockMovement (SALE_RETURN)
-      for (const line of body.items) {
-        const item = await tx.item.findUnique({ where: { id: line.itemId } });
-        if (item && item.type === 'PRODUCT') {
-          const curStock = new Prisma.Decimal(item.currentStock || 0);
-          const qtyDecimal = new Prisma.Decimal(line.quantity);
-          const newStock = curStock.add(qtyDecimal);
+      // 4. Update Original Sale and Quantities
+      if (body.saleId) {
+        await tx.sale.update({
+          where: { id: body.saleId },
+          data: { status: 'RETURNED' },
+        });
 
-          await tx.item.update({
-            where: { id: line.itemId },
-            data: { currentStock: newStock },
+        for (const line of body.items) {
+          const saleItem = await tx.saleItem.findFirst({
+            where: { saleId: body.saleId, itemId: line.itemId },
           });
+          if (saleItem) {
+            const currentRet = new Prisma.Decimal(saleItem.returnedQuantity || 0);
+            const reqRet = new Prisma.Decimal(line.quantity);
+            const maxAllowed = new Prisma.Decimal(saleItem.quantity);
 
-          await tx.stockMovement.create({
-            data: {
-              businessId: request.tenant!.businessId,
-              itemId: line.itemId,
-              type: StockMovementType.SALE_RETURN,
-              quantity: qtyDecimal,
-              reference: `Credit Note ${returnNumber}`,
-            },
-          });
+            if (currentRet.add(reqRet).greaterThan(maxAllowed)) {
+              throw new AppError(`Cannot return more than originally sold. Allowed remaining: ${maxAllowed.sub(currentRet).toNumber()}`, 400);
+            }
+
+            await tx.saleItem.update({
+              where: { id: saleItem.id },
+              data: { returnedQuantity: currentRet.add(reqRet) },
+            });
+          }
         }
       }
 
-      // 2. Immediate Cash/Bank Refund & Customer Receivable Adjustment
+      // 5. Increase Stock atomically
+      for (const line of body.items) {
+        await updateStock(tx as any, line.itemId, line.quantity, 'ADD');
+        await tx.stockMovement.create({
+          data: {
+            businessId: request.tenant!.businessId,
+            itemId: line.itemId,
+            type: StockMovementType.SALE_RETURN,
+            quantity: new Prisma.Decimal(line.quantity),
+            reference: `Credit Note ${returnNumber}`,
+          },
+        });
+      }
+
+      // 6. Handle Financials
       const refundAmt = new Prisma.Decimal(body.refundAmount || 0);
-      const creditToBalance = totalAmount.sub(refundAmt);
+      const creditToBalance = totals.totalAmount.sub(refundAmt); // Amount not refunded immediately
 
       if (refundAmt.greaterThan(0)) {
         let targetAccount = body.accountId
@@ -657,12 +646,8 @@ export async function saleRoutes(fastify: FastifyInstance) {
           });
         }
 
-        const curAccBal = new Prisma.Decimal(targetAccount.balance || 0);
-        const newAccBal = curAccBal.sub(refundAmt);
-        await tx.account.update({
-          where: { id: targetAccount.id },
-          data: { balance: newAccBal },
-        });
+        // Refund means money out
+        await updateAccountBalance(tx as any, targetAccount.id, refundAmt.toNumber(), 'REDUCE');
 
         await tx.paymentOut.create({
           data: {
@@ -684,22 +669,16 @@ export async function saleRoutes(fastify: FastifyInstance) {
             category: TransactionCategory.SALE_RETURN,
             amount: refundAmt,
             referenceId: newReturn.id,
-            description: `Cash refund for Credit Note ${returnNumber}`,
+            description: `Refund for Credit Note ${returnNumber}`,
             date: new Date(body.date),
           },
         });
       }
 
+      // Adjust customer balance (Credit note reduces what they owe us)
+      // For a customer, positive balance means receivable. Reducing receivable means subtract.
       if (!creditToBalance.isZero()) {
-        const party = await tx.party.findUnique({ where: { id: body.partyId } });
-        if (party) {
-          const curBal = new Prisma.Decimal(party.currentBalance || 0);
-          const newBal = curBal.sub(creditToBalance);
-          await tx.party.update({
-            where: { id: body.partyId },
-            data: { currentBalance: newBal },
-          });
-        }
+        await updatePartyBalance(tx as any, body.partyId, creditToBalance.toNumber(), 'REDUCE_RECEIVABLE');
       }
 
       return newReturn;

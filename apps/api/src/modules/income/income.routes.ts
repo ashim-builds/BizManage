@@ -180,6 +180,10 @@ export async function incomeRoutes(fastify: FastifyInstance) {
         throw new AppError('Income record not found', 404, 'NOT_FOUND');
       }
 
+      if (income.status === 'VOIDED') {
+        throw new AppError('Income is already voided', 400, 'BAD_REQUEST');
+      }
+
       const amt = new Prisma.Decimal(income.amount || 0);
 
       const account = await tx.account.findUnique({ where: { id: income.accountId } });
@@ -192,12 +196,15 @@ export async function incomeRoutes(fastify: FastifyInstance) {
       }
 
       await tx.transaction.deleteMany({ where: { referenceId: id } });
-      await tx.income.delete({ where: { id } });
+      await tx.income.update({
+        where: { id },
+        data: { status: 'VOIDED' },
+      });
     });
 
     return reply.send({
       success: true,
-      data: { message: 'Income record deleted successfully' },
+      data: { message: 'Income record voided successfully' },
     });
   });
 }

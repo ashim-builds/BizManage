@@ -23,6 +23,17 @@ export function usePaymentsIn(params?: PaymentsQueryParams) {
   });
 }
 
+export function usePaymentIn(id: string) {
+  return useQuery({
+    queryKey: ['payments', 'in', id],
+    queryFn: async () => {
+      const res = await api.get(`/payments/in/${id}`);
+      return res.data.data;
+    },
+    enabled: !!id,
+  });
+}
+
 export function usePaymentsInSummary() {
   return useQuery({
     queryKey: ['payments', 'in', 'summary'],
@@ -48,6 +59,21 @@ export function useCreatePaymentIn() {
   });
 }
 
+export function useVoidPaymentIn() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.post(`/payments/in/${id}/void`);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['parties'] });
+      queryClient.invalidateQueries({ queryKey: ['sales'] });
+    },
+  });
+}
+
 export function usePaymentsOut(params?: PaymentsQueryParams) {
   return useQuery({
     queryKey: ['payments', 'out', params],
@@ -55,6 +81,17 @@ export function usePaymentsOut(params?: PaymentsQueryParams) {
       const res = await api.get('/payments/out', { params });
       return res.data;
     },
+  });
+}
+
+export function usePaymentOut(id: string) {
+  return useQuery({
+    queryKey: ['payments', 'out', id],
+    queryFn: async () => {
+      const res = await api.get(`/payments/out/${id}`);
+      return res.data.data;
+    },
+    enabled: !!id,
   });
 }
 
@@ -73,6 +110,21 @@ export function useCreatePaymentOut() {
   return useMutation({
     mutationFn: async (data: CreatePaymentOutInput) => {
       const res = await api.post('/payments/out', data);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['parties'] });
+      queryClient.invalidateQueries({ queryKey: ['purchases'] });
+    },
+  });
+}
+
+export function useVoidPaymentOut() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.post(`/payments/out/${id}/void`);
       return res.data.data;
     },
     onSuccess: () => {

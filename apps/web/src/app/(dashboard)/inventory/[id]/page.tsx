@@ -172,8 +172,8 @@ export default function ItemDetailsPage({ params }: { params: { id: string } }) 
             description="Stock changes from purchases, sales, returns, and manual adjustments will be audited here."
           />
         ) : (
-          <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-900 shadow-xl">
-            <table className="w-full text-left text-xs">
+          <div className="border border-slate-800 rounded-2xl overflow-x-auto overflow-y-hidden bg-slate-900 shadow-xl">
+            <table className="w-full text-left text-xs min-w-[800px]">
               <thead className="bg-slate-800/70 text-slate-400 font-semibold border-b border-slate-800">
                 <tr>
                   <th className="px-6 py-4">Date</th>

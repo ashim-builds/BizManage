@@ -198,4 +198,64 @@ export async function cashflowRoutes(fastify: FastifyInstance) {
       data: accounts,
     });
   });
+  // ----------------------------------------------------
+  // GET UNIFIED TRANSACTIONS LIST (WITH PAGINATION)
+  // ----------------------------------------------------
+  fastify.get<{
+    Querystring: {
+      page?: string;
+      limit?: string;
+      category?: TransactionCategory;
+      startDate?: string;
+      endDate?: string;
+    };
+  }>('/transactions', async (request, reply) => {
+    const businessId = request.tenant!.businessId;
+    const { page = '1', limit = '50', category, startDate, endDate } = request.query;
+
+    const skip = (Number(page) - 1) * Number(limit);
+    const take = Number(limit);
+
+    const where: any = { businessId };
+
+    if (category) {
+      where.category = category;
+    }
+
+    if (startDate || endDate) {
+      where.date = {};
+      if (startDate) where.date.gte = new Date(startDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        where.date.lte = end;
+      }
+    }
+
+    const [transactions, total] = await Promise.all([
+      request.db!.transaction.findMany({
+        where,
+        orderBy: { date: 'desc' },
+        skip,
+        take,
+        include: {
+          account: {
+            select: { accountName: true, accountType: true }
+          }
+        }
+      }),
+      request.db!.transaction.count({ where }),
+    ]);
+
+    return reply.send({
+      success: true,
+      data: transactions,
+      meta: {
+        total,
+        page: Number(page),
+        limit: take,
+        totalPages: Math.ceil(total / take),
+      }
+    });
+  });
 }
