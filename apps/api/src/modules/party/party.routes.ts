@@ -163,6 +163,10 @@ export async function partyRoutes(fastify: FastifyInstance) {
   // CREATE NEW PARTY
   // ----------------------------------------------------
   fastify.post('/', async (request, reply) => {
+    if (!request.tenant!.features.includes('AUTO_LEDGER')) {
+      throw new AppError('Feature Locked: Upgrade your plan to add parties.', 403, 'FEATURE_LOCKED');
+    }
+
     const body = partySchema.parse(request.body);
 
     // Calculate signed opening balance

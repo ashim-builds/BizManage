@@ -23,8 +23,6 @@ if (envPath) {
   dotenv.config(); // fallback: let dotenv search default locations
 }
 
-const isProduction = process.env.NODE_ENV === 'production';
-
 const envSchema = z.object({
   NODE_ENV: z
     .string()
@@ -54,6 +52,27 @@ const envSchema = z.object({
   CORS_ORIGIN: z
     .string()
     .default('*'),
+
+  ESEWA_MERCHANT_CODE: z
+    .string()
+    .default('EPAYTEST'),
+    
+  ESEWA_SECRET_KEY: z
+    .string()
+    .min(1, 'ESEWA_SECRET_KEY is required'),
+  ESEWA_ENVIRONMENT: z.enum(['uat', 'production']).optional(),
+  FRONTEND_URL: z.string().url().default('http://localhost:3000'),
+
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_CALLBACK_URL: z.string().default('http://localhost:4000/api/v1/auth/google/callback'),
+
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().default(587),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
+  SMTP_FROM: z.string().default('noreply@bizmanage.com'),
+  SMTP_FROM_NAME: z.string().default('BizManage Team'),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -64,4 +83,14 @@ if (!parsed.success) {
   process.exit(1);
 }
 
-export const env = parsed.data;
+const configuredEnvironment = parsed.data.ESEWA_ENVIRONMENT
+  ?? (parsed.data.NODE_ENV === 'production' ? 'production' : 'uat');
+
+if (configuredEnvironment === 'production' && parsed.data.ESEWA_MERCHANT_CODE === 'EPAYTEST') {
+  throw new Error('Production eSewa requires a production ESEWA_MERCHANT_CODE; EPAYTEST is UAT-only.');
+}
+
+export const env = {
+  ...parsed.data,
+  ESEWA_ENVIRONMENT: configuredEnvironment,
+};

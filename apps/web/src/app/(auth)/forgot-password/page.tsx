@@ -9,7 +9,6 @@ import { api } from '@/lib/api';
 
 export default function ForgotPasswordPage() {
   const [message, setMessage] = useState<string | null>(null);
-  const [resetToken, setResetToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -29,9 +28,6 @@ export default function ForgotPasswordPage() {
       const res = await api.post('/auth/forgot-password', data);
       if (res.data.success) {
         setMessage(res.data.data.message);
-        if (res.data.data.resetToken) {
-          setResetToken(res.data.data.resetToken);
-        }
       }
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to request password reset.');
@@ -44,9 +40,13 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
       <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl">
         <div className="text-center mb-8">
-          <div className="inline-flex w-12 h-12 rounded-xl bg-blue-600 items-center justify-center font-bold text-xl text-white mb-3">
-            B
-          </div>
+          <Link href="/" onClick={() => window.scrollTo(0, 0)} className="inline-block cursor-pointer">
+            <img
+              src="/logo-transparent.png"
+              alt="BizManage Logo"
+              className="w-14 h-14 object-contain mx-auto mb-3 drop-shadow-2xl hover:scale-105 transition-transform"
+            />
+          </Link>
           <h2 className="text-2xl font-bold text-white">Reset Password</h2>
           <p className="text-sm text-slate-400 mt-1">Enter your registered email address to receive password reset instructions</p>
         </div>
@@ -60,14 +60,6 @@ export default function ForgotPasswordPage() {
         {message && (
           <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm space-y-3">
             <p>{message}</p>
-            {resetToken && (
-              <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs font-mono text-slate-300 break-all">
-                <p className="text-slate-400 font-sans mb-1">Development Reset Link:</p>
-                <Link href={`/reset-password?token=${resetToken}`} className="text-blue-400 underline">
-                  /reset-password?token={resetToken}
-                </Link>
-              </div>
-            )}
           </div>
         )}
 

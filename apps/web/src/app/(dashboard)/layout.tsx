@@ -7,6 +7,9 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useNotifications } from '@/services/utilityService';
 import { Breadcrumbs } from '@/components/common/Breadcrumbs';
 import { QuickEntryModal } from '@/components/common/QuickEntryModal';
+import { GlobalSearch } from '@/components/common/GlobalSearch';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
+import toast from 'react-hot-toast';
 import {
   LayoutDashboard,
   Receipt,
@@ -39,20 +42,21 @@ import {
   BellOff,
 } from 'lucide-react';
 
-interface NavGroupItem {
+export interface NavGroupItem {
   name: string;
   href: string;
   icon: any;
 }
 
-interface NavSection {
+export interface NavSection {
   name: string;
   icon: any;
   href?: string;
   children?: NavGroupItem[];
+  requiredFeature?: string;
 }
 
-const sidebarSections: NavSection[] = [
+export const sidebarSections: NavSection[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   {
     name: 'Transactions',
@@ -66,13 +70,13 @@ const sidebarSections: NavSection[] = [
       { name: 'Purchase Return', href: '/transactions/purchase-return', icon: RotateCcw },
     ],
   },
-  { name: 'Parties', href: '/parties', icon: Users },
-  { name: 'Inventory', href: '/inventory', icon: Package },
-  { name: 'Cash & Bank', href: '/accounts', icon: Wallet },
-  { name: 'Expenses', href: '/expenses', icon: TrendingDown },
-  { name: 'Other Income', href: '/income', icon: TrendingUp },
-  { name: 'Cashflow', href: '/cashflow', icon: Wallet },
-  { name: 'Reports', href: '/reports', icon: FileBarChart },
+  { name: 'Parties', href: '/parties', icon: Users, requiredFeature: 'AUTO_LEDGER' },
+  { name: 'Inventory', href: '/inventory', icon: Package, requiredFeature: 'INVENTORY_TRACKING' },
+  { name: 'Cash & Bank', href: '/accounts', icon: Wallet, requiredFeature: 'CASH_BANK' },
+  { name: 'Expenses', href: '/expenses', icon: TrendingDown, requiredFeature: 'CASH_BANK' },
+  { name: 'Other Income', href: '/income', icon: TrendingUp, requiredFeature: 'CASH_BANK' },
+  { name: 'Cashflow', href: '/cashflow', icon: Wallet, requiredFeature: 'ADVANCED_REPORTS' },
+  { name: 'Reports', href: '/reports', icon: FileBarChart, requiredFeature: 'ADVANCED_REPORTS' },
   { name: 'Subscription', href: '/subscription', icon: Crown },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
@@ -81,19 +85,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, activeBusinessId, loading, setActiveBusinessId, logout } = useAuth();
-  const { data: notifData } = useNotifications();
+  const { data: notifData } = useNotifications(activeBusinessId);
 
-  const [readNotifIds, setReadNotifIds] = useState<string[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('bizmanage_read_notifications');
-        return saved ? JSON.parse(saved) : [];
-      } catch (_) {
-        return [];
-      }
+  const [readNotifIds, setReadNotifIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (user?.readNotifications) {
+      setReadNotifIds(user.readNotifications);
     }
-    return [];
-  });
+  }, [user?.readNotifications]);
 
   const notifications = notifData?.notifications || [];
   const unreadCount = notifications.filter((n) => !readNotifIds.includes(n.id)).length;
@@ -102,22 +102,47 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     const allIds = notifications.map((n) => n.id);
     const updated = Array.from(new Set([...readNotifIds, ...allIds]));
     setReadNotifIds(updated);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('bizmanage_read_notifications', JSON.stringify(updated));
-    }
+    
+    // Optimistically update backend
+    import('@/lib/api').then(({ api }) => {
+      api.patch('/auth/me/preferences', { readNotifications: updated }).catch(() => {});
+    });
   };
 
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [transactionsOpen, setTransactionsOpen] = useState(pathname?.startsWith('/transactions') ?? false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [quickEntryOpen, setQuickEntryOpen] = useState(false);
-  const [hasSelectedPlan, setHasSelectedPlan] = useState<boolean>(true);
+  
+  const currentBiz = user?.memberships?.[0]?.business;
+  const hasSelectedPlan = Boolean(currentBiz?.subscriptionPackage);
+
+  // Global feature lock calculation
+  const currentSection = sidebarSections.find(s => 
+    s.href === pathname || (s.children && s.children.some(c => c.href === pathname))
+  );
+  let requiredFeature = currentSection?.requiredFeature;
+  if (!requiredFeature && currentSection?.children) {
+    const child = currentSection.children.find(c => c.href === pathname);
+    if (child && (child as any).requiredFeature) {
+      requiredFeature = (child as any).requiredFeature;
+    }
+  }
+
+  const isFeatureLocked = Boolean(
+    requiredFeature && 
+    !(currentBiz?.subscriptionPackage?.features || []).includes(requiredFeature)
+  );
+  
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
+    if (!loading) {
+      if (!user) {
+        router.push('/login');
+      } else if (user.isSystemAdmin) {
+        router.push('/admin/dashboard');
+      }
     }
   }, [loading, user, router]);
 
@@ -125,12 +150,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     setMounted(true);
     if (pathname?.startsWith('/transactions')) {
       setTransactionsOpen(true);
-    }
-    setMobileOpen(false);
-
-    if (typeof window !== 'undefined') {
-      const plan = localStorage.getItem('bizmanage_selected_plan');
-      setHasSelectedPlan(!!plan);
     }
   }, [pathname]);
 
@@ -179,42 +198,20 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Quick Entry Modal Component */}
       <QuickEntryModal isOpen={quickEntryOpen} onClose={() => setQuickEntryOpen(false)} />
 
-      {/* Mobile Drawer Backdrop */}
-      {mobileOpen && (
-        <div
-          onClick={() => setMobileOpen(false)}
-          className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 lg:hidden"
-        />
-      )}
-
       {/* Sidebar Navigation */}
-      <aside
-        className={`fixed top-0 left-0 bottom-0 w-64 bg-slate-900 border-r border-slate-800 z-50 flex flex-col transition-transform duration-300 print:hidden ${
-          mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        }`}
-      >
+      <aside className="fixed top-0 left-0 bottom-0 w-64 bg-slate-900 border-r border-slate-800 z-50 hidden lg:flex flex-col transition-transform duration-300 print:hidden">
         {/* Brand & Business Switcher Header */}
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            {currentBusiness?.logoUrl ? (
-              <img
-                src={currentBusiness.logoUrl}
-                alt="Business Logo"
-                className="w-8 h-8 rounded-xl object-contain bg-slate-950 border border-slate-700 p-0.5 shrink-0"
-              />
-            ) : (
-              <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-600/30 shrink-0">
-                BM
-              </div>
-            )}
-            <div className="overflow-hidden">
-              <h2 className="text-lg font-bold text-white truncate font-sans">BizManage</h2>
-              <p className="text-[10px] text-slate-400 font-medium truncate">ERP Edition</p>
-            </div>
-          </div>
+        <div className="p-4 border-b border-slate-800 flex items-center justify-center relative min-h-[80px]">
+          <Link href="/" onClick={() => window.scrollTo(0, 0)} className="flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity">
+            <img
+              src="/logo-full-transparent.png"
+              alt="BizManage Logo"
+              className="h-10 sm:h-12 lg:h-14 w-auto max-w-[200px] object-contain drop-shadow-[0_0_15px_rgba(59,130,246,0.25)] hover:drop-shadow-[0_0_25px_rgba(59,130,246,0.4)] hover:scale-105 transition-all duration-300 shrink-0"
+            />
+          </Link>
           <button
             onClick={() => setMobileOpen(false)}
-            className="lg:hidden text-slate-400 hover:text-white p-1 rounded-lg"
+            className="lg:hidden text-slate-400 hover:text-white p-1 rounded-lg absolute right-4 top-1/2 -translate-y-1/2"
           >
             <X className="w-5 h-5" />
           </button>
@@ -223,13 +220,28 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         {/* Business Selector Area */}
         <div className="p-3 border-b border-slate-800/80">
           <div className="p-2 rounded-xl bg-slate-800/60 border border-slate-700/50 flex items-center justify-between">
-            <div className="flex items-center gap-2 overflow-hidden">
-              <Building2 className="w-4 h-4 text-blue-400 shrink-0" />
+            <div className="flex items-center gap-3 overflow-hidden">
+              {currentBusiness?.logoUrl ? (
+                <img src={currentBusiness.logoUrl} alt={currentBusiness.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
+              ) : (
+                <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold shrink-0">
+                  {currentBusiness?.name?.charAt(0).toUpperCase() || 'B'}
+                </div>
+              )}
               <div className="overflow-hidden">
                 <p className="text-xs font-semibold text-white truncate">
                   {currentBusiness?.name || 'My Business'}
                 </p>
-                <p className="text-[10px] text-slate-400">Active Tenant</p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-[10px] text-slate-400 truncate">
+                    {currentBusiness?.subscriptionPackage?.name || 'Free Plan'}
+                  </span>
+                  {currentBusiness?.subscriptionStatus === 'ACTIVE' ? (
+                     <span className="text-[8px] font-bold uppercase bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/30">Online</span>
+                  ) : currentBusiness?.subscriptionStatus === 'EXPIRED' ? (
+                     <span className="text-[8px] font-bold uppercase bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded border border-red-500/30">Expired</span>
+                  ) : null}
+                </div>
               </div>
             </div>
           </div>
@@ -241,46 +253,71 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             const Icon = section.icon;
             const isActive = pathname === section.href;
 
+            const isLocked = section.requiredFeature && !(currentBusiness?.subscriptionPackage?.features || []).includes(section.requiredFeature);
+
             if (!section.children) {
               return (
                 <Link
                   key={section.name}
-                  href={section.href!}
+                  href={isLocked ? '/subscription' : section.href!}
+                  onClick={(e) => {
+                    if (isLocked) {
+                      e.preventDefault();
+                      toast.error(`Please upgrade your plan to access ${section.name}`);
+                      router.push('/subscription');
+                    }
+                  }}
                   className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all ${
                     isActive
                       ? 'bg-blue-600 text-white font-semibold shadow-lg shadow-blue-600/20'
+                      : isLocked
+                      ? 'text-slate-500 opacity-70 hover:opacity-100 hover:bg-slate-800/40'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                  <span>{section.name}</span>
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-white' : isLocked ? 'text-slate-600' : 'text-slate-400'}`} />
+                  <span className="flex-1">{section.name}</span>
+                  {isLocked && <Crown className="w-3.5 h-3.5 text-amber-500/70" />}
                 </Link>
               );
             }
 
             const isGroupActive = pathname?.startsWith('/transactions') ?? false;
+            const isGroupLocked = section.requiredFeature && !(currentBusiness?.subscriptionPackage?.features || []).includes(section.requiredFeature);
+
             return (
               <div key={section.name} className="space-y-1">
                 <button
-                  onClick={() => setTransactionsOpen(!transactionsOpen)}
+                  onClick={() => {
+                    if (isGroupLocked) {
+                      toast.error(`Please upgrade your plan to access ${section.name}`);
+                      router.push('/subscription');
+                    } else {
+                      setTransactionsOpen(!transactionsOpen);
+                    }
+                  }}
                   className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all ${
                     isGroupActive
                       ? 'text-white bg-slate-800/80 font-semibold'
+                      : isGroupLocked
+                      ? 'text-slate-500 opacity-70 hover:opacity-100 hover:bg-slate-800/40'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className="w-4 h-4 text-blue-400" />
+                    <Icon className={`w-4 h-4 ${isGroupLocked ? 'text-slate-600' : 'text-blue-400'}`} />
                     <span>{section.name}</span>
                   </div>
-                  {transactionsOpen ? (
+                  {isGroupLocked ? (
+                    <Crown className="w-3.5 h-3.5 text-amber-500/70" />
+                  ) : transactionsOpen ? (
                     <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
                   ) : (
                     <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
                   )}
                 </button>
 
-                {transactionsOpen && (
+                {transactionsOpen && !isGroupLocked && (
                   <div className="pl-6 space-y-1 border-l border-slate-800 ml-5 my-1">
                     {section.children.map((child) => {
                       const ChildIcon = child.icon;
@@ -328,19 +365,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main Content Shell */}
-      <main className="lg:pl-64 flex-1 min-h-screen bg-slate-950 flex flex-col print:pl-0 print:bg-white print:min-h-0">
+      <main className="lg:pl-64 flex-1 min-h-screen bg-slate-950 flex flex-col pb-20 lg:pb-0 print:pl-0 print:bg-white print:min-h-0 print:pb-0">
         {/* Header Bar */}
         <header className="h-16 border-b border-slate-800 px-3 sm:px-6 flex items-center justify-between sticky top-0 bg-slate-950/80 backdrop-blur-md z-30 print:hidden gap-2">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            <button
-              onClick={() => setMobileOpen(true)}
-              className="lg:hidden text-slate-400 hover:text-white p-1.5 rounded-lg border border-slate-800 bg-slate-900 shrink-0"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-            <div className="min-w-0 truncate">
+            <div className="min-w-0 truncate pl-2 lg:pl-0">
               <Breadcrumbs />
             </div>
+          </div>
+          
+          <div className="flex-1 max-w-xl mx-4 hidden md:flex justify-center">
+            <GlobalSearch />
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
@@ -372,7 +407,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               </button>
 
               {notificationsOpen && (
-                <div className="absolute right-0 mt-2 w-96 max-h-[480px] overflow-y-auto rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl z-50">
+                <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-96 max-h-[480px] overflow-y-auto rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl z-50">
                   {/* Header */}
                   <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 sticky top-0 bg-slate-900 rounded-t-2xl">
                     <div className="flex items-center gap-2">
@@ -433,9 +468,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                             onClick={() => {
                               const updated = Array.from(new Set([...readNotifIds, item.id]));
                               setReadNotifIds(updated);
-                              if (typeof window !== 'undefined') {
-                                localStorage.setItem('bizmanage_read_notifications', JSON.stringify(updated));
-                              }
+                              import('@/lib/api').then(({ api }) => {
+                                api.patch('/auth/me/preferences', { readNotifications: updated }).catch(() => {});
+                              });
                               setNotificationsOpen(false);
                             }}
                             className={`flex items-start gap-3 px-4 py-3 transition-all hover:bg-slate-800/50 ${
@@ -507,7 +542,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        {/* Page Content */}
         <div className="p-6 md:p-8 flex-1">
           {mounted && !hasSelectedPlan && pathname !== '/subscription' && pathname !== '/settings' && pathname !== '/dashboard' ? (
             <div className="max-w-xl mx-auto my-12 p-8 rounded-3xl bg-slate-900 border border-amber-500/30 text-center space-y-6 shadow-2xl font-sans">
@@ -527,11 +561,32 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 <Crown className="w-4 h-4" /> Go to Subscription Page & Choose Plan
               </Link>
             </div>
+          ) : mounted && isFeatureLocked && pathname !== '/subscription' && pathname !== '/settings' && pathname !== '/dashboard' ? (
+            <div className="max-w-xl mx-auto my-12 p-8 rounded-3xl bg-slate-900 border border-red-500/30 text-center space-y-6 shadow-2xl font-sans">
+              <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 flex items-center justify-center mx-auto">
+                <Crown className="w-8 h-8" />
+              </div>
+              <div>
+                <h2 className="text-xl font-extrabold text-white">Feature Locked</h2>
+                <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                  Your current subscription plan (<span className="font-bold text-blue-400">{currentBiz?.subscriptionPackage?.name}</span>) does not include access to this feature. Please upgrade your plan to unlock it.
+                </p>
+              </div>
+              <Link
+                href="/subscription"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-lg shadow-red-600/25 transition-all"
+              >
+                <Crown className="w-4 h-4" /> View Upgrade Options
+              </Link>
+            </div>
           ) : (
             children
           )}
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav onQuickEntry={() => setQuickEntryOpen(true)} />
     </div>
   );
 }

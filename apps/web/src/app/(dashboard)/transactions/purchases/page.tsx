@@ -13,11 +13,16 @@ import {
   usePayPurchase,
 } from '@/services/purchaseService';
 import { useParties } from '@/services/partyService';
+import { getPartyBalanceDisplay } from '@/lib/balance';
 import { useItems } from '@/services/itemService';
 import { useAccounts } from '@/services/accountService';
+import { calculateInvoiceTotals, formatCurrency } from '@/lib/accounting';
+import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
+import { toast } from 'react-hot-toast';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
+import { ModalPortal } from '@/components/ui/ModalPortal';
 import {
   ShoppingBag,
   Plus,
@@ -40,13 +45,12 @@ export default function PurchasesPage() {
   const [search, setSearch] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<InvoiceStatus | ''>('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isVatBill, setIsVatBill] = useState(false);
+  const [payDueCustomAmount, setPayDueCustomAmount] = useState('');
 
   // Pay Due modal state
   const [payDueId, setPayDueId] = useState<string | null>(null);
   const [payDueAmount, setPayDueAmount] = useState(0);
   const [payDueMode, setPayDueMode] = useState<PaymentMode>(PaymentMode.CASH);
-  const [payDueCustomAmount, setPayDueCustomAmount] = useState('');
 
   // Queries
   const { data: summary, isLoading: summaryLoading } = usePurchasesSummary();
@@ -70,8 +74,9 @@ export default function PurchasesPage() {
       await payPurchase.mutateAsync({ id: payDueId, amount: amt, paymentMode: payDueMode });
       setPayDueId(null);
       setPayDueCustomAmount('');
+      toast.success('Payment recorded successfully');
     } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Payment failed.');
+      toast.error(err.response?.data?.error?.message || 'Payment failed.');
     }
   };
 
@@ -86,6 +91,7 @@ export default function PurchasesPage() {
     resolver: zodResolver(createPurchaseSchema),
     defaultValues: {
       date: new Date().toISOString().split('T')[0],
+      isVatBill: false,
       paidAmount: 0,
       paymentMode: PaymentMode.CASH,
       items: [{ itemId: '', quantity: 1, unitPrice: 0, discount: 0, taxAmount: 0 }],
@@ -96,50 +102,52 @@ export default function PurchasesPage() {
   const watchItems = form.watch('items');
   const watchPaymentMode = form.watch('paymentMode');
 
-  // Compute live invoice totals (discount as %)
-  const subTotal = watchItems.reduce(
-    (acc, item) => acc + (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0),
-    0
-  );
-  const totalDiscountAmt = watchItems.reduce((acc, item) => {
-    const q = Number(item.quantity) || 0;
-    const p = Number(item.unitPrice) || 0;
-    const dPct = Number(item.discount) || 0;
-    return acc + (q * p * dPct) / 100;
-  }, 0);
-  const taxableAmount = subTotal - totalDiscountAmt;
-  const vatAmount = isVatBill ? taxableAmount * VAT_RATE : 0;
-  const grandTotal = taxableAmount + vatAmount;
+  const desiredAccountType =
+    watchPaymentMode === PaymentMode.BANK || watchPaymentMode === PaymentMode.CHEQUE
+      ? 'BANK'
+      : watchPaymentMode === PaymentMode.ONLINE
+      ? 'MOBILE_WALLET'
+      : 'CASH';
+
+  const filteredAccounts = accounts.filter((a: any) => a.accountType === desiredAccountType);
+
+  const watchIsVatBill = form.watch('isVatBill');
+
+  const mappedItems = watchItems.map((item) => ({
+    unitPrice: Number(item.unitPrice) || 0,
+    quantity: Number(item.quantity) || 0,
+    discountPercent: Number(item.discount) || 0,
+  }));
+
+  const totals = calculateInvoiceTotals(mappedItems, watchIsVatBill);
+  const { subTotal, discount, taxableAmount, taxAmount, totalAmount } = totals;
 
   // Auto-fill paid amount = grand total
   useEffect(() => {
-    if (isCreateOpen) form.setValue('paidAmount', grandTotal);
-  }, [grandTotal, isCreateOpen]);
+    if (isCreateOpen) form.setValue('paidAmount', totalAmount);
+  }, [totalAmount, isCreateOpen]);
 
   const handleCreateSubmit = async (data: CreatePurchaseInput) => {
     try {
       // Convert % discount → Rs. amount per line before sending
       const formattedItems = data.items.map((item) => {
-        const q = Number(item.quantity || 0);
-        const p = Number(item.unitPrice || 0);
-        const dPct = Number(item.discount || 0);
-        const dAmt = (q * p * dPct) / 100;
-        // VAT tax on this line if isVatBill
-        const lineSubtotal = q * p - dAmt;
-        const lineTax = isVatBill ? lineSubtotal * VAT_RATE : 0;
-        return { ...item, discount: dAmt, taxAmount: lineTax };
+        return { 
+          ...item, 
+          discountPercent: Number(item.discount || 0),
+        };
       });
       await createPurchase.mutateAsync({ ...data, items: formattedItems });
       setIsCreateOpen(false);
-      setIsVatBill(false);
       form.reset({
         date: new Date().toISOString().split('T')[0],
+        isVatBill: false,
         paidAmount: 0,
         paymentMode: PaymentMode.CASH,
         items: [{ itemId: '', quantity: 1, unitPrice: 0, discount: 0, taxAmount: 0 }],
       });
+      toast.success('Purchase bill recorded successfully');
     } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Failed to record purchase bill.');
+      toast.error(err.response?.data?.error?.message || 'Failed to record purchase bill.');
     }
   };
 
@@ -149,14 +157,6 @@ export default function PurchasesPage() {
       form.setValue(`items.${index}.unitPrice`, Number(selected.purchasePrice || 0));
     }
   };
-
-  // Find accounts matching payment mode
-  const filteredAccounts = accounts.filter((a) => {
-    if (watchPaymentMode === PaymentMode.BANK || watchPaymentMode === PaymentMode.CHEQUE)
-      return a.accountType === 'BANK';
-    if (watchPaymentMode === PaymentMode.ONLINE) return a.accountType === 'MOBILE_WALLET';
-    return a.accountType === 'CASH';
-  });
 
   const purchases = purchasesResponse?.data || [];
 
@@ -179,7 +179,7 @@ export default function PurchasesPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-1 md:grid-cols-3 gap-6">
         <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Purchases</p>
@@ -221,24 +221,24 @@ export default function PurchasesPage() {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900 border border-slate-800">
-        <div className="relative flex-1 min-w-[280px]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900 border border-slate-800">
+        <div className="relative w-full md:flex-1">
           <Search className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
           <input
             type="text"
             placeholder="Search by bill number or supplier name..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>
 
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold">
-          {(['', 'UNPAID', 'PARTIAL', 'PAID'] as const).map((s) => (
+        <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold w-full md:w-auto">
+          {(['', 'UNPAID', 'PARTIAL', 'PAID', 'RETURNED'] as const).map((s) => (
             <button
               key={s}
               onClick={() => setSelectedStatus(s as any)}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
+              className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg transition-all ${
                 selectedStatus === s ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -262,19 +262,84 @@ export default function PurchasesPage() {
           onAction={() => setIsCreateOpen(true)}
         />
       ) : (
-        <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-900 shadow-xl">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-800/70 text-slate-400 font-semibold border-b border-slate-800">
-              <tr>
-                <th className="px-6 py-4">BILL NO / DATE</th>
-                <th className="px-6 py-4">SUPPLIER</th>
-                <th className="px-6 py-4">ITEMS</th>
-                <th className="px-6 py-4 text-right">TOTAL AMOUNT</th>
-                <th className="px-6 py-4 text-right">PAID / DUE</th>
-                <th className="px-6 py-4 text-center">STATUS</th>
-                <th className="px-6 py-4 text-right">ACTIONS</th>
-              </tr>
-            </thead>
+        <>
+          {/* Mobile Card Layout */}
+          <div className="grid gap-4 md:hidden">
+            {purchases.map((p: any) => {
+              const total = Number(p.totalAmount || 0);
+              const due = Number(p.dueAmount || 0);
+
+              return (
+                <div key={p.id} className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col gap-3 shadow-sm">
+                  {/* Header */}
+                  <div className="flex items-start justify-between border-b border-slate-800/60 pb-3">
+                    <div>
+                      <Link href={`/transactions/purchases/${p.id}`} className="font-bold text-blue-400 hover:text-blue-300 font-mono text-sm">
+                        {p.billNumber}
+                      </Link>
+                      <p className="text-[11px] text-slate-500 mt-0.5">{new Date(p.date).toLocaleDateString()}</p>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider ${
+                      p.status === InvoiceStatus.PAID ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      : p.status === InvoiceStatus.PARTIAL ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                      : p.status === InvoiceStatus.RETURNED ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+                      : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                    }`}>
+                      {p.status}
+                    </span>
+                  </div>
+                  
+                  {/* Body */}
+                  <div className="flex justify-between items-center">
+                     <div>
+                       <p className="text-sm font-semibold text-slate-200">{p.party?.name || 'Unknown Supplier'}</p>
+                       <p className="text-xs text-slate-500 mt-0.5">{p.items?.length || 0} items</p>
+                     </div>
+                     <div className="text-right">
+                       <p className="font-mono font-bold text-white text-base">Rs. {total.toLocaleString()}</p>
+                       {due > 0 ? (
+                         <p className="font-mono text-[10px] text-rose-400 mt-0.5">Due: Rs. {due.toLocaleString()}</p>
+                       ) : (
+                         <p className="font-mono text-[10px] text-emerald-400 mt-0.5">Paid In Full</p>
+                       )}
+                     </div>
+                  </div>
+
+                  {/* Footer Actions */}
+                  <div className="flex justify-end items-center gap-2 pt-1">
+                     {(p.status === InvoiceStatus.UNPAID || p.status === InvoiceStatus.PARTIAL) && (
+                       <button onClick={() => {
+                          setPayDueId(p.id);
+                          setPayDueAmount(Number(p.dueAmount || 0));
+                          setPayDueCustomAmount('');
+                          setPayDueMode(PaymentMode.CASH);
+                       }} className="px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[11px] font-bold flex items-center gap-1.5 hover:bg-rose-500/20">
+                         <BanknoteIcon className="w-3.5 h-3.5" /> Pay Now
+                       </button>
+                     )}
+                     <Link href={`/transactions/purchases/${p.id}`} className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 text-[11px] font-bold flex items-center gap-1.5">
+                        <Eye className="w-3.5 h-3.5" /> View
+                     </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop Table Layout */}
+          <div className="hidden md:block border border-slate-800 rounded-2xl overflow-x-auto overflow-y-hidden bg-slate-900 shadow-xl">
+            <table className="w-full text-left text-xs min-w-[800px]">
+              <thead className="bg-slate-800/70 text-slate-400 font-semibold border-b border-slate-800">
+                <tr>
+                  <th className="px-6 py-4">BILL NO / DATE</th>
+                  <th className="px-6 py-4">SUPPLIER</th>
+                  <th className="px-6 py-4">ITEMS</th>
+                  <th className="px-6 py-4 text-right">TOTAL AMOUNT</th>
+                  <th className="px-6 py-4 text-right">PAID / DUE</th>
+                  <th className="px-6 py-4 text-center">STATUS</th>
+                  <th className="px-6 py-4 text-right">ACTIONS</th>
+                </tr>
+              </thead>
             <tbody className="divide-y divide-slate-800/60">
               {purchases.map((p: any) => {
                 const total = Number(p.totalAmount || 0);
@@ -311,6 +376,8 @@ export default function PurchasesPage() {
                             ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                             : p.status === InvoiceStatus.PARTIAL
                             ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                            : p.status === InvoiceStatus.RETURNED
+                            ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
                             : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                         }`}
                       >
@@ -348,11 +415,12 @@ export default function PurchasesPage() {
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       {/* CREATE PURCHASE BILL MODAL */}
       {isCreateOpen && (
-        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+        <ModalPortal><div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
           <div className="w-full max-w-5xl bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-h-[95vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="sticky top-0 bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between z-10">
@@ -369,9 +437,9 @@ export default function PurchasesPage() {
                 {/* VAT Bill Toggle */}
                 <button
                   type="button"
-                  onClick={() => setIsVatBill(v => !v)}
+                  onClick={() => form.setValue('isVatBill', !watchIsVatBill)}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${
-                    isVatBill
+                    watchIsVatBill
                       ? 'bg-amber-500/15 border-amber-500/40 text-amber-400'
                       : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'
                   }`}
@@ -380,7 +448,7 @@ export default function PurchasesPage() {
                   VAT Bill (13%)
                 </button>
                 <button
-                  onClick={() => { setIsCreateOpen(false); setIsVatBill(false); }}
+                  onClick={() => { setIsCreateOpen(false); form.setValue('isVatBill', false); }}
                   className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
                 >
                   <X className="w-4 h-4" />
@@ -390,7 +458,7 @@ export default function PurchasesPage() {
 
             <form onSubmit={form.handleSubmit(handleCreateSubmit)} className="p-6 space-y-6">
               {/* Header Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">Supplier Party *</label>
                   <select
@@ -398,11 +466,14 @@ export default function PurchasesPage() {
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
                   >
                     <option value="">Select Supplier</option>
-                    {suppliers.map((s: any) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} {s.phone ? `(${s.phone})` : ''}
-                      </option>
-                    ))}
+                    {suppliers.map((s: any) => {
+                      const balLabel = getPartyBalanceDisplay(s.currentBalance, 'SUPPLIER');
+                      return (
+                        <option key={s.id} value={s.id}>
+                          {s.name} {s.phone ? `(${s.phone})` : ''} — {balLabel}
+                        </option>
+                      );
+                    })}
                   </select>
                   {form.formState.errors.partyId && (
                     <p className="text-xs text-rose-400 mt-1 flex items-center gap-1">
@@ -457,15 +528,9 @@ export default function PurchasesPage() {
 
                 <div className="space-y-2">
                   {fields.map((field, idx) => {
+                    const totals = calculateInvoiceTotals(form.watch('items'), watchIsVatBill);
                     const selItemId = form.watch(`items.${idx}.itemId`);
                     const selItem = availableItems.find((i: any) => i.id === selItemId);
-                    const lineQty = Number(form.watch(`items.${idx}.quantity`)) || 0;
-                    const linePrice = Number(form.watch(`items.${idx}.unitPrice`)) || 0;
-                    const lineDiscPct = Number(form.watch(`items.${idx}.discount`)) || 0;
-                    const lineDiscAmt = (lineQty * linePrice * lineDiscPct) / 100;
-                    const lineSubtotal = lineQty * linePrice - lineDiscAmt;
-                    const lineTax = isVatBill ? lineSubtotal * VAT_RATE : 0;
-                    const lineTotal = lineSubtotal + lineTax;
 
                     return (
                       <div
@@ -495,16 +560,12 @@ export default function PurchasesPage() {
                                 <Package className="w-2.5 h-2.5" />
                                 Stock: {Number(selItem.currentStock || 0).toLocaleString()} {selItem.unit}
                               </span>
-                              <span className="text-[10px] text-slate-500">
-                                MRP: Rs. {Number(selItem.salePrice || 0).toLocaleString()}
-                              </span>
                             </div>
                           )}
                         </div>
 
                         {/* Quantity */}
                         <div className="col-span-4 md:col-span-2">
-                          <label className="md:hidden text-[10px] font-semibold text-slate-500 mb-1 block">QTY</label>
                           <input
                             type="number"
                             step="any"
@@ -517,7 +578,6 @@ export default function PurchasesPage() {
 
                         {/* Unit Price */}
                         <div className="col-span-4 md:col-span-2">
-                          <label className="md:hidden text-[10px] font-semibold text-slate-500 mb-1 block">RATE (Rs.)</label>
                           <input
                             type="number"
                             step="any"
@@ -530,7 +590,6 @@ export default function PurchasesPage() {
 
                         {/* Discount % */}
                         <div className="col-span-4 md:col-span-1">
-                          <label className="md:hidden text-[10px] font-semibold text-slate-500 mb-1 block">DISC %</label>
                           <div className="relative">
                             <input
                               type="number"
@@ -546,20 +605,8 @@ export default function PurchasesPage() {
                         </div>
 
                         {/* Line Total */}
-                        <div className="col-span-10 md:col-span-2 flex flex-col justify-center">
-                          <p className="text-right font-mono font-bold text-white text-xs">
-                            Rs. {lineTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </p>
-                          {lineDiscAmt > 0 && (
-                            <p className="text-right text-[10px] text-rose-400 font-mono">
-                              -Rs. {lineDiscAmt.toFixed(2)} disc
-                            </p>
-                          )}
-                          {lineTax > 0 && (
-                            <p className="text-right text-[10px] text-amber-400 font-mono">
-                              +Rs. {lineTax.toFixed(2)} VAT
-                            </p>
-                          )}
+                        <div className="col-span-1 text-right font-mono font-bold text-white text-xs">
+                          Rs. {formatCurrency(totals.items[idx]?.total || 0)}
                         </div>
 
                         {/* Remove */}
@@ -601,25 +648,20 @@ export default function PurchasesPage() {
                     </select>
                   </div>
 
-                  {/* Account Selector */}
-                  {filteredAccounts.length > 0 && (
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">
-                        Pay From Account
-                      </label>
-                      <select
-                        {...form.register('accountId')}
-                        className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-600 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all"
-                      >
-                        <option value="">Auto-select</option>
-                        {filteredAccounts.map((a) => (
-                          <option key={a.id} value={a.id}>
-                            {a.accountName} — Rs. {Number(a.balance).toLocaleString()}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">Account</label>
+                    <select
+                      {...form.register('accountId')}
+                      className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-600 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all"
+                    >
+                      <option value="">Default {desiredAccountType.replace('_', ' ')} Account</option>
+                      {filteredAccounts.map((a: any) => (
+                        <option key={a.id} value={a.id}>
+                          {a.bankName || a.accountName} — Rs. {formatCurrency(a.balance)} Available
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">Paid Amount (Rs.)</label>
@@ -637,60 +679,43 @@ export default function PurchasesPage() {
                 </div>
 
                 {/* Totals Summary */}
-                <div className="p-4 rounded-xl bg-gradient-to-br from-slate-900 to-slate-800/60 border border-slate-700 space-y-2.5 text-xs">
-                  <h4 className="text-xs font-bold text-slate-300 mb-3 uppercase tracking-wider">Bill Summary</h4>
+                <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2 text-xs">
                   <div className="flex justify-between text-slate-400">
                     <span>Subtotal</span>
-                    <span className="font-mono">Rs. {subTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className="font-mono">Rs. {formatCurrency(subTotal)}</span>
                   </div>
-                  {totalDiscountAmt > 0 && (
+                  {discount > 0 && (
                     <div className="flex justify-between text-rose-400">
-                      <span>Discount</span>
-                      <span className="font-mono">− Rs. {totalDiscountAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      <span>Total Discount</span>
+                      <span className="font-mono">- Rs. {formatCurrency(discount)}</span>
                     </div>
                   )}
-                  {isVatBill && (
+
+                  {watchIsVatBill && (
                     <>
-                      <div className="flex justify-between text-slate-400 pt-1 border-t border-slate-800">
+                      <div className="flex justify-between text-slate-400 pt-1 border-t border-slate-800/60">
                         <span>Taxable Amount</span>
-                        <span className="font-mono">Rs. {taxableAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="font-mono">Rs. {formatCurrency(taxableAmount)}</span>
                       </div>
-                      <div className="flex justify-between text-amber-400">
+                      <div className="flex justify-between text-blue-400">
                         <span>VAT (13%)</span>
-                        <span className="font-mono">+ Rs. {vatAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="font-mono">+ Rs. {formatCurrency(taxAmount)}</span>
                       </div>
                     </>
                   )}
-                  <div className="flex justify-between text-base font-bold text-white pt-2 border-t border-slate-700 mt-1">
+                  
+                  <div className="flex justify-between text-base font-bold text-white pt-2 border-t border-slate-800">
                     <span>Grand Total</span>
-                    <span className="font-mono text-blue-400">Rs. {grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className="font-mono text-blue-400">Rs. {formatCurrency(totalAmount)}</span>
                   </div>
-                  {isVatBill && (
-                    <div className="pt-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                      <p className="text-[10px] font-semibold text-amber-400 flex items-center gap-1">
-                        <Receipt className="w-3 h-3" /> VAT Invoice — 13% Tax Applied
-                      </p>
-                    </div>
-                  )}
                 </div>
-              </div>
-
-              {/* Notes */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Notes (Optional)</label>
-                <textarea
-                  {...form.register('notes')}
-                  rows={2}
-                  placeholder="Any additional remarks about this purchase..."
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all resize-none"
-                />
               </div>
 
               {/* Actions */}
               <div className="flex justify-end gap-3 pt-2 border-t border-slate-800">
                 <button
                   type="button"
-                  onClick={() => { setIsCreateOpen(false); setIsVatBill(false); }}
+                  onClick={() => { setIsCreateOpen(false); }}
                   className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold transition-all"
                 >
                   Cancel
@@ -700,24 +725,17 @@ export default function PurchasesPage() {
                   disabled={createPurchase.isPending}
                   className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 flex items-center gap-2"
                 >
-                  {createPurchase.isPending ? (
-                    <>Processing...</>
-                  ) : (
-                    <>
-                      <ShoppingBag className="w-4 h-4" />
-                      Save {isVatBill ? 'VAT ' : ''}Purchase Bill
-                    </>
-                  )}
+                  {createPurchase.isPending ? 'Processing Transaction...' : `Save ${watchIsVatBill ? 'VAT ' : ''}Purchase Bill`}
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div></ModalPortal>
       )}
 
       {/* PAY DUE MODAL */}
       {payDueId && (
-        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+        <ModalPortal><div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
           <div className="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
               <div className="flex items-center gap-2.5">
@@ -781,7 +799,7 @@ export default function PurchasesPage() {
               </div>
             </div>
           </div>
-        </div>
+        </div></ModalPortal>
       )}
     </div>
   );

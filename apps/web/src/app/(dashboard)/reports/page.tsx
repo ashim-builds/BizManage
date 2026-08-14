@@ -327,7 +327,7 @@ export default function ReportsPage() {
           </div>
 
           <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-900">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-xs min-w-[800px]">
               <thead className="bg-slate-800/70 text-slate-400 font-semibold border-b border-slate-800">
                 <tr>
                   <th className="px-6 py-4">Invoice #</th>
@@ -397,7 +397,7 @@ export default function ReportsPage() {
           </div>
 
           <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-900">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-xs min-w-[800px]">
               <thead className="bg-slate-800/70 text-slate-400 font-semibold border-b border-slate-800">
                 <tr>
                   <th className="px-6 py-4">Bill #</th>
@@ -451,7 +451,7 @@ export default function ReportsPage() {
           </div>
 
           <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-900">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-xs min-w-[800px]">
               <thead className="bg-slate-800/70 text-slate-400 font-semibold border-b border-slate-800">
                 <tr>
                   <th className="px-6 py-4">Date</th>
@@ -509,7 +509,7 @@ export default function ReportsPage() {
           </div>
 
           <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-900">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-xs min-w-[800px]">
               <thead className="bg-slate-800/70 text-slate-400 font-semibold border-b border-slate-800">
                 <tr>
                   <th className="px-6 py-4">Party Name</th>
@@ -587,7 +587,7 @@ export default function ReportsPage() {
           </div>
 
           <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-900">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-xs min-w-[800px]">
               <thead className="bg-slate-800/70 text-slate-400 font-semibold border-b border-slate-800">
                 <tr>
                   <th className="px-6 py-4">Item Name</th>

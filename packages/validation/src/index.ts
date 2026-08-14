@@ -46,7 +46,7 @@ export const updateBusinessSchema = z.object({
   taxNumber: z.string().optional().nullable(),
   currency: z.string().default('NPR'),
   logoUrl: z.string().optional().nullable(),
-  subscriptionPlan: z.string().optional(),
+  subscriptionPackageId: z.string().optional().nullable(),
   profileCompleted: z.boolean().optional(),
   setupCompleted: z.boolean().optional(),
 });
@@ -117,6 +117,7 @@ export const invoiceItemSchema = z.object({
   itemId: z.string().min(1, 'Item selection is required'),
   quantity: z.number().positive('Quantity must be greater than 0'),
   unitPrice: z.number().min(0, 'Unit price cannot be negative'),
+  discountPercent: z.number().min(0).max(100).default(0),
   discount: z.number().min(0).default(0),
   taxAmount: z.number().min(0).default(0),
 });
@@ -127,6 +128,7 @@ export const createPurchaseSchema = z.object({
   billNumber: z.string().optional(),
   date: z.string().or(z.date()),
   items: z.array(invoiceItemSchema).min(1, 'At least one item is required'),
+  isVatBill: z.boolean().default(false),
   paidAmount: z.number().min(0).default(0),
   paymentMode: z.nativeEnum(PaymentMode).default(PaymentMode.CASH),
   accountId: z.string().optional().nullable(),
@@ -153,6 +155,7 @@ export const createSaleSchema = z.object({
   date: z.string().or(z.date()),
   dueDate: z.string().or(z.date()).optional().nullable(),
   items: z.array(invoiceItemSchema).min(1, 'At least one item is required'),
+  isVatBill: z.boolean().default(false),
   paidAmount: z.number().min(0).default(0),
   paymentMode: z.nativeEnum(PaymentMode).default(PaymentMode.CASH),
   accountId: z.string().optional().nullable(),

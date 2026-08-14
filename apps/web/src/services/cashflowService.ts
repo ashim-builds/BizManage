@@ -54,3 +54,21 @@ export function useCashflowAccounts() {
     },
   });
 }
+
+export interface TransactionListParams {
+  page?: number;
+  limit?: number;
+  category?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export function useTransactionsList(params: TransactionListParams) {
+  return useQuery({
+    queryKey: ['transactions', 'list', params],
+    queryFn: async () => {
+      const res = await api.get('/cashflow/transactions', { params });
+      return res.data;
+    },
+  });
+}

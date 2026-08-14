@@ -1,6 +1,7 @@
 'use client';
 
 import { useParty } from '@/services/partyService';
+import { formatPartyBalance } from '@/lib/balance';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -28,8 +29,8 @@ export default function PartyDetailsPage({ params }: { params: { id: string } })
 
   const currentBal = Number(party.currentBalance || 0);
   const openingBal = Number(party.openingBalance || 0);
-  const isReceivable = currentBal > 0;
-  const isPayable = currentBal < 0;
+  const balInfo = formatPartyBalance(party.currentBalance, party.type);
+  const openingBalInfo = formatPartyBalance(party.openingBalance, party.type);
 
   // Combine transactions for chronological ledger
   const salesTx = (party.sales || []).map((s: any) => ({
@@ -175,11 +176,8 @@ export default function PartyDetailsPage({ params }: { params: { id: string } })
           <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col justify-between">
             <div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Opening Balance</p>
-              <h3 className="text-2xl font-bold text-white font-mono mt-2">
-                Rs. {Math.abs(openingBal).toLocaleString()}{' '}
-                <span className="text-xs font-sans text-slate-500">
-                  ({openingBal >= 0 ? 'Receivable' : 'Payable'})
-                </span>
+              <h3 className={`text-2xl font-bold font-mono mt-2 ${openingBalInfo.colorClass}`}>
+                {openingBalInfo.text}
               </h3>
             </div>
             <p className="text-[11px] text-slate-500 mt-4 border-t border-slate-800/80 pt-3">
@@ -190,29 +188,9 @@ export default function PartyDetailsPage({ params }: { params: { id: string } })
           <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col justify-between">
             <div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Current Balance</p>
-              <h3 className="text-3xl font-bold font-mono mt-2">
-                {isReceivable && <span className="text-emerald-400">Rs. {currentBal.toLocaleString()}</span>}
-                {isPayable && <span className="text-rose-400">Rs. {Math.abs(currentBal).toLocaleString()}</span>}
-                {!isReceivable && !isPayable && <span className="text-slate-400">Rs. 0</span>}
+              <h3 className={`text-3xl font-bold font-mono mt-2 ${balInfo.colorClass}`}>
+                {balInfo.text}
               </h3>
-            </div>
-            <div className="mt-4 border-t border-slate-800/80 pt-3 flex items-center justify-between">
-              <span className="text-xs text-slate-400">Balance Status</span>
-              {isReceivable && (
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold border border-emerald-500/20">
-                  Amount to Receive
-                </span>
-              )}
-              {isPayable && (
-                <span className="px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-400 text-xs font-semibold border border-rose-500/20">
-                  Amount to Give
-                </span>
-              )}
-              {!isReceivable && !isPayable && (
-                <span className="px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400 text-xs font-semibold">
-                  Settled
-                </span>
-              )}
             </div>
           </div>
         </div>
@@ -231,8 +209,8 @@ export default function PartyDetailsPage({ params }: { params: { id: string } })
             description="Sales invoices, purchase bills, and payment entries for this party will appear here."
           />
         ) : (
-          <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-900 shadow-xl">
-            <table className="w-full text-left text-xs">
+          <div className="border border-slate-800 rounded-2xl overflow-x-auto overflow-y-hidden bg-slate-900 shadow-xl">
+            <table className="w-full text-left text-xs min-w-[800px]">
               <thead className="bg-slate-800/70 text-slate-400 font-semibold border-b border-slate-800">
                 <tr>
                   <th className="px-6 py-4">Date</th>

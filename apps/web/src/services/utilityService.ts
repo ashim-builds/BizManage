@@ -10,13 +10,14 @@ export interface NotificationItem {
   link: string;
 }
 
-export function useNotifications() {
+export function useNotifications(businessId?: string | null) {
   return useQuery({
-    queryKey: ['notifications'],
+    queryKey: ['notifications', businessId],
     queryFn: async () => {
       const res = await api.get('/utilities/notifications');
       return res.data.data as { unreadCount: number; notifications: NotificationItem[] };
     },
+    enabled: !!businessId,
     refetchInterval: 30000,
   });
 }

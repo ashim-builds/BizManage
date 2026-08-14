@@ -39,7 +39,7 @@ export default function SaleInvoiceDetailsPage({ params }: { params: { id: strin
           </Link>
           <div>
             <h1 className="text-xl font-bold text-white flex items-center gap-2">
-              Sales Tax Invoice <span className="font-mono text-blue-400">{sale.invoiceNumber}</span>
+              {sale.isVatBill ? 'Sales Tax Invoice' : 'Sales Invoice'} <span className="font-mono text-blue-400">{sale.invoiceNumber}</span>
             </h1>
             <p className="text-xs text-slate-400">Date: {new Date(sale.date).toLocaleDateString()}</p>
           </div>
@@ -67,16 +67,21 @@ export default function SaleInvoiceDetailsPage({ params }: { params: { id: strin
             {business?.phone && (
               <p className="text-xs text-slate-400 print:text-slate-600">Phone: {business.phone}</p>
             )}
-            {business?.taxNumber && (
+            {business?.taxNumber && sale.isVatBill && (
               <p className="text-xs text-slate-400 print:text-slate-600 font-mono mt-0.5">
-                PAN/VAT: {business.taxNumber}
+                VAT No.: {business.taxNumber}
+              </p>
+            )}
+            {business?.taxNumber && !sale.isVatBill && (
+              <p className="text-xs text-slate-400 print:text-slate-600 font-mono mt-0.5">
+                PAN: {business.taxNumber}
               </p>
             )}
           </div>
 
           <div className="text-right">
             <span className="text-sm font-bold uppercase tracking-widest px-3 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 print:border-slate-300 print:bg-slate-100 print:text-slate-800">
-              TAX INVOICE (VAT BILL)
+              {sale.isVatBill ? 'TAX INVOICE' : 'INVOICE'}
             </span>
             <h3 className="text-xl font-bold font-mono text-white print:text-slate-900 mt-2">
               {sale.invoiceNumber}
@@ -116,6 +121,8 @@ export default function SaleInvoiceDetailsPage({ params }: { params: { id: strin
                   ? 'bg-emerald-500/10 text-emerald-400 print:bg-emerald-100 print:text-emerald-800'
                   : sale.status === InvoiceStatus.PARTIAL
                   ? 'bg-amber-500/10 text-amber-400 print:bg-amber-100 print:text-amber-800'
+                  : sale.status === InvoiceStatus.RETURNED
+                  ? 'bg-purple-500/10 text-purple-400 print:bg-purple-100 print:text-purple-800'
                   : 'bg-rose-500/10 text-rose-400 print:bg-rose-100 print:text-rose-800'
               }`}
             >
@@ -126,7 +133,7 @@ export default function SaleInvoiceDetailsPage({ params }: { params: { id: strin
 
         {/* Line Items Table */}
         <div className="border border-slate-800 print:border-slate-200 rounded-xl overflow-hidden">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-left text-xs min-w-[800px]">
             <thead className="bg-slate-800/80 print:bg-slate-100 text-slate-300 print:text-slate-700 font-semibold border-b border-slate-800 print:border-slate-200">
               <tr>
                 <th className="px-4 py-3">Item Description</th>
@@ -149,6 +156,11 @@ export default function SaleInvoiceDetailsPage({ params }: { params: { id: strin
                   </td>
                   <td className="px-4 py-3 text-right font-mono">
                     {Number(line.quantity)} {line.item?.unit}
+                    {Number(line.returnedQuantity || 0) > 0 && (
+                      <span className="block text-[10px] text-rose-400 font-semibold mt-1">
+                        Returned: {Number(line.returnedQuantity)} {line.item?.unit}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right font-mono">
                     Rs. {Number(line.unitPrice).toLocaleString()}
@@ -189,21 +201,20 @@ export default function SaleInvoiceDetailsPage({ params }: { params: { id: strin
                 <span className="font-mono">- Rs. {totalDiscount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             )}
-            <div className="flex justify-between text-slate-400 print:text-slate-700">
-              <span>Taxable Amount</span>
-              <span className="font-mono text-white print:text-slate-900">Rs. {(subTotal - totalDiscount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            </div>
-            {totalTax > 0 ? (
-              <div className="flex justify-between text-amber-400 print:text-slate-800 font-semibold">
-                <span>VAT (13%)</span>
-                <span className="font-mono">+ Rs. {totalTax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              </div>
-            ) : (
-              <div className="flex justify-between text-slate-500 print:text-slate-500">
-                <span>VAT (13%)</span>
-                <span className="font-mono">Rs. 0.00</span>
-              </div>
+            
+            {sale.isVatBill && (
+              <>
+                <div className="flex justify-between text-slate-400 print:text-slate-700">
+                  <span>Taxable Amount</span>
+                  <span className="font-mono text-white print:text-slate-900">Rs. {(totalAmount - totalTax).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                <div className="flex justify-between text-amber-400 print:text-slate-800 font-semibold">
+                  <span>VAT (13%)</span>
+                  <span className="font-mono">+ Rs. {totalTax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+              </>
             )}
+            
             <div className="flex justify-between text-sm font-bold text-white print:text-slate-900 pt-2 border-t border-slate-800 print:border-slate-300">
               <span>Grand Total</span>
               <span className="font-mono text-blue-400 print:text-slate-900">

@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 import { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,11 +9,13 @@ import { createSaleReturnSchema, CreateSaleReturnInput } from '@bizmanage/valida
 import { useSaleReturns, useCreateSaleReturn, useSales } from '@/services/saleService';
 import { useParties } from '@/services/partyService';
 import { useAccounts } from '@/services/accountService';
+import { getPartyBalanceDisplay } from '@/lib/balance';
+import { calculateInvoiceTotals, formatCurrency } from '@/lib/accounting';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ModalPortal } from '@/components/common/ModalPortal';
-import { RotateCcw, Plus, FileText, ArrowDownLeft, X, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { RotateCcw, Plus, FileText, ArrowDownLeft, X, Trash2, CheckCircle2, AlertTriangle, Eye } from 'lucide-react';
 import { PaymentMode } from '@bizmanage/types';
 
 export default function SalesReturnPage() {
@@ -85,13 +89,17 @@ export default function SalesReturnPage() {
     }
   };
 
-  const calculatedTotal = watchItems.reduce((acc, item) => {
-    const qty = Number(item.quantity) || 0;
-    const price = Number(item.unitPrice) || 0;
-    const disc = Number(item.discount) || 0;
-    const tax = Number(item.taxAmount) || 0;
-    return acc + (qty * price - disc + tax);
-  }, 0);
+  const selectedSale = customerSales.find((s: any) => s.id === selectedSaleId);
+  const isVatBill = selectedSale?.isVatBill || false;
+
+  const mappedItems = watchItems.map((item) => ({
+    unitPrice: Number(item.unitPrice) || 0,
+    quantity: Number(item.quantity) || 0,
+    discountPercent: Number(item.discountPercent) || 0,
+  }));
+
+  const totals = calculateInvoiceTotals(mappedItems, isVatBill);
+  const calculatedTotal = totals.totalAmount;
 
   const handleCreateSubmit = async (data: CreateSaleReturnInput) => {
     setErrorBanner('');
@@ -134,7 +142,7 @@ export default function SalesReturnPage() {
       </div>
 
       {/* Summary Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-3 gap-4">
         <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
           <p className="text-xs text-slate-400 font-semibold">Total Credit Notes Issued</p>
           <p className="text-xl font-bold text-white font-mono">{returnsList.length}</p>
@@ -165,19 +173,58 @@ export default function SalesReturnPage() {
           onAction={() => setIsCreateOpen(true)}
         />
       ) : (
-        <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-900 shadow-xl">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-800/70 text-slate-400 font-semibold border-b border-slate-800">
-              <tr>
-                <th className="px-6 py-4">Return No / Date</th>
-                <th className="px-6 py-4">Customer Party</th>
-                <th className="px-6 py-4">Original Invoice</th>
-                <th className="px-6 py-4">Returned Items</th>
-                <th className="px-6 py-4 text-right">Return Amount</th>
-                <th className="px-6 py-4 text-center">Settlement Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60">
+        <>
+          {/* Mobile Card Layout */}
+          <div className="grid gap-4 md:hidden">
+            {returnsList.map((r: any) => (
+              <div key={r.id} className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col gap-3 shadow-sm">
+                <div className="flex items-start justify-between border-b border-slate-800/60 pb-3">
+                  <div>
+                    <span className="font-bold text-white font-mono text-sm">{r.returnNumber}</span>
+                    <p className="text-[11px] text-slate-500 mt-0.5">{new Date(r.date).toLocaleDateString()}</p>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                    Credit Note
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-200">{r.party?.name || 'Walk-in Customer'}</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      {r.sale?.invoiceNumber ? `Ref: ${r.sale.invoiceNumber} • ` : ''}
+                      {r.items?.length || 0} items
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-mono font-bold text-white text-base">Rs. {Number(r.totalAmount || 0).toLocaleString()}</p>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <Link href={`/transactions/sales-return/${r.id}`} className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 text-[11px] font-bold flex items-center gap-1.5">
+                    <Eye className="w-3.5 h-3.5" /> View
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table Layout */}
+          <div className="hidden md:block border border-slate-800 rounded-2xl overflow-x-auto overflow-y-hidden bg-slate-900 shadow-xl">
+            <table className="w-full text-left text-xs min-w-[800px]">
+              <thead className="bg-slate-800/70 text-slate-400 font-semibold border-b border-slate-800">
+                <tr>
+                  <th className="px-6 py-4">Return No / Date</th>
+                  <th className="px-6 py-4">Customer Party</th>
+                  <th className="px-6 py-4">Original Invoice</th>
+                  <th className="px-6 py-4">Returned Items</th>
+                  <th className="px-6 py-4 text-right">Return Amount</th>
+                  <th className="px-6 py-4 text-center">Settlement Status</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
               {returnsList.map((r: any) => (
                 <tr key={r.id} className="hover:bg-slate-800/40 transition-colors">
                   <td className="px-6 py-4 font-semibold text-white font-mono">
@@ -214,11 +261,22 @@ export default function SalesReturnPage() {
                       Credit Note Issued
                     </span>
                   </td>
+
+                  <td className="px-6 py-4 text-right">
+                    <Link
+                      href={`/transactions/sales-return/${r.id}`}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 inline-block"
+                      title="View Credit Note"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       {/* CREATE SALES RETURN MODAL */}
@@ -235,6 +293,15 @@ export default function SalesReturnPage() {
                     Select customer and original invoice to populate items. Return pricing uses original sold rates.
                   </p>
                 </div>
+                <div className="flex items-center justify-between p-4 rounded-xl bg-slate-800/80 border border-slate-700">
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-300">Total Return Value</h4>
+                    <p className="text-[10px] text-slate-400">Total value of credit note {isVatBill ? '(VAT Included)' : ''}</p>
+                  </div>
+                  <div className="text-xl font-bold text-indigo-400 font-mono">
+                    Rs. {formatCurrency(calculatedTotal)}
+                  </div>
+                </div>
                 <button
                   onClick={() => setIsCreateOpen(false)}
                   className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
@@ -250,7 +317,7 @@ export default function SalesReturnPage() {
               )}
 
               <form onSubmit={form.handleSubmit(handleCreateSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div className="grid grid-cols-1 md:grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                   <div>
                     <label className="block font-semibold text-slate-300 mb-1">Customer Party *</label>
                     <select
@@ -258,11 +325,14 @@ export default function SalesReturnPage() {
                       className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
                     >
                       <option value="">Select Customer</option>
-                      {customers.map((c: any) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
+                      {customers.map((c: any) => {
+                        const balLabel = getPartyBalanceDisplay(c.currentBalance, 'CUSTOMER');
+                        return (
+                          <option key={c.id} value={c.id}>
+                            {c.name} ({balLabel})
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
 
@@ -307,11 +377,6 @@ export default function SalesReturnPage() {
                   ) : (
                     <div className="space-y-2">
                       {fields.map((field, idx) => {
-                        const lineQty = form.watch(`items.${idx}.quantity`) || 0;
-                        const linePrice = form.watch(`items.${idx}.unitPrice`) || 0;
-                        const lineDisc = form.watch(`items.${idx}.discount`) || 0;
-                        const lineTotal = lineQty * linePrice - lineDisc;
-
                         return (
                           <div
                             key={field.id}
@@ -335,7 +400,7 @@ export default function SalesReturnPage() {
                             </div>
 
                             <div className="col-span-3 text-right font-mono font-bold text-white text-xs">
-                              Rs. {lineTotal.toLocaleString()}
+                              Rs. {formatCurrency(totals.items[idx]?.total || 0)}
                             </div>
 
                             <div className="col-span-1 flex justify-center">

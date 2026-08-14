@@ -3,6 +3,7 @@ import { requireBusinessTenant } from '../../middleware/auth.js';
 import { createExpenseSchema } from '@bizmanage/validation';
 import { PaymentMode, TransactionCategory, Prisma } from '@bizmanage/database';
 import { AppError } from '../../plugins/error-handler.js';
+import { updateAccountBalance } from '../../services/accounting.service.js';
 
 export async function expenseRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', requireBusinessTenant);
@@ -141,12 +142,13 @@ export async function expenseRoutes(fastify: FastifyInstance) {
       });
 
       // 2. Decrease Cash/Bank Account Balance
+      // We do a manual fetch to check balance before atomic update
       const curAccBal = new Prisma.Decimal(targetAccount.balance || 0);
-      const newAccBal = curAccBal.sub(amt);
-      await tx.account.update({
-        where: { id: targetAccount.id },
-        data: { balance: newAccBal },
-      });
+      if (curAccBal.sub(amt).lessThan(0)) {
+        throw new AppError('Insufficient balance in the selected account. Please add funds or change payment method.', 400, 'VALIDATION_ERROR');
+      }
+
+      await updateAccountBalance(tx as any, targetAccount.id, amt.toNumber(), 'REDUCE');
 
       // 3. Create Transaction Entry
       await tx.transaction.create({
@@ -180,25 +182,25 @@ export async function expenseRoutes(fastify: FastifyInstance) {
         throw new AppError('Expense record not found', 404, 'NOT_FOUND');
       }
 
+      if (expense.status === 'VOIDED') {
+        throw new AppError('Expense is already voided', 400, 'BAD_REQUEST');
+      }
+
       const amt = new Prisma.Decimal(expense.amount || 0);
 
       // Restore account balance
-      const account = await tx.account.findUnique({ where: { id: expense.accountId } });
-      if (account) {
-        const curBal = new Prisma.Decimal(account.balance || 0);
-        await tx.account.update({
-          where: { id: account.id },
-          data: { balance: curBal.add(amt) },
-        });
-      }
+      await updateAccountBalance(tx as any, expense.accountId, amt.toNumber(), 'ADD');
 
       await tx.transaction.deleteMany({ where: { referenceId: id } });
-      await tx.expense.delete({ where: { id } });
+      await tx.expense.update({
+        where: { id },
+        data: { status: 'VOIDED' },
+      });
     });
 
     return reply.send({
       success: true,
-      data: { message: 'Expense record deleted successfully' },
+      data: { message: 'Expense record voided successfully' },
     });
   });
 }

@@ -85,6 +85,17 @@ export function usePurchaseReturns() {
   });
 }
 
+export function usePurchaseReturn(id: string) {
+  return useQuery({
+    queryKey: ['purchases', 'returns', id],
+    queryFn: async () => {
+      const res = await api.get(`/purchases/returns/${id}`);
+      return res.data.data;
+    },
+    enabled: !!id,
+  });
+}
+
 export function useCreatePurchaseReturn() {
   const queryClient = useQueryClient();
   return useMutation({

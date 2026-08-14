@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Tag, Plus, X, AlertTriangle, Loader2 } from 'lucide-react';
-import { ModalPortal } from './ModalPortal';
+import { ModalPortal } from '@/components/ui/ModalPortal';
 import {
   useCreateItemCategory,
   useCreatePartyCategory,
@@ -82,7 +82,7 @@ export function AddCategoryModal({
   return (
     <ModalPortal>
       <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[120] flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+        <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto scrollbar-thin">
           <div className="flex items-center justify-between border-b border-slate-800 pb-4">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">

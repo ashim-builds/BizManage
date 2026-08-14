@@ -9,6 +9,7 @@ declare module '@fastify/jwt' {
       id: string;
       email: string;
       name: string;
+      isSystemAdmin: boolean;
     };
   }
 }
@@ -17,6 +18,8 @@ declare module 'fastify' {
   interface FastifyRequest {
     tenant?: {
       businessId: string;
+      features: string[];
+      isExpired?: boolean;
     };
     membership?: {
       role: Role;
@@ -27,22 +30,22 @@ declare module 'fastify' {
 
 export async function authenticateUser(request: FastifyRequest, _reply: FastifyReply) {
   try {
-    const authHeader = request.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new AppError('Missing or invalid authorization header', 401, 'UNAUTHORIZED');
-    }
-
     const payload = await request.jwtVerify<{ userId: string; email: string }>();
     const user = await globalPrisma.user.findUnique({
       where: { id: payload.userId },
-      select: { id: true, email: true, name: true },
+      select: { id: true, email: true, name: true, isSystemAdmin: true },
     });
 
     if (!user) {
       throw new AppError('User not found', 401, 'UNAUTHORIZED');
     }
 
-    request.user = user;
+    request.user = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      isSystemAdmin: user.isSystemAdmin,
+    };
   } catch (err) {
     if (err instanceof AppError) throw err;
     throw new AppError('Invalid or expired token', 401, 'UNAUTHORIZED');
@@ -64,13 +67,48 @@ export async function requireBusinessTenant(request: FastifyRequest, _reply: Fas
         businessId,
       },
     },
+    include: {
+      business: {
+        select: { 
+          isActive: true,
+          subscriptionStatus: true,
+          currentPeriodEnd: true,
+          subscriptionPackage: {
+            select: { features: true }
+          }
+        },
+      },
+    },
   });
 
   if (!membership) {
     throw new AppError('Access denied for this business tenant', 403, 'FORBIDDEN');
   }
 
-  request.tenant = { businessId };
+  if (!membership.business.isActive) {
+    throw new AppError('Your business account has been suspended. Please contact the administrator.', 403, 'FORBIDDEN');
+  }
+
+  let isExpired = false;
+  if (membership.business.subscriptionStatus === 'EXPIRED') {
+    isExpired = true;
+  } else if (membership.business.currentPeriodEnd && new Date(membership.business.currentPeriodEnd) < new Date()) {
+    isExpired = true;
+  }
+
+  request.tenant = { 
+    businessId,
+    features: (membership.business.subscriptionPackage?.features as string[]) || [],
+    isExpired
+  };
   request.membership = { role: membership.role as Role };
-  request.db = createTenantClient(businessId);
+  request.db = createTenantClient(businessId, request.user.id, request.ip);
+}
+
+export async function requireSystemAdmin(request: FastifyRequest, _reply: FastifyReply) {
+  await authenticateUser(request, _reply);
+
+  if (!request.user.isSystemAdmin) {
+    throw new AppError('System Admin privileges required', 403, 'FORBIDDEN');
+  }
 }

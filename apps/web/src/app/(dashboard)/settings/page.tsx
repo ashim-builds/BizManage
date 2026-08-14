@@ -7,9 +7,11 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useCurrentBusiness, useUpdateBusiness, useUpdateBusinessSettings } from '@/services/businessService';
 import { useImportParties, useImportItems, useDownloadBackup, useChangePassword } from '@/services/utilityService';
 import { useDashboardMetrics } from '@/services/dashboardService';
+import { useSessions, useDeleteSession, useDeleteOtherSessions } from '@/services/sessionService';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { BmsOnboardingWizard } from '@/components/dashboard/BmsOnboardingWizard';
+import { toast } from 'react-hot-toast';
 import {
   Settings,
   Building2,
@@ -31,6 +33,11 @@ import {
   EyeOff,
   KeyRound,
   ShieldCheck,
+  Monitor,
+  Smartphone,
+  MapPin,
+  Clock,
+  Trash2,
 } from 'lucide-react';
 
 type SettingsTab =
@@ -72,10 +79,10 @@ function SettingsPageContent() {
   const updateBusiness = useUpdateBusiness();
 
   useEffect(() => {
-    if (business?.subscriptionPlan) {
-      setSelectedPlan(business.subscriptionPlan);
+    if (business?.subscriptionPackage?.name) {
+      setSelectedPlan(business.subscriptionPackage.name);
     }
-  }, [business?.subscriptionPlan]);
+  }, [business?.subscriptionPackage?.name]);
 
   // Utilities Mutations
   const importParties = useImportParties();
@@ -131,6 +138,10 @@ function SettingsPageContent() {
     return true;
   });
   const [enableTax, setEnableTax] = useState(false);
+  
+  const rawFeatures = business?.subscriptionPackage?.features;
+  const userFeatures = typeof rawFeatures === 'string' ? JSON.parse(rawFeatures) : (rawFeatures || []);
+  const canCustomBranding = userFeatures.includes('CUSTOM_BRANDING');
   const [taxRate, setTaxRate] = useState(13);
   const [profileSuccess, setProfileSuccess] = useState('');
   const [profileError, setProfileError] = useState('');
@@ -146,6 +157,11 @@ function SettingsPageContent() {
   const [pwdSuccess, setPwdSuccess] = useState('');
   const [pwdError, setPwdError] = useState('');
   const [pwdPending, setPwdPending] = useState(false);
+
+  // Session States
+  const { data: sessions, isLoading: sessionsLoading } = useSessions();
+  const deleteSession = useDeleteSession();
+  const deleteOtherSessions = useDeleteOtherSessions();
 
   // Import States
   const [importJsonText, setImportJsonText] = useState('');
@@ -332,8 +348,10 @@ function SettingsPageContent() {
       a.href = url;
       a.download = `bizmanage_backup_${new Date().toISOString().split('T')[0]}.json`;
       a.click();
-    } catch (err: any) {
-      alert('Failed to generate backup dump.');
+      toast.success('Backup downloaded successfully!');
+    } catch (error) {
+      console.error('Backup error:', error);
+      toast.error('Failed to generate backup dump.');
     }
   };
 
@@ -404,7 +422,7 @@ function SettingsPageContent() {
               : 'text-slate-400 hover:text-white'
           }`}
         >
-          <User className="w-3.5 h-3.5" /> My Account
+          <User className="w-3.5 h-3.5" /> Account & Security
         </button>
 
         <button
@@ -481,42 +499,49 @@ function SettingsPageContent() {
 
           <div className="space-y-5 text-xs">
             {/* BUSINESS LOGO UPLOAD */}
-            <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/80 space-y-3">
-              <label className="block text-slate-300 font-semibold">Business Logo (Upload from Computer)</label>
+            <div className={`p-4 rounded-xl border space-y-3 ${canCustomBranding ? 'bg-slate-800/60 border-slate-700/80' : 'bg-slate-900/40 border-slate-800 opacity-75'}`}>
+              <div className="flex items-center justify-between">
+                <label className="block text-slate-300 font-semibold">Business Logo</label>
+                {!canCustomBranding && (
+                  <span className="text-[10px] bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded border border-amber-500/20 font-bold flex items-center gap-1">
+                    <Lock className="w-3 h-3" /> Requires Pro Plan
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-4">
                 {logoUrl ? (
                   <div className="relative group">
                     <img
                       src={logoUrl}
                       alt="Business Logo"
-                      className="w-16 h-16 rounded-xl object-contain bg-slate-900 border border-slate-700 p-1"
+                      className={`w-16 h-16 rounded-xl object-contain bg-slate-900 border p-1 ${!canCustomBranding ? 'border-slate-800 opacity-50 grayscale' : 'border-slate-700'}`}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setLogoUrl('')}
-                      className="absolute -top-1.5 -right-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-md text-[10px]"
-                      title="Remove Logo"
-                    >
-                      ✕
-                    </button>
+                    {canCustomBranding && (
+                      <button
+                        type="button"
+                        onClick={() => setLogoUrl('')}
+                        className="absolute -top-1.5 -right-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-md text-[10px]"
+                        title="Remove Logo"
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <div className="w-16 h-16 rounded-xl bg-slate-900 border border-dashed border-slate-700 flex items-center justify-center text-slate-500 font-bold text-xs">
                     No Logo
                   </div>
                 )}
-
-                <div>
-                  <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all cursor-pointer shadow-md shadow-blue-600/20">
-                    <Upload className="w-3.5 h-3.5" /> Choose Photo
-                    <input
-                      type="file"
-                      accept="image/png, image/jpeg, image/webp"
-                      onChange={handleLogoUpload}
-                      className="hidden"
-                    />
-                  </label>
-                  <p className="text-[10px] text-slate-400 mt-1">PNG, JPG or WEBP up to 2MB.</p>
+                
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    disabled={!canCustomBranding}
+                    className={`block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-500/10 file:text-blue-500 ${canCustomBranding ? 'hover:file:bg-blue-500/20 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
+                  />
+                  <p className="text-[10px] text-slate-500 mt-1">Recommended: Square image, max 5MB (PNG/JPG).</p>
                 </div>
               </div>
             </div>
@@ -652,9 +677,11 @@ function SettingsPageContent() {
               userName={user?.name || 'Owner'}
               businessName={user?.memberships?.[0]?.business?.name || 'My Business'}
               hasProfileComplete={hasProfileComplete}
+              hasSubscription={!!business?.subscriptionPackage}
               hasItems={hasItems}
               hasParties={hasParties}
               hasTransactions={hasTransactions}
+              userFeatures={userFeatures}
             />
           </div>
         </div>
@@ -798,6 +825,91 @@ function SettingsPageContent() {
               <p className="text-[10px] text-slate-500">
                 🔒 All active sessions will be revoked after changing password.
               </p>
+            </div>
+          </div>
+
+          {/* Active Sessions Section */}
+          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <Monitor className="w-5 h-5 text-indigo-400" /> Active Sessions
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">Manage the devices that are currently logged in to your account.</p>
+              </div>
+              <button
+                onClick={() => {
+                  toast.promise(deleteOtherSessions.mutateAsync(), {
+                    loading: 'Logging out other devices...',
+                    success: 'All other devices logged out!',
+                    error: 'Failed to log out other devices.',
+                  });
+                }}
+                disabled={deleteOtherSessions.isPending || sessionsLoading || sessions?.length === 1}
+                className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all font-semibold disabled:opacity-50"
+              >
+                Log out all other devices
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {sessionsLoading ? (
+                <div className="text-center py-6 text-slate-500 text-xs">Loading sessions...</div>
+              ) : sessions?.length === 0 ? (
+                <div className="text-center py-6 text-slate-500 text-xs">No active sessions found.</div>
+              ) : (
+                sessions?.map((session) => (
+                  <div key={session.id} className={`flex items-center justify-between p-4 rounded-xl border ${session.isCurrent ? 'bg-indigo-500/5 border-indigo-500/20' : 'bg-slate-800/50 border-slate-700/50'}`}>
+                    <div className="flex items-start gap-4">
+                      <div className={`p-3 rounded-xl ${session.isCurrent ? 'bg-indigo-500/20 text-indigo-400' : 'bg-slate-700 text-slate-300'}`}>
+                        {session.device?.toLowerCase().includes('mobile') || session.device?.toLowerCase().includes('android') || session.device?.toLowerCase().includes('iphone') ? (
+                          <Smartphone className="w-5 h-5" />
+                        ) : (
+                          <Monitor className="w-5 h-5" />
+                        )}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-bold text-white">
+                            {session.device || 'Unknown Device'}
+                          </h4>
+                          {session.isCurrent && (
+                            <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-bold">
+                              Current Session
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-400 mt-1 flex items-center gap-2">
+                          <span>{session.browser || 'Unknown Browser'}</span>
+                          <span className="w-1 h-1 rounded-full bg-slate-600"></span>
+                          <span>{session.os || 'Unknown OS'}</span>
+                        </p>
+                        <div className="flex items-center gap-3 mt-2 text-[11px] text-slate-500">
+                          <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {session.ipAddress || 'Unknown IP'}</span>
+                          <span className="w-1 h-1 rounded-full bg-slate-700"></span>
+                          <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Active: {new Date(session.lastActiveAt).toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                    {!session.isCurrent && (
+                      <button
+                        onClick={() => {
+                          toast.promise(deleteSession.mutateAsync(session.id), {
+                            loading: 'Logging out...',
+                            success: 'Session logged out!',
+                            error: 'Failed to log out session.',
+                          });
+                        }}
+                        disabled={deleteSession.isPending}
+                        className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all group disabled:opacity-50"
+                        title="Log out this device"
+                      >
+                        <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

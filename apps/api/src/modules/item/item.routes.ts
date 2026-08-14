@@ -157,6 +157,10 @@ export async function itemRoutes(fastify: FastifyInstance) {
   // CREATE ITEM (Transaction-Safe Opening Stock Log)
   // ----------------------------------------------------
   fastify.post('/', async (request, reply) => {
+    if (!request.tenant!.features.includes('INVENTORY_TRACKING')) {
+      throw new AppError('Feature Locked: Upgrade your plan to manage inventory.', 403, 'FEATURE_LOCKED');
+    }
+
     const body = itemSchema.parse(request.body);
 
     const item = await request.db!.$transaction(async (tx) => {

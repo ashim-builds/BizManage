@@ -29,6 +29,8 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
       totalItems,
       totalProducts,
       totalParties,
+      saleReturnAgg,
+      purchaseReturnAgg,
     ] = await Promise.all([
       // 1. To Receive / To Give — two fast aggregate queries instead of fetching all rows
       request.db!.party.aggregate({
@@ -96,6 +98,24 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
       request.db!.item.count({ where: { businessId } }),
       request.db!.item.count({ where: { businessId, type: 'PRODUCT' } }),
       request.db!.party.count({ where: { businessId } }),
+
+      // 9. Sales Return total
+      request.db!.saleReturn.aggregate({
+        where: {
+          businessId,
+          ...(hasDateFilter ? { date: dateFilter } : {}),
+        },
+        _sum: { totalAmount: true },
+      }),
+
+      // 10. Purchases Return total
+      request.db!.purchaseReturn.aggregate({
+        where: {
+          businessId,
+          ...(hasDateFilter ? { date: dateFilter } : {}),
+        },
+        _sum: { totalAmount: true },
+      }),
     ]);
 
     // Calculate To Receive & To Give from party aggregate
@@ -132,13 +152,21 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
     const toGiveRaw = Number(toGiveAgg._sum.currentBalance || 0);
     const toGive = toGiveRaw < 0 ? Math.abs(toGiveRaw) : toGiveRaw;
 
+    const grossSales = Number(salesAgg._sum.totalAmount || 0);
+    const saleReturns = Number(saleReturnAgg._sum.totalAmount || 0);
+    const netSales = Math.max(0, grossSales - saleReturns);
+
+    const grossPurchases = Number(purchasesAgg._sum.totalAmount || 0);
+    const purchaseReturns = Number(purchaseReturnAgg._sum.totalAmount || 0);
+    const netPurchases = Math.max(0, grossPurchases - purchaseReturns);
+
     return reply.send({
       success: true,
       data: {
         toReceive,
         toGive,
-        totalSales: Number(salesAgg._sum.totalAmount || 0),
-        totalPurchases: Number(purchasesAgg._sum.totalAmount || 0),
+        totalSales: netSales,
+        totalPurchases: netPurchases,
         totalExpenses: Number(expensesAgg._sum.amount || 0),
         totalCash: totalCash.toNumber(),
         totalBank: totalBank.toNumber(),

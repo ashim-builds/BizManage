@@ -68,7 +68,15 @@ export async function businessRoutes(fastify: FastifyInstance) {
   fastify.get('/current', { preHandler: [requireBusinessTenant] }, async (request, reply) => {
     const business = await globalPrisma.business.findUnique({
       where: { id: request.tenant!.businessId },
-      include: { settings: true },
+      include: { 
+        settings: true,
+        subscriptionPackage: true,
+        subscriptions: {
+          where: { status: 'ACTIVE' },
+          orderBy: { endDate: 'desc' },
+          take: 1
+        }
+      },
     });
 
     if (!business) {
@@ -85,21 +93,94 @@ export async function businessRoutes(fastify: FastifyInstance) {
   fastify.put('/current', { preHandler: [requireBusinessTenant] }, async (request, reply) => {
     const body = updateBusinessSchema.parse(request.body);
 
-    const updated = await globalPrisma.business.update({
-      where: { id: request.tenant!.businessId },
-      data: {
-        name: body.name,
-        phone: body.phone,
-        email: body.email,
-        address: body.address,
-        taxNumber: body.taxNumber,
-        currency: body.currency,
-        logoUrl: body.logoUrl,
-        subscriptionPlan: body.subscriptionPlan,
-        profileCompleted: body.profileCompleted,
-        setupCompleted: body.setupCompleted,
-      },
-      include: { settings: true },
+    const updated = await globalPrisma.$transaction(async (tx) => {
+      let subUpdateData: any = {};
+      
+      // If user is trying to update their subscription package (e.g. selecting a free plan)
+      if (body.subscriptionPackageId) {
+        const currentBiz = await tx.business.findUnique({
+          where: { id: request.tenant!.businessId },
+          select: { subscriptionPackageId: true }
+        });
+
+        // Only process if it's a new package
+        if (currentBiz?.subscriptionPackageId !== body.subscriptionPackageId) {
+          const pkg = await tx.subscriptionPackage.findUnique({
+            where: { id: body.subscriptionPackageId }
+          });
+
+          if (!pkg) {
+            throw new AppError('Subscription package not found', 404, 'NOT_FOUND');
+          }
+
+          if (Number(pkg.price) > 0) {
+            throw new AppError('Paid plans must be purchased through a payment gateway', 400, 'BAD_REQUEST');
+          }
+
+          // It's a free plan, so we can securely auto-assign it
+          let addDays = 30;
+          if (pkg.billingPeriod === 'YEARLY') addDays = 365;
+          let trialDays = pkg.trialDays || 0;
+
+          const now = new Date();
+          const endDate = new Date(now);
+          endDate.setDate(endDate.getDate() + addDays + trialDays);
+
+          await tx.subscription.create({
+            data: {
+              businessId: request.tenant!.businessId,
+              subscriptionPackageId: pkg.id,
+              status: 'ACTIVE',
+              startDate: now,
+              endDate
+            }
+          });
+
+          subUpdateData = {
+            subscriptionPackageId: pkg.id,
+            subscriptionStatus: 'ACTIVE',
+            currentPeriodEnd: endDate,
+            isActive: true,
+          };
+        }
+      }
+
+      // Check for CUSTOM_BRANDING feature before allowing logoUrl updates
+      if (body.logoUrl !== undefined) {
+        const currentBiz = await tx.business.findUnique({
+          where: { id: request.tenant!.businessId },
+          include: { subscriptionPackage: true }
+        });
+        
+        const currentLogoUrl = currentBiz?.logoUrl || '';
+        
+        // If they are actually changing or setting the logo
+        if (body.logoUrl !== currentLogoUrl) {
+          const rawFeatures = currentBiz?.subscriptionPackage?.features;
+          const userFeatures = typeof rawFeatures === 'string' ? JSON.parse(rawFeatures) : (rawFeatures || []);
+          
+          if (!userFeatures.includes('CUSTOM_BRANDING')) {
+            throw new AppError('Custom branding requires a Pro plan. Please upgrade your subscription.', 403, 'FEATURE_LOCKED');
+          }
+        }
+      }
+
+      return await tx.business.update({
+        where: { id: request.tenant!.businessId },
+        data: {
+          name: body.name,
+          phone: body.phone,
+          email: body.email,
+          address: body.address,
+          taxNumber: body.taxNumber,
+          currency: body.currency,
+          logoUrl: body.logoUrl,
+          profileCompleted: body.profileCompleted,
+          setupCompleted: body.setupCompleted,
+          ...subUpdateData
+        },
+        include: { settings: true },
+      });
     });
 
     return reply.send({

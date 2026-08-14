@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -26,7 +27,7 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ModalPortal } from '@/components/common/ModalPortal';
 import { AddCategoryModal } from '@/components/common/AddCategoryModal';
-import { ConfirmDeleteModal } from '@/components/common/ConfirmDeleteModal';
+import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
 import {
   Package,
   Plus,
@@ -46,7 +47,8 @@ import {
 } from 'lucide-react';
 
 export default function InventoryPage() {
-  const [search, setSearch] = useState('');
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedType, setSelectedType] = useState<ItemType | ''>('');
   const [lowStockOnly, setLowStockOnly] = useState(false);
@@ -236,8 +238,8 @@ export default function InventoryPage() {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900 border border-slate-800">
-        <div className="flex items-center gap-3 flex-1 min-w-[280px]">
+      <div className="flex flex-col md:flex-row gap-4 p-4 rounded-2xl bg-slate-900 border border-slate-800">
+        <div className="flex flex-col sm:flex-row gap-3 flex-1">
           <div className="relative flex-1">
             <Search className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
             <input
@@ -245,15 +247,15 @@ export default function InventoryPage() {
               placeholder="Search by item name or SKU code..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
-          <div className="w-48">
+          <div className="w-full sm:w-48">
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value="">All Categories</option>
               {categories?.map((cat: any) => (
@@ -263,26 +265,6 @@ export default function InventoryPage() {
               ))}
             </select>
           </div>
-        </div>
-
-        {/* Type Filter Buttons */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold">
-          <button
-            onClick={() => setSelectedType('')}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              selectedType === '' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => setSelectedType(ItemType.PRODUCT)}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              selectedType === ItemType.PRODUCT ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            Products / Stock
-          </button>
         </div>
       </div>
 
@@ -300,19 +282,93 @@ export default function InventoryPage() {
           onAction={() => setIsCreateOpen(true)}
         />
       ) : (
-        <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-900 shadow-xl">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-800/70 text-slate-400 font-semibold border-b border-slate-800">
-              <tr>
-                <th className="px-6 py-4">Item Name / Code</th>
-                <th className="px-6 py-4">Type</th>
-                <th className="px-6 py-4">Category</th>
-                <th className="px-6 py-4 text-right">Purchase Cost</th>
-                <th className="px-6 py-4 text-right">Sale Price</th>
-                <th className="px-6 py-4 text-right">Stock Level</th>
-                <th className="px-6 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
+        <>
+          {/* Mobile Card Layout */}
+          <div className="grid gap-4 md:hidden">
+            {items.map((item: any) => {
+              const stock = Number(item.currentStock || 0);
+              const minAlert = Number(item.minStockAlert || 0);
+              const isProduct = item.type === ItemType.PRODUCT;
+              const isOut = isProduct && stock <= 0;
+              const isLow = isProduct && stock > 0 && stock <= minAlert;
+
+              return (
+                <div key={item.id} className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col gap-3 shadow-sm">
+                  {/* Header */}
+                  <div className="flex items-start justify-between border-b border-slate-800/60 pb-3">
+                    <div>
+                      <Link href={`/inventory/${item.id}`} className="font-bold text-blue-400 hover:text-blue-300 text-sm">
+                        {item.name}
+                      </Link>
+                      {item.code && <p className="text-[11px] text-slate-500 font-mono mt-0.5">SKU: {item.code}</p>}
+                    </div>
+                    <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider ${
+                      isProduct ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                      : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+                    }`}>
+                      {item.type}
+                    </span>
+                  </div>
+                  
+                  {/* Body */}
+                  <div className="flex justify-between items-center">
+                     <div>
+                       <p className="text-xs text-slate-400">
+                         {item.category ? item.category.name : 'Uncategorized'}
+                       </p>
+                       <p className="text-sm font-bold text-white mt-0.5">Rs. {Number(item.salePrice || 0).toLocaleString()}</p>
+                     </div>
+                     <div className="text-right">
+                       {isProduct ? (
+                         <>
+                           <p className={`font-bold text-base ${isOut ? 'text-rose-400' : isLow ? 'text-amber-400' : 'text-emerald-400'}`}>
+                             {stock} {item.unit}
+                           </p>
+                           {isOut && <p className="text-[10px] text-rose-400 uppercase mt-0.5">Out of stock</p>}
+                           {isLow && <p className="text-[10px] text-amber-400 uppercase mt-0.5">Low stock</p>}
+                         </>
+                       ) : (
+                         <p className="text-[11px] text-slate-500">N/A (Service)</p>
+                       )}
+                     </div>
+                  </div>
+
+                  {/* Footer Actions */}
+                  <div className="flex justify-end items-center gap-1.5 pt-1">
+                    <Link href={`/inventory/${item.id}`} className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700">
+                      <Eye className="w-3.5 h-3.5" />
+                    </Link>
+                    {isProduct && (
+                      <button onClick={() => setAdjustingItem(item)} className="p-2 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/20">
+                        <ArrowUpDown className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    <button onClick={() => openEditModal(item)} className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700">
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => handleDelete(item.id, item.name)} className="p-2 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop Table Layout */}
+          <div className="hidden md:block border border-slate-800 rounded-2xl overflow-x-auto overflow-y-hidden bg-slate-900 shadow-xl">
+            <table className="w-full text-left text-xs min-w-[800px]">
+              <thead className="bg-slate-800/70 text-slate-400 font-semibold border-b border-slate-800">
+                <tr>
+                  <th className="px-6 py-4">Item Name / Code</th>
+                  <th className="px-6 py-4">Type</th>
+                  <th className="px-6 py-4">Category</th>
+                  <th className="px-6 py-4 text-right">Purchase Cost</th>
+                  <th className="px-6 py-4 text-right">Sale Price</th>
+                  <th className="px-6 py-4 text-right">Stock Level</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
+                </tr>
+              </thead>
             <tbody className="divide-y divide-slate-800/60">
               {items.map((item: any) => {
                 const stock = Number(item.currentStock || 0);
@@ -423,6 +479,7 @@ export default function InventoryPage() {
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       {/* CREATE ITEM MODAL */}
@@ -789,12 +846,14 @@ export default function InventoryPage() {
         }}
       />
 
-      <ConfirmDeleteModal
+      <ConfirmActionModal
         isOpen={!!deletingItemInfo}
         onClose={() => { setDeletingItemInfo(null); setDeleteError(''); }}
+        title="Delete Item"
         itemName={deletingItemInfo?.name}
+        actionText="Delete Item"
         error={deleteError}
-        isDeleting={deleteItem.isPending}
+        isProcessing={deleteItem.isPending}
         onConfirm={async () => {
           if (!deletingItemInfo) return;
           setDeleteError('');

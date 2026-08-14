@@ -12,6 +12,7 @@ interface OnboardingWizardProps {
   hasItems?: boolean;
   hasParties?: boolean;
   hasTransactions?: boolean;
+  userFeatures?: any[];
 }
 
 export function BmsOnboardingWizard({
@@ -22,6 +23,7 @@ export function BmsOnboardingWizard({
   hasItems = false,
   hasParties = false,
   hasTransactions = false,
+  userFeatures = [],
 }: OnboardingWizardProps) {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -52,6 +54,7 @@ export function BmsOnboardingWizard({
       actionText: 'Add Items',
       isCompleted: hasItems,
       icon: Package,
+      requiredFeature: 'INVENTORY_TRACKING',
     },
     {
       id: 4,
@@ -61,6 +64,7 @@ export function BmsOnboardingWizard({
       actionText: 'Add Party',
       isCompleted: hasParties,
       icon: Users,
+      requiredFeature: 'AUTO_LEDGER',
     },
     {
       id: 5,
@@ -161,6 +165,18 @@ export function BmsOnboardingWizard({
                     <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold inline-flex items-center gap-1">
                       <Check className="w-3.5 h-3.5" /> Done
                     </span>
+                  ) : step.requiredFeature && !userFeatures.includes(step.requiredFeature) ? (
+                    <Link
+                      href="/subscription"
+                      className="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-slate-800/80 hover:bg-slate-700 text-amber-500 border border-amber-500/30"
+                      onClick={() => {
+                        import('react-hot-toast').then(({ default: toast }) => {
+                          toast.error(`Please upgrade to unlock ${step.title}`);
+                        });
+                      }}
+                    >
+                      <Lock className="w-3.5 h-3.5" /> Upgrade to Unlock
+                    </Link>
                   ) : (
                     <Link
                       href={step.href}
