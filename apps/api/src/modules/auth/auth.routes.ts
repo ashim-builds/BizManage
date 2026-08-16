@@ -23,6 +23,11 @@ import { AuditService } from '../../services/audit.service.js';
 import { z } from 'zod';
 import { UAParser } from 'ua-parser-js';
 
+// In production the API and web are on different Render domains (cross-origin).
+// Cookies must be SameSite=None;Secure to be sent on cross-site XHR requests.
+const isProduction = process.env.NODE_ENV === 'production';
+const cookieSameSite: 'none' | 'lax' = isProduction ? 'none' : 'lax';
+
 const verifyEmailSchema = z.object({
   email: z.string().email(),
   otp: z.string().length(6),
@@ -284,7 +289,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     reply.setCookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: cookieSameSite,
       path: '/api/v1/auth',
       expires: sessionExpiresAt,
     });
@@ -297,7 +302,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     reply.setCookie('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: cookieSameSite,
       path: '/',
       maxAge: 15 * 60, // 15 minutes
     });
@@ -391,7 +396,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     reply.setCookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: cookieSameSite,
       path: '/api/v1/auth',
       expires: sessionExpiresAt,
     });
@@ -404,7 +409,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     reply.setCookie('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: cookieSameSite,
       path: '/',
       maxAge: 15 * 60,
     });
@@ -578,7 +583,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     reply.setCookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: cookieSameSite,
       path: '/api/v1/auth',
       expires: sessionExpiresAt,
     });
@@ -591,7 +596,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     reply.setCookie('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: cookieSameSite,
       path: '/',
       expires: new Date(Date.now() + 15 * 60 * 1000),
     });
@@ -646,7 +651,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     reply.setCookie('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: cookieSameSite,
       path: '/',
       maxAge: 15 * 60, // 15 minutes
     });
@@ -961,7 +966,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     reply.setCookie('oauth_state', state, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: cookieSameSite,
       path: '/api/v1/auth/google/callback',
       maxAge: 10 * 60, // 10 minutes
     });
@@ -969,7 +974,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     reply.setCookie('oauth_code_verifier', codeVerifier, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: cookieSameSite,
       path: '/api/v1/auth/google/callback',
       maxAge: 10 * 60,
     });
@@ -1098,7 +1103,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       reply.setCookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: cookieSameSite,
         path: '/api/v1/auth',
         expires: sessionExpiresAt,
       });
@@ -1111,20 +1116,74 @@ export async function authRoutes(fastify: FastifyInstance) {
       reply.setCookie('accessToken', accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: cookieSameSite,
         path: '/',
         maxAge: 15 * 60,
       });
 
       AuditService.logEvent({ action: 'LOGIN_SUCCESS', module: 'Auth', userId: user.id, recordId: user.id, ipAddress: request.ip });
 
-      // Redirect to dashboard
+      // In production, API and frontend are on different domains, so cookies won't carry over.
+      // Pass tokens in URL so the frontend can store them via /auth/oauth-callback page.
+      const isCrossDomain = frontendUrl && !frontendUrl.includes('localhost');
+      if (isCrossDomain) {
+        const params = new URLSearchParams({ accessToken, refreshToken });
+        return reply.redirect(`${frontendUrl}/auth/oauth-callback?${params.toString()}`);
+      }
+
+      // Local dev: same-origin cookies work fine, redirect directly
       return reply.redirect(`${frontendUrl}/dashboard`);
     } catch (err: any) {
       console.error('Google OAuth Error:', err);
       return reply.redirect(`${frontendUrl}/login?error=OAuth_Failed`);
     }
   });
+
+  // 11. OAUTH SESSION EXCHANGE: Called by frontend after cross-domain OAuth redirect
+  // The frontend receives tokens in the URL and POSTs them here to get proper httpOnly cookies.
+  fastify.post('/oauth-session', async (request, reply) => {
+    const { accessToken, refreshToken } = request.body as { accessToken?: string; refreshToken?: string };
+
+    if (!accessToken || !refreshToken) {
+      throw new AppError('Missing tokens', 400, 'BAD_REQUEST');
+    }
+
+    // Verify the access token is valid
+    let payload: any;
+    try {
+      payload = fastify.jwt.verify(accessToken);
+    } catch {
+      throw new AppError('Invalid access token', 401, 'UNAUTHORIZED');
+    }
+
+    // Verify the refresh token exists in DB
+    const session = await globalPrisma.session.findFirst({
+      where: { userId: payload.userId, token: refreshToken },
+    });
+    if (!session) {
+      throw new AppError('Invalid session', 401, 'UNAUTHORIZED');
+    }
+
+    // Set cookies (these will be set on the API domain, but with SameSite=None + Secure for cross-origin)
+    reply.setCookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      path: '/',
+      maxAge: 15 * 60,
+    });
+
+    reply.setCookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      path: '/api/v1/auth',
+      expires: session.expiresAt,
+    });
+
+    return reply.send({ success: true });
+  });
+
   // --- SESSION MANAGEMENT ROUTES ---
 
   fastify.get('/sessions', { preHandler: [authenticateUser] }, async (request, reply) => {
