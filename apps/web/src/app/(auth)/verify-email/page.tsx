@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { api } from '@/lib/api';
+import { api, setAccessToken } from '@/lib/api';
 import Link from 'next/link';
 import { Mail, ArrowRight, Loader2, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
@@ -73,6 +73,11 @@ export default function VerifyEmailPage() {
     try {
       const res = await api.post('/auth/verify-email', { email, otp: otpValue });
       if (res.data.success) {
+        // Store token for mobile browsers that block cross-origin cookies
+        // The API returns accessToken in the body after successful verification
+        if (res.data.data?.accessToken) {
+          setAccessToken(res.data.data.accessToken);
+        }
         await refreshUser();
         router.push('/dashboard');
       }
