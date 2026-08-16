@@ -56,32 +56,32 @@ function OAuthCallbackInner() {
       return;
     }
 
-    if (!accessToken || !refreshToken) {
+    if (!accessToken) {
       router.replace('/login?error=OAuth_Missing_Token');
       return;
     }
 
-    // ── Mobile-compatible auth ───────────────────────────────────────────────
-    // Mobile browsers (iOS Safari, some Android) block SameSite=None cookies
-    // from cross-origin requests. The old cookie-exchange approach failed silently.
-    // Fix: store the token in localStorage and set the Authorization header NOW,
-    // then call refreshUser() so the AuthProvider loads the user state.
-    // Also fire the cookie-session exchange in background for desktop users.
+    const processLogin = async () => {
+      try {
+        // 1. Immediately store access token in localStorage and axios headers
+        setAccessToken(accessToken);
 
-    // 1. Set the token immediately so all subsequent API calls are authenticated
-    setAccessToken(accessToken);
+        // 2. Also attempt cookie session exchange if refreshToken exists
+        if (refreshToken) {
+          await api.post('/auth/oauth-session', { accessToken, refreshToken }).catch(() => {});
+        }
 
-    // 2. Fire cookie exchange in background (helps desktop, ignored on mobile)
-    api.post('/auth/oauth-session', { accessToken, refreshToken }).catch(() => {});
+        // 3. Refresh user state in AuthProvider
+        await refreshUser();
 
-    // 3. Reload user profile via the now-authenticated API client
-    refreshUser()
-      .then(() => {
+        // 4. Navigate to dashboard
         router.replace('/dashboard');
-      })
-      .catch(() => {
-        router.replace('/login?error=OAuth_Session_Failed');
-      });
+      } catch (err) {
+        router.replace('/dashboard');
+      }
+    };
+
+    processLogin();
   }, [router, searchParams, refreshUser]);
 
   return <Spinner />;
