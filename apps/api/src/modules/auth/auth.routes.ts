@@ -910,7 +910,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
 
     if (!user.passwordHash) {
-      throw new AppError('Password not set for this account', 400, 'BAD_REQUEST');
+      throw new AppError('Password not set for this account. Please use social login or set a password.', 400, 'INVALID_CREDENTIALS');
     }
 
     const validPassword = await argon2.verify(user.passwordHash, body.currentPassword);
@@ -1028,7 +1028,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         throw new Error('Failed to exchange code for token');
       }
 
-      const tokenData = (await tokenResponse.json()) as { access_token: string };
+      const tokenData = await tokenResponse.json() as { access_token: string };
 
       // Fetch user profile
       const profileResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
@@ -1041,7 +1041,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         throw new Error('Failed to fetch user profile');
       }
 
-      const profileData = (await profileResponse.json()) as any;
+      const profileData = await profileResponse.json() as { id: string; email: string; name: string; picture: string; };
       const { id: googleId, email, name, picture: avatarUrl } = profileData;
 
       if (!email) {

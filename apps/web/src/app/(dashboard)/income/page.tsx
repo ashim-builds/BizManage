@@ -495,7 +495,7 @@ export default function IncomePage() {
         isOpen={!!deletingIncomeInfo}
         onClose={() => { setDeletingIncomeInfo(null); setDeleteError(''); }}
         title="Delete Income Record"
-        itemName={deletingIncomeInfo?.description}
+        itemName={deletingIncomeInfo?.name}
         actionText="Delete Record"
         error={deleteError}
         isProcessing={deleteIncome.isPending}

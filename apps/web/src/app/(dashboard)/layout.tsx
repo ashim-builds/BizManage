@@ -88,6 +88,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { data: notifData } = useNotifications(activeBusinessId);
 
   const [readNotifIds, setReadNotifIds] = useState<string[]>([]);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     if (user?.readNotifications) {

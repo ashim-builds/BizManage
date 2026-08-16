@@ -491,6 +491,10 @@ export async function adminRoutes(fastify: FastifyInstance) {
       throw new AppError('User not found', 404, 'NOT_FOUND');
     }
 
+    if (!user.passwordHash) {
+      throw new AppError('Password not set for this account', 400, 'INVALID_CREDENTIALS');
+    }
+
     const isValid = await argon2.verify(user.passwordHash, oldPassword);
     if (!isValid) {
       throw new AppError('Incorrect older password', 400, 'INVALID_PASSWORD');

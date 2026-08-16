@@ -117,7 +117,7 @@ export async function processSubscriptions() {
         if (owner && owner.email) {
           await sendSubscriptionExpiringEmail(
             owner.email, 
-            sub.business.name, 
+            sub.business.name,
             days
           );
 
