@@ -66,10 +66,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     const allIds = notifications.map((n) => n.id);
     const updated = Array.from(new Set([...readNotifIds, ...allIds]));
     setReadNotifIds(updated);
-    
+
     // Optimistically update backend
     import('@/lib/api').then(({ api }) => {
-      api.patch('/auth/me/preferences', { readNotifications: updated }).catch(() => {});
+      api.patch('/auth/me/preferences', { readNotifications: updated }).catch(() => { });
     });
   };
 
@@ -77,12 +77,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [quickEntryOpen, setQuickEntryOpen] = useState(false);
-  
+
   const currentBiz = user?.memberships?.[0]?.business;
   const hasSelectedPlan = Boolean(currentBiz?.subscriptionPackage);
 
   // Global feature lock calculation
-  const currentSection = sidebarSections.find(s => 
+  const currentSection = sidebarSections.find(s =>
     s.href === pathname || (s.children && s.children.some(c => c.href === pathname))
   );
   let requiredFeature = currentSection?.requiredFeature;
@@ -94,10 +94,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   }
 
   const isFeatureLocked = Boolean(
-    requiredFeature && 
+    requiredFeature &&
     !(currentBiz?.subscriptionPackage?.features || []).includes(requiredFeature)
   );
-  
+
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -157,6 +157,27 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   if (!user) return null;
 
+  // If user has no businesses, show a redirect screen instead of broken layout
+  // The useEffect above already calls router.push('/setup-business')
+  if (user.memberships.length === 0) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-200 relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30rem] h-[30rem] bg-blue-600/10 rounded-full blur-[100px] animate-pulse" />
+        <div className="relative z-10 flex flex-col items-center gap-6">
+          <div className="relative flex items-center justify-center w-20 h-20">
+            <div className="absolute inset-0 border-4 border-slate-800 rounded-full" />
+            <div className="absolute inset-0 border-4 border-blue-500 rounded-full border-t-transparent animate-spin" />
+            <Building2 className="w-8 h-8 text-blue-400 animate-pulse" />
+          </div>
+          <div className="text-center space-y-2">
+            <h2 className="text-xl font-bold text-white tracking-wide">Setting up your workspace</h2>
+            <p className="text-sm text-slate-400">Redirecting to business setup...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const userBusinesses = (user.memberships || []).map((m) => m.business).filter(Boolean);
   const currentBusiness = userBusinesses.find((b) => b.id === activeBusinessId) || userBusinesses[0];
 
@@ -201,12 +222,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 </p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="text-[10px] text-slate-400 truncate">
-                    {currentBusiness?.subscriptionPackage?.name || 'Free Plan'}
+                    {currentBusiness?.subscriptionPackage?.name || (currentBusiness?.subscriptionStatus === 'ACTIVE' ? 'Free Plan' : 'No Plan Selected')}
                   </span>
-                  {currentBusiness?.subscriptionStatus === 'ACTIVE' ? (
-                     <span className="text-[8px] font-bold uppercase bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/30">Online</span>
+                  {currentBusiness?.subscriptionPackage && currentBusiness?.subscriptionStatus === 'ACTIVE' ? (
+                    <span className="text-[8px] font-bold uppercase bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/30">Online</span>
                   ) : currentBusiness?.subscriptionStatus === 'EXPIRED' ? (
-                     <span className="text-[8px] font-bold uppercase bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded border border-red-500/30">Expired</span>
+                    <span className="text-[8px] font-bold uppercase bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded border border-red-500/30">Expired</span>
                   ) : null}
                 </div>
               </div>
@@ -234,13 +255,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                       router.push('/subscription');
                     }
                   }}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all ${
-                    isActive
-                      ? 'bg-blue-600 text-white font-semibold shadow-lg shadow-blue-600/20'
-                      : isLocked
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all ${isActive
+                    ? 'bg-blue-600 text-white font-semibold shadow-lg shadow-blue-600/20'
+                    : isLocked
                       ? 'text-slate-500 opacity-70 hover:opacity-100 hover:bg-slate-800/40'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-                  }`}
+                    }`}
                 >
                   <Icon className={`w-4 h-4 ${isActive ? 'text-white' : isLocked ? 'text-slate-600' : 'text-slate-400'}`} />
                   <span className="flex-1">{section.name}</span>
@@ -263,13 +283,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                       setTransactionsOpen(!transactionsOpen);
                     }
                   }}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all ${
-                    isGroupActive
-                      ? 'text-white bg-slate-800/80 font-semibold'
-                      : isGroupLocked
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all ${isGroupActive
+                    ? 'text-white bg-slate-800/80 font-semibold'
+                    : isGroupLocked
                       ? 'text-slate-500 opacity-70 hover:opacity-100 hover:bg-slate-800/40'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <Icon className={`w-4 h-4 ${isGroupLocked ? 'text-slate-600' : 'text-blue-400'}`} />
@@ -293,11 +312,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                         <Link
                           key={child.name}
                           href={child.href}
-                          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[11px] font-medium transition-all ${
-                            isChildActive
-                              ? 'bg-blue-500/10 text-blue-400 font-bold border border-blue-500/20'
-                              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
-                          }`}
+                          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[11px] font-medium transition-all ${isChildActive
+                            ? 'bg-blue-500/10 text-blue-400 font-bold border border-blue-500/20'
+                            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                            }`}
                         >
                           <ChildIcon className="w-3.5 h-3.5 text-slate-400" />
                           {child.name}
@@ -340,7 +358,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               <Breadcrumbs />
             </div>
           </div>
-          
+
           <div className="flex-1 max-w-xl mx-4 hidden md:flex justify-center">
             <GlobalSearch />
           </div>
@@ -411,10 +429,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                       {notifications.map((item) => {
                         const isRead = readNotifIds.includes(item.id);
                         const cfg = {
-                          WARNING:  { icon: AlertTriangle, color: 'text-amber-400',  bg: 'bg-amber-500/10',   border: 'border-amber-500/20',  dot: 'bg-amber-400' },
-                          ERROR:    { icon: XCircle,       color: 'text-red-400',     bg: 'bg-red-500/10',     border: 'border-red-500/20',    dot: 'bg-red-400' },
-                          SUCCESS:  { icon: CheckCircle2,  color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', dot: 'bg-emerald-400' },
-                          INFO:     { icon: Info,           color: 'text-blue-400',    bg: 'bg-blue-500/10',    border: 'border-blue-500/20',    dot: 'bg-blue-400' },
+                          WARNING: { icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', dot: 'bg-amber-400' },
+                          ERROR: { icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', dot: 'bg-red-400' },
+                          SUCCESS: { icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', dot: 'bg-emerald-400' },
+                          INFO: { icon: Info, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', dot: 'bg-blue-400' },
                         }[item.type] || { icon: Info, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', dot: 'bg-blue-400' };
                         const Icon = cfg.icon;
 
@@ -436,13 +454,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                               const updated = Array.from(new Set([...readNotifIds, item.id]));
                               setReadNotifIds(updated);
                               import('@/lib/api').then(({ api }) => {
-                                api.patch('/auth/me/preferences', { readNotifications: updated }).catch(() => {});
+                                api.patch('/auth/me/preferences', { readNotifications: updated }).catch(() => { });
                               });
                               setNotificationsOpen(false);
                             }}
-                            className={`flex items-start gap-3 px-4 py-3 transition-all hover:bg-slate-800/50 ${
-                              isRead ? 'opacity-60' : ''
-                            }`}
+                            className={`flex items-start gap-3 px-4 py-3 transition-all hover:bg-slate-800/50 ${isRead ? 'opacity-60' : ''
+                              }`}
                           >
                             {/* Type Icon */}
                             <div className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center mt-0.5 ${cfg.bg} border ${cfg.border}`}>

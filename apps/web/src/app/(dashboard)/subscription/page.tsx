@@ -166,16 +166,32 @@ export default function SubscriptionPage() {
       )}
 
       {/* Subscription Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {packages.map((pkg, idx) => {
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:items-center">
+        {/* Sort: Free Starter first, Pro in center, others last */}
+        {[...packages]
+          .sort((a, b) => {
+            const getOrder = (pkg: SubscriptionPackage) => {
+              if (pkg.isDefault) return 0;                          // Free → slot 0
+              if (pkg.name.toLowerCase().includes('pro')) return 1; // Pro  → slot 1 (center)
+              return 2;                                             // Rest → slot 2
+            };
+            return getOrder(a) - getOrder(b);
+          })
+          .map((pkg) => {
           const isActive = selectedPlanId === pkg.id;
-          const isPopular = idx === 1; // Highlight second plan as popular usually
+          const isPopular = pkg.name.toLowerCase().includes('pro'); // Pro is most popular
 
           return (
-            <div key={pkg.id} className={`relative p-6 sm:p-8 rounded-3xl border flex flex-col justify-between transition-all ${isActive ? 'bg-slate-900 border-emerald-500 ring-2 ring-emerald-500/20 shadow-xl' : isPopular ? 'bg-slate-900/80 border-blue-500/50 shadow-lg' : 'bg-slate-900/50 border-slate-800'}`}>
+            <div key={pkg.id} className={`relative p-6 sm:p-8 rounded-3xl border flex flex-col justify-between transition-all ${
+              isActive
+                ? 'bg-slate-900 border-emerald-500 ring-2 ring-emerald-500/20 shadow-xl'
+                : isPopular
+                ? 'bg-gradient-to-b from-blue-950/80 to-slate-900 border-blue-500 ring-2 ring-blue-500/20 shadow-2xl shadow-blue-500/10 md:scale-105 md:z-10'
+                : 'bg-slate-900/50 border-slate-800'
+            }`}>
               {isPopular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-md">
-                  Most Popular
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-blue-600 to-violet-600 text-white text-[11px] font-extrabold uppercase tracking-widest shadow-lg shadow-blue-600/40 flex items-center gap-1.5 whitespace-nowrap">
+                  <span>⭐</span> Most Popular
                 </div>
               )}
               <div>
@@ -231,9 +247,11 @@ export default function SubscriptionPage() {
               <button
                 onClick={() => handleSelectPlan(pkg)}
                 disabled={isActive}
-                className={`w-full mt-8 py-2.5 px-4 rounded-xl text-xs font-bold transition-all ${
+                className={`w-full mt-8 py-3 px-4 rounded-xl text-xs font-bold transition-all ${
                   isActive
                     ? 'bg-slate-800 text-emerald-400 border border-emerald-500/40 cursor-default'
+                    : isPopular
+                    ? 'bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white shadow-lg shadow-blue-600/30 flex items-center justify-center gap-1.5'
                     : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/25 flex items-center justify-center gap-1.5'
                 }`}
               >

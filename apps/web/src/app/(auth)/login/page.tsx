@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, LoginInput } from '@bizmanage/validation';
 import { useAuth } from '@/providers/AuthProvider';
-import { api } from '@/lib/api';
+import { api, setAccessToken } from '@/lib/api';
 import { Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
@@ -32,6 +32,10 @@ export default function LoginPage() {
     try {
       const res = await api.post('/auth/login', data);
       if (res.data.success) {
+        // Store token for mobile browsers that block cross-origin cookies
+        if (res.data.data?.accessToken) {
+          setAccessToken(res.data.data.accessToken);
+        }
         await refreshUser();
         router.push('/dashboard');
       }
