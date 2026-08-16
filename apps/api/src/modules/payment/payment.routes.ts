@@ -3,6 +3,7 @@ import { requireBusinessTenant } from '../../middleware/auth.js';
 import { createPaymentInSchema, createPaymentOutSchema } from '@bizmanage/validation';
 import { PaymentMode, TransactionCategory, AccountType, Prisma } from '@bizmanage/database';
 import { AppError } from '../../plugins/error-handler.js';
+import { updateAccountBalance } from '../../services/accounting.service.js';
 
 export async function paymentRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', requireBusinessTenant);
@@ -246,6 +247,84 @@ export async function paymentRoutes(fastify: FastifyInstance) {
     });
   });
 
+  // GET PAYMENT IN BY ID
+  fastify.get('/in/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const payment = await request.db!.paymentIn.findFirst({
+      where: {
+        id,
+        businessId: request.tenant!.businessId,
+      },
+      include: {
+        party: { select: { id: true, name: true, phone: true, email: true, currentBalance: true } },
+        account: { select: { id: true, accountName: true, accountType: true } },
+      },
+    });
+
+    if (!payment) {
+      throw new AppError('Payment In record not found', 404, 'NOT_FOUND');
+    }
+
+    return reply.send({
+      success: true,
+      data: payment,
+    });
+  });
+
+  // VOID PAYMENT IN (Transaction-Safe Reversal)
+  fastify.post('/in/:id/void', async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    const result = await request.db!.$transaction(async (tx) => {
+      const payment = await tx.paymentIn.findFirst({
+        where: {
+          id,
+          businessId: request.tenant!.businessId,
+        },
+      });
+
+      if (!payment) {
+        throw new AppError('Payment In record not found', 404, 'NOT_FOUND');
+      }
+
+      if (payment.status === 'VOIDED') {
+        throw new AppError('Payment is already voided', 400, 'BAD_REQUEST');
+      }
+
+      const amt = new Prisma.Decimal(payment.amount);
+
+      // 1. Revert Customer Receivable Balance (Add back to customer receivable)
+      await tx.party.update({
+        where: { id: payment.partyId },
+        data: {
+          currentBalance: { increment: amt },
+        },
+      });
+
+      // 2. Reduce Account Balance (Reverse received money)
+      await updateAccountBalance(tx as any, payment.accountId, amt, 'REDUCE');
+
+      // 3. Remove transaction record
+      await tx.transaction.deleteMany({
+        where: { referenceId: id },
+      });
+
+      // 4. Update status to VOIDED
+      const updatedPayment = await tx.paymentIn.update({
+        where: { id },
+        data: { status: 'VOIDED' },
+      });
+
+      return updatedPayment;
+    });
+
+    return reply.send({
+      success: true,
+      data: result,
+      message: 'Payment In record voided successfully',
+    });
+  });
+
   // ====================================================
   // PAYMENT OUT (Supplier Payouts)
   // ====================================================
@@ -482,6 +561,84 @@ export async function paymentRoutes(fastify: FastifyInstance) {
     return reply.status(201).send({
       success: true,
       data: paymentOut,
+    });
+  });
+
+  // GET PAYMENT OUT BY ID
+  fastify.get('/out/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const payment = await request.db!.paymentOut.findFirst({
+      where: {
+        id,
+        businessId: request.tenant!.businessId,
+      },
+      include: {
+        party: { select: { id: true, name: true, phone: true, email: true, currentBalance: true } },
+        account: { select: { id: true, accountName: true, accountType: true } },
+      },
+    });
+
+    if (!payment) {
+      throw new AppError('Payment Out record not found', 404, 'NOT_FOUND');
+    }
+
+    return reply.send({
+      success: true,
+      data: payment,
+    });
+  });
+
+  // VOID PAYMENT OUT (Transaction-Safe Reversal)
+  fastify.post('/out/:id/void', async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    const result = await request.db!.$transaction(async (tx) => {
+      const payment = await tx.paymentOut.findFirst({
+        where: {
+          id,
+          businessId: request.tenant!.businessId,
+        },
+      });
+
+      if (!payment) {
+        throw new AppError('Payment Out record not found', 404, 'NOT_FOUND');
+      }
+
+      if (payment.status === 'VOIDED') {
+        throw new AppError('Payment is already voided', 400, 'BAD_REQUEST');
+      }
+
+      const amt = new Prisma.Decimal(payment.amount);
+
+      // 1. Revert Supplier Payable Balance (Deduct from supplier balance, increasing payable)
+      await tx.party.update({
+        where: { id: payment.partyId },
+        data: {
+          currentBalance: { decrement: amt },
+        },
+      });
+
+      // 2. Add back Account Balance (Money was paid out, so restore it)
+      await updateAccountBalance(tx as any, payment.accountId, amt, 'ADD');
+
+      // 3. Remove transaction record
+      await tx.transaction.deleteMany({
+        where: { referenceId: id },
+      });
+
+      // 4. Update status to VOIDED
+      const updatedPayment = await tx.paymentOut.update({
+        where: { id },
+        data: { status: 'VOIDED' },
+      });
+
+      return updatedPayment;
+    });
+
+    return reply.send({
+      success: true,
+      data: result,
+      message: 'Payment Out record voided successfully',
     });
   });
 }
