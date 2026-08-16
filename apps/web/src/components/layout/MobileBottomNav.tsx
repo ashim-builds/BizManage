@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Receipt, Plus, ShoppingBag, Menu, X, ChevronRight } from 'lucide-react';
-import { sidebarSections } from '@/app/(dashboard)/layout';
+import { sidebarSections } from '@/components/layout/navConfig';
 
 interface MobileBottomNavProps {
   onQuickEntry: () => void;
