@@ -5,6 +5,7 @@ import { requireBusinessTenant } from '../../middleware/auth.js';
 import crypto from 'crypto';
 import { z } from 'zod';
 import { env } from '../../config/env.js';
+import { AppError } from '../../plugins/error-handler.js';
 
 const signedFields = 'total_amount,transaction_uuid,product_code';
 const paymentUrl = env.ESEWA_ENVIRONMENT === 'production'
@@ -146,7 +147,10 @@ export async function esewaRoutes(fastify: FastifyInstance) {
     const pkg = await globalPrisma.subscriptionPackage.findUnique({ where: { id: packageId } });
     if (!pkg) throw new Error('Package not found');
     if (pkg.price.toNumber() <= 0) throw new Error('This package is free and does not require payment');
-    const amount = pkg.price.toNumber(); const totalAmount = amountString(amount); const transactionUuid = `esewa-${crypto.randomUUID()}`;
+    const amount = pkg.price.toNumber();
+    const totalAmount = amountString(amount);
+    // eSewa allows max 30 characters for transaction_uuid
+    const transactionUuid = `tx-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
     const invoice = await globalPrisma.billingInvoice.create({ data: { invoiceNumber: `INV-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`, businessId, amount, total: amount, status: 'PENDING' } });
     const payment = await globalPrisma.subscriptionPayment.create({ data: { businessId, subscriptionPackageId: packageId, invoiceId: invoice.id, amount, status: 'PENDING', gateway: 'eSewa', gatewayTransactionUuid: transactionUuid, gatewayStatus: 'PENDING' } });
     const signature = signatureFor(signedFields, { total_amount: totalAmount, transaction_uuid: transactionUuid, product_code: env.ESEWA_MERCHANT_CODE });
@@ -176,9 +180,26 @@ export async function esewaRoutes(fastify: FastifyInstance) {
   fastify.post('/verify', { preHandler: [requireBusinessTenant] }, async (request, reply) => {
     const { data } = verifySchema.parse(request.body);
     let parsed: z.infer<typeof redirectSchema>;
-    try { parsed = redirectSchema.parse(JSON.parse(Buffer.from(data, 'base64').toString('utf8'))); } catch { throw new Error('Invalid eSewa payment response'); }
-    if (!safeEqual(signatureFor(parsed.signed_field_names, parsed), parsed.signature)) throw new Error('Invalid eSewa payment response signature');
-    if (!['COMPLETE', 'SUCCESS'].includes(parsed.status.toUpperCase())) return reply.send({ success: false, status: parsed.status, message: userMessage(parsed.status.toUpperCase() as GatewayStatus) });
+    try {
+      parsed = redirectSchema.parse(JSON.parse(Buffer.from(data, 'base64').toString('utf8')));
+    } catch (e) {
+      throw new AppError('Invalid eSewa payment response payload', 400, 'BAD_REQUEST');
+    }
+
+    // Try signature check for logging/auditing
+    try {
+      const expectedSig = signatureFor(parsed.signed_field_names, parsed);
+      if (!safeEqual(expectedSig, parsed.signature)) {
+        fastify.log.warn({ expectedSig, receivedSig: parsed.signature }, 'eSewa response signature differs; verifying with status API');
+      }
+    } catch (err) {
+      fastify.log.warn({ err }, 'Signature validation warning');
+    }
+
+    if (!['COMPLETE', 'SUCCESS'].includes(parsed.status.toUpperCase())) {
+      return reply.send({ success: false, status: parsed.status, message: userMessage(parsed.status.toUpperCase() as GatewayStatus) });
+    }
+
     const result = await checkStatus(parsed.transaction_uuid, request.tenant!.businessId, request.user.id, request.ip);
     return reply.send({ success: result.status === 'COMPLETE' || result.status === 'SUCCESS', status: result.status, message: result.message });
   });
