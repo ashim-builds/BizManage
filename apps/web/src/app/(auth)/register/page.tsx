@@ -69,7 +69,7 @@ export default function RegisterPage() {
 
         <div className="mb-6 space-y-4">
           <a
-            href="http://localhost:4000/api/v1/auth/google"
+            href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/auth/google`}
             className="w-full py-3 px-4 flex items-center justify-center gap-3 rounded-lg bg-white hover:bg-slate-50 text-slate-900 font-semibold transition-all border border-slate-200 text-sm"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
