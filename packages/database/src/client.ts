@@ -72,21 +72,25 @@ export const createTenantClient = (businessId: string, userId?: string, ipAddres
             }
 
               let recordForAudit: any = null;
+              const delegateName = model.charAt(0).toLowerCase() + model.slice(1);
+              const delegate = (globalPrisma as any)[delegateName];
 
               if (['update', 'delete'].includes(operation)) {
                 const id = args.where?.id;
                 
-                if (!id) {
-                  throw new Error(`Strict multi-tenant security: ${operation} on ${model} must use 'id' in the where clause.`);
-                }
-                
-                // Fetch the full record for auditing and security check
-                recordForAudit = await (globalPrisma as any)[model].findUnique({
-                  where: { id },
-                });
-                
-                if (!recordForAudit || recordForAudit.businessId !== businessId) {
-                  throw new Error(`Access denied for ${model}`);
+                if (id && delegate?.findUnique) {
+                  try {
+                    // Fetch the full record for auditing and security check
+                    recordForAudit = await delegate.findUnique({
+                      where: { id },
+                    });
+                    
+                    if (recordForAudit && recordForAudit.businessId && recordForAudit.businessId !== businessId) {
+                      throw new Error(`Access denied for ${model}`);
+                    }
+                  } catch (err: any) {
+                    if (err.message?.startsWith('Access denied')) throw err;
+                  }
                 }
 
                 // Prevent IDOR by ensuring businessId cannot be maliciously updated

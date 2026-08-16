@@ -958,17 +958,24 @@ export async function authRoutes(fastify: FastifyInstance) {
       throw new AppError('Google OAuth is not configured', 500, 'SERVER_ERROR');
     }
 
-    const state = crypto.randomBytes(16).toString('hex');
+    const rawState = crypto.randomBytes(16).toString('hex');
     const codeVerifier = crypto.randomBytes(32).toString('base64url');
     const codeChallenge = crypto.createHash('sha256').update(codeVerifier).digest('base64url');
 
-    // Store state and code_verifier in cookies
-    reply.setCookie('oauth_state', state, {
+    // Sign the state with codeVerifier so we don't rely solely on cookies
+    // (mobile browsers like iOS Safari / Chrome block third-party cookies during cross-site OAuth redirects)
+    const signedState = fastify.jwt.sign(
+      { s: rawState, cv: codeVerifier },
+      { expiresIn: '15m' }
+    );
+
+    // Also store in cookies as fallback
+    reply.setCookie('oauth_state', rawState, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: cookieSameSite,
       path: '/api/v1/auth/google/callback',
-      maxAge: 10 * 60, // 10 minutes
+      maxAge: 15 * 60,
     });
 
     reply.setCookie('oauth_code_verifier', codeVerifier, {
@@ -976,7 +983,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: cookieSameSite,
       path: '/api/v1/auth/google/callback',
-      maxAge: 10 * 60,
+      maxAge: 15 * 60,
     });
 
     const defaultCallback = `${request.protocol}://${request.headers.host || request.hostname}/api/v1/auth/google/callback`;
@@ -987,7 +994,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       redirect_uri: redirectUri,
       response_type: 'code',
       scope: 'openid email profile',
-      state,
+      state: signedState,
       code_challenge: codeChallenge,
       code_challenge_method: 'S256',
     });
@@ -1005,10 +1012,30 @@ export async function authRoutes(fastify: FastifyInstance) {
       return reply.redirect(`${frontendUrl}/login?error=${encodeURIComponent(error)}`);
     }
 
-    const storedState = request.cookies.oauth_state;
-    const storedCodeVerifier = request.cookies.oauth_code_verifier;
+    let codeVerifier: string | null = null;
 
-    if (!state || state !== storedState || !storedCodeVerifier) {
+    // 1. Try decoding the cryptographically signed state token first
+    if (state) {
+      try {
+        const decoded = fastify.jwt.verify<{ s: string; cv: string }>(state);
+        if (decoded?.cv) {
+          codeVerifier = decoded.cv;
+        }
+      } catch {
+        // Continue to cookie fallback
+      }
+    }
+
+    // 2. Cookie fallback for raw state
+    if (!codeVerifier) {
+      const storedState = request.cookies.oauth_state;
+      const storedCodeVerifier = request.cookies.oauth_code_verifier;
+      if (state && state === storedState && storedCodeVerifier) {
+        codeVerifier = storedCodeVerifier;
+      }
+    }
+
+    if (!codeVerifier) {
       return reply.redirect(`${frontendUrl}/login?error=Invalid_OAuth_State`);
     }
 
@@ -1032,7 +1059,7 @@ export async function authRoutes(fastify: FastifyInstance) {
           code,
           grant_type: 'authorization_code',
           redirect_uri: redirectUri,
-          code_verifier: storedCodeVerifier,
+          code_verifier: codeVerifier,
         }),
       });
 
@@ -1123,16 +1150,9 @@ export async function authRoutes(fastify: FastifyInstance) {
 
       AuditService.logEvent({ action: 'LOGIN_SUCCESS', module: 'Auth', userId: user.id, recordId: user.id, ipAddress: request.ip });
 
-      // In production, API and frontend are on different domains, so cookies won't carry over.
-      // Pass tokens in URL so the frontend can store them via /auth/oauth-callback page.
-      const isCrossDomain = frontendUrl && !frontendUrl.includes('localhost');
-      if (isCrossDomain) {
-        const params = new URLSearchParams({ accessToken, refreshToken });
-        return reply.redirect(`${frontendUrl}/auth/oauth-callback?${params.toString()}`);
-      }
-
-      // Local dev: same-origin cookies work fine, redirect directly
-      return reply.redirect(`${frontendUrl}/dashboard`);
+      // Pass tokens in URL to /auth/oauth-callback page so the frontend can store accessToken in localStorage on mobile
+      const params = new URLSearchParams({ accessToken, refreshToken });
+      return reply.redirect(`${frontendUrl}/auth/oauth-callback?${params.toString()}`);
     } catch (err: any) {
       console.error('Google OAuth Error:', err);
       return reply.redirect(`${frontendUrl}/login?error=OAuth_Failed`);
