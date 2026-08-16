@@ -974,9 +974,12 @@ export async function authRoutes(fastify: FastifyInstance) {
       maxAge: 10 * 60,
     });
 
+    const defaultCallback = `${request.protocol}://${request.headers.host || request.hostname}/api/v1/auth/google/callback`;
+    const redirectUri = process.env.GOOGLE_CALLBACK_URL || defaultCallback;
+
     const params = new URLSearchParams({
       client_id: process.env.GOOGLE_CLIENT_ID,
-      redirect_uri: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:4000/api/v1/auth/google/callback',
+      redirect_uri: redirectUri,
       response_type: 'code',
       scope: 'openid email profile',
       state,
@@ -991,16 +994,17 @@ export async function authRoutes(fastify: FastifyInstance) {
   // 10. GOOGLE OAUTH: Callback
   fastify.get('/google/callback', async (request, reply) => {
     const { code, state, error } = request.query as any;
+    const frontendUrl = process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:3000';
 
     if (error) {
-      return reply.redirect(`${process.env.CORS_ORIGIN}/login?error=${encodeURIComponent(error)}`);
+      return reply.redirect(`${frontendUrl}/login?error=${encodeURIComponent(error)}`);
     }
 
     const storedState = request.cookies.oauth_state;
     const storedCodeVerifier = request.cookies.oauth_code_verifier;
 
     if (!state || state !== storedState || !storedCodeVerifier) {
-      return reply.redirect(`${process.env.CORS_ORIGIN}/login?error=Invalid_OAuth_State`);
+      return reply.redirect(`${frontendUrl}/login?error=Invalid_OAuth_State`);
     }
 
     // Clear OAuth cookies
@@ -1008,6 +1012,9 @@ export async function authRoutes(fastify: FastifyInstance) {
     reply.clearCookie('oauth_code_verifier', { path: '/api/v1/auth/google/callback' });
 
     try {
+      const defaultCallback = `${request.protocol}://${request.headers.host || request.hostname}/api/v1/auth/google/callback`;
+      const redirectUri = process.env.GOOGLE_CALLBACK_URL || defaultCallback;
+
       // Exchange code for token
       const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
@@ -1019,7 +1026,7 @@ export async function authRoutes(fastify: FastifyInstance) {
           client_secret: process.env.GOOGLE_CLIENT_SECRET!,
           code,
           grant_type: 'authorization_code',
-          redirect_uri: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:4000/api/v1/auth/google/callback',
+          redirect_uri: redirectUri,
           code_verifier: storedCodeVerifier,
         }),
       });
@@ -1112,10 +1119,10 @@ export async function authRoutes(fastify: FastifyInstance) {
       AuditService.logEvent({ action: 'LOGIN_SUCCESS', module: 'Auth', userId: user.id, recordId: user.id, ipAddress: request.ip });
 
       // Redirect to dashboard
-      return reply.redirect(`${process.env.CORS_ORIGIN}/dashboard`);
+      return reply.redirect(`${frontendUrl}/dashboard`);
     } catch (err: any) {
       console.error('Google OAuth Error:', err);
-      return reply.redirect(`${process.env.CORS_ORIGIN}/login?error=OAuth_Failed`);
+      return reply.redirect(`${frontendUrl}/login?error=OAuth_Failed`);
     }
   });
   // --- SESSION MANAGEMENT ROUTES ---
