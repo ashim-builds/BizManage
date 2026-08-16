@@ -378,6 +378,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               <button
                 onClick={() => {
                   const nextState = !notificationsOpen;
+                  if (nextState) setUserMenuOpen(false);
                   setNotificationsOpen(nextState);
                 }}
                 className="relative p-2 rounded-xl border border-slate-800 bg-slate-900 text-slate-300 hover:text-white hover:border-slate-700 transition-all"
@@ -392,106 +393,123 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               </button>
 
               {notificationsOpen && (
-                <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-96 max-h-[480px] overflow-y-auto rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl z-50">
-                  {/* Header */}
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 sticky top-0 bg-slate-900 rounded-t-2xl">
-                    <div className="flex items-center gap-2">
-                      <Bell className="w-4 h-4 text-slate-400" />
-                      <h4 className="text-xs font-bold text-white">Notifications</h4>
-                      {unreadCount > 0 && (
-                        <span className="px-1.5 py-0.5 rounded-full bg-red-500 text-[9px] font-bold text-white">{unreadCount}</span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {unreadCount > 0 && (
+                <>
+                  {/* Backdrop for mobile closing */}
+                  <div
+                    className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-40 sm:hidden"
+                    onClick={() => setNotificationsOpen(false)}
+                  />
+
+                  {/* Responsive Notification Box */}
+                  <div className="fixed sm:absolute inset-x-3 top-16 sm:top-auto sm:inset-x-auto sm:right-0 sm:mt-2 sm:w-96 max-h-[calc(100vh-5.5rem)] sm:max-h-[480px] flex flex-col rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 shrink-0 bg-slate-900">
+                      <div className="flex items-center gap-2">
+                        <Bell className="w-4 h-4 text-slate-400" />
+                        <h4 className="text-xs font-bold text-white">Notifications</h4>
+                        {unreadCount > 0 && (
+                          <span className="px-1.5 py-0.5 rounded-full bg-red-500 text-[9px] font-bold text-white">{unreadCount}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {unreadCount > 0 && (
+                          <button
+                            onClick={markAllAsRead}
+                            className="text-[11px] text-blue-400 hover:text-blue-300 font-semibold transition-colors px-2 py-1 rounded-lg hover:bg-slate-800"
+                          >
+                            Mark all read
+                          </button>
+                        )}
                         <button
-                          onClick={markAllAsRead}
-                          className="text-[10px] text-blue-400 hover:text-blue-300 font-semibold transition-colors"
+                          onClick={() => setNotificationsOpen(false)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
                         >
-                          Mark all read
+                          <X className="w-4 h-4" />
                         </button>
+                      </div>
+                    </div>
+
+                    {/* Scrollable Body */}
+                    <div className="overflow-y-auto flex-1 divide-y divide-slate-800/50">
+                      {notifications.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+                          <BellOff className="w-10 h-10 text-slate-700 mb-3" />
+                          <p className="text-xs font-semibold text-slate-400">All caught up!</p>
+                          <p className="text-[11px] text-slate-600 mt-0.5">No active alerts right now.</p>
+                        </div>
+                      ) : (
+                        notifications.map((item) => {
+                          const isRead = readNotifIds.includes(item.id);
+                          const cfg = {
+                            WARNING: { icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', dot: 'bg-amber-400' },
+                            ERROR: { icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', dot: 'bg-red-400' },
+                            SUCCESS: { icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', dot: 'bg-emerald-400' },
+                            INFO: { icon: Info, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', dot: 'bg-blue-400' },
+                          }[item.type] || { icon: Info, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', dot: 'bg-blue-400' };
+                          const Icon = cfg.icon;
+
+                          const relativeTime = (() => {
+                            const diff = Date.now() - new Date(item.createdAt).getTime();
+                            const mins = Math.floor(diff / 60000);
+                            if (mins < 1) return 'just now';
+                            if (mins < 60) return `${mins}m ago`;
+                            const hrs = Math.floor(mins / 60);
+                            if (hrs < 24) return `${hrs}h ago`;
+                            return `${Math.floor(hrs / 24)}d ago`;
+                          })();
+
+                          return (
+                            <Link
+                              key={item.id}
+                              href={item.link}
+                              onClick={() => {
+                                const updated = Array.from(new Set([...readNotifIds, item.id]));
+                                setReadNotifIds(updated);
+                                import('@/lib/api').then(({ api }) => {
+                                  api.patch('/auth/me/preferences', { readNotifications: updated }).catch(() => { });
+                                });
+                                setNotificationsOpen(false);
+                              }}
+                              className={`flex items-start gap-3 px-4 py-3.5 transition-all hover:bg-slate-800/60 active:bg-slate-800 ${
+                                isRead ? 'opacity-60' : ''
+                              }`}
+                            >
+                              {/* Type Icon */}
+                              <div className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center mt-0.5 ${cfg.bg} border ${cfg.border}`}>
+                                <Icon className={`w-4 h-4 ${cfg.color}`} />
+                              </div>
+
+                              {/* Content */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className={`text-xs font-bold truncate ${cfg.color}`}>{item.title}</p>
+                                  <span className="text-[10px] text-slate-500 shrink-0">{relativeTime}</span>
+                                </div>
+                                <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed line-clamp-2">{item.message}</p>
+                              </div>
+
+                              {/* Unread dot */}
+                              {!isRead && (
+                                <div className={`shrink-0 w-2 h-2 rounded-full mt-2 ${cfg.dot}`} />
+                              )}
+                            </Link>
+                          );
+                        })
                       )}
-                      <button onClick={() => setNotificationsOpen(false)} className="p-1 rounded-lg text-slate-500 hover:text-white hover:bg-slate-800 transition-all">
-                        <X className="w-3.5 h-3.5" />
-                      </button>
                     </div>
                   </div>
-
-                  {/* Body */}
-                  {notifications.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-10 text-center px-4">
-                      <BellOff className="w-8 h-8 text-slate-700 mb-3" />
-                      <p className="text-xs font-semibold text-slate-500">All caught up!</p>
-                      <p className="text-[11px] text-slate-600 mt-0.5">No active alerts right now.</p>
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-slate-800/50">
-                      {notifications.map((item) => {
-                        const isRead = readNotifIds.includes(item.id);
-                        const cfg = {
-                          WARNING: { icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', dot: 'bg-amber-400' },
-                          ERROR: { icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', dot: 'bg-red-400' },
-                          SUCCESS: { icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', dot: 'bg-emerald-400' },
-                          INFO: { icon: Info, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', dot: 'bg-blue-400' },
-                        }[item.type] || { icon: Info, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', dot: 'bg-blue-400' };
-                        const Icon = cfg.icon;
-
-                        const relativeTime = (() => {
-                          const diff = Date.now() - new Date(item.createdAt).getTime();
-                          const mins = Math.floor(diff / 60000);
-                          if (mins < 1) return 'just now';
-                          if (mins < 60) return `${mins}m ago`;
-                          const hrs = Math.floor(mins / 60);
-                          if (hrs < 24) return `${hrs}h ago`;
-                          return `${Math.floor(hrs / 24)}d ago`;
-                        })();
-
-                        return (
-                          <Link
-                            key={item.id}
-                            href={item.link}
-                            onClick={() => {
-                              const updated = Array.from(new Set([...readNotifIds, item.id]));
-                              setReadNotifIds(updated);
-                              import('@/lib/api').then(({ api }) => {
-                                api.patch('/auth/me/preferences', { readNotifications: updated }).catch(() => { });
-                              });
-                              setNotificationsOpen(false);
-                            }}
-                            className={`flex items-start gap-3 px-4 py-3 transition-all hover:bg-slate-800/50 ${isRead ? 'opacity-60' : ''
-                              }`}
-                          >
-                            {/* Type Icon */}
-                            <div className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center mt-0.5 ${cfg.bg} border ${cfg.border}`}>
-                              <Icon className={`w-4 h-4 ${cfg.color}`} />
-                            </div>
-
-                            {/* Content */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-2">
-                                <p className={`text-xs font-bold truncate ${cfg.color}`}>{item.title}</p>
-                                <span className="text-[10px] text-slate-500 shrink-0">{relativeTime}</span>
-                              </div>
-                              <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed line-clamp-2">{item.message}</p>
-                            </div>
-
-                            {/* Unread dot */}
-                            {!isRead && (
-                              <div className={`shrink-0 w-2 h-2 rounded-full mt-2 ${cfg.dot}`} />
-                            )}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                </>
               )}
             </div>
 
             {/* User Dropdown Menu */}
             <div className="relative">
               <button
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                onClick={() => {
+                  const nextState = !userMenuOpen;
+                  if (nextState) setNotificationsOpen(false);
+                  setUserMenuOpen(nextState);
+                }}
                 className="flex items-center gap-2.5 p-1.5 pl-3 rounded-xl border border-slate-800 bg-slate-900 hover:border-slate-700 transition-all"
               >
                 <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center font-bold text-[10px] text-white">
@@ -502,25 +520,33 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               </button>
 
               {userMenuOpen && (
-                <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-2 z-50">
-                  <div className="px-3 py-2 border-b border-slate-800 mb-1">
-                    <p className="text-xs font-bold text-white">{user.name}</p>
-                    <p className="text-[10px] text-slate-400 truncate">{user.email}</p>
-                  </div>
-                  <Link
-                    href="/settings"
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800"
+                <>
+                  {/* Backdrop for mobile closing */}
+                  <div
+                    className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-40 sm:hidden"
                     onClick={() => setUserMenuOpen(false)}
-                  >
-                    <Settings className="w-3.5 h-3.5" /> Account Settings
-                  </Link>
-                  <button
-                    onClick={logout}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors mt-1"
-                  >
-                    <LogOut className="w-3.5 h-3.5" /> Sign Out
-                  </button>
-                </div>
+                  />
+
+                  <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="px-3 py-2 border-b border-slate-800 mb-1">
+                      <p className="text-xs font-bold text-white">{user.name}</p>
+                      <p className="text-[10px] text-slate-400 truncate">{user.email}</p>
+                    </div>
+                    <Link
+                      href="/settings"
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800"
+                      onClick={() => setUserMenuOpen(false)}
+                    >
+                      <Settings className="w-3.5 h-3.5" /> Account Settings
+                    </Link>
+                    <button
+                      onClick={logout}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors mt-1"
+                    >
+                      <LogOut className="w-3.5 h-3.5" /> Sign Out
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           </div>
