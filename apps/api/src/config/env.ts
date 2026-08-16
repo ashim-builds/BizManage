@@ -87,7 +87,7 @@ const configuredEnvironment = parsed.data.ESEWA_ENVIRONMENT
   ?? (parsed.data.NODE_ENV === 'production' ? 'production' : 'uat');
 
 if (configuredEnvironment === 'production' && parsed.data.ESEWA_MERCHANT_CODE === 'EPAYTEST') {
-  throw new Error('Production eSewa requires a production ESEWA_MERCHANT_CODE; EPAYTEST is UAT-only.');
+  console.warn('⚠️  WARNING: ESEWA_MERCHANT_CODE is set to EPAYTEST in a production environment. eSewa payments will not work. Set a real ESEWA_MERCHANT_CODE to enable production payments.');
 }
 
 export const env = {
