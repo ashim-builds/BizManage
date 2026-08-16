@@ -175,10 +175,21 @@ export async function saleRoutes(fastify: FastifyInstance) {
       // 2. Generate unique Invoice Number
       let invoiceNumber = body.invoiceNumber;
       if (!invoiceNumber) {
-        const count = await tx.sale.count({
+        let count = await tx.sale.count({
           where: { businessId: request.tenant!.businessId },
         });
-        invoiceNumber = `${prefix}${String(count + 1).padStart(5, '0')}`;
+        let candidate = `${prefix}${String(count + 1).padStart(5, '0')}`;
+        let exists = await tx.sale.findFirst({
+          where: { businessId: request.tenant!.businessId, invoiceNumber: candidate },
+        });
+        while (exists) {
+          count++;
+          candidate = `${prefix}${String(count + 1).padStart(5, '0')}`;
+          exists = await tx.sale.findFirst({
+            where: { businessId: request.tenant!.businessId, invoiceNumber: candidate },
+          });
+        }
+        invoiceNumber = candidate;
       }
 
       // 3. Centralized Math Engine

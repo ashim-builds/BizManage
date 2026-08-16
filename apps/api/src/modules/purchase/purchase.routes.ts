@@ -171,10 +171,21 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
       // 2. Generate unique Bill Number
       let billNumber = body.billNumber;
       if (!billNumber) {
-        const count = await tx.purchase.count({
+        let count = await tx.purchase.count({
           where: { businessId: request.tenant!.businessId },
         });
-        billNumber = `${prefix}${String(count + 1).padStart(5, '0')}`;
+        let candidate = `${prefix}${String(count + 1).padStart(5, '0')}`;
+        let exists = await tx.purchase.findFirst({
+          where: { businessId: request.tenant!.businessId, billNumber: candidate },
+        });
+        while (exists) {
+          count++;
+          candidate = `${prefix}${String(count + 1).padStart(5, '0')}`;
+          exists = await tx.purchase.findFirst({
+            where: { businessId: request.tenant!.businessId, billNumber: candidate },
+          });
+        }
+        billNumber = candidate;
       }
 
       // 3. Centralized Math Engine
