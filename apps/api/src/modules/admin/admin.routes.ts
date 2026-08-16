@@ -1,6 +1,8 @@
 import { FastifyInstance } from 'fastify';
 import { globalPrisma } from '@bizmanage/database';
 import { requireSystemAdmin } from '../../middleware/auth.js';
+import { AppError } from '../../plugins/error-handler.js';
+import argon2 from 'argon2';
 import { z } from 'zod';
 
 export async function adminRoutes(fastify: FastifyInstance) {
@@ -71,7 +73,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
         { email: { contains: query.search, mode: 'insensitive' } },
       ];
     }
-    
+
     if (query.status === 'active') {
       where.isActive = true;
     } else if (query.status === 'suspended') {
@@ -279,7 +281,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
         data: { subscriptionPackageId },
         include: { subscriptionPackage: true },
       });
-      
+
       if (subscriptionPackageId) {
         const pkg = biz.subscriptionPackage;
         let addDays = 30;
@@ -480,7 +482,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
     });
 
     const { oldPassword, newPassword } = schema.parse(request.body);
-    
+
     const user = await globalPrisma.user.findUnique({
       where: { id: request.user.id },
     });
@@ -495,7 +497,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
     }
 
     const newHash = await argon2.hash(newPassword);
-    
+
     await globalPrisma.user.update({
       where: { id: user.id },
       data: { passwordHash: newHash },
@@ -539,9 +541,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
       .filter((id): id is string => id !== null);
     const packages = packageIds.length
       ? await globalPrisma.subscriptionPackage.findMany({
-          where: { id: { in: packageIds } },
-          select: { id: true, name: true },
-        })
+        where: { id: { in: packageIds } },
+        select: { id: true, name: true },
+      })
       : [];
     const packageNames = new Map(packages.map((pkg) => [pkg.id, pkg.name]));
 

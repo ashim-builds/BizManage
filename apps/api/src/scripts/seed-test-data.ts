@@ -62,7 +62,6 @@ async function runSeed() {
     data: {
       name: 'RB Hardware & Sanitary House',
       currency: 'NPR',
-      subscriptionPlan: 'PRO',
       setupCompleted: true,
       profileCompleted: true,
       settings: {
