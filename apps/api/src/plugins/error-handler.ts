@@ -16,7 +16,10 @@ export class AppError extends Error {
   }
 }
 
-export function globalErrorHandler(error: FastifyError | AppError | ZodError | any, _request: FastifyRequest, reply: FastifyReply) {
+export function globalErrorHandler(error: FastifyError | AppError | ZodError | any, request: FastifyRequest, reply: FastifyReply) {
+  // Always log error details in server logs for diagnostics
+  console.error(`[API Error] ${request.method} ${request.url}:`, error);
+
   if (error instanceof ZodError || error?.name === 'ZodError') {
     const response: ApiErrorResponse = {
       success: false,
@@ -45,11 +48,57 @@ export function globalErrorHandler(error: FastifyError | AppError | ZodError | a
     return reply.status(statusCode).send(response);
   }
 
+  // Handle Prisma Client Known Request Errors
+  if (error?.code === 'P2002') {
+    const target = (error.meta?.target as string[])?.join(', ') || 'field';
+    const response: ApiErrorResponse = {
+      success: false,
+      error: {
+        code: 'CONFLICT',
+        message: `A record with this ${target} already exists.`,
+      },
+    };
+    return reply.status(409).send(response);
+  }
+
+  if (error?.code === 'P2025') {
+    const response: ApiErrorResponse = {
+      success: false,
+      error: {
+        code: 'NOT_FOUND',
+        message: 'The requested record was not found.',
+      },
+    };
+    return reply.status(404).send(response);
+  }
+
+  if (error?.code === 'P2003') {
+    const response: ApiErrorResponse = {
+      success: false,
+      error: {
+        code: 'BAD_REQUEST',
+        message: 'Referenced entity does not exist or cannot be modified.',
+      },
+    };
+    return reply.status(400).send(response);
+  }
+
+  if (error?.name === 'PrismaClientValidationError') {
+    const response: ApiErrorResponse = {
+      success: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Invalid data format provided to database.',
+      },
+    };
+    return reply.status(400).send(response);
+  }
+
   const response: ApiErrorResponse = {
     success: false,
     error: {
       code: 'INTERNAL_ERROR',
-      message: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message,
+      message: error?.message || 'Internal server error',
     },
   };
   return reply.status(500).send(response);
