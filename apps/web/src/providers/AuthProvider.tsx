@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { api, setApiBusinessId } from '@/lib/api';
+import { api, setApiBusinessId, setAccessToken } from '@/lib/api';
 
 export interface UserProfile {
   id: string;
@@ -133,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setActiveBusinessIdState(null);
       setActiveBusinessLimits(null);
       setApiBusinessId(null);
+      setAccessToken(null); // Clear token from localStorage on mobile
       router.push('/login');
     }
   };
