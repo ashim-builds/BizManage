@@ -191,7 +191,7 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
   // Watchers & Auto-fill
   const saleWatchItems = saleForm.watch('items');
   const saleWatchIsVatBill = saleForm.watch('isVatBill');
-  
+
   const saleTotals = calculateInvoiceTotals(
     saleWatchItems.map((i) => ({ unitPrice: Number(i.unitPrice) || 0, quantity: Number(i.quantity) || 0, discountPercent: Number(i.discountPercent) || 0 })),
     saleWatchIsVatBill
@@ -217,8 +217,8 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
     return mode === PaymentMode.BANK || mode === PaymentMode.CHEQUE
       ? 'BANK'
       : mode === PaymentMode.ONLINE
-      ? 'MOBILE_WALLET'
-      : 'CASH';
+        ? 'MOBILE_WALLET'
+        : 'CASH';
   };
 
   const salePaymentMode = saleForm.watch('paymentMode');
@@ -369,72 +369,64 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
         <div className="grid grid-cols-4 md:grid-cols-8 gap-1 p-2 bg-slate-950/50 border-b border-slate-800 text-[11px] font-semibold">
           <button
             onClick={() => setActiveType('sale')}
-            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${
-              activeType === 'sale' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
-            }`}
+            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${activeType === 'sale' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+              }`}
           >
             <ShoppingCart className="w-4 h-4" /> Sale
           </button>
 
           <button
             onClick={() => setActiveType('purchase')}
-            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${
-              activeType === 'purchase' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'
-            }`}
+            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${activeType === 'purchase' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'
+              }`}
           >
             <Receipt className="w-4 h-4" /> Purchase
           </button>
 
           <button
             onClick={() => setActiveType('payment_in')}
-            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${
-              activeType === 'payment_in' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
-            }`}
+            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${activeType === 'payment_in' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
+              }`}
           >
             <ArrowDownRight className="w-4 h-4" /> Pay In
           </button>
 
           <button
             onClick={() => setActiveType('payment_out')}
-            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${
-              activeType === 'payment_out' ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-white'
-            }`}
+            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${activeType === 'payment_out' ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-white'
+              }`}
           >
             <ArrowUpRight className="w-4 h-4" /> Pay Out
           </button>
 
           <button
             onClick={() => setActiveType('expense')}
-            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${
-              activeType === 'expense' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white'
-            }`}
+            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${activeType === 'expense' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white'
+              }`}
           >
             <DollarSign className="w-4 h-4" /> Expense
           </button>
 
           <button
             onClick={() => setActiveType('income')}
-            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${
-              activeType === 'income' ? 'bg-teal-600 text-white' : 'text-slate-400 hover:text-white'
-            }`}
+            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${activeType === 'income' ? 'bg-teal-600 text-white' : 'text-slate-400 hover:text-white'
+              }`}
           >
             <TrendingUp className="w-4 h-4" /> Income
           </button>
 
           <button
             onClick={() => setActiveType('add_party')}
-            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${
-              activeType === 'add_party' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
-            }`}
+            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${activeType === 'add_party' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+              }`}
           >
             <UserPlus className="w-4 h-4" /> Party
           </button>
 
           <button
             onClick={() => setActiveType('add_item')}
-            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${
-              activeType === 'add_item' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'
-            }`}
+            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${activeType === 'add_item' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'
+              }`}
           >
             <PackagePlus className="w-4 h-4" /> Item
           </button>
@@ -536,7 +528,7 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
                 </div>
                 <div>
                   <label className="block text-slate-300 font-semibold mb-1">
-                    Paid Amount (Rs.) 
+                    Paid Amount (Rs.)
                     <span className="text-[10px] text-slate-500 font-normal ml-2">Total: Rs. {formatCurrency(saleTotals.totalAmount)}</span>
                   </label>
                   <input
@@ -563,7 +555,7 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
                 <div>
                   <label className="block text-slate-300 font-semibold mb-1">Account</label>
                   <select
-                    {...saleForm.register('accountId')}
+                    {...saleForm.register('accountId' as any)}
                     className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
                   >
                     <option value="">Default Account</option>
@@ -680,7 +672,7 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
                 </div>
                 <div>
                   <label className="block text-slate-300 font-semibold mb-1">
-                    Paid Amount (Rs.) 
+                    Paid Amount (Rs.)
                     <span className="text-[10px] text-slate-500 font-normal ml-2">Total: Rs. {formatCurrency(purchaseTotals.totalAmount)}</span>
                   </label>
                   <input
@@ -707,7 +699,7 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
                 <div>
                   <label className="block text-slate-300 font-semibold mb-1">Account</label>
                   <select
-                    {...purchaseForm.register('accountId')}
+                    {...purchaseForm.register('accountId' as any)}
                     className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
                   >
                     <option value="">Default Account</option>
@@ -778,7 +770,7 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
               <div>
                 <label className="block text-slate-300 font-semibold mb-1">Account</label>
                 <select
-                  {...paymentInForm.register('accountId')}
+                  {...paymentInForm.register('accountId' as any)}
                   className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
                 >
                   <option value="">Default Account</option>
@@ -848,7 +840,7 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
               <div>
                 <label className="block text-slate-300 font-semibold mb-1">Account</label>
                 <select
-                  {...paymentOutForm.register('accountId')}
+                  {...paymentOutForm.register('accountId' as any)}
                   className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
                 >
                   <option value="">Default Account</option>

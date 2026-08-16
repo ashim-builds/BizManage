@@ -61,7 +61,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  const navItems = [
+  const navItems: { name: string; href: string; icon: any; disabled?: boolean }[] = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Packages', href: '/admin/packages', icon: Package },
     { name: 'Businesses', href: '/admin/businesses', icon: Building },

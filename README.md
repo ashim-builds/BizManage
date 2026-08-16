@@ -4,86 +4,78 @@
 
 ---
 
-## 🌟 Key Features
-
-- **🔒 Multi-Tenant Isolation**: Secure data partition per business tenant (`businessId`).
-- **💳 Double-Entry Accounting**: Automatic Cash in Hand, Bank Accounts, and Mobile Wallets tracking.
-- **📄 Sales & Purchases**: Auto-numbered Sales Invoices (`INV-`) & Purchase Bills (`PUR-`).
-- **↩️ Credit & Debit Notes**: Real-world Sales Returns (`CN-`) & Purchase Returns (`DN-`) with original rate protection & inventory restoration.
-- **👥 Party Ledgers**: Automated customer receivables & supplier payables tracking.
-- **📦 Inventory & Stock Movements**: Transaction-driven stock calculations with low stock alert thresholds.
-- **📊 Real-Time Analytics**: Executive Dashboard, Cashflow (7-Day Daily & 12-Month Monthly), Profit & Loss, and exportable financial reports.
-- **🛡️ Enterprise Security**: Argon2id password hashing, JWT Access Tokens, HttpOnly Cookies, and session revocation.
-
----
-
-## 🛠️ Technology Stack
+## 🌟 Project Overview & Tech Stack
 
 - **Frontend**: Next.js 14, React 18, Tailwind CSS, Lucide Icons, React Hook Form, Zod, TanStack Query
 - **Backend API**: Fastify, TypeScript, Prisma ORM, Argon2, Fastify Cookie, Fastify JWT
-- **Database**: PostgreSQL
+- **Database**: PostgreSQL (Dockerized)
 - **Monorepo Manager**: pnpm workspaces + Turborepo
+- **Key Features**: Multi-Tenant Isolation, Double-Entry Accounting, Sales & Purchases, Credit & Debit Notes, Party Ledgers, Inventory & Stock Movements, Real-Time Analytics, Enterprise Security.
 
 ---
 
 ## 📋 Prerequisites
 
-Before running the application, make sure you have installed:
+Before setting up the project on a fresh laptop, ensure you have the following installed:
 
-- **Node.js** (v18.x or v20.x recommended)
-- **pnpm** (Install globally via `npm install -g pnpm`)
-- **PostgreSQL Database** (Local PostgreSQL server, Docker container, or free cloud DB like [Neon.tech](https://neon.tech) / [Supabase](https://supabase.com))
+- **Node.js**: v18.0.0 or higher (v24+ recommended)
+- **pnpm**: v9.0.0 or higher (Install globally: `npm install -g pnpm`)
+- **Docker & Docker Compose**: For running the local PostgreSQL database
+- **Git**: For version control
 
 ---
 
-## 🚀 Step-by-Step Quick Start Guide
+## 🚀 Fresh-Laptop Setup Flow from Zero
 
-### 1. Clone or Open Project Directory
+Follow these exact steps to run the project locally from scratch:
+
+### 1. Clone the Repository
 
 ```bash
-cd c:\Users\ashim\OneDrive\Documents\bizmanage
+git clone <your-repo-url>
+cd BizManage
 ```
 
-### 2. Install All Monorepo Dependencies
+### 2. Install Dependencies
+
+Install all monorepo dependencies using pnpm:
 
 ```bash
 pnpm install
 ```
 
-### 3. Configure Environment Variables
+### 3. Setup Environment Variables
 
-Create a `.env` file in the root directory (or inside `apps/api/.env` and `packages/database/.env`):
-
-```env
-# Database Connection URL (PostgreSQL)
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/bizmanage_db?schema=public"
-
-# API & Auth Secrets
-JWT_SECRET="super_secret_jwt_key_998877665544332211"
-COOKIE_SECRET="super_secret_cookie_key_112233445566778899"
-NODE_ENV="development"
-PORT=4000
-FRONTEND_URL="http://localhost:3000"
-
-# Web App Public API Endpoint
-NEXT_PUBLIC_API_URL="http://localhost:4000/api/v1"
-```
-
-### 4. Setup Database Schema & Seed Initial Data
-
-Push the database schema and generate Prisma client:
+Copy the example environment configuration to create your local `.env` file:
 
 ```bash
-# Push Prisma schema to PostgreSQL database
-pnpm --filter @bizmanage/database exec prisma db push
-
-# Generate Prisma Client
-pnpm --filter @bizmanage/database exec prisma generate
+cp .env.example .env
 ```
 
-### 5. Launch the Development Server
+Ensure `.env` contains the required placeholders (the defaults work out-of-the-box for local development). Make sure to check the database connection string matches your Docker configuration.
 
-Start both the **Next.js Frontend** (port 3000) and **Fastify Backend API** (port 4000) concurrently:
+### 4. Start Docker Database
+
+Start the PostgreSQL container in the background:
+
+```bash
+docker-compose up -d
+```
+*Wait a few seconds for the database to become healthy.*
+
+### 5. Setup Database Schema & Generate Client
+
+Sync the Prisma schema with your local database and generate the client:
+
+```bash
+pnpm --filter @bizmanage/database db:push
+pnpm --filter @bizmanage/database db:generate
+```
+*(Optional) If you have migrations, use `pnpm --filter @bizmanage/database db:migrate` instead of `db:push`.*
+
+### 6. Start the Development Server
+
+Start the Fastify Backend API and Next.js Frontend concurrently:
 
 ```bash
 pnpm dev
@@ -91,56 +83,87 @@ pnpm dev
 
 ---
 
-## 🌐 Accessing the Application
+## 🌐 Local URLs and Ports
 
-Once the development server is running:
+Once the development server is running, the services will be available at:
 
-| Service         | URL                                                          | Description             |
+| Service         | Local URL                                                    | Description             |
 | --------------- | ------------------------------------------------------------ | ----------------------- |
 | **Web UI App**  | [http://localhost:3000](http://localhost:3000)               | Main Dashboard & Portal |
 | **Backend API** | [http://localhost:4000/api/v1](http://localhost:4000/api/v1) | Fastify REST API        |
+| **Database**    | `localhost:5432`                                             | PostgreSQL              |
+
+**Default Test Credentials** (If seeded or manually created):
+- **Email**: `test@gmail.com` or `admin@bizmanage.com`
+- **Password**: `test123` or `admin123`
 
 ---
 
-## 🔑 Default Test Credentials
-
-Use these pre-configured credentials to sign in immediately:
-
-- **Email / Username**: `test@gmail.com`
-- **Password**: `test123`
-- **Active Business**: `test` / `RB Hardware & Sanitary House`
-
----
-
-## 📁 Repository Structure
+## 🏗️ Project Structure
 
 ```text
 bizmanage/
 ├── apps/
-│   ├── api/              # Fastify Node.js Backend API
-│   └── web/              # Next.js 14 App Router Frontend Web UI
+│   ├── api/              # Fastify Node.js Backend API (Port 4000)
+│   ├── desktop/          # Electron Desktop App
+│   └── web/              # Next.js 14 App Router Frontend (Port 3000)
 ├── packages/
-│   ├── database/         # Prisma Schema & Database Client
+│   ├── database/         # Prisma Schema & Database Client (PostgreSQL)
 │   ├── shared/           # Shared utility helper functions
 │   ├── types/            # Shared TypeScript type definitions
 │   └── validation/       # Zod validation schemas for API & Web
+├── docker-compose.yml    # Local PostgreSQL configuration
 ├── package.json          # Root pnpm workspace configuration
 └── turbo.json            # Turborepo build pipeline
 ```
 
 ---
 
-## 🔧 Useful CLI Commands
+## 🔧 Useful Commands
 
-| Command                                                 | Description                                            |
-| ------------------------------------------------------- | ------------------------------------------------------ |
-| `pnpm dev`                                              | Starts frontend (3000) and backend (4000) concurrently |
-| `pnpm build`                                            | Builds production bundles for all packages             |
-| `pnpm --filter @bizmanage/database exec prisma studio`  | Opens Prisma GUI Database Inspector                    |
-| `pnpm --filter @bizmanage/database exec prisma db push` | Syncs Prisma schema with database                      |
+### Development
+- `pnpm dev` - Starts frontend and backend concurrently
+- `pnpm format` - Formats code using Prettier
+- `pnpm lint` - Runs linter across all packages
+
+### Docker Management
+- `docker-compose up -d` - Starts the database in the background
+- `docker-compose down` - Stops and removes the database container
+- `docker-compose logs -f postgres` - Views database logs
+
+### Database & Prisma
+- `pnpm --filter @bizmanage/database db:generate` - Generates Prisma Client
+- `pnpm --filter @bizmanage/database db:push` - Syncs schema to the database
+- `pnpm --filter @bizmanage/database db:studio` - Opens Prisma GUI Database Inspector
+
+### Production
+- `pnpm build` - Builds production bundles for all packages
+
+---
+
+## 🛠️ Common Troubleshooting
+
+**1. `pnpm install` fails with Electron errors**
+If `apps/desktop` causes issues with `electron@^latest`, ensure `apps/desktop/package.json` specifies `"electron": "latest"` without the caret (`^`).
+
+**2. Database connection fails (`P1001`)**
+Ensure Docker is running and the container is healthy:
+```bash
+docker-compose ps
+```
+If the container is not running, start it using `docker-compose up -d`.
+
+**3. Turborepo cache issues**
+If builds or dev servers act stale, try running with `--no-cache` or clearing `.turbo` folders:
+```bash
+rm -rf .turbo
+```
+
+**4. ModuleResolution errors during `pnpm build` in `apps/desktop`**
+Ensure `apps/desktop/tsconfig.json` uses `"moduleResolution": "Node16"` and `"module": "Node16"`, as `Node10` module resolution is deprecated in newer TypeScript versions. Also ensure it has `"rootDir": "./src"` if using an explicit `src` directory.
 
 ---
 
 ## 🚀 Production Deployment
 
-Refer to the [Render Deployment Guide](file:///C:/Users/ashim/.gemini/antigravity-ide/brain/76c1e9cc-d823-4bfc-b2d8-576f1dd1a19a/render_deployment_guide.md) for 100% free hosting instructions on Render.com and Neon PostgreSQL!
+Refer to the `render_deployment_guide.md` for hosting instructions on Render.com and Neon PostgreSQL!

@@ -51,9 +51,7 @@ export async function processSubscriptions() {
       if (!notif) {
         await sendSubscriptionExpiredEmail(
           owner.email, 
-          sub.business.name, 
-          sub.subscriptionPackage.name, 
-          sub.endDate.toLocaleDateString()
+          sub.business.name
         );
 
         await globalPrisma.subscriptionNotification.create({
@@ -119,10 +117,8 @@ export async function processSubscriptions() {
         if (owner && owner.email) {
           await sendSubscriptionExpiringEmail(
             owner.email, 
-            sub.business.name, 
-            sub.subscriptionPackage.name, 
-            days,
-            sub.endDate.toLocaleDateString()
+            sub.business.name,
+            days
           );
 
           await globalPrisma.subscriptionNotification.create({

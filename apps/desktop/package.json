@@ -1,0 +1,14 @@
+{
+  "name": "@bizmanage/desktop",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "latest",
+    "typescript": "latest"
+  }
+}

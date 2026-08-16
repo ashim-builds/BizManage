@@ -1,6 +1,8 @@
 import { FastifyInstance } from 'fastify';
 import { globalPrisma } from '@bizmanage/database';
 import { requireSystemAdmin } from '../../middleware/auth.js';
+import { AppError } from '../../plugins/error-handler.js';
+import argon2 from 'argon2';
 import { z } from 'zod';
 
 export async function adminRoutes(fastify: FastifyInstance) {
@@ -487,6 +489,10 @@ export async function adminRoutes(fastify: FastifyInstance) {
 
     if (!user) {
       throw new AppError('User not found', 404, 'NOT_FOUND');
+    }
+
+    if (!user.passwordHash) {
+      throw new AppError('Password not set for this account', 400, 'INVALID_CREDENTIALS');
     }
 
     const isValid = await argon2.verify(user.passwordHash, oldPassword);

@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { Package, Plus, Edit2, Trash2, CheckCircle2, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ModalPortal } from '@/components/ui/ModalPortal';
+import { AVAILABLE_FEATURES } from '@/lib/constants';
 
 interface SubscriptionPackage {
   id: string;
@@ -18,20 +19,6 @@ interface SubscriptionPackage {
   isDefault: boolean;
   displayOrder: number;
 }
-
-export const AVAILABLE_FEATURES = [
-  { id: 'UNLIMITED_INVOICES', label: 'Unlimited Invoices & Purchases' },
-  { id: 'INVENTORY_TRACKING', label: 'Full Stock & Inventory Tracking' },
-  { id: 'AUTO_LEDGER', label: 'Customer & Supplier Auto-Ledgers' },
-  { id: 'CASH_BANK', label: 'Cash & Bank Management' },
-  { id: 'CUSTOM_BRANDING', label: 'Custom Logo & Invoice Branding' },
-  { id: 'ADVANCED_REPORTS', label: 'Advanced P&L & Daybook Reports' },
-  { id: 'WALLET_SYNC', label: 'Multi-Account Cash & Wallet Sync' },
-  { id: 'PRIORITY_SUPPORT', label: 'Priority Technical Support' },
-  { id: 'MULTI_BRANCH', label: 'Multi-Branch Operations & Team Collaboration' },
-  { id: 'STAFF_ROLES', label: 'Unlimited Staff Roles & Granular Permissions' },
-  { id: 'ACCOUNT_MANAGER', label: 'Dedicated Account Manager' },
-];
 
 export default function AdminPackagesPage() {
   const [packages, setPackages] = useState<SubscriptionPackage[]>([]);

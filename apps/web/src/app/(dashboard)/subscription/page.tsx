@@ -5,7 +5,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { Crown, Check, Lock, Sparkles, Zap, ShieldCheck, ArrowRight, Plus, Minus } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useUpdateBusiness } from '@/services/businessService';
-import { AVAILABLE_FEATURES } from '@/app/admin/packages/page';
+import { AVAILABLE_FEATURES } from '@/lib/constants';
 
 interface SubscriptionPackage {
   id: string;

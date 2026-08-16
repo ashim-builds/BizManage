@@ -495,7 +495,7 @@ export default function ExpensesPage() {
         isOpen={!!deletingExpenseInfo}
         onClose={() => { setDeletingExpenseInfo(null); setDeleteError(''); }}
         title="Delete Expense Record"
-        itemName={deletingExpenseInfo?.description}
+        itemName={deletingExpenseInfo?.name}
         actionText="Delete Record"
         error={deleteError}
         isProcessing={deleteExpense.isPending}

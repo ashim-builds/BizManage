@@ -14,6 +14,7 @@ import { getPartyBalanceDisplay } from '@/lib/balance';
 import { formatCurrency } from '@/lib/accounting';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
+import { EmptyState } from '@/components/common/EmptyState';
 import { ModalPortal } from '@/components/common/ModalPortal';
 import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
 import { toast } from 'react-hot-toast';

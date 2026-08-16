@@ -207,7 +207,7 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
                   </p>
                   {(() => {
                     if (!business.currentPeriodEnd) return null;
-                    if (business.subscriptionPackage && business.subscriptionPackage.trialDays > 0) {
+                    if (business.subscriptionPackage && (business.subscriptionPackage.trialDays || 0) > 0) {
                       const periodDays = business.subscriptionPackage.billingPeriod === 'YEARLY' ? 365 : 30;
                       const trialEndDate = new Date(business.currentPeriodEnd);
                       trialEndDate.setDate(trialEndDate.getDate() - periodDays);

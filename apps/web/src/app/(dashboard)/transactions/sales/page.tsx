@@ -593,7 +593,7 @@ export default function SalesPage() {
                   <button
                     type="button"
                     onClick={() =>
-                      append({ itemId: '', quantity: 1, unitPrice: 0, discount: 0, taxAmount: 0 })
+                      append({ itemId: '', quantity: 1, unitPrice: 0, discountPercent: 0, discount: 0, taxAmount: 0 })
                     }
                     className="text-xs text-blue-400 hover:text-blue-300 font-semibold bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5"
                   >

@@ -17,7 +17,7 @@ import {
 import { useAuth } from "@/providers/AuthProvider";
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
-import { AVAILABLE_FEATURES } from "@/app/admin/packages/page";
+import { AVAILABLE_FEATURES } from "@/lib/constants";
 
 interface SubscriptionPackage {
   id: string;
