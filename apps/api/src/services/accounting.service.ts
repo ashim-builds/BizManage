@@ -1,5 +1,4 @@
 import { Prisma, PrismaClient } from '@bizmanage/database';
-import { AppError } from '../plugins/error-handler.js';
 
 // Use a transaction client or the main client
 type TxClient = Omit<
@@ -197,8 +196,7 @@ export async function updateStock(
     },
   });
 
-  if (item.currentStock.lessThan(0)) {
-    throw new AppError(`Insufficient stock for item ${item.name}`, 400);
-  }
+  // Note: negative stock is allowed — some businesses sell before receiving stock.
+  // If you want strict enforcement, add a business setting for it.
   return item;
 }

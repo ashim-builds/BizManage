@@ -2,7 +2,8 @@
 
 import { Suspense, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { api } from '@/lib/api';
+import { api, setAccessToken } from '@/lib/api';
+import { useAuth } from '@/providers/AuthProvider';
 
 const Spinner = () => (
   <div
@@ -39,6 +40,7 @@ const Spinner = () => (
 function OAuthCallbackInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { refreshUser } = useAuth();
   const didRun = useRef(false);
 
   useEffect(() => {
@@ -59,16 +61,28 @@ function OAuthCallbackInner() {
       return;
     }
 
-    // Exchange URL tokens for httpOnly cookies via the API
-    api
-      .post('/auth/oauth-session', { accessToken, refreshToken })
+    // ── Mobile-compatible auth ───────────────────────────────────────────────
+    // Mobile browsers (iOS Safari, some Android) block SameSite=None cookies
+    // from cross-origin requests. The old cookie-exchange approach failed silently.
+    // Fix: store the token in localStorage and set the Authorization header NOW,
+    // then call refreshUser() so the AuthProvider loads the user state.
+    // Also fire the cookie-session exchange in background for desktop users.
+
+    // 1. Set the token immediately so all subsequent API calls are authenticated
+    setAccessToken(accessToken);
+
+    // 2. Fire cookie exchange in background (helps desktop, ignored on mobile)
+    api.post('/auth/oauth-session', { accessToken, refreshToken }).catch(() => {});
+
+    // 3. Reload user profile via the now-authenticated API client
+    refreshUser()
       .then(() => {
         router.replace('/dashboard');
       })
       .catch(() => {
         router.replace('/login?error=OAuth_Session_Failed');
       });
-  }, [router, searchParams]);
+  }, [router, searchParams, refreshUser]);
 
   return <Spinner />;
 }
