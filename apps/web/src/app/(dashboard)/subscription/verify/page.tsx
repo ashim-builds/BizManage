@@ -16,36 +16,62 @@ export default function VerifyPaymentPage() {
   const [message, setMessage] = useState('Verifying your payment...');
 
   useEffect(() => {
-    if (!searchParams) {
-      setStatus('pending');
-      setTitle('Payment Pending');
-      setMessage('We could not read the payment response. Please check your subscription page later.');
-      return;
+    // Extract parameters with robust fallbacks
+    let data = searchParams?.get('data') || null;
+    let statusParam = searchParams?.get('status') || null;
+    let transactionUuid = searchParams?.get('transaction_uuid') || null;
+
+    if (typeof window !== 'undefined') {
+      const href = window.location.href;
+      if (!data) {
+        const dataMatch = href.match(/[?&]data=([^&#]+)/);
+        if (dataMatch) data = decodeURIComponent(dataMatch[1]);
+      }
+      if (!transactionUuid) {
+        const uuidMatch = href.match(/[?&]transaction_uuid=([^&#]+)/);
+        if (uuidMatch) transactionUuid = decodeURIComponent(uuidMatch[1]);
+      }
+      if (!statusParam) {
+        const statusMatch = href.match(/[?&]status=([^&#]+)/);
+        if (statusMatch) statusParam = decodeURIComponent(statusMatch[1]);
+      }
     }
-    const data = searchParams.get('data');
-    const statusParam = searchParams.get('status');
-    
-    const transactionUuid = searchParams.get('transaction_uuid');
 
     const showGatewayStatus = async () => {
       if (!transactionUuid) {
-        setStatus(statusParam === 'canceled' ? 'error' : 'pending');
-        setTitle(statusParam === 'canceled' ? 'Payment Cancelled' : 'Payment Pending');
-        setMessage('We could not identify this payment attempt. Please check your subscription page later.');
+        setStatus(statusParam === 'failure' || statusParam === 'canceled' ? 'error' : 'pending');
+        setTitle(statusParam === 'canceled' ? 'Payment Cancelled' : 'Payment Failed');
+        setMessage('We could not identify this payment attempt. Please check your subscription page.');
         return;
       }
       try {
         const response = await api.get(`/esewa/status/${encodeURIComponent(transactionUuid)}`);
         const gatewayStatus = response.data.status;
         if (gatewayStatus === 'COMPLETE' || gatewayStatus === 'SUCCESS') {
-          await refreshUser(); setStatus('success'); setTitle('Payment Successful!'); setMessage(response.data.message);
+          await refreshUser();
+          setStatus('success');
+          setTitle('Payment Successful!');
+          setMessage(response.data.message || 'Payment verified successfully! Your subscription is now active.');
+          setTimeout(() => router.push('/subscription'), 3000);
         } else if (gatewayStatus === 'PENDING') {
-          setStatus('pending'); setTitle('Payment Pending'); setMessage(response.data.message);
+          setStatus('pending');
+          setTitle('Payment Pending');
+          setMessage(response.data.message || 'Your payment is being processed.');
         } else {
-          setStatus('error'); setTitle(gatewayStatus === 'CANCELED' ? 'Payment Cancelled' : gatewayStatus === 'NOT_FOUND' || gatewayStatus === 'EXPIRED' ? 'Payment Expired' : 'Payment Failed'); setMessage(response.data.message);
+          setStatus('error');
+          setTitle(
+            gatewayStatus === 'CANCELED'
+              ? 'Payment Cancelled'
+              : gatewayStatus === 'NOT_FOUND' || gatewayStatus === 'EXPIRED'
+              ? 'Payment Expired'
+              : 'Payment Failed'
+          );
+          setMessage(response.data.message || 'Payment could not be completed.');
         }
       } catch (error: any) {
-        setStatus('pending'); setTitle('Payment Pending'); setMessage(error.response?.data?.message || 'We could not verify the payment yet. Please try again shortly.');
+        setStatus('error');
+        setTitle('Payment Failed');
+        setMessage(error.response?.data?.message || 'Payment verification failed. Please try again.');
       }
     };
 
@@ -55,9 +81,12 @@ export default function VerifyPaymentPage() {
     }
 
     if (!data) {
-      const allParams = searchParams.toString();
+      if (transactionUuid) {
+        showGatewayStatus();
+        return;
+      }
       setStatus('error');
-      setMessage(`Invalid payment response. Missing data. Params: ${allParams || 'none'}`);
+      setMessage('Invalid payment response. Missing data from payment gateway.');
       return;
     }
 
@@ -66,7 +95,8 @@ export default function VerifyPaymentPage() {
         const response = await api.post('/esewa/verify', { data });
         if (response.data.success) {
           await refreshUser();
-          setStatus('success'); setTitle('Payment Successful!');
+          setStatus('success');
+          setTitle('Payment Successful!');
           setMessage('Payment verified successfully! Your subscription is now active.');
           setTimeout(() => {
             router.push('/subscription');
@@ -77,8 +107,27 @@ export default function VerifyPaymentPage() {
           setMessage(response.data.message || 'Payment verification failed.');
         }
       } catch (error: any) {
-        setStatus('pending'); setTitle('Payment Pending');
-        setMessage(error.response?.data?.message || 'We could not verify the payment yet. Please try again shortly.');
+        // If verify endpoint throws, fallback to check status via transaction UUID if available
+        try {
+          const decoded = JSON.parse(Buffer.from(data, 'base64').toString('utf8'));
+          if (decoded?.transaction_uuid) {
+            const statusRes = await api.get(`/esewa/status/${encodeURIComponent(decoded.transaction_uuid)}`);
+            if (statusRes.data.status === 'COMPLETE' || statusRes.data.status === 'SUCCESS') {
+              await refreshUser();
+              setStatus('success');
+              setTitle('Payment Successful!');
+              setMessage('Payment verified successfully!');
+              setTimeout(() => router.push('/subscription'), 3000);
+              return;
+            }
+          }
+        } catch {
+          // ignore fallback decode error
+        }
+
+        setStatus('error');
+        setTitle('Payment Verification Failed');
+        setMessage(error.response?.data?.message || error.message || 'We could not verify the payment.');
       }
     };
 

@@ -152,8 +152,25 @@ export async function esewaRoutes(fastify: FastifyInstance) {
     const signature = signatureFor(signedFields, { total_amount: totalAmount, transaction_uuid: transactionUuid, product_code: env.ESEWA_MERCHANT_CODE });
     fastify.log.info({ transactionUuid, amount: totalAmount, environment: env.ESEWA_ENVIRONMENT }, 'eSewa payment initiated');
     AuditService.logEvent({ action: 'SUBSCRIPTION_PAYMENT_INITIATED', module: 'SubscriptionPayment', businessId, userId: request.user.id, recordId: payment.id, ipAddress: request.ip, newValue: { transactionUuid, amount: totalAmount } });
-    const callback = `${env.FRONTEND_URL}/subscription/verify?transaction_uuid=${encodeURIComponent(transactionUuid)}`;
-    return reply.send({ success: true, data: { amount: totalAmount, tax_amount: '0', product_service_charge: '0', product_delivery_charge: '0', total_amount: totalAmount, transaction_uuid: transactionUuid, product_code: env.ESEWA_MERCHANT_CODE, success_url: callback, failure_url: `${callback}&status=failure`, signed_field_names: signedFields, signature, paymentUrl } });
+    const successUrl = `${env.FRONTEND_URL}/subscription/verify`;
+    const failureUrl = `${env.FRONTEND_URL}/subscription/verify?status=failure&transaction_uuid=${encodeURIComponent(transactionUuid)}`;
+    return reply.send({
+      success: true,
+      data: {
+        amount: totalAmount,
+        tax_amount: '0',
+        product_service_charge: '0',
+        product_delivery_charge: '0',
+        total_amount: totalAmount,
+        transaction_uuid: transactionUuid,
+        product_code: env.ESEWA_MERCHANT_CODE,
+        success_url: successUrl,
+        failure_url: failureUrl,
+        signed_field_names: signedFields,
+        signature,
+        paymentUrl,
+      },
+    });
   });
 
   fastify.post('/verify', { preHandler: [requireBusinessTenant] }, async (request, reply) => {
