@@ -139,4 +139,8 @@ bizmanage/
 | `pnpm --filter @bizmanage/database exec prisma studio`  | Opens Prisma GUI Database Inspector                    |
 | `pnpm --filter @bizmanage/database exec prisma db push` | Syncs Prisma schema with database                      |
 
-                                                
+---
+
+## 🚀 Production Deployment
+
+Refer to the [Render Deployment Guide](file:///C:/Users/ashim/.gemini/antigravity-ide/brain/76c1e9cc-d823-4bfc-b2d8-576f1dd1a19a/render_deployment_guide.md) for 100% free hosting instructions on Render.com and Neon PostgreSQL!
