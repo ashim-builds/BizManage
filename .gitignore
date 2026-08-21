@@ -41,3 +41,5 @@ Thumbs.db
 # Turbo cache
 .turbo
 
+# Local scratch/test scripts (may contain credentials — never commit)
+scratch/
