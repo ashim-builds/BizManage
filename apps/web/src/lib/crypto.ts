@@ -35,7 +35,7 @@ export class E2EECrypto {
   // Generate a new random Salt for PBKDF2
   static generateSalt(): string {
     const salt = globalThis.crypto.getRandomValues(new Uint8Array(16));
-    return this.arrayBufferToBase64(salt);
+    return this.arrayBufferToBase64(salt.buffer);
   }
 
   // 2. Generate RSA-OAEP Key Pair for the User
@@ -86,17 +86,17 @@ export class E2EECrypto {
   }
 
   // 3. Encrypt/Decrypt Private Key using derived Password Key
-  static async encryptPrivateKey(privateKeyBase64: string, derivedKey: CryptoKey): Promise<string> {
+  static async encryptPrivateKey(privateKeyBase64: string, kek: CryptoKey): Promise<string> {
     const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
     const enc = new TextEncoder();
     
     const ciphertext = await globalThis.crypto.subtle.encrypt(
       { name: 'AES-GCM', iv },
-      derivedKey,
+      kek,
       enc.encode(privateKeyBase64)
     );
     
-    const ivBase64 = this.arrayBufferToBase64(iv);
+    const ivBase64 = this.arrayBufferToBase64(iv.buffer);
     const ciphertextBase64 = this.arrayBufferToBase64(ciphertext);
     return `${ivBase64}:${ciphertextBase64}`;
   }
@@ -137,7 +137,7 @@ export class E2EECrypto {
       enc.encode(plaintext)
     );
     
-    const ivBase64 = this.arrayBufferToBase64(iv);
+    const ivBase64 = this.arrayBufferToBase64(iv.buffer);
     const ciphertextBase64 = this.arrayBufferToBase64(ciphertext);
     return `${ivBase64}:${ciphertextBase64}`;
   }
