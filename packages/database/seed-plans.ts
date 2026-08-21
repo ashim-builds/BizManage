@@ -8,8 +8,8 @@ async function main() {
   const plans = [
     {
       name: 'Free Forever',
-      price: 0,
-      currency: 'NPR',
+      price: 0.00,
+      currency: 'USD',
       billingPeriod: 'MONTHLY',
       trialDays: 0,
       features: JSON.stringify(['INVENTORY_TRACKING', 'BASIC_REPORTING', 'MAX_MEMBERS_1']),
@@ -19,8 +19,8 @@ async function main() {
     },
     {
       name: 'Starter Monthly',
-      price: 1999,
-      currency: 'NPR',
+      price: 19.99,
+      currency: 'USD',
       billingPeriod: 'MONTHLY',
       trialDays: 14,
       features: JSON.stringify(['INVENTORY_TRACKING', 'ADVANCED_REPORTING', 'MAX_MEMBERS_5', 'API_ACCESS']),
@@ -30,8 +30,8 @@ async function main() {
     },
     {
       name: 'Pro Monthly',
-      price: 4999,
-      currency: 'NPR',
+      price: 49.99,
+      currency: 'USD',
       billingPeriod: 'MONTHLY',
       trialDays: 14,
       features: JSON.stringify(['INVENTORY_TRACKING', 'ADVANCED_REPORTING', 'UNLIMITED_MEMBERS', 'API_ACCESS', 'CUSTOM_BRANDING']),
@@ -41,8 +41,8 @@ async function main() {
     },
     {
       name: 'Enterprise Yearly',
-      price: 49999,
-      currency: 'NPR',
+      price: 499.99,
+      currency: 'USD',
       billingPeriod: 'YEARLY',
       trialDays: 30,
       features: JSON.stringify(['INVENTORY_TRACKING', 'ADVANCED_REPORTING', 'UNLIMITED_MEMBERS', 'API_ACCESS', 'CUSTOM_BRANDING', 'DEDICATED_SUPPORT']),
