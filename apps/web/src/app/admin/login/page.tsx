@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, LoginInput } from '@bizmanage/validation';
 import { useAuth } from '@/providers/AuthProvider';
-import { api } from '@/lib/api';
+import { api, setAccessToken } from '@/lib/api';
 import { Eye, EyeOff } from 'lucide-react';
 
 export default function AdminLoginPage() {
@@ -41,6 +41,9 @@ export default function AdminLoginPage() {
     try {
       const res = await api.post('/auth/admin-login', data);
       if (res.data.success) {
+        if (res.data.data?.accessToken) {
+          setAccessToken(res.data.data.accessToken);
+        }
         await refreshUser();
         router.push('/admin/dashboard');
       }
