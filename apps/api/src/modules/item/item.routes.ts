@@ -262,12 +262,14 @@ export async function itemRoutes(fastify: FastifyInstance) {
         purchasePrice: body.purchasePrice ?? existing.purchasePrice,
         minStockAlert: body.minStockAlert ?? existing.minStockAlert,
         // E2EE Metadata
-        encryptedDeks: body.encryptedDeks !== undefined ? (body.encryptedDeks ? body.encryptedDeks : Prisma.JsonNull) : existing.encryptedDeks,
-        iv: body.iv !== undefined ? body.iv : existing.iv,
-        encPurchasePrice: body.encPurchasePrice !== undefined ? body.encPurchasePrice : existing.encPurchasePrice,
-        encSalePrice: body.encSalePrice !== undefined ? body.encSalePrice : existing.encSalePrice,
-        hmacName: body.hmacName !== undefined ? body.hmacName : existing.hmacName,
-        hmacCode: body.hmacCode !== undefined ? body.hmacCode : existing.hmacCode,
+        encryptedDeks: body.encryptedDeks !== undefined 
+          ? (body.encryptedDeks ? body.encryptedDeks : Prisma.JsonNull) 
+          : undefined,
+        iv: body.iv !== undefined ? body.iv : undefined,
+        encPurchasePrice: body.encPurchasePrice !== undefined ? body.encPurchasePrice : undefined,
+        encSalePrice: body.encSalePrice !== undefined ? body.encSalePrice : undefined,
+        hmacName: body.hmacName !== undefined ? body.hmacName : undefined,
+        hmacCode: body.hmacCode !== undefined ? body.hmacCode : undefined,
       },
       include: {
         category: { select: { id: true, name: true } },
