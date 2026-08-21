@@ -567,4 +567,82 @@ export async function adminRoutes(fastify: FastifyInstance) {
     });
   });
 
+  // GET /admin/packages - List all packages
+  fastify.get('/packages', async (request, reply) => {
+    const packages = await globalPrisma.subscriptionPackage.findMany({
+      orderBy: { displayOrder: 'asc' },
+    });
+    return reply.send({ success: true, data: packages });
+  });
+
+  // POST /admin/packages - Create package
+  fastify.post('/packages', async (request, reply) => {
+    const bodySchema = z.object({
+      name: z.string(),
+      price: z.number(),
+      currency: z.string().default('NPR'),
+      billingPeriod: z.enum(['MONTHLY', 'YEARLY']).default('MONTHLY'),
+      trialDays: z.number().default(0),
+      features: z.array(z.string()).default([]),
+      isActive: z.boolean().default(true),
+      isDefault: z.boolean().default(false),
+      displayOrder: z.number().default(0),
+    });
+    const body = bodySchema.parse(request.body);
+    const pkg = await globalPrisma.subscriptionPackage.create({
+      data: {
+        ...body,
+        features: JSON.stringify(body.features),
+      }
+    });
+    return reply.send({ success: true, data: pkg });
+  });
+
+  // PUT /admin/packages/:id - Update package
+  fastify.put('/packages/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const bodySchema = z.object({
+      name: z.string().optional(),
+      price: z.number().optional(),
+      currency: z.string().optional(),
+      billingPeriod: z.enum(['MONTHLY', 'YEARLY']).optional(),
+      trialDays: z.number().optional(),
+      features: z.array(z.string()).optional(),
+      isActive: z.boolean().optional(),
+      isDefault: z.boolean().optional(),
+      displayOrder: z.number().optional(),
+    });
+    const body = bodySchema.parse(request.body);
+    
+    const dataToUpdate: any = { ...body };
+    if (body.features) {
+      dataToUpdate.features = JSON.stringify(body.features);
+    }
+
+    const pkg = await globalPrisma.subscriptionPackage.update({
+      where: { id },
+      data: dataToUpdate,
+    });
+    return reply.send({ success: true, data: pkg });
+  });
+
+  // DELETE /admin/packages/:id - Delete package
+  fastify.delete('/packages/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    
+    // Make sure no businesses are using it
+    const activeCount = await globalPrisma.business.count({
+      where: { subscriptionPackageId: id }
+    });
+    
+    if (activeCount > 0) {
+      throw new AppError('Cannot delete package currently used by businesses.', 400, 'PACKAGE_IN_USE');
+    }
+
+    await globalPrisma.subscriptionPackage.delete({
+      where: { id },
+    });
+    return reply.send({ success: true, message: 'Package deleted' });
+  });
+
 }
