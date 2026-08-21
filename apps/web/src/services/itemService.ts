@@ -23,6 +23,7 @@ export function useItems(params?: ItemsQueryParams) {
     queryFn: async () => {
       const res = await api.get('/items', {
         params: {
+          limit: 1000,
           ...params,
           lowStock: params?.lowStock ? 'true' : undefined,
         },

@@ -78,7 +78,7 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
 
   // Shared Queries
   const { data: partiesData } = useParties({ limit: 100 });
-  const { data: itemsData } = useItems({ limit: 100 });
+  const { data: itemsData } = useItems({ limit: 1000 });
   const { data: accountsData } = useAccounts();
 
   const parties = partiesData?.data || [];

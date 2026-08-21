@@ -56,7 +56,7 @@ export default function PurchasesPage() {
   // Queries
   const { data: summary, isLoading: summaryLoading } = usePurchasesSummary();
   const { data: partiesData } = useParties({ limit: 100 });
-  const { data: itemsData } = useItems({ limit: 100 });
+  const { data: itemsData } = useItems({ limit: 1000 });
   const { data: accountsData } = useAccounts();
   const {
     data: purchasesResponse,
