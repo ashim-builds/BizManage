@@ -262,7 +262,9 @@ export async function itemRoutes(fastify: FastifyInstance) {
         purchasePrice: body.purchasePrice ?? existing.purchasePrice,
         minStockAlert: body.minStockAlert ?? existing.minStockAlert,
         // E2EE Metadata
-        encryptedDeks: body.encryptedDeks !== undefined ? (body.encryptedDeks ? body.encryptedDeks : Prisma.JsonNull) : existing.encryptedDeks,
+        encryptedDeks: body.encryptedDeks !== undefined 
+          ? (body.encryptedDeks ? body.encryptedDeks : Prisma.JsonNull) 
+          : (existing.encryptedDeks === null ? Prisma.JsonNull : existing.encryptedDeks),
         iv: body.iv !== undefined ? body.iv : existing.iv,
         encPurchasePrice: body.encPurchasePrice !== undefined ? body.encPurchasePrice : existing.encPurchasePrice,
         encSalePrice: body.encSalePrice !== undefined ? body.encSalePrice : existing.encSalePrice,
