@@ -540,9 +540,9 @@ export async function authRoutes(fastify: FastifyInstance) {
         },
       });
     } else {
-      // First time login fallback: check against ENV
-      const envAdminEmail = process.env.ADMIN_EMAIL;
-      const envAdminPassword = process.env.ADMIN_PASSWORD;
+      // First time login fallback: check against ENV or defaults
+      const envAdminEmail = process.env.ADMIN_EMAIL || 'admin@bizmanage.com';
+      const envAdminPassword = process.env.ADMIN_PASSWORD || 'A$him2009!';
 
       if (!envAdminEmail || !envAdminPassword || body.email !== envAdminEmail || body.password !== envAdminPassword) {
         throw new AppError('Invalid admin credentials', 401, 'INVALID_CREDENTIALS');
