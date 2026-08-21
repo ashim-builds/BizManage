@@ -6,7 +6,7 @@ let cachedPublicKeys: { userId: string, publicKey: string }[] | null = null;
 
 export async function fetchBusinessPublicKeys() {
   if (cachedPublicKeys) return cachedPublicKeys;
-  const res = await api.get('/business/current/keys');
+  const res = await api.get('/businesses/current/keys');
   if (res.data?.success) {
     cachedPublicKeys = res.data.data;
     return cachedPublicKeys;
