@@ -268,9 +268,9 @@ export async function saleRoutes(fastify: FastifyInstance) {
 
       // 5. Update Inventory
       for (const line of body.items) {
-        const item = await tx.item.findUnique({ where: { id: line.itemId } });
+        const item = await tx.item.findFirst({ where: { id: line.itemId , businessId: request.tenant!.businessId } });
         if (item && item.type === 'PRODUCT') {
-          await updateStock(tx as any, line.itemId, line.quantity, 'REDUCE');
+          await updateStock(tx as any, line.itemId, request.tenant!.businessId, line.quantity, 'REDUCE');
           await tx.stockMovement.create({
             data: {
               businessId: request.tenant!.businessId,
@@ -284,11 +284,11 @@ export async function saleRoutes(fastify: FastifyInstance) {
       }
 
       // 6. Update Customer Balance (Increase Receivable)
-      await updatePartyBalance(tx as any, partyId, totals.totalAmount, 'ADD_RECEIVABLE');
+      await updatePartyBalance(tx as any, partyId, request.tenant!.businessId, totals.totalAmount, 'ADD_RECEIVABLE');
 
       // 7. Handle Payment
       if (paidAmount.greaterThan(0)) {
-        await updatePartyBalance(tx as any, partyId, paidAmount, 'REDUCE_RECEIVABLE');
+        await updatePartyBalance(tx as any, partyId, request.tenant!.businessId, paidAmount, 'REDUCE_RECEIVABLE');
 
         const desiredType =
           body.paymentMode === PaymentMode.BANK || body.paymentMode === PaymentMode.CHEQUE
@@ -298,7 +298,7 @@ export async function saleRoutes(fastify: FastifyInstance) {
             : AccountType.CASH;
 
         let targetAccount = body.accountId
-          ? await tx.account.findUnique({ where: { id: body.accountId } })
+          ? await tx.account.findFirst({ where: { id: body.accountId , businessId: request.tenant!.businessId } })
           : await tx.account.findFirst({
               where: { businessId: request.tenant!.businessId, accountType: desiredType },
             });
@@ -320,7 +320,7 @@ export async function saleRoutes(fastify: FastifyInstance) {
           });
         }
 
-        await updateAccountBalance(tx as any, targetAccount.id, paidAmount, 'ADD');
+        await updateAccountBalance(tx as any, targetAccount.id, request.tenant!.businessId, paidAmount, 'ADD');
 
         await tx.paymentIn.create({
           data: {
@@ -349,7 +349,7 @@ export async function saleRoutes(fastify: FastifyInstance) {
       }
 
       return sale;
-    });
+    }, { maxWait: 10000, timeout: 20000 });
 
     return reply.status(201).send({
       success: true,
@@ -403,7 +403,7 @@ export async function saleRoutes(fastify: FastifyInstance) {
 
       // Update customer party balance
       if (sale.partyId) {
-        const party = await tx.party.findUnique({ where: { id: sale.partyId } });
+        const party = await tx.party.findFirst({ where: { id: sale.partyId , businessId: request.tenant!.businessId } });
         if (party) {
           const curBal = new Prisma.Decimal(party.currentBalance || 0);
           const newBal = curBal.sub(actualPay);
@@ -423,7 +423,7 @@ export async function saleRoutes(fastify: FastifyInstance) {
           : AccountType.CASH;
 
       let targetAccount = accountId
-        ? await tx.account.findUnique({ where: { id: accountId } })
+        ? await tx.account.findFirst({ where: { id: accountId , businessId: request.tenant!.businessId } })
         : await tx.account.findFirst({
             where: { businessId: request.tenant!.businessId, accountType: desiredType },
           });
@@ -483,7 +483,7 @@ export async function saleRoutes(fastify: FastifyInstance) {
       });
 
       return updated;
-    });
+    }, { maxWait: 10000, timeout: 20000 });
 
     return reply.send({ success: true, data: updatedSale });
   });
@@ -551,7 +551,7 @@ export async function saleRoutes(fastify: FastifyInstance) {
       // Check if it's returning against a specific sale
       let isVatBill = false;
       if (body.saleId) {
-        const sale = await tx.sale.findUnique({ where: { id: body.saleId } });
+        const sale = await tx.sale.findFirst({ where: { id: body.saleId , businessId: request.tenant!.businessId } });
         if (sale) {
           isVatBill = sale.isVatBill;
         }
@@ -626,7 +626,7 @@ export async function saleRoutes(fastify: FastifyInstance) {
 
       // 5. Increase Stock atomically
       for (const line of body.items) {
-        await updateStock(tx as any, line.itemId, line.quantity, 'ADD');
+        await updateStock(tx as any, line.itemId, request.tenant!.businessId, line.quantity, 'ADD');
         await tx.stockMovement.create({
           data: {
             businessId: request.tenant!.businessId,
@@ -644,7 +644,7 @@ export async function saleRoutes(fastify: FastifyInstance) {
 
       if (refundAmt.greaterThan(0)) {
         let targetAccount = body.accountId
-          ? await tx.account.findUnique({ where: { id: body.accountId } })
+          ? await tx.account.findFirst({ where: { id: body.accountId , businessId: request.tenant!.businessId } })
           : await tx.account.findFirst({ where: { businessId: request.tenant!.businessId } });
 
         if (!targetAccount) {
@@ -658,7 +658,7 @@ export async function saleRoutes(fastify: FastifyInstance) {
         }
 
         // Refund means money out
-        await updateAccountBalance(tx as any, targetAccount.id, refundAmt.toNumber(), 'REDUCE');
+        await updateAccountBalance(tx as any, targetAccount.id, request.tenant!.businessId, refundAmt.toNumber(), 'REDUCE');
 
         await tx.paymentOut.create({
           data: {
@@ -689,11 +689,11 @@ export async function saleRoutes(fastify: FastifyInstance) {
       // Adjust customer balance (Credit note reduces what they owe us)
       // For a customer, positive balance means receivable. Reducing receivable means subtract.
       if (!creditToBalance.isZero()) {
-        await updatePartyBalance(tx as any, body.partyId, creditToBalance.toNumber(), 'REDUCE_RECEIVABLE');
+        await updatePartyBalance(tx as any, body.partyId, request.tenant!.businessId, creditToBalance.toNumber(), 'REDUCE_RECEIVABLE');
       }
 
       return newReturn;
-    });
+    }, { maxWait: 10000, timeout: 20000 });
 
     return reply.status(201).send({
       success: true,
@@ -791,7 +791,7 @@ export async function saleRoutes(fastify: FastifyInstance) {
       });
 
       return newQuotation;
-    });
+    }, { maxWait: 10000, timeout: 20000 });
 
     return reply.status(201).send({
       success: true,
@@ -821,7 +821,7 @@ export async function saleRoutes(fastify: FastifyInstance) {
 
       // Check stock availability
       for (const line of quotation.items) {
-        const item = await tx.item.findUnique({ where: { id: line.itemId } });
+        const item = await tx.item.findFirst({ where: { id: line.itemId , businessId: request.tenant!.businessId } });
         if (item && item.type === 'PRODUCT') {
           const curStock = new Prisma.Decimal(item.currentStock || 0);
           const reqQty = new Prisma.Decimal(line.quantity);
@@ -878,7 +878,7 @@ export async function saleRoutes(fastify: FastifyInstance) {
 
       // Update Stock
       for (const line of quotation.items) {
-        const item = await tx.item.findUnique({ where: { id: line.itemId } });
+        const item = await tx.item.findFirst({ where: { id: line.itemId , businessId: request.tenant!.businessId } });
         if (item && item.type === 'PRODUCT') {
           const curStock = new Prisma.Decimal(item.currentStock || 0);
           const qtyDecimal = new Prisma.Decimal(line.quantity);
@@ -902,7 +902,7 @@ export async function saleRoutes(fastify: FastifyInstance) {
       }
 
       // Update Customer Receivable
-      const party = await tx.party.findUnique({ where: { id: quotation.partyId } });
+      const party = await tx.party.findFirst({ where: { id: quotation.partyId , businessId: request.tenant!.businessId } });
       if (party) {
         const curBal = new Prisma.Decimal(party.currentBalance || 0);
         const newBal = curBal.add(quotation.totalAmount);
@@ -913,7 +913,7 @@ export async function saleRoutes(fastify: FastifyInstance) {
       }
 
       return newSale;
-    });
+    }, { maxWait: 10000, timeout: 20000 });
 
     return reply.send({
       success: true,

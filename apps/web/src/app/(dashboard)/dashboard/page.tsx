@@ -19,6 +19,7 @@ import {
   DollarSign,
   Plus,
   ArrowRight,
+  ChevronRight,
   Clock,
   Package,
   Crown,
@@ -33,10 +34,10 @@ export default function ExecutiveDashboardPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [preset, setPreset] = useState<'all' | 'today' | 'week' | 'month' | 'custom'>('all');
-  
+
   const currentBiz = user?.memberships?.[0]?.business;
   const selectedPlan = currentBiz?.subscriptionPackage;
-  
+
   const [optimisticSetup, setOptimisticSetup] = useState(false);
   useEffect(() => {
     if (typeof window !== 'undefined' && localStorage.getItem('bizmanage_setup_completed_optimistic') === 'true') {
@@ -46,7 +47,17 @@ export default function ExecutiveDashboardPage() {
 
   const isSetupCompleted = Boolean(currentBiz?.setupCompleted) || optimisticSetup;
   const hasProfileComplete = Boolean(currentBiz?.profileCompleted);
-  
+
+  let profileCompletionPercent = 0;
+  if (currentBiz) {
+    let fields = 0;
+    if (currentBiz.name) fields++;
+    if (currentBiz.phone) fields++;
+    if (currentBiz.address) fields++;
+    if (currentBiz.taxNumber) fields++;
+    profileCompletionPercent = Math.round((fields / 4) * 100);
+  }
+
   const rawFeatures = selectedPlan?.features;
   const userFeatures = typeof rawFeatures === 'string' ? JSON.parse(rawFeatures) : (rawFeatures || []);
 
@@ -77,8 +88,8 @@ export default function ExecutiveDashboardPage() {
     refetch();
 
     if (allStepsFinished && !isSetupCompleted) {
-       // If all steps finished but DB hasn't marked it yet, we could trigger the API update here
-       // or just rely on the API state for next reload.
+      // If all steps finished but DB hasn't marked it yet, we could trigger the API update here
+      // or just rely on the API state for next reload.
     }
   }, [allStepsFinished, refetch, isSetupCompleted]);
 
@@ -189,43 +200,39 @@ export default function ExecutiveDashboardPage() {
             </div>
 
             {/* Quick Date Presets & Custom Pickers */}
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold">
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 hide-scrollbar w-full">
+              <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold shrink-0">
                 <button
                   onClick={() => setPresetRange('all')}
-                  className={`px-3 py-1.5 rounded-lg transition-all ${
-                    preset === 'all' ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/20' : 'text-slate-400 hover:text-white'
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg transition-all whitespace-nowrap ${preset === 'all' ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/20' : 'text-slate-400 hover:text-white'
+                    }`}
                 >
                   All Time
                 </button>
                 <button
                   onClick={() => setPresetRange('today')}
-                  className={`px-3 py-1.5 rounded-lg transition-all ${
-                    preset === 'today' ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/20' : 'text-slate-400 hover:text-white'
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg transition-all whitespace-nowrap ${preset === 'today' ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/20' : 'text-slate-400 hover:text-white'
+                    }`}
                 >
                   Today
                 </button>
                 <button
                   onClick={() => setPresetRange('week')}
-                  className={`px-3 py-1.5 rounded-lg transition-all ${
-                    preset === 'week' ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/20' : 'text-slate-400 hover:text-white'
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg transition-all whitespace-nowrap ${preset === 'week' ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/20' : 'text-slate-400 hover:text-white'
+                    }`}
                 >
                   Last 7 Days
                 </button>
                 <button
                   onClick={() => setPresetRange('month')}
-                  className={`px-3 py-1.5 rounded-lg transition-all ${
-                    preset === 'month' ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/20' : 'text-slate-400 hover:text-white'
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg transition-all whitespace-nowrap ${preset === 'month' ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/20' : 'text-slate-400 hover:text-white'
+                    }`}
                 >
                   This Month
                 </button>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <input
                   type="date"
                   value={startDate}
@@ -251,173 +258,126 @@ export default function ExecutiveDashboardPage() {
             </div>
           </div>
 
-          {/* KPI Cards Grid - Row 1 (5 cards) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
+          {/* KPI Cards - Clean Mobile Layout Style */}
+
+          {/* Top 2 Primary KPI Cards */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 mb-3 sm:mb-5">
             {/* To Receive */}
-            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-md flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">To Receive</span>
-                <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center">
-                  <ArrowDownLeft className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <p className="text-xl font-extrabold text-emerald-400 font-mono">
+            <Link href="/parties" className="p-4 sm:p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 shadow-md flex flex-row items-center justify-between group cursor-pointer transition-all hover:bg-emerald-500/20 hover:scale-[1.01] active:scale-[0.99]">
+              <div>
+                <h3 className="text-lg sm:text-2xl font-bold text-emerald-400 font-mono">
                   Rs. {(metrics.toReceive || 0).toLocaleString()}
-                </p>
-                <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-500">
-                  <span>Customer Debt →</span>
+                </h3>
+                <div className="flex items-center gap-1.5 mt-1 text-[11px] sm:text-xs text-emerald-500">
+                  <span>To Receive</span>
+                  <ArrowDownLeft className="w-3 h-3" />
                 </div>
               </div>
-            </div>
+              <ChevronRight className="w-4 h-4 text-emerald-500/40 group-hover:text-emerald-500 transition-colors" />
+            </Link>
 
             {/* To Give */}
-            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-md flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">To Give</span>
-                <div className="w-7 h-7 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 flex items-center justify-center">
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <p className="text-xl font-extrabold text-red-400 font-mono">
+            <Link href="/parties" className="p-4 sm:p-5 rounded-2xl bg-rose-500/10 border border-rose-500/20 shadow-md flex flex-row items-center justify-between group cursor-pointer transition-all hover:bg-rose-500/20 hover:scale-[1.01] active:scale-[0.99]">
+              <div>
+                <h3 className="text-lg sm:text-2xl font-bold text-rose-400 font-mono">
                   Rs. {(metrics.toGive || 0).toLocaleString()}
-                </p>
-                <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-500">
-                  <span>Supplier Payable →</span>
+                </h3>
+                <div className="flex items-center gap-1.5 mt-1 text-[11px] sm:text-xs text-rose-500">
+                  <span>To Give</span>
+                  <ArrowUpRight className="w-3 h-3" />
                 </div>
               </div>
-            </div>
+              <ChevronRight className="w-4 h-4 text-rose-500/40 group-hover:text-rose-500 transition-colors" />
+            </Link>
+          </div>
 
-            {/* Total Sales */}
-            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-md flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">Total Sales</span>
-                <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center">
-                  <ShoppingCart className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <p className="text-xl font-extrabold text-white font-mono">
+          {/* Secondary KPI Cards Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+            {/* Sales */}
+            <Link href="/transactions/sales" className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm flex flex-row items-center justify-between cursor-pointer hover:bg-slate-800 hover:border-slate-700 transition-all group active:scale-[0.98]">
+              <div>
+                <h3 className="text-base sm:text-xl font-bold text-white font-mono">
                   Rs. {(metrics.totalSales || 0).toLocaleString()}
-                </p>
-                <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-500">
-                  <span>{metrics.totalSales ? '1' : '0'} Invoices Billed</span>
-                </div>
+                </h3>
+                <div className="text-[10px] sm:text-[11px] text-slate-400 mt-1">Sales (Total)</div>
               </div>
-            </div>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-600 hidden sm:block group-hover:text-slate-400 transition-colors" />
+            </Link>
 
-            {/* Total Purchase */}
-            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-md flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">Total Purchase</span>
-                <div className="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20 flex items-center justify-center">
-                  <Receipt className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <p className="text-xl font-extrabold text-white font-mono">
+            {/* Purchases */}
+            <Link href="/transactions/purchases" className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm flex flex-row items-center justify-between cursor-pointer hover:bg-slate-800 hover:border-slate-700 transition-all group active:scale-[0.98]">
+              <div>
+                <h3 className="text-base sm:text-xl font-bold text-white font-mono">
                   Rs. {(metrics.totalPurchases || 0).toLocaleString()}
-                </p>
-                <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-500">
-                  <span>{metrics.totalPurchases ? '1' : '0'} Purchase Bills</span>
-                </div>
+                </h3>
+                <div className="text-[10px] sm:text-[11px] text-slate-400 mt-1">Purchase (Total)</div>
               </div>
-            </div>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-600 hidden sm:block group-hover:text-slate-400 transition-colors" />
+            </Link>
 
-            {/* Total Expense */}
-            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-md flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">Total Expense</span>
-                <div className="w-7 h-7 rounded-lg bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 flex items-center justify-center">
-                  <DollarSign className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <p className="text-xl font-extrabold text-white font-mono">
+            {/* Expense */}
+            <Link href="/expenses" className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm flex flex-row items-center justify-between cursor-pointer hover:bg-slate-800 hover:border-slate-700 transition-all group active:scale-[0.98]">
+              <div>
+                <h3 className="text-base sm:text-xl font-bold text-white font-mono">
                   Rs. {(metrics.totalExpenses || 0).toLocaleString()}
-                </p>
-                <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-500">
-                  <span>Operational Spend</span>
-                </div>
+                </h3>
+                <div className="text-[10px] sm:text-[11px] text-slate-400 mt-1">Expense (Total)</div>
               </div>
-            </div>
-          </div>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-600 hidden sm:block group-hover:text-slate-400 transition-colors" />
+            </Link>
 
-          {/* KPI Cards Grid - Row 2 (4 cards) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {/* Cash in Hand */}
-            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-md flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">Cash in Hand</span>
-                <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center">
-                  <Wallet className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <p className="text-xl font-extrabold text-emerald-400 font-mono">
-                  Rs. {(metrics.totalCash || 0).toLocaleString()}
-                </p>
-                <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-500">
-                  <span>Physical Register Cash</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Bank Balance */}
-            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-md flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">Bank Balance</span>
-                <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center">
-                  <Printer className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <p className="text-xl font-extrabold text-blue-400 font-mono">
-                  Rs. {(metrics.totalBank || 0).toLocaleString()}
-                </p>
-                <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-500">
-                  <span>Institutional Bank Accounts</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Total Liquidity */}
-            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-md flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">Total Liquidity</span>
-                <div className="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20 flex items-center justify-center">
-                  <TrendingUp className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <p className="text-xl font-extrabold text-white font-mono">
+            {/* Cash & Bank */}
+            <Link href="/accounts" className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm flex flex-row items-center justify-between cursor-pointer hover:bg-slate-800 hover:border-slate-700 transition-all group active:scale-[0.98]">
+              <div>
+                <h3 className="text-base sm:text-xl font-bold text-white font-mono">
                   Rs. {((metrics.totalCash || 0) + (metrics.totalBank || 0)).toLocaleString()}
-                </p>
-                <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-500">
-                  <span>Total Available Cash + Bank</span>
-                </div>
+                </h3>
+                <div className="text-[10px] sm:text-[11px] text-slate-400 mt-1">Total Balance</div>
               </div>
-            </div>
-
-            {/* Total Products */}
-            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-md flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">Total Products</span>
-                <div className="w-7 h-7 rounded-lg bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 flex items-center justify-center">
-                  <Box className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <p className="text-xl font-extrabold text-yellow-400 font-mono">
-                  {metrics.totalItemsCount || 0}
-                </p>
-                <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-500">
-                  <span>{metrics.totalItemsCount || 0} Items in Inventory →</span>
-                </div>
-              </div>
-            </div>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-600 hidden sm:block group-hover:text-slate-400 transition-colors" />
+            </Link>
           </div>
+
+          {/* Quick Actions (Mobile Mockup Style) */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 mb-5 lg:hidden">
+            <button
+              onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'q', ctrlKey: true }))}
+              className="p-3 sm:p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-sm flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors"
+            >
+              <div className="text-emerald-400">
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+              </div>
+              <span className="text-[13px] sm:text-sm font-semibold text-white">Quick Entry</span>
+            </button>
+            <Link
+              href="/reports"
+              className="p-3 sm:p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-sm flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors"
+            >
+              <div className="text-emerald-400">
+                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
+              </div>
+              <span className="text-[13px] sm:text-sm font-semibold text-white">View Reports</span>
+            </Link>
+          </div>
+
+          {/* Complete Profile Banner (Mobile Mockup Style) */}
+          <Link href="/settings" className={`block mb-6 p-4 sm:p-5 rounded-2xl shadow-md flex items-center justify-between text-white relative overflow-hidden group hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer z-10 ${profileCompletionPercent >= 100 ? 'bg-emerald-600' : 'bg-[#00A86B]'}`}>
+            <div className="relative z-20 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full border-[3px] border-white/30 flex items-center justify-center shrink-0 bg-black/10">
+                <span className="text-xs font-bold text-white">{profileCompletionPercent}%</span>
+              </div>
+              <div>
+                <h3 className="text-sm sm:text-base font-bold flex items-center gap-2 text-white">
+                  {profileCompletionPercent >= 100 ? 'Business Profile Complete' : 'Complete your Profile'} <ArrowRight className="w-4 h-4" />
+                </h3>
+                <p className="text-[11px] sm:text-xs text-white/90 mt-1 max-w-[220px] sm:max-w-none">
+                  {profileCompletionPercent >= 100
+                    ? 'Your profile is fully set up. Click to view or edit.'
+                    : 'You can use more app features after completing your business profile.'}
+                </p>
+              </div>
+            </div>
+          </Link>
 
           {/* Row 3 - Audit Feed & Low Stock */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -443,30 +403,25 @@ export default function ExecutiveDashboardPage() {
                   metrics.recentTransactions.map((tx: any) => {
                     const isTxIn = ['SALE', 'PAYMENT_IN', 'INCOME', 'PURCHASE_RETURN'].includes(tx.category);
                     return (
-                      <div key={tx.id} className="flex items-start justify-between">
-                        <div className="flex items-start gap-3">
-                          <div className={`w-8 h-8 rounded-xl border flex items-center justify-center shrink-0 ${
-                            isTxIn 
-                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-                              : 'bg-red-500/10 text-red-400 border-red-500/20'
-                          }`}>
+                      <div key={tx.id} className="flex items-start sm:items-center justify-between py-2 border-b border-slate-800/50 last:border-0">
+                        <div className="flex items-start sm:items-center gap-3 w-full max-w-[65%] sm:max-w-none">
+                          <div className={`w-8 h-8 rounded-xl border flex items-center justify-center shrink-0 ${isTxIn
+                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                            : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                            }`}>
                             {isTxIn ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
                           </div>
-                          <div>
+                          <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              <p className="text-sm font-bold text-white">{tx.description || 'Transaction'}</p>
-                              <span className="px-2 py-0.5 rounded-md bg-slate-800 text-[9px] font-bold text-slate-400 uppercase border border-slate-700">
-                                {tx.category ? tx.category.replace('_', ' ') : 'TXN'}
-                              </span>
+                              <p className="text-sm font-bold text-white truncate">{tx.description || 'Transaction'}</p>
                             </div>
-                            <p className="text-[10px] text-slate-500 mt-0.5">
+                            <p className="text-[10px] text-slate-500 mt-0.5 truncate">
                               {new Date(tx.date).toLocaleDateString()} • {tx.account?.accountName || 'Account'}
                             </p>
                           </div>
                         </div>
-                        <p className={`text-sm font-bold font-mono shrink-0 ${
-                          isTxIn ? 'text-emerald-400' : 'text-red-400'
-                        }`}>
+                        <p className={`text-sm font-bold font-mono shrink-0 ${isTxIn ? 'text-emerald-400' : 'text-red-400'
+                          }`}>
                           {isTxIn ? '+' : '-'} Rs. {Number(tx.amount || 0).toLocaleString()}
                         </p>
                       </div>
@@ -497,10 +452,33 @@ export default function ExecutiveDashboardPage() {
                 </Link>
               </div>
 
-              <div className="flex-1 flex flex-col items-center justify-center p-6 rounded-xl bg-slate-950/50 border border-slate-800 text-center">
-                <Box className="w-8 h-8 text-emerald-400 mb-3" />
-                <p className="text-sm font-bold text-white">All Stock Levels Healthy</p>
-                <p className="text-xs text-slate-400 mt-1">No items are below minimum threshold.</p>
+              <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 rounded-xl bg-slate-950/50 border border-slate-800 text-center overflow-y-auto max-h-[300px]">
+                {metrics.lowStockItems && metrics.lowStockItems.length > 0 ? (
+                  <div className="w-full space-y-3">
+                    {metrics.lowStockItems.map((item: any) => (
+                      <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-900 border border-slate-800">
+                        <div className="text-left min-w-0 flex-1">
+                          <Link href={`/inventory/${item.id}`} className="text-sm font-bold text-blue-400 hover:text-blue-300 truncate block">
+                            {item.name}
+                          </Link>
+                          {item.code && <p className="text-[10px] text-slate-500 font-mono mt-0.5 truncate">{item.code}</p>}
+                        </div>
+                        <div className="text-right shrink-0 ml-3">
+                          <p className={`font-bold text-sm ${Number(item.currentStock) <= 0 ? 'text-rose-400' : 'text-amber-400'}`}>
+                            {Number(item.currentStock)} {item.unit}
+                          </p>
+                          <p className="text-[9px] text-slate-500 uppercase mt-0.5">Min: {Number(item.minStockAlert)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    <Box className="w-8 h-8 text-emerald-400 mb-3" />
+                    <p className="text-sm font-bold text-white">All Stock Levels Healthy</p>
+                    <p className="text-xs text-slate-400 mt-1">No items are below minimum threshold.</p>
+                  </>
+                )}
               </div>
             </div>
           </div>

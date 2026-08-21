@@ -112,7 +112,7 @@ export async function expenseRoutes(fastify: FastifyInstance) {
       const amt = new Prisma.Decimal(body.amount);
 
       let targetAccount = body.accountId
-        ? await tx.account.findUnique({ where: { id: body.accountId } })
+        ? await tx.account.findFirst({ where: { id: body.accountId , businessId: request.tenant!.businessId } })
         : await tx.account.findFirst({ where: { businessId: request.tenant!.businessId } });
 
       if (!targetAccount) {
@@ -148,7 +148,7 @@ export async function expenseRoutes(fastify: FastifyInstance) {
         throw new AppError('Insufficient balance in the selected account. Please add funds or change payment method.', 400, 'VALIDATION_ERROR');
       }
 
-      await updateAccountBalance(tx as any, targetAccount.id, amt.toNumber(), 'REDUCE');
+      await updateAccountBalance(tx as any, targetAccount.id, request.tenant!.businessId, amt.toNumber(), 'REDUCE');
 
       // 3. Create Transaction Entry
       await tx.transaction.create({
@@ -164,7 +164,7 @@ export async function expenseRoutes(fastify: FastifyInstance) {
       });
 
       return expense;
-    });
+    }, { maxWait: 10000, timeout: 20000 });
 
     return reply.status(201).send({
       success: true,
@@ -189,14 +189,14 @@ export async function expenseRoutes(fastify: FastifyInstance) {
       const amt = new Prisma.Decimal(expense.amount || 0);
 
       // Restore account balance
-      await updateAccountBalance(tx as any, expense.accountId, amt.toNumber(), 'ADD');
+      await updateAccountBalance(tx as any, expense.accountId, request.tenant!.businessId, amt.toNumber(), 'ADD');
 
       await tx.transaction.deleteMany({ where: { referenceId: id } });
       await tx.expense.update({
         where: { id },
         data: { status: 'VOIDED' },
       });
-    });
+    }, { maxWait: 10000, timeout: 20000 });
 
     return reply.send({
       success: true,

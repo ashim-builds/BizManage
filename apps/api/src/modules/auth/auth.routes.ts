@@ -143,7 +143,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
 
       return { user, business };
-    });
+    }, { maxWait: 10000, timeout: 20000 });
 
     const rawOtp = generateOtp();
     const otpHash = await argon2.hash(rawOtp);
@@ -717,6 +717,9 @@ export async function authRoutes(fastify: FastifyInstance) {
                 id: true,
                 name: true,
                 currency: true,
+                phone: true,
+                email: true,
+                address: true,
                 taxNumber: true,
                 logoUrl: true,
                 profileCompleted: true,

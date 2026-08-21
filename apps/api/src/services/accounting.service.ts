@@ -125,6 +125,7 @@ export function calculateInvoiceTotals(
 export async function updatePartyBalance(
   tx: TxClient,
   partyId: string,
+  businessId: string,
   amount: Prisma.Decimal | number | string,
   action: 'ADD_RECEIVABLE' | 'REDUCE_RECEIVABLE' | 'ADD_PAYABLE' | 'REDUCE_PAYABLE'
 ) {
@@ -143,12 +144,16 @@ export async function updatePartyBalance(
       break;
   }
 
-  await tx.party.update({
-    where: { id: partyId },
+  const result = await tx.party.updateMany({
+    where: { id: partyId, businessId },
     data: {
       currentBalance: { increment: incrementValue },
     },
   });
+
+  if (result.count === 0) {
+    throw new Error(`Party ${partyId} not found or unauthorized`);
+  }
 }
 
 /**
@@ -157,24 +162,23 @@ export async function updatePartyBalance(
 export async function updateAccountBalance(
   tx: TxClient,
   accountId: string,
+  businessId: string,
   amount: Prisma.Decimal | number | string,
   action: 'ADD' | 'REDUCE'
 ) {
   const amt = new Prisma.Decimal(amount);
   const incrementValue = action === 'ADD' ? amt : amt.negated();
 
-  const acc = await tx.account.update({
-    where: { id: accountId },
+  const result = await tx.account.updateMany({
+    where: { id: accountId, businessId },
     data: {
       balance: { increment: incrementValue },
     },
   });
 
-  if (acc.balance.lessThan(0)) {
-    // In a real strict environment we might throw, but bank accounts can be overdrawn.
-    // For now we allow negative balances (overdraft).
+  if (result.count === 0) {
+    throw new Error(`Account ${accountId} not found or unauthorized`);
   }
-  return acc;
 }
 
 /**
@@ -183,20 +187,21 @@ export async function updateAccountBalance(
 export async function updateStock(
   tx: TxClient,
   itemId: string,
+  businessId: string,
   quantity: Prisma.Decimal | number | string,
   action: 'ADD' | 'REDUCE'
 ) {
   const qty = new Prisma.Decimal(quantity);
   const incrementValue = action === 'ADD' ? qty : qty.negated();
 
-  const item = await tx.item.update({
-    where: { id: itemId },
+  const result = await tx.item.updateMany({
+    where: { id: itemId, businessId },
     data: {
       currentStock: { increment: incrementValue },
     },
   });
 
-  // Note: negative stock is allowed — some businesses sell before receiving stock.
-  // If you want strict enforcement, add a business setting for it.
-  return item;
+  if (result.count === 0) {
+    throw new Error(`Item ${itemId} not found or unauthorized`);
+  }
 }

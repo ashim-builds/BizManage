@@ -51,10 +51,10 @@ export async function transferRoutes(fastify: FastifyInstance) {
       });
 
       // 2. Reduce balance from source account
-      await updateAccountBalance(tx as any, body.fromAccountId, body.amount, 'REDUCE');
+      await updateAccountBalance(tx as any, body.fromAccountId, request.tenant!.businessId, body.amount, 'REDUCE');
 
       // 3. Increase balance to destination account
-      await updateAccountBalance(tx as any, body.toAccountId, body.amount, 'ADD');
+      await updateAccountBalance(tx as any, body.toAccountId, request.tenant!.businessId, body.amount, 'ADD');
 
       // 4. Record transactions for history (optional, but good for ledger)
       await tx.transaction.create({
@@ -82,7 +82,7 @@ export async function transferRoutes(fastify: FastifyInstance) {
       });
 
       return transfer;
-    });
+    }, { maxWait: 10000, timeout: 20000 });
 
     return reply.status(201).send({ success: true, data: result });
   });

@@ -119,7 +119,7 @@ export async function esewaRoutes(fastify: FastifyInstance) {
           const subscription = await tx.subscription.create({ data: { businessId: payment.businessId, subscriptionPackageId: payment.subscriptionPackageId, status: 'ACTIVE', startDate, endDate } });
           if (payment.invoiceId) await tx.billingInvoice.update({ where: { id: payment.invoiceId }, data: { subscriptionId: subscription.id } });
           await tx.business.update({ where: { id: payment.businessId }, data: { subscriptionPackageId: payment.subscriptionPackageId, subscriptionStatus: 'ACTIVE', currentPeriodEnd: endDate, isActive: true } });
-        });
+        }, { maxWait: 10000, timeout: 20000 });
         AuditService.logEvent({ action: 'SUBSCRIPTION_PAYMENT_COMPLETED', module: 'SubscriptionPayment', businessId: payment.businessId, recordId: payment.id, ipAddress, newValue: { status, transactionUuid } });
         await logPaymentSystemEvent(actorId, 'SUBSCRIPTION_PAYMENT_COMPLETED', payment, status, {
           referenceId: verificationResponse.ref_id ?? verificationResponse.refId ?? null,
@@ -131,7 +131,7 @@ export async function esewaRoutes(fastify: FastifyInstance) {
       await globalPrisma.$transaction(async (tx) => {
         await tx.subscriptionPayment.update({ where: { id: payment.id }, data: { status: paymentStatus, gatewayStatus: status, referenceId: String(verificationResponse.ref_id ?? verificationResponse.refId ?? '') || null, failureReason: userMessage(status), verificationResponse: verificationResponse as never } });
         if (payment.invoiceId && status !== 'PENDING') await tx.billingInvoice.update({ where: { id: payment.invoiceId }, data: { status: status === 'CANCELED' ? 'CANCELLED' : 'FAILED' } });
-      });
+      }, { maxWait: 10000, timeout: 20000 });
       if (statusChanged && status !== 'PENDING') {
         await logPaymentSystemEvent(actorId, `SUBSCRIPTION_PAYMENT_${status}`, payment, status, {
           referenceId: verificationResponse.ref_id ?? verificationResponse.refId ?? null,

@@ -543,11 +543,7 @@ export async function paymentRoutes(fastify: FastifyInstance) {
         // 3. Reduce Account Balance
         // ------------------------------------------------
 
-        await updateAccountBalance(
-          tx as any,
-          payment.accountId,
-          amt,
-          'REDUCE'
+        await updateAccountBalance(tx as any, payment.accountId, request.tenant!.businessId, amt, 'REDUCE'
         );
 
         // ------------------------------------------------
@@ -1128,11 +1124,7 @@ export async function paymentRoutes(fastify: FastifyInstance) {
         // 3. Restore Account Balance
         // ------------------------------------------------
 
-        await updateAccountBalance(
-          tx as any,
-          payment.accountId,
-          amt,
-          'ADD'
+        await updateAccountBalance(tx as any, payment.accountId, request.tenant!.businessId, amt, 'ADD'
         );
 
         // ------------------------------------------------

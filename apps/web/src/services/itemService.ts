@@ -10,6 +10,8 @@ export interface ItemsQueryParams {
   lowStock?: boolean;
   page?: number;
   limit?: number;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 export function useItems(params?: ItemsQueryParams) {

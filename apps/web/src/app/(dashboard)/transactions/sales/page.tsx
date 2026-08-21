@@ -218,8 +218,8 @@ export default function SalesPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+      <div className="grid grid-cols-1 md:grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+        <div className="p-4 sm:p-6 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Sales Revenue</p>
             <h3 className="text-2xl font-bold text-white mt-1">
@@ -234,7 +234,7 @@ export default function SalesPage() {
           </div>
         </div>
 
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+        <div className="p-4 sm:p-6 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Collected</p>
             <h3 className="text-2xl font-bold text-emerald-400 mt-1">
@@ -247,7 +247,7 @@ export default function SalesPage() {
           </div>
         </div>
 
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+        <div className="p-4 sm:p-6 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Customer Receivables</p>
             <h3 className="text-2xl font-bold text-amber-400 mt-1">
@@ -729,7 +729,7 @@ export default function SalesPage() {
               </div>
 
               {/* Totals & Payment Section */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-800">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 pt-4 border-t border-slate-800">
                 <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-800 space-y-3">
                   <h4 className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                     <Wallet className="w-4 h-4 text-emerald-400" /> Immediate Payment Collection

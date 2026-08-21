@@ -245,9 +245,9 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
 
       // 5. Update Inventory
       for (const line of body.items) {
-        const item = await tx.item.findUnique({ where: { id: line.itemId } });
+        const item = await tx.item.findFirst({ where: { id: line.itemId , businessId: request.tenant!.businessId } });
         if (item && item.type === 'PRODUCT') {
-          await updateStock(tx as any, line.itemId, line.quantity, 'ADD');
+          await updateStock(tx as any, line.itemId, request.tenant!.businessId, line.quantity, 'ADD');
           await tx.stockMovement.create({
             data: {
               businessId: request.tenant!.businessId,
@@ -261,14 +261,14 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
       }
 
       // 6. Update Supplier Balance (Increase Payable)
-      await updatePartyBalance(tx as any, body.partyId, totals.totalAmount, 'ADD_PAYABLE');
+      await updatePartyBalance(tx as any, body.partyId, request.tenant!.businessId, totals.totalAmount, 'ADD_PAYABLE');
 
       // 7. Handle Payment Out
       if (paidAmount.greaterThan(0)) {
-        await updatePartyBalance(tx as any, body.partyId, paidAmount, 'REDUCE_PAYABLE');
+        await updatePartyBalance(tx as any, body.partyId, request.tenant!.businessId, paidAmount, 'REDUCE_PAYABLE');
 
         let targetAccount = body.accountId
-          ? await tx.account.findUnique({ where: { id: body.accountId } })
+          ? await tx.account.findFirst({ where: { id: body.accountId , businessId: request.tenant!.businessId } })
           : await tx.account.findFirst({ where: { businessId: request.tenant!.businessId } });
 
         if (!targetAccount) {
@@ -286,7 +286,7 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
           throw new AppError('Insufficient balance in the selected account. Please add funds or change payment method.', 400, 'VALIDATION_ERROR');
         }
 
-        await updateAccountBalance(tx as any, targetAccount.id, paidAmount, 'REDUCE');
+        await updateAccountBalance(tx as any, targetAccount.id, request.tenant!.businessId, paidAmount, 'REDUCE');
 
         await tx.paymentOut.create({
           data: {
@@ -315,7 +315,7 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
       }
 
       return purchase;
-    });
+    }, { maxWait: 10000, timeout: 20000 });
 
     return reply.status(201).send({
       success: true,
@@ -369,7 +369,7 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
 
       // Update supplier party balance (increase towards 0)
       if (purchase.partyId) {
-        const party = await tx.party.findUnique({ where: { id: purchase.partyId } });
+        const party = await tx.party.findFirst({ where: { id: purchase.partyId , businessId: request.tenant!.businessId } });
         if (party) {
           const curBal = new Prisma.Decimal(party.currentBalance || 0);
           const newBal = curBal.add(actualPay);
@@ -389,7 +389,7 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
           : AccountType.CASH;
 
       let targetAccount = accountId
-        ? await tx.account.findUnique({ where: { id: accountId } })
+        ? await tx.account.findFirst({ where: { id: accountId , businessId: request.tenant!.businessId } })
         : await tx.account.findFirst({
             where: { businessId: request.tenant!.businessId, accountType: desiredType },
           });
@@ -454,7 +454,7 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
       });
 
       return updated;
-    });
+    }, { maxWait: 10000, timeout: 20000 });
 
     return reply.send({ success: true, data: updatedPurchase });
   });
@@ -522,7 +522,7 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
       // Check if it's returning against a specific purchase
       let isVatBill = false;
       if (body.purchaseId) {
-        const purchase = await tx.purchase.findUnique({ where: { id: body.purchaseId } });
+        const purchase = await tx.purchase.findFirst({ where: { id: body.purchaseId , businessId: request.tenant!.businessId } });
         if (purchase) {
           isVatBill = purchase.isVatBill;
         }
@@ -597,7 +597,7 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
 
       // 5. Decrease Stock atomically
       for (const line of body.items) {
-        await updateStock(tx as any, line.itemId, line.quantity, 'REDUCE');
+        await updateStock(tx as any, line.itemId, request.tenant!.businessId, line.quantity, 'REDUCE');
         await tx.stockMovement.create({
           data: {
             businessId: request.tenant!.businessId,
@@ -615,7 +615,7 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
 
       if (refundAmt.greaterThan(0)) {
         let targetAccount = body.accountId
-          ? await tx.account.findUnique({ where: { id: body.accountId } })
+          ? await tx.account.findFirst({ where: { id: body.accountId , businessId: request.tenant!.businessId } })
           : await tx.account.findFirst({ where: { businessId: request.tenant!.businessId } });
 
         if (!targetAccount) {
@@ -629,7 +629,7 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
         }
 
         // Refund means money in (supplier gives us money back)
-        await updateAccountBalance(tx as any, targetAccount.id, refundAmt.toNumber(), 'ADD');
+        await updateAccountBalance(tx as any, targetAccount.id, request.tenant!.businessId, refundAmt.toNumber(), 'ADD');
 
         await tx.paymentIn.create({
           data: {
@@ -660,11 +660,11 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
       // Adjust supplier balance (Debit note reduces what we owe them)
       // For a supplier, negative balance means payable. Reducing payable means ADD.
       if (!debitToBalance.isZero()) {
-        await updatePartyBalance(tx as any, body.partyId, debitToBalance.toNumber(), 'REDUCE_PAYABLE');
+        await updatePartyBalance(tx as any, body.partyId, request.tenant!.businessId, debitToBalance.toNumber(), 'REDUCE_PAYABLE');
       }
 
       return newReturn;
-    });
+    }, { maxWait: 10000, timeout: 20000 });
 
     return reply.status(201).send({
       success: true,

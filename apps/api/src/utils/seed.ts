@@ -14,7 +14,7 @@ export async function seedDefaultPackages() {
           currency: 'NPR',
           billingPeriod: 'MONTHLY',
           trialDays: 0,
-          features: JSON.stringify(['INVOICING', 'INVENTORY', 'AUTO_LEDGER', 'CASH_BANK']),
+          features: JSON.stringify(['UNLIMITED_INVOICES', 'INVENTORY_TRACKING', 'AUTO_LEDGER', 'CASH_BANK']),
           isActive: true,
           isDefault: true,
           displayOrder: 1

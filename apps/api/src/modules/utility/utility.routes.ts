@@ -78,7 +78,7 @@ export async function utilityRoutes(fastify: FastifyInstance) {
         results.push(party);
       }
       return results;
-    });
+    }, { maxWait: 10000, timeout: 20000 });
 
     return reply.status(201).send({
       success: true,
@@ -158,7 +158,7 @@ export async function utilityRoutes(fastify: FastifyInstance) {
         results.push(item);
       }
       return results;
-    });
+    }, { maxWait: 10000, timeout: 20000 });
 
     return reply.status(201).send({
       success: true,

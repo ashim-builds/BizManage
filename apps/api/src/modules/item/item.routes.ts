@@ -59,13 +59,15 @@ export async function itemRoutes(fastify: FastifyInstance) {
   // LIST ITEMS WITH SEARCH & FILTERS
   // ----------------------------------------------------
   fastify.get('/', async (request, reply) => {
-    const { search, categoryId, type, lowStock, page = '1', limit = '50' } = request.query as {
+    const { search, categoryId, type, lowStock, page = '1', limit = '50', dateFrom, dateTo } = request.query as {
       search?: string;
       categoryId?: string;
       type?: ItemType;
       lowStock?: string;
       page?: string;
       limit?: string;
+      dateFrom?: string;
+      dateTo?: string;
     };
 
     const pageNum = Math.max(1, parseInt(page, 10));
@@ -81,7 +83,23 @@ export async function itemRoutes(fastify: FastifyInstance) {
     }
 
     if (categoryId) {
-      whereClause.categoryId = categoryId;
+      if (categoryId === 'none') {
+        whereClause.categoryId = null;
+      } else {
+        whereClause.categoryId = categoryId;
+      }
+    }
+
+    if (dateFrom || dateTo) {
+      whereClause.createdAt = {};
+      if (dateFrom) {
+        whereClause.createdAt.gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        const endDate = new Date(dateTo);
+        endDate.setHours(23, 59, 59, 999);
+        whereClause.createdAt.lte = endDate;
+      }
     }
 
     if (search && search.trim()) {
@@ -196,7 +214,7 @@ export async function itemRoutes(fastify: FastifyInstance) {
       }
 
       return newItem;
-    });
+    }, { maxWait: 10000, timeout: 20000 });
 
     return reply.status(201).send({
       success: true,
@@ -281,7 +299,7 @@ export async function itemRoutes(fastify: FastifyInstance) {
       });
 
       return newItemRecord;
-    });
+    }, { maxWait: 10000, timeout: 20000 });
 
     return reply.send({
       success: true,

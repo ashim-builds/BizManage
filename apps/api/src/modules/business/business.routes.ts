@@ -56,7 +56,7 @@ export async function businessRoutes(fastify: FastifyInstance) {
       });
 
       return biz;
-    });
+    }, { maxWait: 10000, timeout: 20000 });
 
     return reply.status(201).send({
       success: true,
@@ -105,9 +105,7 @@ export async function businessRoutes(fastify: FastifyInstance) {
 
         // Only process if it's a new package
         if (currentBiz?.subscriptionPackageId !== body.subscriptionPackageId) {
-          const pkg = await tx.subscriptionPackage.findUnique({
-            where: { id: body.subscriptionPackageId }
-          });
+          const pkg = await tx.subscriptionPackage.findUnique({ where: { id: body.subscriptionPackageId } });
 
           if (!pkg) {
             throw new AppError('Subscription package not found', 404, 'NOT_FOUND');
@@ -153,9 +151,10 @@ export async function businessRoutes(fastify: FastifyInstance) {
         });
         
         const currentLogoUrl = currentBiz?.logoUrl || '';
+        const newLogoUrl = body.logoUrl || '';
         
-        // If they are actually changing or setting the logo
-        if (body.logoUrl !== currentLogoUrl) {
+        // If they are actually changing or setting the logo to a real image
+        if (newLogoUrl && newLogoUrl !== currentLogoUrl) {
           const rawFeatures = currentBiz?.subscriptionPackage?.features;
           const userFeatures = typeof rawFeatures === 'string' ? JSON.parse(rawFeatures) : (rawFeatures || []);
           
@@ -181,7 +180,7 @@ export async function businessRoutes(fastify: FastifyInstance) {
         },
         include: { settings: true },
       });
-    });
+    }, { maxWait: 10000, timeout: 20000 });
 
     return reply.send({
       success: true,

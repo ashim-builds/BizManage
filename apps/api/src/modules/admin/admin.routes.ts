@@ -317,7 +317,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
       }
 
       return biz;
-    });
+    }, { maxWait: 10000, timeout: 20000 });
 
     await logAdminAction(request.user.id, 'BUSINESS_SUBSCRIPTION_UPDATE', id, 'Business', { subscriptionPackageId });
     return reply.send({ success: true, data: business });

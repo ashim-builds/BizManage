@@ -111,8 +111,7 @@ function SettingsPageContent() {
     business?.name &&
     business?.address &&
     business?.phone &&
-    business?.taxNumber &&
-    business?.logoUrl
+    business?.taxNumber
   );
 
   useEffect(() => {
@@ -138,7 +137,7 @@ function SettingsPageContent() {
     return true;
   });
   const [enableTax, setEnableTax] = useState(false);
-  
+
   const rawFeatures = business?.subscriptionPackage?.features;
   const userFeatures = typeof rawFeatures === 'string' ? JSON.parse(rawFeatures) : (rawFeatures || []);
   const canCustomBranding = userFeatures.includes('CUSTOM_BRANDING');
@@ -249,7 +248,7 @@ function SettingsPageContent() {
     setProfileSuccess('');
     setProfileError('');
     try {
-      const isProfileCompleted = Boolean(name && address && phone && taxNumber && logoUrl);
+      const isProfileCompleted = Boolean(name && address && phone && taxNumber);
       await updateBusiness.mutateAsync({ name, phone, email, address, taxNumber, currency: 'NPR', logoUrl, profileCompleted: isProfileCompleted });
       await updateSettings.mutateAsync({
         invoicePrefix: 'INV-',
@@ -331,7 +330,7 @@ function SettingsPageContent() {
     const file = e.target.files?.[0];
     if (!file) return;
     setImportFileName(file.name);
-    
+
     const reader = new FileReader();
     reader.onload = (event) => {
       setImportJsonText(event.target?.result as string);
@@ -394,88 +393,80 @@ function SettingsPageContent() {
       <div className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-2xl bg-slate-900 border border-slate-800 text-xs font-semibold">
         <button
           onClick={() => setActiveTab('profile')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
-            activeTab === 'profile'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-              : 'text-slate-400 hover:text-white'
-          }`}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${activeTab === 'profile'
+            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+            : 'text-slate-400 hover:text-white'
+            }`}
         >
           <Building2 className="w-3.5 h-3.5" /> Business Profile
         </button>
 
         <button
           onClick={() => setActiveTab('guide')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
-            activeTab === 'guide'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-              : 'text-slate-400 hover:text-white'
-          }`}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${activeTab === 'guide'
+            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+            : 'text-slate-400 hover:text-white'
+            }`}
         >
           <BookOpen className="w-3.5 h-3.5" /> Setup Guide
         </button>
 
         <button
           onClick={() => setActiveTab('account')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
-            activeTab === 'account'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-              : 'text-slate-400 hover:text-white'
-          }`}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${activeTab === 'account'
+            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+            : 'text-slate-400 hover:text-white'
+            }`}
         >
           <User className="w-3.5 h-3.5" /> Account & Security
         </button>
 
         <button
           onClick={() => setActiveTab('subscription')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
-            activeTab === 'subscription'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-              : 'text-slate-400 hover:text-white'
-          }`}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${activeTab === 'subscription'
+            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+            : 'text-slate-400 hover:text-white'
+            }`}
         >
           <Crown className="w-3.5 h-3.5" /> Subscription Plan
         </button>
 
         <button
           onClick={() => setActiveTab('import')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
-            activeTab === 'import'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-              : 'text-slate-400 hover:text-white'
-          }`}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${activeTab === 'import'
+            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+            : 'text-slate-400 hover:text-white'
+            }`}
         >
           <Upload className="w-3.5 h-3.5" /> Import Data
         </button>
 
         <button
           onClick={() => setActiveTab('backup')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
-            activeTab === 'backup'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-              : 'text-slate-400 hover:text-white'
-          }`}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${activeTab === 'backup'
+            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+            : 'text-slate-400 hover:text-white'
+            }`}
         >
           <Download className="w-3.5 h-3.5" /> Secure Backup
         </button>
 
         <button
           onClick={() => setActiveTab('calculators')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
-            activeTab === 'calculators'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-              : 'text-slate-400 hover:text-white'
-          }`}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${activeTab === 'calculators'
+            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+            : 'text-slate-400 hover:text-white'
+            }`}
         >
           <Calculator className="w-3.5 h-3.5" /> Business Tools
         </button>
 
         <button
           onClick={() => setActiveTab('about')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
-            activeTab === 'about'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-              : 'text-slate-400 hover:text-white'
-          }`}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${activeTab === 'about'
+            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+            : 'text-slate-400 hover:text-white'
+            }`}
         >
           <HelpCircle className="w-3.5 h-3.5" /> Help & About
         </button>
@@ -532,7 +523,7 @@ function SettingsPageContent() {
                     No Logo
                   </div>
                 )}
-                
+
                 <div className="flex-1">
                   <input
                     type="file"
@@ -653,18 +644,6 @@ function SettingsPageContent() {
                   Revisit all 5 step-by-step setup guides to finish setting up your business management system.
                 </p>
               </div>
-              <button
-                onClick={() => {
-                  if (typeof window !== 'undefined') {
-                    localStorage.removeItem('bizmanage_setup_completed');
-                    localStorage.setItem('bizmanage_show_onboarding', 'true');
-                  }
-                  setProfileSuccess('Setup Guide has been re-opened on your Dashboard!');
-                }}
-                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all shadow-md shadow-blue-600/20 shrink-0"
-              >
-                Re-open Guide on Dashboard
-              </button>
             </div>
 
             {profileSuccess && (
@@ -932,33 +911,31 @@ function SettingsPageContent() {
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">Manage your active workspace license and features.</p>
               </div>
-              <span className={`px-4 py-1.5 rounded-full font-bold text-xs border ${
-                selectedPlan?.toLowerCase() === 'enterprise' 
-                  ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                  : selectedPlan?.toLowerCase() === 'pro'
+              <span className={`px-4 py-1.5 rounded-full font-bold text-xs border ${selectedPlan?.toLowerCase() === 'enterprise'
+                ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                : selectedPlan?.toLowerCase() === 'pro'
                   ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
                   : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-              }`}>
+                }`}>
                 {selectedPlan?.toLowerCase() === 'enterprise' ? 'Enterprise Active' : selectedPlan?.toLowerCase() === 'pro' ? 'Pro Plan Active' : 'Free Starter Active'}
               </span>
             </div>
 
-            <div className={`p-6 rounded-xl border space-y-3 ${
-                selectedPlan?.toLowerCase() === 'enterprise'
-                  ? 'bg-gradient-to-r from-amber-900/20 to-orange-900/20 border-amber-500/20'
-                  : selectedPlan?.toLowerCase() === 'pro'
-                  ? 'bg-gradient-to-r from-blue-900/20 to-indigo-900/20 border-blue-500/20'
-                  : 'bg-gradient-to-r from-emerald-900/20 to-teal-900/20 border-emerald-500/20'
-            }`}>
+            <div className={`p-6 rounded-xl border space-y-3 ${selectedPlan?.toLowerCase() === 'enterprise'
+              ? 'bg-gradient-to-r from-amber-900/20 to-orange-900/20 border-amber-500/20'
+              : selectedPlan?.toLowerCase() === 'pro'
+                ? 'bg-gradient-to-r from-blue-900/20 to-indigo-900/20 border-blue-500/20'
+                : 'bg-gradient-to-r from-emerald-900/20 to-teal-900/20 border-emerald-500/20'
+              }`}>
               <h4 className="text-lg font-bold text-white">
                 {selectedPlan?.toLowerCase() === 'enterprise' ? 'Enterprise License' : selectedPlan?.toLowerCase() === 'pro' ? 'Pro Business License' : 'Free Starter License'}
               </h4>
               <p className="text-sm text-slate-300">
-                {selectedPlan?.toLowerCase() === 'enterprise' 
+                {selectedPlan?.toLowerCase() === 'enterprise'
                   ? 'Unlimited transaction volume, multi-business isolation, real-time double-entry ledgers, and priority support.'
                   : selectedPlan?.toLowerCase() === 'pro'
-                  ? 'Advanced reporting, unlimited parties, up to 10,000 transactions/mo, and automated backups.'
-                  : 'Basic double-entry accounting, up to 100 transactions/mo, and single business management.'}
+                    ? 'Advanced reporting, unlimited parties, up to 10,000 transactions/mo, and automated backups.'
+                    : 'Basic double-entry accounting, up to 100 transactions/mo, and single business management.'}
               </p>
             </div>
             <div className="pt-4 border-t border-slate-800 space-y-4">

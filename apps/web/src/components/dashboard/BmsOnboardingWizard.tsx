@@ -31,7 +31,7 @@ export function BmsOnboardingWizard({
     {
       id: 1,
       title: 'Complete your business profile',
-      description: 'Add your business name, address, contact number, tax ID, and logo.',
+      description: 'Add your business name, address, contact number, and tax ID.',
       href: '/settings?tab=profile',
       actionText: 'Go to Settings',
       isCompleted: hasProfileComplete,
@@ -86,7 +86,7 @@ export function BmsOnboardingWizard({
       {/* Welcome Banner Card - Blue/White/Dark Theme */}
       <div className="p-6 rounded-2xl bg-slate-900 border border-blue-500/30 text-white shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
-        
+
         <div className="flex items-center justify-between gap-4 relative z-10">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center font-black text-xl text-blue-400 shrink-0">
@@ -129,23 +129,21 @@ export function BmsOnboardingWizard({
             return (
               <div
                 key={step.id}
-                className={`p-5 rounded-2xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
-                  step.isCompleted
+                className={`p-5 rounded-2xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${step.isCompleted
                     ? 'bg-slate-900/40 border-slate-800 text-slate-400'
                     : isCurrentStep
-                    ? 'bg-slate-900 border-blue-500/50 shadow-lg shadow-blue-950/40 ring-1 ring-blue-500/20 text-white'
-                    : 'bg-slate-900/60 border-slate-800/60 text-slate-500 opacity-80'
-                }`}
+                      ? 'bg-slate-900 border-blue-500/50 shadow-lg shadow-blue-950/40 ring-1 ring-blue-500/20 text-white'
+                      : 'bg-slate-900/60 border-slate-800/60 text-slate-500 opacity-80'
+                  }`}
               >
                 <div className="flex items-start gap-4">
                   <div
-                    className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 ${
-                      step.isCompleted
+                    className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 ${step.isCompleted
                         ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
                         : isCurrentStep
-                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                        : 'bg-slate-800 text-slate-400 border border-slate-700/50'
-                    }`}
+                          ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                          : 'bg-slate-800 text-slate-400 border border-slate-700/50'
+                      }`}
                   >
                     {step.isCompleted ? <Check className="w-4 h-4 text-emerald-400" /> : step.id}
                   </div>
@@ -180,11 +178,10 @@ export function BmsOnboardingWizard({
                   ) : (
                     <Link
                       href={step.href}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                        isCurrentStep
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${isCurrentStep
                           ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/25'
                           : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
-                      }`}
+                        }`}
                     >
                       {step.actionText} <ArrowRight className="w-3.5 h-3.5" />
                     </Link>

@@ -112,8 +112,8 @@ export default function IncomePage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+        <div className="p-4 sm:p-6 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Other Income</p>
             <h3 className="text-2xl font-bold text-emerald-400 mt-1">
@@ -128,7 +128,7 @@ export default function IncomePage() {
           </div>
         </div>
 
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+        <div className="p-4 sm:p-6 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Received Today</p>
             <h3 className="text-2xl font-bold text-white mt-1">
@@ -141,7 +141,7 @@ export default function IncomePage() {
           </div>
         </div>
 
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+        <div className="p-4 sm:p-6 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Cashflow Inflow</p>
             <h3 className="text-2xl font-bold text-slate-300 mt-1">Audit Logged</h3>

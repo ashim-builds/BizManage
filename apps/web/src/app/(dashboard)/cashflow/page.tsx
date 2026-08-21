@@ -83,8 +83,8 @@ export default function CashflowPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 sm:gap-6">
+        <div className="p-4 sm:p-6 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Liquidity</p>
             <h3 className="text-2xl font-bold text-white mt-1">
@@ -97,7 +97,7 @@ export default function CashflowPage() {
           </div>
         </div>
 
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+        <div className="p-4 sm:p-6 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Money In</p>
             <h3 className="text-2xl font-bold text-emerald-400 mt-1 flex items-center gap-1">
@@ -110,7 +110,7 @@ export default function CashflowPage() {
           </div>
         </div>
 
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+        <div className="p-4 sm:p-6 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Money Out</p>
             <h3 className="text-2xl font-bold text-rose-400 mt-1 flex items-center gap-1">
@@ -123,7 +123,7 @@ export default function CashflowPage() {
           </div>
         </div>
 
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+        <div className="p-4 sm:p-6 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Net Cash Movement</p>
             <h3
@@ -150,7 +150,7 @@ export default function CashflowPage() {
       </div>
 
       {/* Main Bar Chart Section */}
-      <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6">
+      <div className="p-4 sm:p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6">
         <div className="flex items-center justify-between border-b border-slate-800 pb-4">
           <div>
             <h3 className="text-base font-bold text-white flex items-center gap-2">
@@ -282,7 +282,7 @@ export default function CashflowPage() {
       </div>
 
       {/* Cash & Bank Accounts Liquidity Breakdown */}
-      <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+      <div className="p-4 sm:p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
         <div className="border-b border-slate-800 pb-3 flex items-center justify-between">
           <div>
             <h3 className="text-base font-bold text-white flex items-center gap-2">
