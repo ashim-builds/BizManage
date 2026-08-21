@@ -1,10 +1,10 @@
-# 🏬 BizManage ERP — Multi-Tenant Business & Inventory Management SaaS
+# BizManage ERP — Multi-Tenant Business & Inventory Management SaaS
 
 **BizManage** is a production-ready, full-featured multi-tenant ERP software built for modern retail, hardware, sanitary, and commercial businesses. Built as a high-performance **pnpm monorepo** with **Next.js 14 (App Router)**, **Fastify**, **Prisma ORM**, and **PostgreSQL**.
 
 ---
 
-## 🌟 Project Overview & Tech Stack
+## Project Overview & Tech Stack
 
 - **Frontend**: Next.js 14, React 18, Tailwind CSS, Lucide Icons, React Hook Form, Zod, TanStack Query
 - **Backend API**: Fastify, TypeScript, Prisma ORM, Argon2, Fastify Cookie, Fastify JWT
@@ -14,7 +14,7 @@
 
 ---
 
-## 📋 Prerequisites
+## Prerequisites
 
 Before setting up the project on a fresh laptop, ensure you have the following installed:
 
@@ -25,7 +25,7 @@ Before setting up the project on a fresh laptop, ensure you have the following i
 
 ---
 
-## 🚀 Fresh-Laptop Setup Flow from Zero
+## Fresh-Laptop Setup Flow from Zero
 
 Follow these exact steps to run the project locally from scratch:
 
@@ -83,7 +83,7 @@ pnpm dev
 
 ---
 
-## 🌐 Local URLs and Ports
+## Local URLs and Ports
 
 Once the development server is running, the services will be available at:
 
@@ -99,7 +99,7 @@ Once the development server is running, the services will be available at:
 
 ---
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```text
 bizmanage/
@@ -119,7 +119,7 @@ bizmanage/
 
 ---
 
-## 🔧 Useful Commands
+## Useful Commands
 
 ### Development
 - `pnpm dev` - Starts frontend and backend concurrently
@@ -164,6 +164,6 @@ Ensure `apps/desktop/tsconfig.json` uses `"moduleResolution": "Node16"` and `"mo
 
 ---
 
-## 🚀 Production Deployment
+## Production Deployment
 
 Refer to the `render_deployment_guide.md` for hosting instructions on Render.com and Neon PostgreSQL!
