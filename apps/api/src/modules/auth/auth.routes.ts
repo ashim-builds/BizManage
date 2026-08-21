@@ -115,6 +115,9 @@ export async function authRoutes(fastify: FastifyInstance) {
           name: body.name,
           passwordHash,
           isVerified: false,
+          publicKey: body.publicKey,
+          encryptedPrivateKey: body.encryptedPrivateKey,
+          kdfSalt: body.kdfSalt,
         },
       });
 
@@ -320,6 +323,9 @@ export async function authRoutes(fastify: FastifyInstance) {
           name: user.name,
           isVerified: user.isVerified,
           isSystemAdmin: user.isSystemAdmin,
+          activeBusinessId: user.activeBusinessId,
+          kdfSalt: user.kdfSalt,
+          encryptedPrivateKey: user.encryptedPrivateKey,
         },
         memberships: user.memberships.map((m) => ({
           business: { id: m.business.id, name: m.business.name },
@@ -709,6 +715,9 @@ export async function authRoutes(fastify: FastifyInstance) {
         activeBusinessId: true,
         isSystemAdmin: true,
         createdAt: true,
+        kdfSalt: true,
+        encryptedPrivateKey: true,
+        publicKey: true,
         memberships: {
           select: {
             role: true,

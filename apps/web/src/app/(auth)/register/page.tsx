@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema, RegisterInput } from '@bizmanage/validation';
 import { useAuth } from '@/providers/AuthProvider';
 import { api } from '@/lib/api';
+import { E2EECrypto } from '@/lib/crypto';
 import { Building2, Eye, EyeOff, ShieldCheck, ArrowRight } from 'lucide-react';
 
 export default function RegisterPage() {
@@ -30,7 +31,25 @@ export default function RegisterPage() {
     setError(null);
     setLoading(true);
     try {
-      const res = await api.post('/auth/register', data);
+      // 1. Generate E2EE Keys locally before sending to server
+      const keyPair = await E2EECrypto.generateKeyPair();
+      const publicKey = await E2EECrypto.exportPublicKey(keyPair.publicKey);
+      
+      const kdfSalt = E2EECrypto.generateSalt();
+      const derivedKey = await E2EECrypto.deriveKeyFromPassword(data.password, kdfSalt);
+      
+      const privateKeyBase64 = await E2EECrypto.exportPrivateKey(keyPair.privateKey);
+      const encryptedPrivateKey = await E2EECrypto.encryptPrivateKey(privateKeyBase64, derivedKey);
+      
+      // 2. Attach to payload
+      const payload = {
+        ...data,
+        publicKey,
+        encryptedPrivateKey,
+        kdfSalt,
+      };
+
+      const res = await api.post('/auth/register', payload);
       if (res.data.success) {
         router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
       }

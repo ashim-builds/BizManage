@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, LoginInput } from '@bizmanage/validation';
 import { useAuth } from '@/providers/AuthProvider';
 import { api, setAccessToken } from '@/lib/api';
+import { E2EECrypto } from '@/lib/crypto';
 import { Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
@@ -36,6 +37,24 @@ export default function LoginPage() {
         if (res.data.data?.accessToken) {
           setAccessToken(res.data.data.accessToken);
         }
+
+        // --- E2EE KEY UNLOCKING ---
+        const user = res.data.data?.user;
+        if (user?.kdfSalt && user?.encryptedPrivateKey) {
+          try {
+            const derivedKey = await E2EECrypto.deriveKeyFromPassword(data.password, user.kdfSalt);
+            const decryptedPrivateKeyBase64 = await E2EECrypto.decryptPrivateKey(user.encryptedPrivateKey, derivedKey);
+            
+            // Store the decrypted private key in session storage so it survives page reloads
+            sessionStorage.setItem('e2ee_private_key', decryptedPrivateKeyBase64);
+            if (user.publicKey) {
+              sessionStorage.setItem('e2ee_public_key', user.publicKey);
+            }
+          } catch (e) {
+            console.error('Failed to unlock E2EE vault', e);
+          }
+        }
+
         await refreshUser();
         router.push('/dashboard');
       }

@@ -3,6 +3,7 @@ import { requireBusinessTenant } from '../../middleware/auth.js';
 import { itemSchema, updateItemSchema, stockAdjustmentSchema } from '@bizmanage/validation';
 import { ItemType, StockMovementType, Prisma } from '@bizmanage/database';
 import { AppError } from '../../plugins/error-handler.js';
+import crypto from 'crypto';
 
 export async function itemRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', requireBusinessTenant);
@@ -102,11 +103,16 @@ export async function itemRoutes(fastify: FastifyInstance) {
       }
     }
 
-    if (search && search.trim()) {
-      const q = search.trim();
+    if (search) {
+      // NOTE: With E2EE, we cannot use ILIKE on encrypted strings!
+      // We must query against the HMAC column. This means search is EXACT MATCH only.
+      // We will hash the search term on the backend using the same static secret.
+      const searchHmac = crypto.createHmac('sha256', 'bms_hmac_secret').update(search.toLowerCase().trim()).digest('base64');
+      
       whereClause.OR = [
-        { name: { contains: q, mode: 'insensitive' } },
-        { code: { contains: q, mode: 'insensitive' } },
+        { hmacName: searchHmac },
+        { hmacCode: searchHmac },
+        { category: { name: { contains: search, mode: 'insensitive' } } },
       ];
     }
 
@@ -195,6 +201,13 @@ export async function itemRoutes(fastify: FastifyInstance) {
           minStockAlert: body.minStockAlert,
           openingStock: body.openingStock,
           currentStock: body.openingStock,
+          // E2EE Metadata
+          encryptedDeks: body.encryptedDeks ? body.encryptedDeks : Prisma.JsonNull,
+          iv: body.iv || null,
+          encPurchasePrice: body.encPurchasePrice || null,
+          encSalePrice: body.encSalePrice || null,
+          hmacName: body.hmacName || null,
+          hmacCode: body.hmacCode || null,
         },
         include: {
           category: { select: { id: true, name: true } },
@@ -248,6 +261,13 @@ export async function itemRoutes(fastify: FastifyInstance) {
         salePrice: body.salePrice ?? existing.salePrice,
         purchasePrice: body.purchasePrice ?? existing.purchasePrice,
         minStockAlert: body.minStockAlert ?? existing.minStockAlert,
+        // E2EE Metadata
+        encryptedDeks: body.encryptedDeks !== undefined ? (body.encryptedDeks ? body.encryptedDeks : Prisma.JsonNull) : existing.encryptedDeks,
+        iv: body.iv !== undefined ? body.iv : existing.iv,
+        encPurchasePrice: body.encPurchasePrice !== undefined ? body.encPurchasePrice : existing.encPurchasePrice,
+        encSalePrice: body.encSalePrice !== undefined ? body.encSalePrice : existing.encSalePrice,
+        hmacName: body.hmacName !== undefined ? body.hmacName : existing.hmacName,
+        hmacCode: body.hmacCode !== undefined ? body.hmacCode : existing.hmacCode,
       },
       include: {
         category: { select: { id: true, name: true } },

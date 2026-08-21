@@ -42,6 +42,8 @@ interface AuthContextType {
   activeBusinessId: string | null;
   activeBusinessLimits: BusinessLimits | null;
   loading: boolean;
+  e2eePrivateKey: string | null;
+  e2eePublicKey: string | null;
   setActiveBusinessId: (id: string) => void;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -56,6 +58,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   const [activeBusinessLimits, setActiveBusinessLimits] = useState<BusinessLimits | null>(null);
+  
+  const [e2eePrivateKey, setE2eePrivateKey] = useState<string | null>(null);
+  const [e2eePublicKey, setE2eePublicKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Load keys from sessionStorage on mount
+    setE2eePrivateKey(sessionStorage.getItem('e2ee_private_key'));
+    setE2eePublicKey(sessionStorage.getItem('e2ee_public_key'));
+  }, []);
 
   const computeLimits = (userData: UserProfile, bizId: string | null) => {
     if (!bizId) {
@@ -145,6 +156,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         activeBusinessId,
         activeBusinessLimits,
         loading,
+        e2eePrivateKey,
+        e2eePublicKey,
         setActiveBusinessId,
         logout,
         refreshUser: fetchUser,

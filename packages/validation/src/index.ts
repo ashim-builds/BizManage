@@ -13,6 +13,10 @@ export const registerSchema = z.object({
     .regex(/[0-9]/, 'Password must contain at least one number')
     .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
   businessName: z.string().trim().min(2, 'Business name must be at least 2 characters'),
+  // E2EE properties sent on registration
+  publicKey: z.string().optional(),
+  encryptedPrivateKey: z.string().optional(),
+  kdfSalt: z.string().optional(),
 });
 
 export const loginSchema = z.object({
@@ -102,6 +106,13 @@ export const itemSchema = z.object({
   purchasePrice: z.number().min(0, 'Purchase price cannot be negative').default(0),
   minStockAlert: z.number().min(0).default(0),
   openingStock: z.number().default(0),
+  // E2EE Metadata
+  encryptedDeks: z.record(z.string()).optional(),
+  iv: z.string().optional(),
+  encPurchasePrice: z.string().optional(),
+  encSalePrice: z.string().optional(),
+  hmacName: z.string().optional(),
+  hmacCode: z.string().optional(),
 });
 
 export const updateItemSchema = itemSchema.partial();

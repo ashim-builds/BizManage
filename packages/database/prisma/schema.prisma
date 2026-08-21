@@ -106,6 +106,11 @@ model User {
   failedLoginAttempts Int              @default(0)
   lockedUntil         DateTime?
   lastLoginAt         DateTime?
+  
+  // E2EE Key Management
+  publicKey           String?  @db.Text
+  encryptedPrivateKey String?  @db.Text
+  kdfSalt             String?
 }
 
 model OtpVerification {
@@ -311,9 +316,19 @@ model Item {
   purchaseItems       PurchaseItem[]
   purchaseReturnItems PurchaseReturnItem[]
   stockMovements      StockMovement[]
+  
+  // E2EE Metadata
+  encryptedDeks       Json?
+  iv                  String?
+  hmacName            String?
+  hmacCode            String?
+  encPurchasePrice    String?
+  encSalePrice        String?
 
   @@index([businessId, name])
   @@index([businessId, code])
+  @@index([businessId, hmacName])
+  @@index([businessId, hmacCode])
   @@index([businessId, categoryId])
   @@index([businessId, currentStock])
 }

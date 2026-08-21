@@ -222,4 +222,31 @@ export async function businessRoutes(fastify: FastifyInstance) {
       data: updatedSettings,
     });
   });
+
+  // Get public keys of all users in the current business for Envelope Encryption
+  fastify.get('/current/keys', { preHandler: [requireBusinessTenant] }, async (request, reply) => {
+    const memberships = await globalPrisma.userBusinessRole.findMany({
+      where: { businessId: request.tenant!.businessId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            publicKey: true,
+          }
+        }
+      }
+    });
+
+    const keys = memberships
+      .filter(m => m.user.publicKey) // Only users with generated keys
+      .map(m => ({
+        userId: m.user.id,
+        publicKey: m.user.publicKey
+      }));
+
+    return reply.send({
+      success: true,
+      data: keys,
+    });
+  });
 }

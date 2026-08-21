@@ -1,7 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { encryptPayload } from '@/lib/e2eeInterceptor';
 import { ItemInput, UpdateItemInput, StockAdjustmentInput } from '@bizmanage/validation';
 import { ItemType } from '@bizmanage/types';
+
+const ITEM_ENCRYPTED_FIELDS = ['name', 'code'];
 
 export interface ItemsQueryParams {
   search?: string;
@@ -54,7 +57,8 @@ export function useCreateItem() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: ItemInput) => {
-      const res = await api.post('/items', data);
+      const encryptedData = await encryptPayload(data, ITEM_ENCRYPTED_FIELDS);
+      const res = await api.post('/items', encryptedData);
       return res.data.data;
     },
     onSuccess: () => {
@@ -67,7 +71,8 @@ export function useUpdateItem() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateItemInput }) => {
-      const res = await api.put(`/items/${id}`, data);
+      const encryptedData = await encryptPayload(data, ITEM_ENCRYPTED_FIELDS);
+      const res = await api.put(`/items/${id}`, encryptedData);
       return res.data.data;
     },
     onSuccess: (_, variables) => {
