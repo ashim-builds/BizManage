@@ -106,3 +106,24 @@ NEXT_PUBLIC_API_URL="https://api.bizmanage.com/api/v1"
 1. **Daily Database Backups**: Neon.tech automatically retains point-in-time database backups for 14 days.
 2. **Automated SSL/TLS**: Render and Vercel automatically generate free auto-renewing Let's Encrypt SSL certificates for `https://bizmanage.com` and `https://api.bizmanage.com`.
 3. **CORS Security**: Backend API restricts request origin strictly to `https://bizmanage.com` with `sameSite: 'none'` cross-domain session cookies.
+
+---
+
+## ⚡ 4. Website Speed & Database Performance Optimizations
+
+To ensure data loads instantly for end-users, configure the following:
+
+1. **Server Region Alignment (Critical)**
+   - Your Neon Database is hosted in **AWS us-east-2 (Ohio)**. 
+   - You **MUST** select **Ohio (US East)** when setting up your Render Backend API.
+   - *Why?* If your API is in Frankfurt but your DB is in Ohio, every single database query takes 150ms of network travel time. Keeping them in the exact same region reduces query latency to < 2ms!
+
+2. **Connection Pooling**
+   - Always use the Neon pooled connection string (with `-pooler` in the URL) in production.
+   - Add connection limits to your `DATABASE_URL` (e.g., `?connection_limit=20&pool_timeout=10`) so Prisma handles traffic spikes smoothly without freezing.
+
+3. **Database Indexing**
+   - Prisma `@@index`es have been added on high-traffic fields (like `businessId` and `createdAt` in invoices and transactions) to ensure search operations remain fast even with millions of rows.
+
+4. **API Pagination & Caching**
+   - Limit API payloads using `take` and `skip`. The frontend leverages client-side caching to prevent unnecessary re-fetching.
