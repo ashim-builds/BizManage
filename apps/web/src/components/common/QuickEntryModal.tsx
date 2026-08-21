@@ -26,6 +26,7 @@ import { useAccounts } from '@/services/accountService';
 import { getPartyBalanceDisplay } from '@/lib/balance';
 import { calculateInvoiceTotals, formatCurrency } from '@/lib/accounting';
 import { ModalPortal } from '@/components/ui/ModalPortal';
+import { ItemSearchSelect } from '@/components/ui/ItemSearchSelect';
 import {
   Zap,
   X,
@@ -468,23 +469,18 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
               <div>
                 <label className="block text-slate-300 font-semibold mb-1">Item & Quantity *</label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <select
-                    {...saleForm.register('items.0.itemId')}
-                    onChange={(e) => {
-                      const sel = items.find((i: any) => i.id === e.target.value);
-                      if (sel) {
-                        saleForm.setValue('items.0.unitPrice', Number(sel.salePrice || 0));
-                      }
+                  <ItemSearchSelect
+                    items={items}
+                    value={saleForm.watch('items.0.itemId') || ''}
+                    onChange={(id) => {
+                      saleForm.setValue('items.0.itemId', id);
+                      const sel = items.find((i: any) => i.id === id);
+                      if (sel) saleForm.setValue('items.0.unitPrice', Number(sel.salePrice || 0));
                     }}
-                    className="col-span-2 px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
-                  >
-                    <option value="">Select Product</option>
-                    {items.map((i: any) => (
-                      <option key={i.id} value={i.id}>
-                        {i.name} (Stock: {i.currentStock} {i.unit})
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="Search product…"
+                    priceField="salePrice"
+                    className="col-span-2"
+                  />
                   <input
                     type="number"
                     step="any"
@@ -612,23 +608,18 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
               <div>
                 <label className="block text-slate-300 font-semibold mb-1">Item & Quantity *</label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <select
-                    {...purchaseForm.register('items.0.itemId')}
-                    onChange={(e) => {
-                      const sel = items.find((i: any) => i.id === e.target.value);
-                      if (sel) {
-                        purchaseForm.setValue('items.0.unitPrice', Number(sel.purchasePrice || 0));
-                      }
+                  <ItemSearchSelect
+                    items={items}
+                    value={purchaseForm.watch('items.0.itemId') || ''}
+                    onChange={(id) => {
+                      purchaseForm.setValue('items.0.itemId', id);
+                      const sel = items.find((i: any) => i.id === id);
+                      if (sel) purchaseForm.setValue('items.0.unitPrice', Number(sel.purchasePrice || 0));
                     }}
-                    className="col-span-2 px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
-                  >
-                    <option value="">Select Item</option>
-                    {items.map((i: any) => (
-                      <option key={i.id} value={i.id}>
-                        {i.name}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="Search item…"
+                    priceField="purchasePrice"
+                    className="col-span-2"
+                  />
                   <input
                     type="number"
                     step="any"

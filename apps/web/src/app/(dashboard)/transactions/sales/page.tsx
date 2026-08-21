@@ -10,6 +10,7 @@ import { useSales, useSalesSummary, useCreateSale, usePaySale } from '@/services
 import { useParties, useCreateParty } from '@/services/partyService';
 import { getPartyBalanceDisplay } from '@/lib/balance';
 import { useItems } from '@/services/itemService';
+import { ItemSearchSelect } from '@/components/ui/ItemSearchSelect';
 import { useAccounts } from '@/services/accountService';
 import { calculateInvoiceTotals, formatCurrency } from '@/lib/accounting';
 import { toast } from 'react-hot-toast';
@@ -637,22 +638,17 @@ export default function SalesPage() {
                             : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700/80'
                         }`}
                       >
-                        <div className="col-span-4">
-                          <select
-                            {...form.register(`items.${idx}.itemId`)}
-                            onChange={(e) => {
-                              form.register(`items.${idx}.itemId`).onChange(e);
-                              onItemSelect(idx, e.target.value);
+                        <div className="col-span-12 md:col-span-4">
+                          <ItemSearchSelect
+                            items={availableItems}
+                            value={selectedItemId || ''}
+                            onChange={(id) => {
+                              form.setValue(`items.${idx}.itemId`, id);
+                              onItemSelect(idx, id);
                             }}
-                            className="w-full px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700/80 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
-                          >
-                            <option value="">Select Product / Item</option>
-                            {availableItems.map((item: any) => (
-                              <option key={item.id} value={item.id}>
-                                {item.name} ({item.unit}) - Stock: {Number(item.currentStock)} | Price: Rs. {Number(item.salePrice)}
-                              </option>
-                            ))}
-                          </select>
+                            placeholder="Search product…"
+                            priceField="salePrice"
+                          />
                           {selectedItem && (
                             <div className="flex items-center gap-2 mt-1.5 px-0.5">
                               <span

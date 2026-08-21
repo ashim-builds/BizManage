@@ -15,6 +15,7 @@ import {
 import { useParties } from '@/services/partyService';
 import { getPartyBalanceDisplay } from '@/lib/balance';
 import { useItems } from '@/services/itemService';
+import { ItemSearchSelect } from '@/components/ui/ItemSearchSelect';
 import { useAccounts } from '@/services/accountService';
 import { calculateInvoiceTotals, formatCurrency } from '@/lib/accounting';
 import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
@@ -539,21 +540,16 @@ export default function PurchasesPage() {
                       >
                         {/* Item Select */}
                         <div className="col-span-12 md:col-span-4">
-                          <select
-                            {...form.register(`items.${idx}.itemId`)}
-                            onChange={(e) => {
-                              form.register(`items.${idx}.itemId`).onChange(e);
-                              onItemSelect(idx, e.target.value);
+                          <ItemSearchSelect
+                            items={availableItems}
+                            value={selItemId || ''}
+                            onChange={(id) => {
+                              form.setValue(`items.${idx}.itemId`, id);
+                              onItemSelect(idx, id);
                             }}
-                            className="w-full px-2.5 py-2 rounded-lg bg-slate-900 border border-slate-600 text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all"
-                          >
-                            <option value="">Select Item</option>
-                            {availableItems.map((item: any) => (
-                              <option key={item.id} value={item.id}>
-                                {item.name} ({item.unit})
-                              </option>
-                            ))}
-                          </select>
+                            placeholder="Search item…"
+                            priceField="purchasePrice"
+                          />
                           {selItem && (
                             <div className="flex items-center gap-2 mt-1.5">
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] text-blue-400 font-semibold">
