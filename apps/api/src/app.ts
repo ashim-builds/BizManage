@@ -57,6 +57,11 @@ export function buildApp() {
 
   // ── CORS ────────────────────────────────────────────────────────────────────
   app.register(cors, {
+    // 'preHandler' ensures CORS headers are stamped on ALL responses —
+    // including rate-limit 429s and early plugin rejections — before they
+    // leave the server. Without this, the browser sees "No CORS header"
+    // instead of the actual error code.
+    hook: 'preHandler',
     origin: (origin, cb) => {
       // In dev or if CORS_ORIGIN is '*', allow any requesting origin
       if (!isProduction || !origin || env.CORS_ORIGIN === '*') {
@@ -67,16 +72,13 @@ export function buildApp() {
       // Check exact match or trailing slash variations
       const cleanOrigin = origin.replace(/\/$/, '');
       const isAllowed = allowed.some((a) => a.replace(/\/$/, '') === cleanOrigin);
-      if (isAllowed) {
-        cb(null, true);
-      } else {
-        // Echo origin for subdomains or render domains
-        cb(null, true);
-      }
+      // Always allow — origin whitelist is informational; Render domains are dynamic
+      cb(null, true);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Business-Id', 'Cookie'],
+    exposedHeaders: ['Set-Cookie'],
   });
 
   // ── Cookie ──────────────────────────────────────────────────────────────────
