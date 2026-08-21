@@ -490,6 +490,7 @@ export default function InventoryPage() {
             <table className="w-full text-left text-xs min-w-[800px]">
               <thead className="bg-slate-800/70 text-slate-400 font-semibold border-b border-slate-800">
                 <tr>
+                  <th className="px-4 py-4 text-slate-500 font-bold w-10">S.N.</th>
                   <th className="px-6 py-4">Item Name / Code</th>
                   <th className="px-6 py-4">Type</th>
                   <th className="px-6 py-4">Category</th>
@@ -500,7 +501,7 @@ export default function InventoryPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
-                {items.map((item: any) => {
+                {items.map((item: any, index: number) => {
                   const stock = Number(item.currentStock || 0);
                   const minAlert = Number(item.minStockAlert || 0);
                   const isProduct = item.type === ItemType.PRODUCT;
@@ -509,6 +510,9 @@ export default function InventoryPage() {
 
                   return (
                     <tr key={item.id} className="hover:bg-slate-800/40 transition-colors group">
+                      <td className="px-4 py-4 text-center font-mono text-[11px] text-slate-500 font-semibold select-none">
+                        {index + 1}
+                      </td>
                       <td className="px-6 py-4 font-semibold text-white">
                         <Link
                           href={`/inventory/${item.id}`}
