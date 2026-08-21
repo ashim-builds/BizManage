@@ -107,6 +107,7 @@ export default function InventoryPage() {
     lowStock: lowStockOnly,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
+    limit: 1000,
   });
 
   // Mutations

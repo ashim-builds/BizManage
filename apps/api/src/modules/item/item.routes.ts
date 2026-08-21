@@ -71,7 +71,7 @@ export async function itemRoutes(fastify: FastifyInstance) {
     };
 
     const pageNum = Math.max(1, parseInt(page, 10));
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
+    const limitNum = Math.min(1000, Math.max(1, parseInt(limit, 10)));
     const skip = (pageNum - 1) * limitNum;
 
     const whereClause: Prisma.ItemWhereInput = {
