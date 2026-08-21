@@ -104,14 +104,26 @@ export async function itemRoutes(fastify: FastifyInstance) {
     }
 
     if (search) {
-      // NOTE: With E2EE, we cannot use ILIKE on encrypted strings!
-      // We must query against the HMAC column. This means search is EXACT MATCH only.
-      // We will hash the search term on the backend using the same static secret.
-      const searchHmac = crypto.createHmac('sha256', 'bms_hmac_secret').update(search.toLowerCase().trim()).digest('base64');
-      
+      // Dual-path search: support both E2EE-encrypted items and legacy plaintext items.
+      //
+      // • Encrypted items  → match via HMAC column (exact match on hmacName / hmacCode)
+      // • Plaintext items  → match via ILIKE contains on name / code
+      //
+      // Using OR across both paths means search works for ALL items regardless of
+      // whether E2EE was active when they were originally saved.
+      const searchHmac = crypto
+        .createHmac('sha256', 'bms_hmac_secret')
+        .update(search.toLowerCase().trim())
+        .digest('base64');
+
       whereClause.OR = [
+        // E2EE path — exact HMAC match
         { hmacName: searchHmac },
         { hmacCode: searchHmac },
+        // Plaintext path — partial / case-insensitive match
+        { name: { contains: search, mode: 'insensitive' } },
+        { code: { contains: search, mode: 'insensitive' } },
+        // Category name always plaintext
         { category: { name: { contains: search, mode: 'insensitive' } } },
       ];
     }
