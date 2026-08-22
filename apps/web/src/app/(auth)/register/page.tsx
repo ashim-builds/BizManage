@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -11,7 +11,7 @@ import { api } from '@/lib/api';
 import { E2EECrypto } from '@/lib/crypto';
 import { Building2, Eye, EyeOff, ShieldCheck, ArrowRight } from 'lucide-react';
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { refreshUser } = useAuth();
@@ -191,5 +191,13 @@ export default function RegisterPage() {
         <ShieldCheck className="w-4 h-4 text-emerald-400" /> Secure Multi-Tenant ERP Architecture
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 text-slate-400">Loading...</div>}>
+      <RegisterForm />
+    </Suspense>
   );
 }

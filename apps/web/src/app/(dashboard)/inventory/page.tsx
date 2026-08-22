@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -58,6 +58,14 @@ const numberInputProps = {
 type SortOption = 'name-asc' | 'name-desc' | 'date-newest' | 'date-oldest';
 
 export default function InventoryPage() {
+  return (
+    <Suspense fallback={<LoadingState message="Loading inventory..." />}>
+      <InventoryPageContent />
+    </Suspense>
+  );
+}
+
+function InventoryPageContent() {
   const searchParams = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
