@@ -1,13 +1,17 @@
 'use client';
 
+import { useState } from 'react';
 import { usePaymentIn } from '@/services/paymentService';
 import { useCurrentBusiness } from '@/services/businessService';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
+import { WhatsAppShareModal } from '@/components/common/WhatsAppShareModal';
+import { generatePaymentReceiptWhatsAppMessage } from '@/lib/whatsapp';
 import {
   Printer,
   ArrowLeft,
   Banknote,
+  MessageSquare,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -15,15 +19,28 @@ export default function PaymentInVoucherPage({ params }: { params: { id: string 
   const { data: payment, isLoading, isError, refetch } = usePaymentIn(params.id);
   const { data: business } = useCurrentBusiness();
 
+  const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
+
   if (isLoading) return <LoadingState message="Loading payment receipt voucher..." />;
   if (isError || !payment) return <ErrorState title="Failed to load receipt voucher" onRetry={refetch} />;
 
   const totalAmount = Number(payment.amount || 0);
 
+  const formattedWhatsAppMsg = generatePaymentReceiptWhatsAppMessage({
+    businessName: business?.name || 'BizManage Store',
+    businessPhone: business?.phone,
+    voucherNumber: payment.referenceNumber,
+    date: new Date(payment.date).toLocaleDateString(),
+    customerName: payment.party?.name || 'Customer',
+    amountReceived: totalAmount,
+    paymentMode: payment.mode,
+    currentBalance: payment.party?.currentBalance,
+  });
+
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
       {/* Top Bar (Actions & Back) - Hidden on Print */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-5 print:hidden">
+      <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-5 gap-4 print:hidden">
         <div className="flex items-center gap-4">
           <Link
             href="/transactions/payment-in"
@@ -39,12 +56,21 @@ export default function PaymentInVoucherPage({ params }: { params: { id: string 
           </div>
         </div>
 
-        <button
-          onClick={() => window.print()}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-all shadow-lg shadow-blue-600/20"
-        >
-          <Printer className="w-4 h-4" /> Print Receipt Voucher
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsWhatsAppOpen(true)}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition-all"
+          >
+            <MessageSquare className="w-4 h-4" /> Share WhatsApp
+          </button>
+
+          <button
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-all shadow-lg shadow-blue-600/20"
+          >
+            <Printer className="w-4 h-4" /> Print Receipt Voucher
+          </button>
+        </div>
       </div>
 
       {/* PRINTABLE VOUCHER DOCUMENT CONTAINER */}
@@ -155,6 +181,15 @@ export default function PaymentInVoucherPage({ params }: { params: { id: string 
           </div>
         </div>
       </div>
+
+      {/* WhatsApp Share Modal */}
+      <WhatsAppShareModal
+        isOpen={isWhatsAppOpen}
+        onClose={() => setIsWhatsAppOpen(false)}
+        title="Share Payment Receipt via WhatsApp"
+        defaultPhone={payment.party?.phone}
+        message={formattedWhatsAppMsg}
+      />
     </div>
   );
 }

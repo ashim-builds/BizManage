@@ -1,9 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { useItem } from '@/services/itemService';
+import { useCurrentBusiness } from '@/services/businessService';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
+import { BarcodeStickerModal } from '@/components/inventory/BarcodeStickerModal';
 import {
   Package,
   Boxes,
@@ -14,12 +17,16 @@ import {
   TrendingUp,
   AlertTriangle,
   FileText,
+  QrCode,
+  Printer,
 } from 'lucide-react';
 import Link from 'next/link';
 import { ItemType, StockMovementType } from '@bizmanage/types';
 
 export default function ItemDetailsPage({ params }: { params: { id: string } }) {
   const { data: item, isLoading, isError, refetch } = useItem(params.id);
+  const { data: business } = useCurrentBusiness();
+  const [isBarcodeOpen, setIsBarcodeOpen] = useState(false);
 
   if (isLoading) return <LoadingState message="Loading item details & stock movement logs..." />;
   if (isError || !item) return <ErrorState title="Failed to load item profile" onRetry={refetch} />;
@@ -41,7 +48,7 @@ export default function ItemDetailsPage({ params }: { params: { id: string } }) 
   return (
     <div className="space-y-8">
       {/* Top Header */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-5">
+      <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-5 gap-4">
         <div className="flex items-center gap-4">
           <Link
             href="/inventory"
@@ -65,6 +72,14 @@ export default function ItemDetailsPage({ params }: { params: { id: string } }) 
             {item.code && <p className="text-xs text-slate-400 font-mono mt-0.5">SKU / Code: {item.code}</p>}
           </div>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setIsBarcodeOpen(true)}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600/15 hover:bg-purple-600/25 text-purple-300 border border-purple-500/30 text-xs font-semibold transition-all shadow-sm"
+        >
+          <QrCode className="w-4 h-4 text-purple-400" /> Print Barcode / QR Label
+        </button>
       </div>
 
       {/* Overview Grid */}
@@ -226,6 +241,19 @@ export default function ItemDetailsPage({ params }: { params: { id: string } }) 
           </div>
         )}
       </div>
+
+      {/* Barcode / QR Sticker Label Generator Modal */}
+      <BarcodeStickerModal
+        isOpen={isBarcodeOpen}
+        onClose={() => setIsBarcodeOpen(false)}
+        businessName={business?.name}
+        item={{
+          name: item.name,
+          code: item.code,
+          salePrice: salePrice,
+          unit: item.unit,
+        }}
+      />
     </div>
   );
 }

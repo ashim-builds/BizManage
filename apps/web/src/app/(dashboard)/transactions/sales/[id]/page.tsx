@@ -1,13 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import { useSale } from '@/services/saleService';
 import { useCurrentBusiness } from '@/services/businessService';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
+import { ThermalReceiptModal } from '@/components/pos/ThermalReceiptModal';
+import { WhatsAppShareModal } from '@/components/common/WhatsAppShareModal';
+import { generateInvoiceWhatsAppMessage } from '@/lib/whatsapp';
 import {
   Printer,
   ArrowLeft,
   Receipt,
+  MessageSquare,
 } from 'lucide-react';
 import Link from 'next/link';
 import { InvoiceStatus } from '@bizmanage/types';
@@ -15,6 +20,9 @@ import { InvoiceStatus } from '@bizmanage/types';
 export default function SaleInvoiceDetailsPage({ params }: { params: { id: string } }) {
   const { data: sale, isLoading, isError, refetch } = useSale(params.id);
   const { data: business } = useCurrentBusiness();
+
+  const [isThermalOpen, setIsThermalOpen] = useState(false);
+  const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
 
   if (isLoading) return <LoadingState message="Loading sales tax invoice document..." />;
   if (isError || !sale) return <ErrorState title="Failed to load sales invoice" onRetry={refetch} />;
@@ -26,10 +34,32 @@ export default function SaleInvoiceDetailsPage({ params }: { params: { id: strin
   const paidAmount = Number(sale.paidAmount || 0);
   const dueAmount = Number(sale.dueAmount || 0);
 
+  const formattedWhatsAppMsg = generateInvoiceWhatsAppMessage({
+    businessName: business?.name || 'BizManage Store',
+    businessPhone: business?.phone,
+    invoiceNumber: sale.invoiceNumber,
+    invoiceDate: new Date(sale.date).toLocaleDateString(),
+    customerName: sale.party?.name || 'Customer',
+    items: (sale.items || []).map((it: any) => ({
+      name: it.item?.name || 'Item',
+      quantity: Number(it.quantity || 1),
+      unit: it.item?.unit || 'pcs',
+      price: Number(it.unitPrice || 0),
+      total: Number(it.total || 0),
+    })),
+    subTotal,
+    discount: totalDiscount,
+    taxAmount: totalTax,
+    totalAmount,
+    paidAmount,
+    dueAmount,
+    isVatBill: sale.isVatBill,
+  });
+
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
       {/* Top Bar (Actions & Back) - Hidden on Print */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-5 print:hidden">
+      <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-5 gap-4 print:hidden">
         <div className="flex items-center gap-4">
           <Link
             href="/transactions/sales"
@@ -45,12 +75,28 @@ export default function SaleInvoiceDetailsPage({ params }: { params: { id: strin
           </div>
         </div>
 
-        <button
-          onClick={() => window.print()}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-all shadow-lg shadow-blue-600/20"
-        >
-          <Printer className="w-4 h-4" /> Print Tax Invoice / Receipt
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setIsWhatsAppOpen(true)}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition-all"
+          >
+            <MessageSquare className="w-4 h-4" /> Share WhatsApp
+          </button>
+
+          <button
+            onClick={() => setIsThermalOpen(true)}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-purple-600/15 hover:bg-purple-600/25 text-purple-400 border border-purple-500/30 text-xs font-semibold transition-all"
+          >
+            <Receipt className="w-4 h-4" /> Thermal POS Print
+          </button>
+
+          <button
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-all shadow-lg shadow-blue-600/20"
+          >
+            <Printer className="w-4 h-4" /> Print Full Invoice
+          </button>
+        </div>
       </div>
 
       {/* PRINTABLE INVOICE DOCUMENT CONTAINER */}
@@ -231,6 +277,29 @@ export default function SaleInvoiceDetailsPage({ params }: { params: { id: strin
           </div>
         </div>
       </div>
+
+      {/* POS Thermal Receipt Modal */}
+      <ThermalReceiptModal
+        isOpen={isThermalOpen}
+        onClose={() => setIsThermalOpen(false)}
+        business={{
+          name: business?.name,
+          address: business?.address,
+          phone: business?.phone,
+          taxNumber: business?.taxNumber,
+          logoUrl: business?.logoUrl,
+        }}
+        sale={sale}
+      />
+
+      {/* WhatsApp Share Modal */}
+      <WhatsAppShareModal
+        isOpen={isWhatsAppOpen}
+        onClose={() => setIsWhatsAppOpen(false)}
+        title="Share Invoice via WhatsApp"
+        defaultPhone={sale.party?.phone}
+        message={formattedWhatsAppMsg}
+      />
     </div>
   );
 }
