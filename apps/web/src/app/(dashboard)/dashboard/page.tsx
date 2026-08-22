@@ -6,7 +6,7 @@ import { useDashboardMetrics } from '@/services/dashboardService';
 import { useAuth } from '@/providers/AuthProvider';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
-import { BmsOnboardingWizard } from '@/components/dashboard/BmsOnboardingWizard';
+import { GuideNoticeModal } from '@/components/dashboard/GuideNoticeModal';
 import {
   TrendingUp,
   ArrowDownLeft,
@@ -38,16 +38,6 @@ export default function ExecutiveDashboardPage() {
   const currentBiz = user?.memberships?.[0]?.business;
   const selectedPlan = currentBiz?.subscriptionPackage;
 
-  const [optimisticSetup, setOptimisticSetup] = useState(false);
-  useEffect(() => {
-    if (typeof window !== 'undefined' && localStorage.getItem('bizmanage_setup_completed_optimistic') === 'true') {
-      setOptimisticSetup(true);
-    }
-  }, []);
-
-  const isSetupCompleted = Boolean(currentBiz?.setupCompleted) || optimisticSetup;
-  const hasProfileComplete = Boolean(currentBiz?.profileCompleted);
-
   let profileCompletionPercent = 0;
   if (currentBiz) {
     let fields = 0;
@@ -58,40 +48,10 @@ export default function ExecutiveDashboardPage() {
     profileCompletionPercent = Math.round((fields / 4) * 100);
   }
 
-  const rawFeatures = selectedPlan?.features;
-  const userFeatures = typeof rawFeatures === 'string' ? JSON.parse(rawFeatures) : (rawFeatures || []);
-
-  const handleUnlockDashboard = async () => {
-    // In a full implementation, you would call updateBusiness.mutateAsync({ setupCompleted: true }) here.
-    // For now, if the user explicitly unlocks, they can bypass it visually.
-    setOptimisticSetup(true);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('bizmanage_setup_completed_optimistic', 'true');
-    }
-  };
-
   const { data: metrics, isLoading, isError, refetch } = useDashboardMetrics({
     startDate: startDate || undefined,
     endDate: endDate || undefined,
   });
-
-  const hasItems = (metrics?.totalItemsCount || 0) > 0;
-  const hasParties = (metrics?.totalPartiesCount || 0) > 0;
-  const hasTransactions = (metrics?.salesCount || 0) > 0 || (metrics?.purchasesCount || 0) > 0 || (metrics?.totalExpenses || 0) > 0;
-
-  // Auto-complete setup if all steps done
-  const allStepsFinished = hasItems && hasParties && hasTransactions && !!selectedPlan && hasProfileComplete;
-
-  useEffect(() => {
-    // Force a fresh fetch of metrics every time dashboard is opened
-    // so setup guide states (like hasParties, hasItems) update instantly
-    refetch();
-
-    if (allStepsFinished && !isSetupCompleted) {
-      // If all steps finished but DB hasn't marked it yet, we could trigger the API update here
-      // or just rely on the API state for next reload.
-    }
-  }, [allStepsFinished, refetch, isSetupCompleted]);
 
   if (isLoading) {
     return <LoadingState message="Loading business executive dashboard..." />;
@@ -123,9 +83,11 @@ export default function ExecutiveDashboardPage() {
     }
   };
 
-
   return (
-    <div className="space-y-8 font-sans">
+    <div className="space-y-6 font-sans">
+      {/* 1. DISMISSIBLE USER GUIDE NOTICE BANNER */}
+      <GuideNoticeModal />
+
       {/* Subscription Lock / Action Warning */}
       {!selectedPlan && (
         <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
@@ -147,57 +109,18 @@ export default function ExecutiveDashboardPage() {
         </div>
       )}
 
-      {/* SETUP PHASE: If setup is NOT completed, show ONLY the BMS Setup Wizard with clear notice */}
-      {!isSetupCompleted && !allStepsFinished ? (
-        <div className="max-w-4xl mx-auto space-y-6">
-          {/* Top Notice */}
-          <div className="p-6 rounded-2xl bg-slate-900 border border-blue-500/30 text-center space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-bold border border-blue-500/20">
-              <Sparkles className="w-3.5 h-3.5" /> Initial Setup Required
-            </div>
-            <h1 className="text-2xl font-extrabold text-white">
-              Complete your business setup below to unlock your Executive Dashboard.
+      {/* Main Executive Dashboard Layout */}
+      <div className="space-y-8">
+        {/* Header & Date Range Filter */}
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-5">
+          <div>
+            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+              Executive Dashboard <TrendingUp className="w-6 h-6 text-blue-400" />
             </h1>
-            <p className="text-xs text-slate-400 max-w-xl mx-auto">
-              Follow these guided steps to configure your business profile, pick a subscription plan, and set up your items & parties.
+            <p className="text-sm text-slate-400 mt-1">
+              Real-time business health, party balance ledger, cashflow liquidity, and sales metrics.
             </p>
           </div>
-
-          {/* BMS Setup Onboarding Wizard */}
-          <BmsOnboardingWizard
-            userName={user?.name || 'Owner'}
-            businessName={user?.memberships?.[0]?.business?.name || 'My Business'}
-            hasProfileComplete={hasProfileComplete}
-            hasSubscription={!!selectedPlan}
-            hasItems={hasItems}
-            hasParties={hasParties}
-            hasTransactions={hasTransactions}
-            userFeatures={userFeatures}
-          />
-
-          {/* Skip / Unlock Button */}
-          <div className="text-center pt-4">
-            <button
-              onClick={handleUnlockDashboard}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white font-semibold text-xs transition-all shadow-md"
-            >
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Unlock & View Executive Dashboard Now
-            </button>
-          </div>
-        </div>
-      ) : (
-        /* COMPLETED SETUP PHASE: Show Executive Dashboard */
-        <div className="space-y-8">
-          {/* Header & Date Range Filter */}
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-5">
-            <div>
-              <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                Executive Dashboard <TrendingUp className="w-6 h-6 text-blue-400" />
-              </h1>
-              <p className="text-sm text-slate-400 mt-1">
-                Real-time business health, party balance ledger, cashflow liquidity, and sales metrics.
-              </p>
-            </div>
 
             {/* Quick Date Presets & Custom Pickers */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 hide-scrollbar w-full">
@@ -554,7 +477,6 @@ export default function ExecutiveDashboardPage() {
             </div>
           </div>
         </div>
-      )}
-    </div>
+      </div>
   );
 }

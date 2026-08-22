@@ -14,6 +14,7 @@ import {
   ShoppingBag,
   RotateCcw,
   Scale,
+  BookOpen,
 } from 'lucide-react';
 
 export interface NavGroupItem {
@@ -52,6 +53,7 @@ export const sidebarSections: NavSection[] = [
   { name: 'Profit & Loss', href: '/profit-loss', icon: Scale, requiredFeature: 'ADVANCED_REPORTS' },
   { name: 'Cashflow', href: '/cashflow', icon: Wallet, requiredFeature: 'ADVANCED_REPORTS' },
   { name: 'Reports', href: '/reports', icon: FileBarChart, requiredFeature: 'ADVANCED_REPORTS' },
+  { name: 'User Guide', href: '/guide', icon: BookOpen },
   { name: 'Subscription', href: '/subscription', icon: Crown },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];

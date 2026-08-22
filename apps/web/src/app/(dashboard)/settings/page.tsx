@@ -10,7 +10,7 @@ import { useDashboardMetrics } from '@/services/dashboardService';
 import { useSessions, useDeleteSession, useDeleteOtherSessions } from '@/services/sessionService';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
-import { BmsOnboardingWizard } from '@/components/dashboard/BmsOnboardingWizard';
+import { UserGuide } from '@/components/guide/UserGuide';
 import { toast } from 'react-hot-toast';
 import {
   Settings,
@@ -408,7 +408,7 @@ function SettingsPageContent() {
             : 'text-slate-400 hover:text-white'
             }`}
         >
-          <BookOpen className="w-3.5 h-3.5" /> Setup Guide
+          <BookOpen className="w-3.5 h-3.5" /> User Guide / निर्देशिका
         </button>
 
         <button
@@ -631,38 +631,10 @@ function SettingsPageContent() {
         </div>
       )}
 
-      {/* TAB: SETUP GUIDE */}
+      {/* TAB: USER GUIDE */}
       {activeTab === 'guide' && (
-        <div className="space-y-6 max-w-4xl font-sans">
-          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-4">
-              <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-blue-400" /> BMS Setup & Onboarding Guide
-                </h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  Revisit all 5 step-by-step setup guides to finish setting up your business management system.
-                </p>
-              </div>
-            </div>
-
-            {profileSuccess && (
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 shrink-0" /> {profileSuccess}
-              </div>
-            )}
-
-            <BmsOnboardingWizard
-              userName={user?.name || 'Owner'}
-              businessName={user?.memberships?.[0]?.business?.name || 'My Business'}
-              hasProfileComplete={hasProfileComplete}
-              hasSubscription={!!business?.subscriptionPackage}
-              hasItems={hasItems}
-              hasParties={hasParties}
-              hasTransactions={hasTransactions}
-              userFeatures={userFeatures}
-            />
-          </div>
+        <div className="max-w-5xl">
+          <UserGuide initialLanguage="np" showLanguageSelector={true} />
         </div>
       )}
 
