@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { DashboardMetrics } from '@/services/dashboardService';
 import { useAuth } from '@/providers/AuthProvider';
+import { CustomDateRangePicker } from '@/components/common/CustomDateRangePicker';
 
 interface ProfitLossSectionProps {
   metrics: DashboardMetrics;
@@ -146,20 +147,17 @@ export function ProfitLossSection({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => onCustomDateChange(e.target.value, endDate)}
-            className="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 text-xs focus:outline-none"
-            title="Start Date"
-          />
-          <span className="text-slate-500 text-xs">to</span>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => onCustomDateChange(startDate, e.target.value)}
-            className="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 text-xs focus:outline-none"
-            title="End Date"
+          <CustomDateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            preset={preset}
+            onApply={(s, e, p) => {
+              if (p === 'custom') {
+                onCustomDateChange(s, e);
+              } else {
+                onPresetChange(p as any);
+              }
+            }}
           />
         </div>
       </div>

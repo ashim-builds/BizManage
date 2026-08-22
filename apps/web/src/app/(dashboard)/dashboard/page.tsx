@@ -7,6 +7,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { GuideNoticeModal } from '@/components/dashboard/GuideNoticeModal';
+import { CustomDateRangePicker } from '@/components/common/CustomDateRangePicker';
 import {
   TrendingUp,
   ArrowDownLeft,
@@ -156,26 +157,19 @@ export default function ExecutiveDashboardPage() {
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => {
-                    setStartDate(e.target.value);
-                    setPreset('custom');
+                <CustomDateRangePicker
+                  startDate={startDate}
+                  endDate={endDate}
+                  preset={preset}
+                  onApply={(s, e, p) => {
+                    if (p === 'custom') {
+                      setStartDate(s);
+                      setEndDate(e);
+                      setPreset('custom');
+                    } else {
+                      setPresetRange(p as any);
+                    }
                   }}
-                  className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 text-xs focus:outline-none"
-                  title="Start Date"
-                />
-                <span className="text-slate-500 text-xs">to</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => {
-                    setEndDate(e.target.value);
-                    setPreset('custom');
-                  }}
-                  className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 text-xs focus:outline-none"
-                  title="End Date"
                 />
               </div>
             </div>
