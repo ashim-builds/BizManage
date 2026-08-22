@@ -49,7 +49,7 @@ export async function reportRoutes(fastify: FastifyInstance) {
       }),
       request.db!.sale.findMany({
         where: whereClause,
-        include: { party: { select: { id: true, name: true, phone: true } } },
+        include: { party: { select: { id: true, name: true, phone: true, taxNumber: true } } },
         orderBy: { date: 'desc' },
         skip,
         take: limitNum,
@@ -116,7 +116,7 @@ export async function reportRoutes(fastify: FastifyInstance) {
     const purchases = await request.db!.purchase.findMany({
       where: whereClause,
       include: {
-        party: { select: { id: true, name: true, phone: true } },
+        party: { select: { id: true, name: true, phone: true, taxNumber: true } },
       },
       orderBy: { date: 'desc' },
     });
