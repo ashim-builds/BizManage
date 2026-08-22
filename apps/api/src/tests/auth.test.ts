@@ -1,4 +1,5 @@
 import { buildApp } from '../app.js';
+import { globalPrisma } from '@bizmanage/database';
 
 export async function runAuthTests() {
   console.log('🧪 [TEST SUITE 1/4] Running Authentication & Session Tests...');
@@ -89,6 +90,12 @@ export async function runAuthTests() {
   console.log('   ✅ Valid User Registration & Unverified Default Status Passed');
 
   // 5. Test Duplicate Email Account Prevention
+  // Mark existing user as verified so duplicate registration triggers 409 Conflict
+  await globalPrisma.user.update({
+    where: { id: regData.user.id },
+    data: { isVerified: true },
+  });
+
   const dupRes = await app.inject({
     method: 'POST',
     url: '/api/v1/auth/register',
