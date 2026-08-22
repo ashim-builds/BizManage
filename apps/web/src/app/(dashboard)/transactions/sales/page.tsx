@@ -18,6 +18,7 @@ import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ModalPortal } from '@/components/ui/ModalPortal';
+import { NepaliDateBadge } from '@/components/common/NepaliDateBadge';
 import {
   TrendingUp,
   Plus,
@@ -429,9 +430,9 @@ export default function SalesPage() {
                       >
                         {s.invoiceNumber}
                       </Link>
-                      <p className="text-[10px] text-slate-500 mt-0.5">
-                        {new Date(s.date).toLocaleDateString()}
-                      </p>
+                      <div className="mt-1">
+                        <NepaliDateBadge date={s.date} />
+                      </div>
                     </td>
 
                     <td className="px-6 py-4 text-slate-300 font-semibold">

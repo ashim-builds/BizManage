@@ -11,10 +11,13 @@ import {
   useInventoryValuationReport,
   useCashflowStatementReport,
 } from '@/services/reportService';
+import { useCurrentBusiness } from '@/services/businessService';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
 import { CustomDateRangePicker } from '@/components/common/CustomDateRangePicker';
+import { VatSalesBookAnnex5 } from '@/components/reports/VatSalesBookAnnex5';
+import { VatPurchaseBookAnnex6 } from '@/components/reports/VatPurchaseBookAnnex6';
 import {
   FileText,
   Search,
@@ -28,11 +31,14 @@ import {
   Package,
   TrendingUp,
   Scale,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 type ReportTab =
   | 'sales'
   | 'purchases'
+  | 'annex5-sales'
+  | 'annex6-purchases'
   | 'expenses'
   | 'payments'
   | 'party-balance'
@@ -77,14 +83,16 @@ export default function ReportsPage() {
   const inventoryQuery = useInventoryValuationReport({ search });
   const cashflowQuery = useCashflowStatementReport({ startDate, endDate });
 
+  const { data: business } = useCurrentBusiness();
+
   const handlePrint = () => {
     window.print();
   };
 
   const activeQuery =
-    activeTab === 'sales'
+    activeTab === 'sales' || activeTab === 'annex5-sales'
       ? salesQuery
-      : activeTab === 'purchases'
+      : activeTab === 'purchases' || activeTab === 'annex6-purchases'
       ? purchaseQuery
       : activeTab === 'expenses'
       ? expenseQuery
@@ -115,7 +123,7 @@ export default function ReportsPage() {
             Financial & Business Reports <FileText className="w-6 h-6 text-blue-400" />
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Export-ready executive reports, tax summaries, party ledgers, and inventory valuation metrics.
+            Export-ready executive reports, IRD tax books, party ledgers, and inventory valuation metrics.
           </p>
         </div>
 
@@ -141,6 +149,17 @@ export default function ReportsPage() {
         </button>
 
         <button
+          onClick={() => setActiveTab('annex5-sales')}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
+            activeTab === 'annex5-sales'
+              ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
+              : 'text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10'
+          }`}
+        >
+          <FileSpreadsheet className="w-3.5 h-3.5" /> Annex-5 (बिक्री खाता)
+        </button>
+
+        <button
           onClick={() => setActiveTab('purchases')}
           className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
             activeTab === 'purchases'
@@ -149,6 +168,17 @@ export default function ReportsPage() {
           }`}
         >
           <Receipt className="w-3.5 h-3.5" /> Purchase Report
+        </button>
+
+        <button
+          onClick={() => setActiveTab('annex6-purchases')}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
+            activeTab === 'annex6-purchases'
+              ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20'
+              : 'text-purple-400 hover:text-purple-300 hover:bg-purple-500/10'
+          }`}
+        >
+          <FileSpreadsheet className="w-3.5 h-3.5" /> Annex-6 (खरिद खाता)
         </button>
 
         <button
@@ -626,6 +656,32 @@ export default function ReportsPage() {
             </table>
           </div>
         </div>
+      )}
+
+      {/* ---------------------------------------------------- */}
+      {/* 7. ANNEX-5 SALES BOOK VIEW */}
+      {/* ---------------------------------------------------- */}
+      {activeTab === 'annex5-sales' && (
+        <VatSalesBookAnnex5
+          sales={reportData?.rows || []}
+          startDate={startDate}
+          endDate={endDate}
+          businessName={business?.name}
+          businessPan={business?.taxNumber || '-'}
+        />
+      )}
+
+      {/* ---------------------------------------------------- */}
+      {/* 8. ANNEX-6 PURCHASE BOOK VIEW */}
+      {/* ---------------------------------------------------- */}
+      {activeTab === 'annex6-purchases' && (
+        <VatPurchaseBookAnnex6
+          purchases={reportData?.rows || []}
+          startDate={startDate}
+          endDate={endDate}
+          businessName={business?.name}
+          businessPan={business?.taxNumber || '-'}
+        />
       )}
     </div>
   );
