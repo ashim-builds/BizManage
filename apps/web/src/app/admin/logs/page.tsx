@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
-import { Activity, ShieldAlert, User, Building, Settings, Search, AlertCircle, Eye } from 'lucide-react';
+import { Activity, ShieldAlert, User, Building, Settings, Search, AlertCircle, Eye, CreditCard } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ModalPortal } from '@/components/ui/ModalPortal';
 
@@ -47,6 +47,7 @@ export default function AdminLogsPage() {
   };
 
   const getActionIcon = (action: string) => {
+    if (action.includes('PAYMENT')) return <CreditCard className="w-4 h-4 text-amber-400" />;
     if (action.includes('BUSINESS')) return <Building className="w-4 h-4 text-blue-400" />;
     if (action.includes('USER')) return <User className="w-4 h-4 text-purple-400" />;
     if (action.includes('SETTING')) return <Settings className="w-4 h-4 text-emerald-400" />;
@@ -55,6 +56,9 @@ export default function AdminLogsPage() {
   };
 
   const getActionColor = (action: string) => {
+    if (action.includes('PAYMENT_SUBMIT')) return 'text-amber-400 bg-amber-400/10';
+    if (action.includes('PAYMENT_APPROVE')) return 'text-emerald-400 bg-emerald-400/10';
+    if (action.includes('PAYMENT_REJECT')) return 'text-rose-400 bg-rose-400/10';
     if (action.includes('SUSPEND') || action.includes('DELETE')) return 'text-rose-400 bg-rose-400/10';
     if (action.includes('UPDATE') || action.includes('EDIT')) return 'text-amber-400 bg-amber-400/10';
     if (action.includes('CREATE') || action.includes('ACTIVATE') || action.includes('IMPORT')) return 'text-emerald-400 bg-emerald-400/10';

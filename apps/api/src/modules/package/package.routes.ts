@@ -58,22 +58,39 @@ export async function publicPackageRoutes(fastify: FastifyInstance) {
       },
     });
 
-    // Audit log
-    await globalPrisma.auditLog.create({
-      data: {
-        businessId,
-        userId: request.user!.id,
-        action: 'CREATE',
-        module: 'SUBSCRIPTION_PAYMENT_REQUEST',
-        recordId: payment.id,
-        newValue: {
-          packageName: pkg.name,
-          amount: Number(pkg.price),
-          referenceId: body.referenceId,
-          senderName: body.senderName,
+    // Audit log & System log for Superadmin visibility
+    await Promise.all([
+      globalPrisma.auditLog.create({
+        data: {
+          businessId,
+          userId: request.user!.id,
+          action: 'CREATE',
+          module: 'SUBSCRIPTION_PAYMENT_REQUEST',
+          recordId: payment.id,
+          newValue: {
+            packageName: pkg.name,
+            amount: Number(pkg.price),
+            referenceId: body.referenceId,
+            senderName: body.senderName,
+          },
         },
-      },
-    });
+      }),
+      globalPrisma.systemLog.create({
+        data: {
+          adminId: request.user!.id,
+          action: 'PAYMENT_SUBMIT',
+          targetId: businessId,
+          targetType: 'Business',
+          details: {
+            paymentId: payment.id,
+            packageName: pkg.name,
+            amount: Number(pkg.price),
+            referenceId: body.referenceId,
+            senderName: body.senderName,
+          },
+        },
+      }),
+    ]);
 
     return reply.status(201).send({
       success: true,

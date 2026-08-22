@@ -11,6 +11,12 @@ interface ReportData {
   activeBusinesses: number;
   totalUsers: number;
   packagesDistribution: { plan: string; count: number }[];
+  payments?: {
+    total: number;
+    pending: number;
+    completed: number;
+    totalRevenue: number;
+  };
   note: string;
 }
 
@@ -48,8 +54,8 @@ export default function AdminReportsPage() {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Reports</h1>
-          <p className="text-slate-400 text-sm">Real-time platform analytics</p>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Reports & Analytics</h1>
+          <p className="text-slate-400 text-sm">Platform metrics & Garima Bikas Bank verified subscription revenue</p>
         </div>
       </div>
 
@@ -60,35 +66,33 @@ export default function AdminReportsPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Top Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-5">
-            <Building className="w-24 h-24" />
-          </div>
           <p className="text-slate-400 text-sm font-medium mb-1">Total Businesses</p>
-          <h2 className="text-3xl font-bold text-white">{data.totalBusinesses}</h2>
+          <h2 className="text-3xl font-bold text-white font-mono">{data.totalBusinesses}</h2>
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-5">
-            <Building className="w-24 h-24" />
-          </div>
           <p className="text-slate-400 text-sm font-medium mb-1">Active Businesses</p>
-          <h2 className="text-3xl font-bold text-emerald-400">{data.activeBusinesses}</h2>
+          <h2 className="text-3xl font-bold text-emerald-400 font-mono">{data.activeBusinesses}</h2>
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-5">
-            <Building className="w-24 h-24" />
-          </div>
-          <p className="text-slate-400 text-sm font-medium mb-1">New (Last 30 Days)</p>
-          <h2 className="text-3xl font-bold text-blue-400">+{data.newBusinesses}</h2>
+          <p className="text-slate-400 text-sm font-medium mb-1">Verified Revenue</p>
+          <h2 className="text-3xl font-bold text-emerald-400 font-mono">
+            Rs. {(data.payments?.totalRevenue || 0).toLocaleString()}
+          </h2>
         </div>
 
-
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 relative overflow-hidden">
+          <p className="text-slate-400 text-sm font-medium mb-1">Pending Verifications</p>
+          <h2 className="text-3xl font-bold text-amber-400 font-mono">{data.payments?.pending || 0}</h2>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Subscription Plan Distribution */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
             <h3 className="font-semibold text-white">Subscription Distribution</h3>
@@ -111,12 +115,23 @@ export default function AdminReportsPage() {
           </div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col items-center justify-center p-8 text-center min-h-[300px]">
-          <FileBarChart className="w-16 h-16 text-slate-800 mb-4" />
-          <h3 className="text-lg font-bold text-slate-400 mb-2">Financial Reports</h3>
-          <p className="text-sm text-slate-500 max-w-sm">
-            Revenue tracking, MRR, and Churn reports will be available here once the global billing architecture is implemented.
-          </p>
+        {/* Bank QR Payment Verification Summary */}
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden p-6 space-y-4">
+          <h3 className="font-semibold text-white">Bank QR Verification Summary</h3>
+          <div className="space-y-3 text-xs">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800">
+              <span className="text-slate-400">Total Verification Requests Submitted:</span>
+              <span className="font-mono font-bold text-white text-sm">{data.payments?.total || 0}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800">
+              <span className="text-slate-400">Approved & Activated Plans:</span>
+              <span className="font-mono font-bold text-emerald-400 text-sm">{data.payments?.completed || 0}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800">
+              <span className="text-slate-400">Pending Review:</span>
+              <span className="font-mono font-bold text-amber-400 text-sm">{data.payments?.pending || 0}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

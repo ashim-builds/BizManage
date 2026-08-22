@@ -22,6 +22,7 @@ import {
   CreditCard,
   Clock,
   Send,
+  AlertTriangle,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useUpdateBusiness } from '@/services/businessService';
@@ -530,6 +531,20 @@ export default function SubscriptionPage() {
                     )}
                   </button>
                 </div>
+              </div>
+
+              {/* CRITICAL VERIFICATION WARNING NOTICE */}
+              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs space-y-1.5 shadow-sm">
+                <div className="flex items-center gap-2 text-amber-400 font-bold text-xs sm:text-sm">
+                  <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>Important Notice (अति महत्त्वपूर्ण जानकारी)</span>
+                </div>
+                <p className="text-[11px] text-amber-200/90 leading-relaxed font-medium">
+                  यदि तपाईंले <b>गलत Business Name</b>, <b>गलत Transaction ID / Ref ID</b>, वा <b>गलत Sender Name</b> राख्नुभयो भने हामीलाई बैंक स्टेटमेन्ट रुजु गर्न सम्भव हुँदैन र <b>तपाईंको प्लान सक्रिय (Activate) गर्न सकिने छैन</b>।
+                </p>
+                <p className="text-[10.5px] text-amber-300/80 leading-relaxed">
+                  <b>Warning:</b> If you enter a wrong Business Name, incorrect Transaction Reference ID, or wrong Sender Name, we will NOT be able to verify your bank deposit and cannot grant access to your plan.
+                </p>
               </div>
 
               {/* Transaction Verification Inputs */}

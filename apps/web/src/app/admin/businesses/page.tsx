@@ -25,6 +25,12 @@ interface Business {
   createdAt: string;
   userCount: number;
   owner: { name: string; email: string } | null;
+  pendingPayment?: {
+    id: string;
+    packageName: string;
+    amount: number;
+    referenceId: string;
+  } | null;
 }
 
 function getExpiryDisplay(business: Business) {
@@ -224,7 +230,18 @@ export default function AdminBusinessesPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-medium text-white">{business.subscriptionPlan || 'No Plan'}</div>
-                      {getExpiryDisplay(business)}
+                      {business.pendingPayment ? (
+                        <Link
+                          href="/admin/payments"
+                          className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold hover:bg-amber-500/30 transition-all"
+                          title={`Payment of Rs. ${business.pendingPayment.amount} submitted (Ref: ${business.pendingPayment.referenceId})`}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping mr-0.5" />
+                          ⏳ Verification Pending: {business.pendingPayment.packageName}
+                        </Link>
+                      ) : (
+                        getExpiryDisplay(business)
+                      )}
                     </td>
                     <td className="px-6 py-4 text-slate-400">
                       {new Date(business.createdAt).toLocaleDateString()}
@@ -296,6 +313,14 @@ export default function AdminBusinessesPage() {
                     <div className="bg-slate-950 p-2 rounded-lg border border-slate-800">
                       <p className="text-xs text-slate-500 mb-0.5">Plan</p>
                       <p className="font-medium text-slate-300">{business.subscriptionPlan || 'No Plan'}</p>
+                      {business.pendingPayment && (
+                        <Link
+                          href="/admin/payments"
+                          className="mt-1 block text-[10px] text-amber-400 font-bold hover:underline"
+                        >
+                          ⏳ Review Payment (Rs. {business.pendingPayment.amount})
+                        </Link>
+                      )}
                     </div>
                     <div className="bg-slate-950 p-2 rounded-lg border border-slate-800">
                       <p className="text-xs text-slate-500 mb-0.5">Users</p>

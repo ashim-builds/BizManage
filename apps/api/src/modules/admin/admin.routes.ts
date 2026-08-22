@@ -16,11 +16,13 @@ export async function adminRoutes(fastify: FastifyInstance) {
       activeBusinesses,
       suspendedBusinesses,
       totalUsers,
+      pendingPaymentsCount,
     ] = await Promise.all([
       globalPrisma.business.count(),
       globalPrisma.business.count({ where: { isActive: true } }),
       globalPrisma.business.count({ where: { isActive: false } }),
       globalPrisma.user.count({ where: { isSystemAdmin: false } }),
+      globalPrisma.subscriptionPayment.count({ where: { status: 'PENDING' } }),
     ]);
 
     // Get recently registered businesses
@@ -47,6 +49,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
         },
         users: {
           total: totalUsers,
+        },
+        payments: {
+          pendingCount: pendingPaymentsCount,
         },
       },
     });
@@ -88,7 +93,11 @@ export async function adminRoutes(fastify: FastifyInstance) {
         orderBy: { createdAt: 'desc' },
         include: {
           subscriptionPackage: true,
-
+          subscriptionPayments: {
+            where: { status: 'PENDING' },
+            include: { subscriptionPackage: true },
+            take: 1,
+          },
           memberships: {
             where: { role: 'OWNER' },
             include: { user: { select: { name: true, email: true } } },
@@ -111,6 +120,12 @@ export async function adminRoutes(fastify: FastifyInstance) {
       currentPeriodEnd: b.currentPeriodEnd,
       subscriptionPlan: b.subscriptionPackage ? b.subscriptionPackage.name : 'No Plan',
       subscriptionPackage: b.subscriptionPackage,
+      pendingPayment: b.subscriptionPayments[0] ? {
+        id: b.subscriptionPayments[0].id,
+        packageName: b.subscriptionPayments[0].subscriptionPackage.name,
+        amount: Number(b.subscriptionPayments[0].amount),
+        referenceId: b.subscriptionPayments[0].referenceId,
+      } : null,
       createdAt: b.createdAt,
       owner: b.memberships[0]?.user || null,
     }));
@@ -526,11 +541,22 @@ export async function adminRoutes(fastify: FastifyInstance) {
       newBusinesses,
       activeBusinesses,
       totalUsers,
+      totalPaymentRequests,
+      pendingPaymentRequests,
+      completedPaymentRequests,
+      completedRevenueAgg,
     ] = await Promise.all([
       globalPrisma.business.count(),
       globalPrisma.business.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
       globalPrisma.business.count({ where: { isActive: true } }),
       globalPrisma.user.count({ where: { isSystemAdmin: false } }),
+      globalPrisma.subscriptionPayment.count(),
+      globalPrisma.subscriptionPayment.count({ where: { status: 'PENDING' } }),
+      globalPrisma.subscriptionPayment.count({ where: { status: 'COMPLETED' } }),
+      globalPrisma.subscriptionPayment.aggregate({
+        where: { status: 'COMPLETED' },
+        _sum: { amount: true },
+      }),
     ]);
 
     // Group businesses by the current package relation. `subscriptionPlan` was
@@ -562,7 +588,13 @@ export async function adminRoutes(fastify: FastifyInstance) {
           plan: p.subscriptionPackageId ? packageNames.get(p.subscriptionPackageId) ?? 'Deleted package' : 'No package',
           count: p._count,
         })),
-        note: "MRR and Churn metrics are currently unavailable as the billing architecture is not yet implemented."
+        payments: {
+          total: totalPaymentRequests,
+          pending: pendingPaymentRequests,
+          completed: completedPaymentRequests,
+          totalRevenue: Number(completedRevenueAgg._sum.amount || 0),
+        },
+        note: "Revenue calculation includes all manually verified bank deposit payments."
       },
     });
   });
