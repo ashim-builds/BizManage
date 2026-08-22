@@ -567,4 +567,147 @@ export async function adminRoutes(fastify: FastifyInstance) {
     });
   });
 
+  // ── Payment Requests Management (Manual Bank QR Verification) ───────────────
+
+  // GET /admin/payment-requests - List manual bank QR payment requests
+  fastify.get('/payment-requests', async (request, reply) => {
+    const querySchema = z.object({
+      status: z.enum(['PENDING', 'COMPLETED', 'REJECTED', 'ALL']).optional().default('ALL'),
+    });
+    const { status } = querySchema.parse(request.query);
+
+    const where: any = {};
+    if (status !== 'ALL') {
+      where.status = status;
+    }
+
+    const requests = await globalPrisma.subscriptionPayment.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        business: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            taxNumber: true,
+            currency: true,
+            subscriptionStatus: true,
+            subscriptionPackage: {
+              select: { id: true, name: true },
+            },
+          },
+        },
+        subscriptionPackage: true,
+      },
+    });
+
+    return reply.send({
+      success: true,
+      data: requests,
+    });
+  });
+
+  // POST /admin/payment-requests/:id/approve - Approve payment & activate package
+  fastify.post('/payment-requests/:id/approve', async (request, reply) => {
+    const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
+
+    const payment = await globalPrisma.subscriptionPayment.findUnique({
+      where: { id },
+      include: { subscriptionPackage: true, business: true },
+    });
+
+    if (!payment) {
+      throw new AppError('Payment request not found', 404, 'NOT_FOUND');
+    }
+
+    if (payment.status === 'COMPLETED') {
+      throw new AppError('Payment request is already approved.', 400, 'BAD_REQUEST');
+    }
+
+    const durationDays = payment.subscriptionPackage.billingPeriod === 'YEARLY' ? 365 : 30;
+    const periodEnd = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
+
+    // Update payment, business subscription, and log system action
+    await globalPrisma.$transaction([
+      globalPrisma.subscriptionPayment.update({
+        where: { id },
+        data: {
+          status: 'COMPLETED',
+          updatedAt: new Date(),
+        },
+      }),
+      globalPrisma.business.update({
+        where: { id: payment.businessId },
+        data: {
+          subscriptionPackageId: payment.subscriptionPackageId,
+          subscriptionStatus: 'ACTIVE',
+          currentPeriodEnd: periodEnd,
+        },
+      }),
+      globalPrisma.systemLog.create({
+        data: {
+          adminId: request.user!.id,
+          action: 'PAYMENT_APPROVE',
+          targetId: payment.businessId,
+          targetType: 'Business',
+          details: {
+            paymentId: payment.id,
+            packageName: payment.subscriptionPackage.name,
+            amount: Number(payment.amount),
+            referenceId: payment.referenceId,
+          },
+        },
+      }),
+    ]);
+
+    return reply.send({
+      success: true,
+      message: `Payment approved successfully. ${payment.business.name} is now on ${payment.subscriptionPackage.name} plan.`,
+    });
+  });
+
+  // POST /admin/payment-requests/:id/reject - Reject payment
+  fastify.post('/payment-requests/:id/reject', async (request, reply) => {
+    const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
+    const body = z.object({ reason: z.string().optional() }).parse(request.body || {});
+
+    const payment = await globalPrisma.subscriptionPayment.findUnique({
+      where: { id },
+      include: { business: true, subscriptionPackage: true },
+    });
+
+    if (!payment) {
+      throw new AppError('Payment request not found', 404, 'NOT_FOUND');
+    }
+
+    await globalPrisma.$transaction([
+      globalPrisma.subscriptionPayment.update({
+        where: { id },
+        data: {
+          status: 'REJECTED',
+          failureReason: body.reason || 'Payment details could not be verified with Garima Bikas Bank statement.',
+          updatedAt: new Date(),
+        },
+      }),
+      globalPrisma.systemLog.create({
+        data: {
+          adminId: request.user!.id,
+          action: 'PAYMENT_REJECT',
+          targetId: payment.businessId,
+          targetType: 'Business',
+          details: {
+            paymentId: payment.id,
+            reason: body.reason,
+          },
+        },
+      }),
+    ]);
+
+    return reply.send({
+      success: true,
+      message: 'Payment request rejected.',
+    });
+  });
 }

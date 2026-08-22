@@ -17,6 +17,7 @@ import {
   Activity,
   ChevronDown,
   Building,
+  CreditCard,
 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
@@ -63,6 +64,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   const navItems: { name: string; href: string; icon: any; disabled?: boolean }[] = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
+    { name: 'Payment Requests', href: '/admin/payments', icon: CreditCard },
     { name: 'Packages', href: '/admin/packages', icon: Package },
     { name: 'Businesses', href: '/admin/businesses', icon: Building },
     { name: 'Reports', href: '/admin/reports', icon: FileBarChart },

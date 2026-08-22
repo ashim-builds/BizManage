@@ -20,6 +20,8 @@ import {
   Building2,
   User,
   CreditCard,
+  Clock,
+  Send,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useUpdateBusiness } from '@/services/businessService';
@@ -39,19 +41,38 @@ interface SubscriptionPackage {
   displayOrder: number;
 }
 
+interface PaymentRequestItem {
+  id: string;
+  amount: string | number;
+  status: 'PENDING' | 'COMPLETED' | 'REJECTED';
+  referenceId: string;
+  failureReason?: string;
+  createdAt: string;
+  subscriptionPackage: {
+    id: string;
+    name: string;
+  };
+}
+
 export default function SubscriptionPage() {
   const { user, refreshUser } = useAuth();
   const updateBusiness = useUpdateBusiness();
   const currentBiz = user?.memberships?.[0]?.business;
 
   const [packages, setPackages] = useState<SubscriptionPackage[]>([]);
+  const [myRequests, setMyRequests] = useState<PaymentRequestItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [expandedPackages, setExpandedPackages] = useState<string[]>([]);
+  
+  // Payment Modal State
   const [qrModalPackage, setQrModalPackage] = useState<SubscriptionPackage | null>(null);
   const [copied, setCopied] = useState(false);
-  const [isActivating, setIsActivating] = useState(false);
+  const [referenceId, setReferenceId] = useState('');
+  const [senderName, setSenderName] = useState('');
+  const [notes, setNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toggleExpand = (pkgId: string) => {
     setExpandedPackages((prev) =>
@@ -65,55 +86,92 @@ export default function SubscriptionPage() {
     }
   }, [currentBiz?.subscriptionPackage]);
 
-  useEffect(() => {
-    const fetchPackages = async () => {
-      try {
-        const res = await api.get('/packages');
-        if (res.data.success) {
-          const parsedPackages = res.data.data.map((pkg: any) => ({
-            ...pkg,
-            features:
-              typeof pkg.features === 'string' ? JSON.parse(pkg.features) : pkg.features || [],
-          }));
-          setPackages(parsedPackages);
-        }
-      } catch (err) {
-        console.error('Failed to fetch packages:', err);
-      } finally {
-        setLoading(false);
+  const fetchPackagesAndRequests = async () => {
+    try {
+      const [pkgRes, reqRes] = await Promise.all([
+        api.get('/packages'),
+        api.get('/packages/my-payment-requests').catch(() => ({ data: { success: false, data: [] } })),
+      ]);
+
+      if (pkgRes.data.success) {
+        const parsedPackages = pkgRes.data.data.map((pkg: any) => ({
+          ...pkg,
+          features:
+            typeof pkg.features === 'string' ? JSON.parse(pkg.features) : pkg.features || [],
+        }));
+        setPackages(parsedPackages);
       }
-    };
-    fetchPackages();
+
+      if (reqRes.data.success) {
+        setMyRequests(reqRes.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch packages:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPackagesAndRequests();
   }, []);
 
   const handleSelectPlan = async (pkg: SubscriptionPackage) => {
     if (Number(pkg.price) > 0 && !pkg.isDefault) {
-      // Open QR Code Payment Modal
+      // Open Garima Bank QR Code Payment Modal
       setQrModalPackage(pkg);
+      setReferenceId('');
+      setSenderName(user?.name || '');
+      setNotes('');
     } else {
       // Free or Default Plan: Activate directly
-      await activateSubscriptionPlan(pkg);
+      try {
+        setSelectedPlanId(pkg.id);
+        await updateBusiness.mutateAsync({
+          name: currentBiz?.name || 'My Business',
+          currency: currentBiz?.currency || 'NPR',
+          subscriptionPackageId: pkg.id,
+        });
+        await refreshUser();
+        toast.success(`${pkg.name} activated successfully!`);
+        setMsg(`${pkg.name} activated! You now have access to all core features.`);
+      } catch (error) {
+        toast.error('Failed to update subscription plan.');
+      }
     }
   };
 
-  const activateSubscriptionPlan = async (pkg: SubscriptionPackage) => {
+  const handleManualPaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!qrModalPackage) return;
+
+    if (!referenceId.trim()) {
+      toast.error('Please enter the Transaction Reference ID or payment proof.');
+      return;
+    }
+    if (!senderName.trim()) {
+      toast.error('Please enter the sender name or mobile number.');
+      return;
+    }
+
     try {
-      setIsActivating(true);
-      setSelectedPlanId(pkg.id);
-      await updateBusiness.mutateAsync({
-        name: currentBiz?.name || 'My Business',
-        currency: currentBiz?.currency || 'NPR',
-        subscriptionPackageId: pkg.id,
+      setIsSubmitting(true);
+      const res = await api.post('/packages/subscribe-request', {
+        packageId: qrModalPackage.id,
+        referenceId: referenceId.trim(),
+        senderName: senderName.trim(),
+        notes: notes.trim(),
       });
-      await refreshUser();
-      setQrModalPackage(null);
-      toast.success(`${pkg.name} activated successfully!`);
-      setMsg(`${pkg.name} activated! You now have access to all included features.`);
-    } catch (error) {
-      toast.error('Failed to update subscription plan.');
-      setMsg('Failed to update subscription plan.');
+
+      if (res.data.success) {
+        toast.success('Payment request submitted! Superadmin will verify and activate your plan shortly.');
+        setQrModalPackage(null);
+        await fetchPackagesAndRequests();
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to submit payment request.');
     } finally {
-      setIsActivating(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -125,6 +183,7 @@ export default function SubscriptionPage() {
   };
 
   const activePackage = packages.find((p) => p.id === selectedPlanId);
+  const pendingPayment = myRequests.find((r) => r.status === 'PENDING');
 
   if (loading) {
     return (
@@ -176,7 +235,27 @@ export default function SubscriptionPage() {
         </div>
       </div>
 
-      {!activePackage && (
+      {/* PENDING VERIFICATION BANNER */}
+      {pendingPayment && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs shadow-lg flex items-start gap-3.5">
+          <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 shrink-0">
+            <Clock className="w-5 h-5" />
+          </div>
+          <div className="flex-1">
+            <h4 className="font-bold text-amber-300 text-sm">
+              Payment Verification Pending (प्रमाणीकरण प्रक्रियामा छ)
+            </h4>
+            <p className="mt-1 text-amber-200/90 leading-relaxed">
+              Your payment for <span className="font-bold text-white">{pendingPayment.subscriptionPackage.name}</span> (Amount: <span className="font-mono font-bold text-white">Rs. {Number(pendingPayment.amount).toLocaleString()}</span>, Ref ID: <span className="font-mono font-bold text-white">{pendingPayment.referenceId}</span>) has been submitted.
+            </p>
+            <p className="text-[11px] text-amber-400/80 mt-1">
+              Our superadmin is verifying the transfer in Garima Bikas Bank and will activate your plan shortly.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {!activePackage && !pendingPayment && (
         <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-2">
           <span>⚠️ Please select a plan below to activate your account and unlock features.</span>
         </div>
@@ -193,13 +272,12 @@ export default function SubscriptionPage() {
 
       {/* Subscription Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:items-center">
-        {/* Sort: Free Starter first, Pro in center, others last */}
         {[...packages]
           .sort((a, b) => {
             const getOrder = (pkg: SubscriptionPackage) => {
-              if (pkg.isDefault) return 0; // Free → slot 0
-              if (pkg.name.toLowerCase().includes('pro')) return 1; // Pro → slot 1 (center)
-              return 2; // Rest → slot 2
+              if (pkg.isDefault) return 0;
+              if (pkg.name.toLowerCase().includes('pro')) return 1;
+              return 2;
             };
             return getOrder(a) - getOrder(b);
           })
@@ -300,7 +378,7 @@ export default function SubscriptionPage() {
                     'Current Active Plan'
                   ) : Number(pkg.price) > 0 ? (
                     <>
-                      <QrCode className="w-4 h-4" /> Pay & Upgrade to {pkg.name}
+                      <QrCode className="w-4 h-4" /> Pay & Request {pkg.name}
                     </>
                   ) : (
                     `Select ${pkg.name}`
@@ -350,7 +428,7 @@ export default function SubscriptionPage() {
         </div>
       </div>
 
-      {/* BANKING QR CODE PAYMENT MODAL */}
+      {/* BANKING QR CODE PAYMENT & VERIFICATION REQUEST MODAL */}
       {qrModalPackage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
           <div
@@ -385,10 +463,10 @@ export default function SubscriptionPage() {
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+            <form onSubmit={handleManualPaymentSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
               {/* QR Image Card */}
-              <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white text-slate-900 border border-slate-200 shadow-md">
-                <div className="relative w-64 h-72">
+              <div className="flex flex-col items-center justify-center p-3.5 rounded-2xl bg-white text-slate-900 border border-slate-200 shadow-md">
+                <div className="relative w-56 h-60">
                   <Image
                     src="/payment-qr.jpg"
                     alt="Garima Bikas Bank Payment QR"
@@ -403,22 +481,22 @@ export default function SubscriptionPage() {
               </div>
 
               {/* Bank Details Card */}
-              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5 text-xs">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
+                <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/80">
                   <span className="text-slate-400 flex items-center gap-1.5">
                     <Building2 className="w-3.5 h-3.5 text-blue-400" /> Bank Name:
                   </span>
                   <span className="font-bold text-white">Garima Bikas Bank Ltd. (गरिमा विकास बैंक)</span>
                 </div>
 
-                <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
+                <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/80">
                   <span className="text-slate-400 flex items-center gap-1.5">
                     <User className="w-3.5 h-3.5 text-purple-400" /> Account Holder:
                   </span>
                   <span className="font-bold text-white tracking-wide">ASHIM ADHIKARI</span>
                 </div>
 
-                <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
+                <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/80">
                   <span className="text-slate-400 flex items-center gap-1.5">
                     <CreditCard className="w-3.5 h-3.5 text-emerald-400" /> Account Type:
                   </span>
@@ -454,47 +532,80 @@ export default function SubscriptionPage() {
                 </div>
               </div>
 
-              {/* Instructions */}
-              <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs space-y-1">
-                <p className="font-bold flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-blue-400" /> भुक्तानी गर्ने तरिका:
-                </p>
-                <ol className="list-decimal list-inside space-y-0.5 text-[11px] text-blue-200/90 leading-relaxed">
-                  <li>माथिको QR कोड स्क्यान गर्नुहोस् वा खाता नम्बरमा रकम ट्रान्सफर गर्नुहोस्।</li>
-                  <li>रिमार्क्स (Remarks) मा आफ्नो Business Name लेख्नुहोस्।</li>
-                  <li>भुक्तानी गरिसकेपछि तलको <b>Confirm & Activate</b> बटन थिच्नुहोस्।</li>
-                </ol>
+              {/* Transaction Verification Inputs */}
+              <div className="space-y-3 pt-2">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-200 mb-1">
+                    Transaction ID / Reference Number (रकम ट्रान्सफर नम्बर / Ref ID) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. FT26082212345 or Trans No."
+                    value={referenceId}
+                    onChange={(e) => setReferenceId(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-mono focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-200 mb-1">
+                      Sender Name / Mobile (पठाउनेको नाम / मोबाइल) *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. 98XXXXXXXX / Ram"
+                      value={senderName}
+                      onChange={(e) => setSenderName(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-200 mb-1">
+                      Remarks / Notes (वैकल्पिक टिप्पणी)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Transferred via Mobile Banking"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
 
-            {/* Modal Footer */}
-            <div className="flex items-center justify-between px-6 py-3.5 border-t border-slate-800 bg-slate-950/80">
-              <button
-                type="button"
-                onClick={() => setQrModalPackage(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-              >
-                Cancel
-              </button>
+              {/* Modal Footer */}
+              <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setQrModalPackage(null)}
+                  className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                >
+                  Cancel
+                </button>
 
-              <button
-                type="button"
-                disabled={isActivating}
-                onClick={() => activateSubscriptionPlan(qrModalPackage)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white text-xs font-bold transition-all shadow-lg shadow-emerald-600/20 disabled:opacity-50"
-              >
-                {isActivating ? (
-                  <>
-                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Activating...
-                  </>
-                ) : (
-                  <>
-                    <Check className="w-4 h-4" /> Confirm & Activate Plan (लागू गर्नुहोस्)
-                  </>
-                )}
-              </button>
-            </div>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white text-xs font-bold transition-all shadow-lg shadow-emerald-600/20 disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" /> Submit for Verification (अनुरोध पठाउनुहोस्)
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
