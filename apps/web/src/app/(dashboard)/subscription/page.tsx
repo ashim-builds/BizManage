@@ -533,18 +533,44 @@ export default function SubscriptionPage() {
                 </div>
               </div>
 
-              {/* CRITICAL VERIFICATION WARNING NOTICE */}
-              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs space-y-1.5 shadow-sm">
-                <div className="flex items-center gap-2 text-amber-400 font-bold text-xs sm:text-sm">
-                  <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>Important Notice (अति महत्त्वपूर्ण जानकारी)</span>
+              {/* RULE OPTION 3: NO REFUND / PLAN QUEUEING & VERIFICATION POLICY */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border-2 border-amber-500/30 text-slate-200 text-xs space-y-3 shadow-md">
+                {/* 1. Headline */}
+                <div className="flex items-start gap-2.5 text-amber-400 font-bold text-xs sm:text-sm">
+                  <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-amber-400 mt-0.5" />
+                  <div>
+                    <h4 className="text-white font-bold leading-tight">
+                      Upgrading to {qrModalPackage.billingPeriod === 'YEARLY' ? 'Yearly' : 'Premium'} Plan? Please Read Before Paying
+                    </h4>
+                    <span className="text-[11px] text-amber-300 font-normal">
+                      (मासिकबाट वार्षिक वा नयाँ प्लानमा अपग्रेड गर्दा कृपया ध्यान दिनुहोस्)
+                    </span>
+                  </div>
                 </div>
-                <p className="text-[11px] text-amber-200/90 leading-relaxed font-medium">
-                  यदि तपाईंले <b>गलत Business Name</b>, <b>गलत Transaction ID / Ref ID</b>, वा <b>गलत Sender Name</b> राख्नुभयो भने हामीलाई बैंक स्टेटमेन्ट रुजु गर्न सम्भव हुँदैन र <b>तपाईंको प्लान सक्रिय (Activate) गर्न सकिने छैन</b>।
-                </p>
-                <p className="text-[10.5px] text-amber-300/80 leading-relaxed">
-                  <b>Warning:</b> If you enter a wrong Business Name, incorrect Transaction Reference ID, or wrong Sender Name, we will NOT be able to verify your bank deposit and cannot grant access to your plan.
-                </p>
+
+                {/* 2. Key Bullets (Rule Option 3: No Refund / Plan Queueing) */}
+                <ul className="space-y-1.5 text-slate-300 pl-5 list-disc text-[11px] sm:text-xs leading-relaxed">
+                  <li>
+                    <strong className="text-white">No Cash Refunds (रिफन्ड नहुने):</strong> Unused days left on your active monthly plan are not refunded in cash.
+                  </li>
+                  <li>
+                    <strong className="text-white">Zero Days Lost (बाँकी दिन खेर जाँदैन):</strong> You will <u>not</u> lose your remaining monthly days. Your current plan stays 100% active until its expiry date.
+                  </li>
+                  <li>
+                    <strong className="text-white">Automatic Plan Queueing (स्वतः पालोमा रहने):</strong> Your new {qrModalPackage.name} plan is queued and will start automatically the moment your current period ends.
+                  </li>
+                  <li>
+                    <strong className="text-amber-300">Exact Details Required (सटीक विवरण):</strong> If you enter a wrong Business Name, incorrect Transaction Reference ID, or wrong Sender Name, we cannot verify your deposit in Garima Bikas Bank and cannot activate your plan.
+                  </li>
+                </ul>
+
+                {/* 3. CTA & Instructions */}
+                <div className="pt-2 border-t border-amber-500/20 text-[11px] text-amber-200/90 flex items-start gap-2">
+                  <span className="text-base leading-none">📸</span>
+                  <span>
+                    <strong>Next Step:</strong> After transferring funds, enter your <strong>Transaction ID</strong> and <strong>Sender Mobile/Name</strong> below to submit your verification request.
+                  </span>
+                </div>
               </div>
 
               {/* Transaction Verification Inputs */}
