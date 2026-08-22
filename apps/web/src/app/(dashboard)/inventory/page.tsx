@@ -28,6 +28,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { ModalPortal } from '@/components/common/ModalPortal';
 import { AddCategoryModal } from '@/components/common/AddCategoryModal';
 import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
+import { CustomDateRangePicker } from '@/components/common/CustomDateRangePicker';
 import {
   Package,
   Plus,
@@ -356,22 +357,15 @@ export default function InventoryPage() {
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <div className="flex items-center gap-2 flex-1 w-full">
-            <Calendar className="hidden sm:block w-4 h-4 text-slate-500 shrink-0" />
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="w-full min-w-0 px-2 sm:px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-              aria-label="From date"
-            />
-            <span className="text-slate-500 text-[10px] sm:text-xs shrink-0">to</span>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="w-full min-w-0 px-2 sm:px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-              aria-label="To date"
+          <div className="flex items-center gap-2">
+            <CustomDateRangePicker
+              startDate={dateFrom}
+              endDate={dateTo}
+              preset={dateFrom || dateTo ? 'custom' : 'all'}
+              onApply={(s, e, p) => {
+                setDateFrom(s);
+                setDateTo(e);
+              }}
             />
           </div>
 

@@ -17,6 +17,7 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ModalPortal } from '@/components/common/ModalPortal';
 import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
+import { CustomDateRangePicker } from '@/components/common/CustomDateRangePicker';
 import { toast } from 'react-hot-toast';
 import {
   ArrowUpRight,
@@ -177,21 +178,15 @@ export default function PaymentOutPage() {
             />
           </div>
 
-          <div className="flex flex-col min-[400px]:flex-row gap-3 w-full sm:w-auto">
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full sm:w-auto px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs focus:outline-none focus:ring-1 focus:ring-rose-500"
-              title="Start Date"
-            />
-
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full sm:w-auto px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs focus:outline-none focus:ring-1 focus:ring-rose-500"
-              title="End Date"
+          <div className="flex items-center gap-2">
+            <CustomDateRangePicker
+              startDate={startDate}
+              endDate={endDate}
+              preset={startDate || endDate ? 'custom' : 'all'}
+              onApply={(s, e, p) => {
+                setStartDate(s);
+                setEndDate(e);
+              }}
             />
           </div>
         </div>

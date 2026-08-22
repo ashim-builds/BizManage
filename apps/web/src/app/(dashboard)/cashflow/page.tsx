@@ -10,6 +10,8 @@ import {
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
+import { CustomDateRangePicker } from '@/components/common/CustomDateRangePicker';
+import { useRouter } from 'next/navigation';
 import {
   TrendingUp,
   ArrowDownRight,
@@ -22,7 +24,11 @@ import {
 } from 'lucide-react';
 
 export default function CashflowPage() {
+  const router = useRouter();
   const [viewMode, setViewMode] = useState<'daily' | 'monthly'>('daily');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [preset, setPreset] = useState<'all' | 'today' | 'week' | 'month' | 'custom'>('week');
 
   // Queries
   const { data: summary, isLoading: summaryLoading, isError: summaryError, refetch } = useCashflowSummary();
@@ -57,28 +63,44 @@ export default function CashflowPage() {
           </p>
         </div>
 
-        {/* View Switcher Tabs */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold">
-          <button
-            onClick={() => setViewMode('daily')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg transition-all ${
-              viewMode === 'daily'
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Calendar className="w-3.5 h-3.5" /> Daily (Last 7 Days)
-          </button>
-          <button
-            onClick={() => setViewMode('monthly')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg transition-all ${
-              viewMode === 'monthly'
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" /> Monthly (Last 12 Months)
-          </button>
+        {/* View Switcher Tabs & Custom Date Picker */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold">
+            <button
+              onClick={() => setViewMode('daily')}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg transition-all ${
+                viewMode === 'daily'
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Calendar className="w-3.5 h-3.5" /> Daily (Last 7 Days)
+            </button>
+            <button
+              onClick={() => setViewMode('monthly')}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg transition-all ${
+                viewMode === 'monthly'
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" /> Monthly (Last 12 Months)
+            </button>
+          </div>
+
+          <CustomDateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            preset={preset}
+            onApply={(s, e, p) => {
+              setStartDate(s);
+              setEndDate(e);
+              setPreset(p);
+              if (s || e) {
+                router.push(`/reports?tab=cashflow-statement&startDate=${s}&endDate=${e}`);
+              }
+            }}
+          />
         </div>
       </div>
 
