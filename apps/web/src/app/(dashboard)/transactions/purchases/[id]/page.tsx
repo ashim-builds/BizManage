@@ -74,12 +74,7 @@ export default function PurchaseBillDetailsPage({ params }: { params: { id: stri
             )}
             {business?.taxNumber && purchase.isVatBill && (
               <p className="text-xs text-slate-400 print:text-slate-600 font-mono mt-0.5">
-                VAT No.: {business.taxNumber}
-              </p>
-            )}
-            {business?.taxNumber && !purchase.isVatBill && (
-              <p className="text-xs text-slate-400 print:text-slate-600 font-mono mt-0.5">
-                PAN: {business.taxNumber}
+                PAN/VAT No.: {business.taxNumber}
               </p>
             )}
           </div>
@@ -107,7 +102,7 @@ export default function PurchaseBillDetailsPage({ params }: { params: { id: stri
             {purchase.party?.phone && (
               <p className="text-slate-300 print:text-slate-600 mt-0.5">Phone: {purchase.party.phone}</p>
             )}
-            {purchase.party?.taxNumber && (
+            {purchase.party?.taxNumber && purchase.isVatBill && (
               <p className="text-slate-300 print:text-slate-600 font-mono">
                 PAN/VAT: {purchase.party.taxNumber}
               </p>

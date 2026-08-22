@@ -13,6 +13,7 @@ import {
   ArrowUpRight,
   ShoppingBag,
   RotateCcw,
+  Scale,
 } from 'lucide-react';
 
 export interface NavGroupItem {
@@ -48,6 +49,7 @@ export const sidebarSections: NavSection[] = [
   { name: 'Cash & Bank', href: '/accounts', icon: Wallet, requiredFeature: 'WALLET_SYNC' },
   { name: 'Expenses', href: '/expenses', icon: TrendingDown, requiredFeature: 'WALLET_SYNC' },
   { name: 'Other Income', href: '/income', icon: TrendingUp, requiredFeature: 'WALLET_SYNC' },
+  { name: 'Profit & Loss', href: '/profit-loss', icon: Scale, requiredFeature: 'ADVANCED_REPORTS' },
   { name: 'Cashflow', href: '/cashflow', icon: Wallet, requiredFeature: 'ADVANCED_REPORTS' },
   { name: 'Reports', href: '/reports', icon: FileBarChart, requiredFeature: 'ADVANCED_REPORTS' },
   { name: 'Subscription', href: '/subscription', icon: Crown },

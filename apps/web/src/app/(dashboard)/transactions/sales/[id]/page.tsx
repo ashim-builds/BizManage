@@ -69,12 +69,7 @@ export default function SaleInvoiceDetailsPage({ params }: { params: { id: strin
             )}
             {business?.taxNumber && sale.isVatBill && (
               <p className="text-xs text-slate-400 print:text-slate-600 font-mono mt-0.5">
-                VAT No.: {business.taxNumber}
-              </p>
-            )}
-            {business?.taxNumber && !sale.isVatBill && (
-              <p className="text-xs text-slate-400 print:text-slate-600 font-mono mt-0.5">
-                PAN: {business.taxNumber}
+                PAN/VAT No.: {business.taxNumber}
               </p>
             )}
           </div>
@@ -104,7 +99,7 @@ export default function SaleInvoiceDetailsPage({ params }: { params: { id: strin
             {sale.party?.phone && (
               <p className="text-slate-300 print:text-slate-600 mt-0.5">Phone: {sale.party.phone}</p>
             )}
-            {sale.party?.taxNumber && (
+            {sale.party?.taxNumber && sale.isVatBill && (
               <p className="text-slate-300 print:text-slate-600 font-mono">
                 PAN/VAT: {sale.party.taxNumber}
               </p>

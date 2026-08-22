@@ -291,12 +291,70 @@ export default function ExecutiveDashboardPage() {
             </Link>
           </div>
 
-          {/* Secondary KPI Cards Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
-            {/* Sales */}
+          {/* NET PROFIT / LOSS STATUS CARD */}
+          {(() => {
+            const netProfit = metrics.netProfit ?? ((metrics.salesMargin || 0) - (metrics.totalExpenses || 0));
+            const isProfit = netProfit >= 0;
+            const netMarginPct = metrics.netProfitPercentage ?? ((metrics.totalSales || 0) > 0 ? (netProfit / (metrics.totalSales || 1)) * 100 : 0);
+            const todayMargin = metrics.todaySummary?.salesMargin ?? 0;
+
+            return (
+              <Link
+                href="/profit-loss"
+                className={`p-4 sm:p-5 rounded-2xl bg-slate-900 border shadow-sm block transition-all group hover:bg-slate-800/80 active:scale-[0.99] cursor-pointer ${
+                  isProfit ? 'border-emerald-500/30' : 'border-rose-500/30'
+                }`}
+              >
+                {/* Header Row */}
+                <div className="flex items-center justify-between gap-2">
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider border ${
+                      isProfit
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                    }`}
+                  >
+                    {isProfit ? '📈 We Are In Profit' : '📉 We Are In Loss'}
+                  </span>
+
+                  <span className="text-xs text-slate-400 shrink-0">
+                    Net Margin: <strong className={`font-mono ${isProfit ? 'text-emerald-400' : 'text-rose-400'}`}>{netMarginPct.toFixed(1)}%</strong>
+                  </span>
+                </div>
+
+                {/* Amount & Subtitle */}
+                <div className="mt-3 flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+                  <h3
+                    className={`text-2xl sm:text-3xl font-black font-mono whitespace-nowrap tracking-tight ${
+                      isProfit ? 'text-emerald-400' : 'text-rose-400'
+                    }`}
+                  >
+                    Rs. {netProfit.toLocaleString()}
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    (Sales Margin: Rs. {(metrics.salesMargin || 0).toLocaleString()} • Expenses: Rs. {(metrics.totalExpenses || 0).toLocaleString()})
+                  </p>
+                </div>
+
+                {/* Footer Action */}
+                <div className="mt-3 pt-3 border-t border-slate-800/60 flex items-center justify-between text-xs">
+                  <span className="text-slate-400">
+                    Today's Margin: <strong className="text-white font-mono">Rs. {todayMargin.toLocaleString()}</strong>
+                  </span>
+                  <span className="font-bold text-blue-400 group-hover:text-blue-300 inline-flex items-center gap-1">
+                    View Full P&L Statement <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
+                </div>
+              </Link>
+            );
+          })()}
+
+          {/* Secondary KPI Cards Grid (Clean Mobile Responsive 2-Col / 5-Col Grid) */}
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+            {/* Sales (Total) */}
             <Link href="/transactions/sales" className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm flex flex-row items-center justify-between cursor-pointer hover:bg-slate-800 hover:border-slate-700 transition-all group active:scale-[0.98]">
               <div>
-                <h3 className="text-base sm:text-xl font-bold text-white font-mono">
+                <h3 className="text-base sm:text-xl font-bold text-white font-mono whitespace-nowrap">
                   Rs. {(metrics.totalSales || 0).toLocaleString()}
                 </h3>
                 <div className="text-[10px] sm:text-[11px] text-slate-400 mt-1">Sales (Total)</div>
@@ -304,10 +362,23 @@ export default function ExecutiveDashboardPage() {
               <ChevronRight className="w-3.5 h-3.5 text-slate-600 hidden sm:block group-hover:text-slate-400 transition-colors" />
             </Link>
 
+            {/* Sales Margin */}
+            <Link href="/profit-loss" className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm flex flex-row items-center justify-between cursor-pointer hover:bg-slate-800 hover:border-slate-700 transition-all group active:scale-[0.98]">
+              <div>
+                <h3 className="text-base sm:text-xl font-bold text-teal-400 font-mono whitespace-nowrap">
+                  Rs. {(metrics.salesMargin || 0).toLocaleString()}
+                </h3>
+                <div className="text-[10px] sm:text-[11px] text-teal-400/90 mt-1">
+                  Sales Margin ({(metrics.salesMarginPercentage || 0).toFixed(0)}%)
+                </div>
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-600 hidden sm:block group-hover:text-slate-400 transition-colors" />
+            </Link>
+
             {/* Purchases */}
             <Link href="/transactions/purchases" className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm flex flex-row items-center justify-between cursor-pointer hover:bg-slate-800 hover:border-slate-700 transition-all group active:scale-[0.98]">
               <div>
-                <h3 className="text-base sm:text-xl font-bold text-white font-mono">
+                <h3 className="text-base sm:text-xl font-bold text-white font-mono whitespace-nowrap">
                   Rs. {(metrics.totalPurchases || 0).toLocaleString()}
                 </h3>
                 <div className="text-[10px] sm:text-[11px] text-slate-400 mt-1">Purchase (Total)</div>
@@ -318,7 +389,7 @@ export default function ExecutiveDashboardPage() {
             {/* Expense */}
             <Link href="/expenses" className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm flex flex-row items-center justify-between cursor-pointer hover:bg-slate-800 hover:border-slate-700 transition-all group active:scale-[0.98]">
               <div>
-                <h3 className="text-base sm:text-xl font-bold text-white font-mono">
+                <h3 className="text-base sm:text-xl font-bold text-white font-mono whitespace-nowrap">
                   Rs. {(metrics.totalExpenses || 0).toLocaleString()}
                 </h3>
                 <div className="text-[10px] sm:text-[11px] text-slate-400 mt-1">Expense (Total)</div>
@@ -327,9 +398,9 @@ export default function ExecutiveDashboardPage() {
             </Link>
 
             {/* Cash & Bank */}
-            <Link href="/accounts" className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm flex flex-row items-center justify-between cursor-pointer hover:bg-slate-800 hover:border-slate-700 transition-all group active:scale-[0.98]">
+            <Link href="/accounts" className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm flex flex-row items-center justify-between cursor-pointer hover:bg-slate-800 hover:border-slate-700 transition-all group active:scale-[0.98] col-span-2 lg:col-span-1">
               <div>
-                <h3 className="text-base sm:text-xl font-bold text-white font-mono">
+                <h3 className="text-base sm:text-xl font-bold text-white font-mono whitespace-nowrap">
                   Rs. {((metrics.totalCash || 0) + (metrics.totalBank || 0)).toLocaleString()}
                 </h3>
                 <div className="text-[10px] sm:text-[11px] text-slate-400 mt-1">Total Balance</div>

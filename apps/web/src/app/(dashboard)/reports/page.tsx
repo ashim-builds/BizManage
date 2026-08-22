@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import {
   useSalesReport,
   usePurchaseReport,
@@ -25,6 +26,7 @@ import {
   Users,
   Package,
   TrendingUp,
+  Scale,
 } from 'lucide-react';
 
 type ReportTab =
@@ -202,6 +204,13 @@ export default function ReportsPage() {
         >
           <TrendingUp className="w-3.5 h-3.5" /> Cashflow Statement
         </button>
+
+        <Link
+          href="/profit-loss"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-teal-400 hover:text-teal-300 hover:bg-teal-500/10 border border-teal-500/20 transition-all font-bold ml-auto"
+        >
+          <Scale className="w-3.5 h-3.5 text-teal-400" /> Full Profit & Loss Statement →
+        </Link>
       </div>
 
       {/* FILTER BAR */}

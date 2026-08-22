@@ -43,3 +43,4 @@ Thumbs.db
 
 # Local scratch/test scripts (may contain credentials — never commit)
 scratch/
+*.tsbuildinfo
