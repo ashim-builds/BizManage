@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { toast } from 'react-hot-toast';
+import { ModalPortal } from '@/components/common/ModalPortal';
 import {
   CreditCard,
   CheckCircle2,
@@ -18,6 +19,8 @@ import {
   X,
   ExternalLink,
   RefreshCw,
+  AlertTriangle,
+  Send,
 } from 'lucide-react';
 
 interface PaymentRequest {
@@ -53,12 +56,37 @@ interface PaymentRequest {
   };
 }
 
+const REJECTION_PRESETS = [
+  'Deposit not found in Garima Bikas Bank statement (बैंक खातामा रकम भेटिएन)।',
+  'Transaction Reference ID is invalid / does not match bank record (रेफरेन्स नम्बर मिलेन)।',
+  'Transfer amount is less than the required package price (रकम अपुग भयो)।',
+  'Sender name or account details do not match submitted proof (पठाउनेको विवरण मिलेन)।',
+  'Duplicate or already submitted transaction ID (पहिले नै प्रयोग भइसकेको ट्रान्सफर नम्बर)।',
+];
+
 export default function AdminPaymentRequestsPage() {
   const [requests, setRequests] = useState<PaymentRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'PENDING' | 'COMPLETED' | 'REJECTED'>('PENDING');
   const [search, setSearch] = useState('');
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+
+  // Rejection & Approval Modal States
+  const [rejectModalPayment, setRejectModalPayment] = useState<PaymentRequest | null>(null);
+  const [rejectReason, setRejectReason] = useState(REJECTION_PRESETS[0]);
+  const [approveModalPayment, setApproveModalPayment] = useState<PaymentRequest | null>(null);
+
+  // Lock background scroll when modal is open
+  useEffect(() => {
+    if (rejectModalPayment || approveModalPayment) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [rejectModalPayment, approveModalPayment]);
 
   const fetchRequests = async () => {
     try {
@@ -80,16 +108,20 @@ export default function AdminPaymentRequestsPage() {
     fetchRequests();
   }, [filterStatus]);
 
-  const handleApprove = async (payment: PaymentRequest) => {
-    if (!confirm(`Are you sure you verified the payment for ${payment.business.name} (Rs. ${payment.amount}) in your Garima Bikas Bank account?`)) {
-      return;
-    }
+  const handleOpenApproveModal = (payment: PaymentRequest) => {
+    setApproveModalPayment(payment);
+  };
+
+  const handleConfirmApprove = async () => {
+    if (!approveModalPayment) return;
+    const payment = approveModalPayment;
 
     try {
       setActionLoadingId(payment.id);
       const res = await api.post(`/admin/payment-requests/${payment.id}/approve`);
       if (res.data.success) {
         toast.success(`Approved! ${payment.business.name} activated on ${payment.subscriptionPackage.name}.`);
+        setApproveModalPayment(null);
         fetchRequests();
       }
     } catch (err: any) {
@@ -99,15 +131,28 @@ export default function AdminPaymentRequestsPage() {
     }
   };
 
-  const handleReject = async (payment: PaymentRequest) => {
-    const reason = prompt(`Enter rejection reason for ${payment.business.name}:`, 'Payment not found in Garima Bikas Bank statement.');
-    if (reason === null) return;
+  const handleOpenRejectModal = (payment: PaymentRequest) => {
+    setRejectModalPayment(payment);
+    setRejectReason(REJECTION_PRESETS[0]);
+  };
+
+  const handleConfirmReject = async () => {
+    if (!rejectModalPayment) return;
+    if (!rejectReason.trim()) {
+      toast.error('Please provide a rejection reason so the customer is notified clearly.');
+      return;
+    }
+
+    const payment = rejectModalPayment;
 
     try {
       setActionLoadingId(payment.id);
-      const res = await api.post(`/admin/payment-requests/${payment.id}/reject`, { reason });
+      const res = await api.post(`/admin/payment-requests/${payment.id}/reject`, {
+        reason: rejectReason.trim(),
+      });
       if (res.data.success) {
-        toast.success(`Payment request for ${payment.business.name} rejected.`);
+        toast.success(`Payment request for ${payment.business.name} rejected and business notified.`);
+        setRejectModalPayment(null);
         fetchRequests();
       }
     } catch (err: any) {
@@ -328,9 +373,9 @@ export default function AdminPaymentRequestsPage() {
                             <button
                               type="button"
                               disabled={isActioning}
-                              onClick={() => handleReject(r)}
+                              onClick={() => handleOpenRejectModal(r)}
                               className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 border border-slate-700 hover:border-rose-500/30 text-xs font-semibold transition-all disabled:opacity-50"
-                              title="Reject Request"
+                              title="Reject Request & Send Reason"
                             >
                               <X className="w-3.5 h-3.5" />
                             </button>
@@ -338,7 +383,7 @@ export default function AdminPaymentRequestsPage() {
                             <button
                               type="button"
                               disabled={isActioning}
-                              onClick={() => handleApprove(r)}
+                              onClick={() => handleOpenApproveModal(r)}
                               className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all inline-flex items-center gap-1.5 disabled:opacity-50"
                             >
                               <Check className="w-3.5 h-3.5" /> Approve & Activate
@@ -356,6 +401,230 @@ export default function AdminPaymentRequestsPage() {
           </div>
         )}
       </div>
+
+      {/* SUPERADMIN REJECT REASON MODAL */}
+      {rejectModalPayment && (
+        <ModalPortal>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200 font-sans">
+            <div
+              className="w-full max-w-lg rounded-2xl sm:rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden text-slate-200 animate-in zoom-in-95 duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950/80">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
+                    <XCircle className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white leading-tight">
+                      Reject Payment Request (भुक्तानी अस्वीकृत गर्नुहोस्)
+                    </h3>
+                    <p className="text-[11px] text-slate-400">
+                      Business: <span className="text-white font-bold">{rejectModalPayment.business.name}</span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setRejectModalPayment(null)}
+                  className="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-all border border-slate-700/50"
+                  title="Close modal"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-5 sm:p-6 space-y-4">
+                {/* Summary Box */}
+                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Requested Package:</span>
+                    <span className="font-bold text-white">{rejectModalPayment.subscriptionPackage.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Claimed Amount:</span>
+                    <span className="font-mono font-bold text-emerald-400">Rs. {rejectModalPayment.amount}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Transaction Ref ID:</span>
+                    <span className="font-mono text-blue-400 font-bold">{rejectModalPayment.referenceId}</span>
+                  </div>
+                  {rejectModalPayment.verificationResponse?.senderName && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Sender Info:</span>
+                      <span className="text-slate-200">{rejectModalPayment.verificationResponse.senderName}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Reason Presets */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-200 mb-1.5">
+                    Select Quick Reason Preset (कारण छान्नुहोस्):
+                  </label>
+                  <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                    {REJECTION_PRESETS.map((preset, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setRejectReason(preset)}
+                        className={`w-full text-left p-2 rounded-xl text-[11px] transition-all border ${
+                          rejectReason === preset
+                            ? 'bg-rose-500/15 border-rose-500/40 text-rose-200 font-medium'
+                            : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                        }`}
+                      >
+                        • {preset}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Custom Editable Textarea */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-200 mb-1">
+                    Rejection Reason / Message for Customer (ग्राहकलाई जाने सन्देश) *
+                  </label>
+                  <textarea
+                    rows={3}
+                    required
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                    placeholder="Describe why this payment was rejected..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-rose-500 resize-none leading-relaxed font-sans"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    This exact reason will appear in the customer's dashboard notification and subscription page.
+                  </p>
+                </div>
+
+                {/* Footer Buttons */}
+                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setRejectModalPayment(null)}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={actionLoadingId === rejectModalPayment.id}
+                    onClick={handleConfirmReject}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md shadow-rose-600/20 disabled:opacity-50"
+                  >
+                    {actionLoadingId === rejectModalPayment.id ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Rejecting...
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="w-3.5 h-3.5" /> Confirm Rejection (अस्वीकृत गर्नुहोस्)
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+
+      {/* SUPERADMIN APPROVAL CONFIRMATION MODAL */}
+      {approveModalPayment && (
+        <ModalPortal>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200 font-sans">
+            <div
+              className="w-full max-w-md rounded-2xl sm:rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden text-slate-200 animate-in zoom-in-95 duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950/80">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+                    <CheckCircle2 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white leading-tight">
+                      Confirm Bank Payment & Activate Plan
+                    </h3>
+                    <p className="text-[11px] text-slate-400">
+                      Business: <span className="text-white font-bold">{approveModalPayment.business.name}</span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setApproveModalPayment(null)}
+                  className="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-all border border-slate-700/50"
+                  title="Close modal"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-5 sm:p-6 space-y-4">
+                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-200 text-xs space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Package to Activate:</span>
+                    <span className="font-bold text-white text-sm">{approveModalPayment.subscriptionPackage.name}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Deposit Amount:</span>
+                    <span className="font-mono font-bold text-emerald-400 text-sm">Rs. {approveModalPayment.amount}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Transaction Ref ID:</span>
+                    <span className="font-mono text-blue-400 font-bold">{approveModalPayment.referenceId}</span>
+                  </div>
+                  {approveModalPayment.verificationResponse?.senderName && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-300">Sender:</span>
+                      <span className="text-white font-semibold">{approveModalPayment.verificationResponse.senderName}</span>
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Have you verified that the amount of <b>Rs. {approveModalPayment.amount}</b> has been received in your <b>Garima Bikas Bank</b> account?
+                </p>
+
+                {/* Footer Buttons */}
+                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setApproveModalPayment(null)}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={actionLoadingId === approveModalPayment.id}
+                    onClick={handleConfirmApprove}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-600/20 disabled:opacity-50"
+                  >
+                    {actionLoadingId === approveModalPayment.id ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Activating...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-3.5 h-3.5" /> Confirm & Activate Plan
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
     </div>
   );
 }

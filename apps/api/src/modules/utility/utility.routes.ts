@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { requireBusinessTenant } from '../../middleware/auth.js';
 import { partySchema, itemSchema } from '@bizmanage/validation';
-import { PartyType, ItemType, Prisma } from '@bizmanage/database';
+import { PartyType, ItemType, Prisma, globalPrisma } from '@bizmanage/database';
 import { z } from 'zod';
 
 export async function utilityRoutes(fastify: FastifyInstance) {
@@ -228,7 +228,7 @@ export async function utilityRoutes(fastify: FastifyInstance) {
   fastify.get('/notifications', async (request, reply) => {
     const businessId = request.tenant!.businessId;
 
-    const [business, items, pendingSales] = await Promise.all([
+    const [business, items, pendingSales, paymentRequests] = await Promise.all([
       request.db!.business.findUnique({ where: { id: businessId } }),
       request.db!.item.findMany({
         where: { type: 'PRODUCT' },
@@ -238,6 +238,12 @@ export async function utilityRoutes(fastify: FastifyInstance) {
         where: { status: { in: ['UNPAID', 'PARTIAL'] } },
         select: { id: true, invoiceNumber: true, dueAmount: true, createdAt: true, party: { select: { name: true } } },
         orderBy: { createdAt: 'desc' },
+        take: 5,
+      }),
+      globalPrisma.subscriptionPayment.findMany({
+        where: { businessId },
+        include: { subscriptionPackage: true },
+        orderBy: { updatedAt: 'desc' },
         take: 5,
       }),
     ]);
@@ -251,8 +257,40 @@ export async function utilityRoutes(fastify: FastifyInstance) {
       link: string;
     }> = [];
 
+    // Subscription Payment Approval, Rejection & Pending Notifications
+    paymentRequests.forEach((payment: any) => {
+      if (payment.status === 'COMPLETED') {
+        notifications.push({
+          id: `payment-approved-${payment.id}`,
+          type: 'SUCCESS',
+          title: `🎉 Plan Approved: ${payment.subscriptionPackage.name}`,
+          message: `Your payment of Rs. ${Number(payment.amount)} for ${payment.subscriptionPackage.name} has been verified and approved by Superadmin. Your plan is now active.`,
+          createdAt: payment.updatedAt.toISOString(),
+          link: '/subscription',
+        });
+      } else if (payment.status === 'REJECTED') {
+        notifications.push({
+          id: `payment-rejected-${payment.id}`,
+          type: 'WARNING',
+          title: `❌ Payment Rejected: ${payment.subscriptionPackage.name}`,
+          message: `Your payment request (Ref: ${payment.referenceId}) was rejected. Reason: "${payment.failureReason || 'Deposit could not be verified in bank records.'}"`,
+          createdAt: payment.updatedAt.toISOString(),
+          link: '/subscription',
+        });
+      } else if (payment.status === 'PENDING') {
+        notifications.push({
+          id: `payment-pending-${payment.id}`,
+          type: 'INFO',
+          title: `⏳ Verification Pending: ${payment.subscriptionPackage.name}`,
+          message: `Payment request for ${payment.subscriptionPackage.name} (Ref: ${payment.referenceId}) is under Superadmin review.`,
+          createdAt: payment.createdAt.toISOString(),
+          link: '/subscription',
+        });
+      }
+    });
+
     // Low stock items
-    items.forEach((item) => {
+    items.forEach((item: any) => {
       if (Number(item.currentStock) <= Number(item.minStockAlert)) {
         notifications.push({
           id: `low-stock-${item.id}`,
@@ -266,7 +304,7 @@ export async function utilityRoutes(fastify: FastifyInstance) {
     });
 
     // Unpaid invoices
-    pendingSales.forEach((sale) => {
+    pendingSales.forEach((sale: any) => {
       notifications.push({
         id: `unpaid-sale-${sale.id}`,
         type: 'INFO',
