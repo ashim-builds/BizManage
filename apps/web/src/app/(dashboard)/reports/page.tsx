@@ -14,6 +14,7 @@ import {
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
+import { CustomDateRangePicker } from '@/components/common/CustomDateRangePicker';
 import {
   FileText,
   Search,
@@ -268,29 +269,20 @@ export default function ReportsPage() {
                 </button>
               </div>
 
-              <div className="flex items-center gap-1">
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => {
-                    setStartDate(e.target.value);
+              <CustomDateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                preset={preset}
+                onApply={(s, e, p) => {
+                  if (p === 'custom') {
+                    setStartDate(s);
+                    setEndDate(e);
                     setPreset('custom');
-                  }}
-                  className="px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs focus:outline-none"
-                  title="Start Date"
-                />
-                <span className="text-slate-500 text-xs">to</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => {
-                    setEndDate(e.target.value);
-                    setPreset('custom');
-                  }}
-                  className="px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs focus:outline-none"
-                  title="End Date"
-                />
-              </div>
+                  } else {
+                    setPresetRange(p as any);
+                  }
+                }}
+              />
             </div>
           )}
         </div>
