@@ -11,6 +11,7 @@ import { useParties, useCreateParty } from '@/services/partyService';
 import { getPartyBalanceDisplay } from '@/lib/balance';
 import { useItems } from '@/services/itemService';
 import { ItemSearchSelect } from '@/components/ui/ItemSearchSelect';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { useAccounts } from '@/services/accountService';
 import { calculateInvoiceTotals, formatCurrency } from '@/lib/accounting';
 import { toast } from 'react-hot-toast';
@@ -601,12 +602,15 @@ export default function SalesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Invoice Date *</label>
-                  <input
-                    type="date"
-                    {...form.register('date')}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700/80 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+                  <DatePicker
+                    label="Invoice Date"
+                    required
+                    value={form.watch('date')}
+                    onChange={(d) => form.setValue('date', d)}
                   />
+                  {form.formState.errors.date && (
+                    <p className="text-xs text-red-400 mt-1">{form.formState.errors.date.message}</p>
+                  )}
                 </div>
 
                 <div>

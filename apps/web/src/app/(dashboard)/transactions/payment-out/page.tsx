@@ -18,6 +18,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { ModalPortal } from '@/components/common/ModalPortal';
 import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
 import { CustomDateRangePicker } from '@/components/common/CustomDateRangePicker';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { toast } from 'react-hot-toast';
 import {
   ArrowUpRight,
@@ -415,12 +416,15 @@ export default function PaymentOutPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Payment Date *</label>
-                  <input
-                    type="date"
-                    {...form.register('date')}
-                    className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-rose-500"
+                  <DatePicker
+                    label="Payment Date"
+                    required
+                    value={form.watch('date')}
+                    onChange={(d) => form.setValue('date', d)}
                   />
+                  {form.formState.errors.date && (
+                    <p className="text-xs text-red-400 mt-1">{form.formState.errors.date.message}</p>
+                  )}
                 </div>
 
                 <div>

@@ -6,6 +6,7 @@ import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ArrowDownLeft, ArrowUpRight, Clock, Filter, Activity, Box, RefreshCw } from 'lucide-react';
+import { DatePicker } from '@/components/ui/DatePicker';
 
 const TRANSACTION_CATEGORIES = [
   'SALE', 'PURCHASE', 'SALE_RETURN', 'PURCHASE_RETURN', 
@@ -70,22 +71,26 @@ export default function TransactionsPage() {
             </select>
           </div>
         </div>
-        <div className="w-full md:w-auto">
-          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 ml-1">Start Date</label>
-          <input
-            type="date"
+        <div className="w-full md:w-56">
+          <DatePicker
+            label="Start Date"
             value={startDate}
-            onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
-            className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-blue-500"
+            onChange={(d) => {
+              setStartDate(d);
+              setPage(1);
+            }}
+            placeholder="From Date"
           />
         </div>
-        <div className="w-full md:w-auto">
-          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 ml-1">End Date</label>
-          <input
-            type="date"
+        <div className="w-full md:w-56">
+          <DatePicker
+            label="End Date"
             value={endDate}
-            onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
-            className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-blue-500"
+            onChange={(d) => {
+              setEndDate(d);
+              setPage(1);
+            }}
+            placeholder="To Date"
           />
         </div>
         <button

@@ -1,0 +1,763 @@
+'use client';
+
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import {
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Clock,
+  Sparkles,
+  Check,
+  CalendarDays,
+  ChevronDown,
+} from 'lucide-react';
+import { adToBs, toNepaliNumerals } from '@/lib/nepaliDate';
+import { ModalPortal } from './ModalPortal';
+
+export interface DatePickerProps {
+  value?: string | Date | null;
+  onChange?: (date: string) => void;
+  label?: string;
+  placeholder?: string;
+  required?: boolean;
+  disabled?: boolean;
+  error?: string;
+  minDate?: string;
+  maxDate?: string;
+  showNepaliDate?: boolean;
+  showPresets?: boolean;
+  className?: string;
+  id?: string;
+  name?: string;
+}
+
+const MONTH_NAMES = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+const DAY_NAMES = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+export function DatePicker({
+  value,
+  onChange,
+  label,
+  placeholder = 'Select date...',
+  required = false,
+  disabled = false,
+  error,
+  minDate,
+  maxDate,
+  showNepaliDate = true,
+  showPresets = true,
+  className = '',
+  id,
+  name,
+}: DatePickerProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState<{ top: number; left: number; width: number; placeAbove: boolean } | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Helper format YYYY-MM-DD
+  const formatISO = (d: Date): string => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Normalized value as ISO string
+  const normalizedValue = useMemo(() => {
+    if (!value) return '';
+    if (value instanceof Date) {
+      return isNaN(value.getTime()) ? '' : formatISO(value);
+    }
+    const str = String(value);
+    if (str.includes('T')) return str.split('T')[0];
+    return str;
+  }, [value]);
+
+  // Parsing current selected date or fallback to today
+  const selectedDateObj = useMemo(() => {
+    if (!normalizedValue) return null;
+    const parts = normalizedValue.split('-');
+    if (parts.length === 3) {
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10) - 1;
+      const d = parseInt(parts[2], 10);
+      const date = new Date(y, m, d);
+      if (!isNaN(date.getTime())) return date;
+    }
+    const fallback = new Date(normalizedValue);
+    return isNaN(fallback.getTime()) ? null : fallback;
+  }, [normalizedValue]);
+
+  // Calendar navigation view date (year & month)
+  const [viewDate, setViewDate] = useState<Date>(() => selectedDateObj || new Date());
+
+  // Check mobile viewport
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Update viewDate when value changes or when opened
+  useEffect(() => {
+    if (isOpen) {
+      setViewDate(selectedDateObj || new Date());
+      updatePosition();
+    }
+  }, [isOpen, value]);
+
+  // Compute position relative to trigger button
+  const updatePosition = () => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const popoverHeight = 440;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const placeAbove = spaceBelow < popoverHeight && rect.top > popoverHeight;
+
+    setCoords({
+      top: placeAbove ? rect.top - 8 : rect.bottom + 8,
+      left: Math.max(12, Math.min(rect.left, window.innerWidth - 360)),
+      width: rect.width,
+      placeAbove,
+    });
+  };
+
+  // Close on outside click
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleScrollOrResize = () => {
+      if (!isMobile) updatePosition();
+    };
+
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node) &&
+        popoverRef.current &&
+        !popoverRef.current.contains(e.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('scroll', handleScrollOrResize, true);
+    window.addEventListener('resize', handleScrollOrResize);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
+    };
+  }, [isOpen, isMobile]);
+
+  // Formatted date string for label display
+  const displayFormatted = useMemo(() => {
+    if (!selectedDateObj) return '';
+    return selectedDateObj.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  }, [selectedDateObj]);
+
+  // Nepali Date Conversion for selected value
+  const nepaliDateSelected = useMemo(() => {
+    if (!normalizedValue) return null;
+    try {
+      return adToBs(normalizedValue);
+    } catch {
+      return null;
+    }
+  }, [normalizedValue]);
+
+  // Calendar math for viewDate
+  const viewYear = viewDate.getFullYear();
+  const viewMonth = viewDate.getMonth();
+
+  const daysInCurrentMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInPrevMonth = new Date(viewYear, viewMonth, 0).getDate();
+
+  // Navigation handlers
+  const handlePrevMonth = () => {
+    setViewDate(new Date(viewYear, viewMonth - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setViewDate(new Date(viewYear, viewMonth + 1, 1));
+  };
+
+  const handleYearChange = (newYear: number) => {
+    setViewDate(new Date(newYear, viewMonth, 1));
+  };
+
+  const handleMonthChange = (newMonth: number) => {
+    setViewDate(new Date(viewYear, newMonth, 1));
+  };
+
+  const handleSelectDate = (dateStr: string) => {
+    if (disabled) return;
+    if (onChange) {
+      onChange(dateStr);
+    }
+    setIsOpen(false);
+  };
+
+  const handleClear = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (disabled) return;
+    if (onChange) {
+      onChange('');
+    }
+  };
+
+  // Quick Preset Handlers
+  const handlePreset = (type: 'today' | 'yesterday' | 'plus7' | 'plus15' | 'plus30' | 'endOfMonth') => {
+    const now = new Date();
+    let target = new Date(now);
+
+    if (type === 'today') {
+      target = now;
+    } else if (type === 'yesterday') {
+      target.setDate(now.getDate() - 1);
+    } else if (type === 'plus7') {
+      target.setDate(now.getDate() + 7);
+    } else if (type === 'plus15') {
+      target.setDate(now.getDate() + 15);
+    } else if (type === 'plus30') {
+      target.setDate(now.getDate() + 30);
+    } else if (type === 'endOfMonth') {
+      target = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    }
+
+    const iso = formatISO(target);
+    handleSelectDate(iso);
+  };
+
+  // Today string for comparison
+  const todayISO = formatISO(new Date());
+
+  // Generate Year dropdown options (e.g. 2020 - 2035)
+  const currentYear = new Date().getFullYear();
+  const yearOptions = useMemo(() => {
+    const list: number[] = [];
+    for (let y = currentYear - 5; y <= currentYear + 10; y++) {
+      list.push(y);
+    }
+    return list;
+  }, [currentYear]);
+
+  // Calendar Day Grid Items
+  const calendarCells = useMemo(() => {
+    const cells: { dateStr: string; dayNum: number; isCurrentMonth: boolean; bsDay?: string }[] = [];
+
+    // 1. Previous month trailing days
+    for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+      const day = daysInPrevMonth - i;
+      const prevDate = new Date(viewYear, viewMonth - 1, day);
+      const iso = formatISO(prevDate);
+      let bsDay = '';
+      try {
+        const bs = adToBs(iso);
+        bsDay = String(bs.day);
+      } catch {}
+      cells.push({
+        dateStr: iso,
+        dayNum: day,
+        isCurrentMonth: false,
+        bsDay,
+      });
+    }
+
+    // 2. Current month days
+    for (let day = 1; day <= daysInCurrentMonth; day++) {
+      const d = new Date(viewYear, viewMonth, day);
+      const iso = formatISO(d);
+      let bsDay = '';
+      try {
+        const bs = adToBs(iso);
+        bsDay = String(bs.day);
+      } catch {}
+      cells.push({
+        dateStr: iso,
+        dayNum: day,
+        isCurrentMonth: true,
+        bsDay,
+      });
+    }
+
+    // 3. Next month leading days to complete grid (multiples of 7)
+    const remaining = (7 - (cells.length % 7)) % 7;
+    for (let day = 1; day <= remaining; day++) {
+      const nextDate = new Date(viewYear, viewMonth + 1, day);
+      const iso = formatISO(nextDate);
+      let bsDay = '';
+      try {
+        const bs = adToBs(iso);
+        bsDay = String(bs.day);
+      } catch {}
+      cells.push({
+        dateStr: iso,
+        dayNum: day,
+        isCurrentMonth: false,
+        bsDay,
+      });
+    }
+
+    return cells;
+  }, [viewYear, viewMonth, daysInCurrentMonth, firstDayOfWeek, daysInPrevMonth]);
+
+  // Nepali month name for current viewing month
+  const currentViewBs = useMemo(() => {
+    try {
+      const midMonth = new Date(viewYear, viewMonth, 15);
+      const bs = adToBs(midMonth);
+      return `${bs.monthNameEn} / ${bs.monthNameNp} ${toNepaliNumerals(bs.year)}`;
+    } catch {
+      return '';
+    }
+  }, [viewYear, viewMonth]);
+
+  return (
+    <div className={`relative flex flex-col ${className}`} ref={containerRef}>
+      {label && (
+        <label className="block text-slate-300 font-semibold mb-1 text-xs">
+          {label} {required && <span className="text-rose-400">*</span>}
+        </label>
+      )}
+
+      {/* Hidden input for standard forms / accessibility */}
+      <input type="hidden" name={name} id={id} value={normalizedValue} />
+
+      {/* Clickable Trigger Button */}
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => {
+          if (!disabled) {
+            setIsOpen(!isOpen);
+          }
+        }}
+        className={`group w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-left transition-all duration-200 ${
+          disabled
+            ? 'bg-slate-800/40 border border-slate-800 text-slate-500 cursor-not-allowed'
+            : error
+            ? 'bg-rose-500/10 border border-rose-500/80 text-white focus:ring-2 focus:ring-rose-500/40'
+            : isOpen
+            ? 'bg-slate-900 border-blue-500 ring-2 ring-blue-500/20 text-white shadow-lg shadow-blue-500/10'
+            : 'bg-slate-900/90 hover:bg-slate-900 border border-slate-700/80 hover:border-slate-600 text-white'
+        }`}
+      >
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <div
+            className={`p-1.5 rounded-lg transition-colors ${
+              isOpen
+                ? 'bg-blue-500/20 text-blue-400'
+                : selectedDateObj
+                ? 'bg-blue-500/15 text-blue-400 group-hover:bg-blue-500/20'
+                : 'bg-slate-800 text-slate-400 group-hover:text-slate-300'
+            }`}
+          >
+            <CalendarIcon className="w-3.5 h-3.5" />
+          </div>
+
+          <div className="min-w-0 flex-1">
+            {normalizedValue ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-semibold text-white font-mono tracking-tight">{displayFormatted}</span>
+                {showNepaliDate && nepaliDateSelected && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-blue-500/15 text-blue-300 border border-blue-500/25">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+                    {nepaliDateSelected.monthNameEn} {String(nepaliDateSelected.day).padStart(2, '0')},{' '}
+                    {nepaliDateSelected.year} BS
+                  </span>
+                )}
+              </div>
+            ) : (
+              <span className="text-xs text-slate-500 font-normal">{placeholder}</span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {normalizedValue && !disabled && !required && (
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={handleClear}
+              className="p-1 text-slate-400 hover:text-rose-300 hover:bg-rose-500/20 rounded-lg transition-colors"
+              title="Clear date"
+            >
+              <X className="w-3 h-3" />
+            </div>
+          )}
+          <ChevronDown
+            className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180 text-blue-400' : 'group-hover:text-slate-300'}`}
+          />
+        </div>
+      </button>
+
+      {error && <p className="text-[11px] text-rose-400 mt-1 font-medium">{error}</p>}
+
+      {/* Popover / Modal Calendar Dropdown */}
+      {isOpen && (
+        <ModalPortal>
+          {isMobile ? (
+            /* Mobile View: Centered Modal with Backdrop */
+            <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[120] flex items-center justify-center p-3 animate-in fade-in duration-200">
+              <div
+                ref={popoverRef}
+                className="w-full max-w-[350px] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-4 space-y-3.5 animate-in zoom-in-95 duration-150"
+              >
+                {/* Mobile Header with Close */}
+                <div className="flex items-center justify-between pb-2.5 border-b border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <CalendarDays className="w-4 h-4 text-blue-400" />
+                    <span className="text-xs font-bold text-white">Select Date</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsOpen(false)}
+                    className="p-1 rounded-lg text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-all"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Calendar Body */}
+                <CalendarContent
+                  viewYear={viewYear}
+                  viewMonth={viewMonth}
+                  viewDate={viewDate}
+                  currentViewBs={currentViewBs}
+                  yearOptions={yearOptions}
+                  calendarCells={calendarCells}
+                  value={normalizedValue}
+                  todayISO={todayISO}
+                  minDate={minDate}
+                  maxDate={maxDate}
+                  showPresets={showPresets}
+                  nepaliDateSelected={nepaliDateSelected}
+                  displayFormatted={displayFormatted}
+                  onPrevMonth={handlePrevMonth}
+                  onNextMonth={handleNextMonth}
+                  onYearChange={handleYearChange}
+                  onMonthChange={handleMonthChange}
+                  onSelectDate={handleSelectDate}
+                  onPreset={handlePreset}
+                  onClose={() => setIsOpen(false)}
+                />
+              </div>
+            </div>
+          ) : (
+            /* Desktop View: Anchored Dropdown Popover */
+            coords && (
+              <div
+                ref={popoverRef}
+                style={{
+                  position: 'fixed',
+                  top: coords.placeAbove ? 'auto' : `${coords.top}px`,
+                  bottom: coords.placeAbove ? `${window.innerHeight - coords.top}px` : 'auto',
+                  left: `${coords.left}px`,
+                }}
+                className="z-[120] w-[350px] bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl shadow-slate-950/90 p-4 space-y-3.5 animate-in fade-in zoom-in-95 duration-150"
+              >
+                <CalendarContent
+                  viewYear={viewYear}
+                  viewMonth={viewMonth}
+                  viewDate={viewDate}
+                  currentViewBs={currentViewBs}
+                  yearOptions={yearOptions}
+                  calendarCells={calendarCells}
+                  value={normalizedValue}
+                  todayISO={todayISO}
+                  minDate={minDate}
+                  maxDate={maxDate}
+                  showPresets={showPresets}
+                  nepaliDateSelected={nepaliDateSelected}
+                  displayFormatted={displayFormatted}
+                  onPrevMonth={handlePrevMonth}
+                  onNextMonth={handleNextMonth}
+                  onYearChange={handleYearChange}
+                  onMonthChange={handleMonthChange}
+                  onSelectDate={handleSelectDate}
+                  onPreset={handlePreset}
+                  onClose={() => setIsOpen(false)}
+                />
+              </div>
+            )
+          )}
+        </ModalPortal>
+      )}
+    </div>
+  );
+}
+
+// Sub-component for Calendar UI
+interface CalendarContentProps {
+  viewYear: number;
+  viewMonth: number;
+  viewDate: Date;
+  currentViewBs: string;
+  yearOptions: number[];
+  calendarCells: { dateStr: string; dayNum: number; isCurrentMonth: boolean; bsDay?: string }[];
+  value: string;
+  todayISO: string;
+  minDate?: string;
+  maxDate?: string;
+  showPresets?: boolean;
+  nepaliDateSelected: any;
+  displayFormatted: string;
+  onPrevMonth: () => void;
+  onNextMonth: () => void;
+  onYearChange: (y: number) => void;
+  onMonthChange: (m: number) => void;
+  onSelectDate: (d: string) => void;
+  onPreset: (type: 'today' | 'yesterday' | 'plus7' | 'plus15' | 'plus30' | 'endOfMonth') => void;
+  onClose: () => void;
+}
+
+function CalendarContent({
+  viewYear,
+  viewMonth,
+  currentViewBs,
+  yearOptions,
+  calendarCells,
+  value,
+  todayISO,
+  minDate,
+  maxDate,
+  showPresets,
+  nepaliDateSelected,
+  displayFormatted,
+  onPrevMonth,
+  onNextMonth,
+  onYearChange,
+  onMonthChange,
+  onSelectDate,
+  onPreset,
+  onClose,
+}: CalendarContentProps) {
+  return (
+    <div className="space-y-3">
+      {/* Month / Year Header Navigation */}
+      <div className="flex items-center justify-between gap-1.5">
+        <button
+          type="button"
+          onClick={onPrevMonth}
+          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800 transition-all flex items-center justify-center"
+          title="Previous month"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+
+        <div className="flex items-center gap-1.5 flex-1 justify-center">
+          {/* Month Select */}
+          <select
+            value={viewMonth}
+            onChange={(e) => onMonthChange(Number(e.target.value))}
+            className="px-2 py-1 rounded-lg bg-slate-800/90 border border-slate-700/80 text-white text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+          >
+            {MONTH_NAMES.map((name, idx) => (
+              <option key={name} value={idx} className="bg-slate-900 text-white">
+                {name}
+              </option>
+            ))}
+          </select>
+
+          {/* Year Select */}
+          <select
+            value={viewYear}
+            onChange={(e) => onYearChange(Number(e.target.value))}
+            className="px-2 py-1 rounded-lg bg-slate-800/90 border border-slate-700/80 text-white text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer font-mono"
+          >
+            {yearOptions.map((year) => (
+              <option key={year} value={year} className="bg-slate-900 text-white">
+                {year}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <button
+          type="button"
+          onClick={onNextMonth}
+          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800 transition-all flex items-center justify-center"
+          title="Next month"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Nepali Context Banner */}
+      {currentViewBs && (
+        <div className="px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-between text-[11px] text-blue-300">
+          <span className="font-medium">BS Calendar:</span>
+          <span className="font-semibold">{currentViewBs}</span>
+        </div>
+      )}
+
+      {/* Days of Week Header */}
+      <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-bold text-slate-400 py-1 border-b border-slate-800">
+        {DAY_NAMES.map((name, i) => (
+          <span key={name} className={i === 6 ? 'text-rose-400' : ''}>
+            {name}
+          </span>
+        ))}
+      </div>
+
+      {/* Days Grid */}
+      <div className="grid grid-cols-7 gap-1">
+        {calendarCells.map((cell, idx) => {
+          const isSelected = cell.dateStr === value;
+          const isToday = cell.dateStr === todayISO;
+          const isSaturday = (idx % 7) === 6;
+
+          let isDisabled = false;
+          if (minDate && cell.dateStr < minDate) isDisabled = true;
+          if (maxDate && cell.dateStr > maxDate) isDisabled = true;
+
+          return (
+            <button
+              key={cell.dateStr}
+              type="button"
+              disabled={isDisabled}
+              onClick={() => onSelectDate(cell.dateStr)}
+              className={`relative h-9 rounded-xl flex flex-col items-center justify-center transition-all group ${
+                isDisabled
+                  ? 'opacity-20 cursor-not-allowed'
+                  : isSelected
+                  ? 'bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold shadow-md shadow-blue-600/30 scale-105 z-10'
+                  : isToday
+                  ? 'bg-blue-500/15 border border-blue-400/50 text-blue-300 font-bold hover:bg-blue-500/25'
+                  : cell.isCurrentMonth
+                  ? isSaturday
+                    ? 'text-rose-300 hover:bg-slate-800 hover:text-white font-medium'
+                    : 'text-slate-200 hover:bg-slate-800 hover:text-white font-medium'
+                  : 'text-slate-600 hover:bg-slate-800/40 hover:text-slate-400 text-xs'
+              }`}
+            >
+              <span className="text-xs leading-none">{cell.dayNum}</span>
+              {cell.bsDay && (
+                <span
+                  className={`text-[8px] leading-none mt-0.5 ${
+                    isSelected ? 'text-blue-100 opacity-90' : isToday ? 'text-blue-400 font-semibold' : 'text-slate-500'
+                  }`}
+                >
+                  {cell.bsDay}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Quick Action Presets */}
+      {showPresets && (
+        <div className="pt-2 border-t border-slate-800 space-y-1.5">
+          <div className="flex items-center justify-between text-[10px] text-slate-400 uppercase font-bold tracking-wider px-0.5">
+            <span>Quick Shortcuts</span>
+            <Sparkles className="w-3 h-3 text-blue-400" />
+          </div>
+          <div className="grid grid-cols-3 gap-1.5 text-xs">
+            <button
+              type="button"
+              onClick={() => onPreset('today')}
+              className="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-medium transition-colors flex items-center justify-center gap-1 border border-slate-700/60"
+            >
+              <Clock className="w-3 h-3 text-emerald-400" /> Today
+            </button>
+            <button
+              type="button"
+              onClick={() => onPreset('yesterday')}
+              className="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-medium transition-colors flex items-center justify-center gap-1 border border-slate-700/60"
+            >
+              Yesterday
+            </button>
+            <button
+              type="button"
+              onClick={() => onPreset('plus7')}
+              className="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-medium transition-colors flex items-center justify-center gap-1 border border-slate-700/60"
+            >
+              +7 Days
+            </button>
+            <button
+              type="button"
+              onClick={() => onPreset('plus15')}
+              className="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-medium transition-colors flex items-center justify-center gap-1 border border-slate-700/60"
+            >
+              +15 Days
+            </button>
+            <button
+              type="button"
+              onClick={() => onPreset('plus30')}
+              className="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-medium transition-colors flex items-center justify-center gap-1 border border-slate-700/60"
+            >
+              +30 Days
+            </button>
+            <button
+              type="button"
+              onClick={() => onPreset('endOfMonth')}
+              className="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-medium transition-colors flex items-center justify-center gap-1 border border-slate-700/60"
+            >
+              Month End
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Footer Selected Summary & Done Button */}
+      {value && (
+        <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
+          <div className="min-w-0 pr-2">
+            <p className="text-[11px] font-semibold text-white truncate font-mono">{displayFormatted}</p>
+            {nepaliDateSelected && (
+              <p className="text-[10px] text-blue-400 font-medium truncate">
+                {nepaliDateSelected.formattedNp} ({nepaliDateSelected.formattedEn})
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-600/20 flex items-center gap-1"
+          >
+            <Check className="w-3 h-3" /> Done
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

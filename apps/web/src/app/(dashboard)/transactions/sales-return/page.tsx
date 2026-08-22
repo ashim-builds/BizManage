@@ -15,6 +15,7 @@ import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ModalPortal } from '@/components/common/ModalPortal';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { RotateCcw, Plus, FileText, ArrowDownLeft, X, Trash2, CheckCircle2, AlertTriangle, Eye } from 'lucide-react';
 import { PaymentMode } from '@bizmanage/types';
 
@@ -353,12 +354,15 @@ export default function SalesReturnPage() {
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-slate-300 mb-1">Return Date *</label>
-                    <input
-                      type="date"
-                      {...form.register('date')}
-                      className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    <DatePicker
+                      label="Return Date"
+                      required
+                      value={form.watch('date')}
+                      onChange={(d) => form.setValue('date', d)}
                     />
+                    {form.formState.errors.date && (
+                      <p className="text-xs text-red-400 mt-1">{form.formState.errors.date.message}</p>
+                    )}
                   </div>
                 </div>
 

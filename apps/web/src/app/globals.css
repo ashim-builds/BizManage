@@ -74,6 +74,25 @@
   ::-webkit-scrollbar-thumb:hover {
     background-color: #475569;
   }
+
+  /* Dark theme date picker styling fallback */
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"] {
+    color-scheme: dark;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(0.85);
+    opacity: 0.8;
+    transition: opacity 0.2s ease, filter 0.2s ease;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+    filter: invert(1);
+  }
 }
 
 @media print {
