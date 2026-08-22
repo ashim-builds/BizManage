@@ -6,8 +6,6 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
-  Clock,
-  Sparkles,
   Check,
   CalendarDays,
   ChevronDown,
@@ -24,7 +22,6 @@ export interface DatePickerProps {
   error?: string;
   minDate?: string;
   maxDate?: string;
-  showPresets?: boolean;
   className?: string;
   id?: string;
   name?: string;
@@ -57,7 +54,6 @@ export function DatePicker({
   error,
   minDate,
   maxDate,
-  showPresets = true,
   className = '',
   id,
   name,
@@ -127,13 +123,13 @@ export function DatePicker({
   const updatePosition = () => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const popoverHeight = 390;
+    const popoverHeight = 310;
     const spaceBelow = window.innerHeight - rect.bottom;
     const placeAbove = spaceBelow < popoverHeight && rect.top > popoverHeight;
 
     setCoords({
       top: placeAbove ? rect.top - 8 : rect.bottom + 8,
-      left: Math.max(12, Math.min(rect.left, window.innerWidth - 360)),
+      left: Math.max(12, Math.min(rect.left, window.innerWidth - 340)),
       width: rect.width,
       placeAbove,
     });
@@ -229,29 +225,6 @@ export function DatePicker({
     if (onChange) {
       onChange('');
     }
-  };
-
-  // Quick Preset Handlers
-  const handlePreset = (type: 'today' | 'yesterday' | 'plus7' | 'plus15' | 'plus30' | 'endOfMonth') => {
-    const now = new Date();
-    let target = new Date(now);
-
-    if (type === 'today') {
-      target = now;
-    } else if (type === 'yesterday') {
-      target.setDate(now.getDate() - 1);
-    } else if (type === 'plus7') {
-      target.setDate(now.getDate() + 7);
-    } else if (type === 'plus15') {
-      target.setDate(now.getDate() + 15);
-    } else if (type === 'plus30') {
-      target.setDate(now.getDate() + 30);
-    } else if (type === 'endOfMonth') {
-      target = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    }
-
-    const iso = formatISO(target);
-    handleSelectDate(iso);
   };
 
   // Today string for comparison
@@ -386,7 +359,7 @@ export function DatePicker({
             <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[120] flex items-center justify-center p-3 animate-in fade-in duration-200">
               <div
                 ref={popoverRef}
-                className="w-full max-w-[340px] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-4 space-y-3 animate-in zoom-in-95 duration-150"
+                className="w-full max-w-[330px] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-3.5 space-y-2.5 animate-in zoom-in-95 duration-150"
               >
                 {/* Mobile Header with Close */}
                 <div className="flex items-center justify-between pb-2 border-b border-slate-800">
@@ -413,14 +386,12 @@ export function DatePicker({
                   todayISO={todayISO}
                   minDate={minDate}
                   maxDate={maxDate}
-                  showPresets={showPresets}
                   displayFormatted={displayFormatted}
                   onPrevMonth={handlePrevMonth}
                   onNextMonth={handleNextMonth}
                   onYearChange={handleYearChange}
                   onMonthChange={handleMonthChange}
                   onSelectDate={handleSelectDate}
-                  onPreset={handlePreset}
                   onClose={() => setIsOpen(false)}
                 />
               </div>
@@ -436,7 +407,7 @@ export function DatePicker({
                   bottom: coords.placeAbove ? `${window.innerHeight - coords.top}px` : 'auto',
                   left: `${coords.left}px`,
                 }}
-                className="z-[120] w-[340px] bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl shadow-slate-950/90 p-4 space-y-3 animate-in fade-in zoom-in-95 duration-150"
+                className="z-[120] w-[330px] bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl shadow-slate-950/90 p-3.5 space-y-2.5 animate-in fade-in zoom-in-95 duration-150"
               >
                 <CalendarContent
                   viewYear={viewYear}
@@ -447,14 +418,12 @@ export function DatePicker({
                   todayISO={todayISO}
                   minDate={minDate}
                   maxDate={maxDate}
-                  showPresets={showPresets}
                   displayFormatted={displayFormatted}
                   onPrevMonth={handlePrevMonth}
                   onNextMonth={handleNextMonth}
                   onYearChange={handleYearChange}
                   onMonthChange={handleMonthChange}
                   onSelectDate={handleSelectDate}
-                  onPreset={handlePreset}
                   onClose={() => setIsOpen(false)}
                 />
               </div>
@@ -476,14 +445,12 @@ interface CalendarContentProps {
   todayISO: string;
   minDate?: string;
   maxDate?: string;
-  showPresets?: boolean;
   displayFormatted: string;
   onPrevMonth: () => void;
   onNextMonth: () => void;
   onYearChange: (y: number) => void;
   onMonthChange: (m: number) => void;
   onSelectDate: (d: string) => void;
-  onPreset: (type: 'today' | 'yesterday' | 'plus7' | 'plus15' | 'plus30' | 'endOfMonth') => void;
   onClose: () => void;
 }
 
@@ -496,18 +463,16 @@ function CalendarContent({
   todayISO,
   minDate,
   maxDate,
-  showPresets,
   displayFormatted,
   onPrevMonth,
   onNextMonth,
   onYearChange,
   onMonthChange,
   onSelectDate,
-  onPreset,
   onClose,
 }: CalendarContentProps) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5">
       {/* Month / Year Header Navigation */}
       <div className="flex items-center justify-between gap-1.5">
         <button
@@ -568,7 +533,7 @@ function CalendarContent({
 
       {/* Days Grid */}
       <div className="grid grid-cols-7 gap-1">
-        {calendarCells.map((cell, idx) => {
+        {calendarCells.map((cell) => {
           const isSelected = cell.dateStr === value;
           const isToday = cell.dateStr === todayISO;
 
@@ -599,60 +564,6 @@ function CalendarContent({
           );
         })}
       </div>
-
-      {/* Quick Action Presets */}
-      {showPresets && (
-        <div className="pt-2 border-t border-slate-800 space-y-1.5">
-          <div className="flex items-center justify-between text-[10px] text-slate-400 uppercase font-bold tracking-wider px-0.5">
-            <span>Quick Shortcuts</span>
-            <Sparkles className="w-3 h-3 text-blue-400" />
-          </div>
-          <div className="grid grid-cols-3 gap-1.5 text-xs">
-            <button
-              type="button"
-              onClick={() => onPreset('today')}
-              className="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-medium transition-colors flex items-center justify-center gap-1 border border-slate-700/60"
-            >
-              <Clock className="w-3 h-3 text-emerald-400" /> Today
-            </button>
-            <button
-              type="button"
-              onClick={() => onPreset('yesterday')}
-              className="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-medium transition-colors flex items-center justify-center gap-1 border border-slate-700/60"
-            >
-              Yesterday
-            </button>
-            <button
-              type="button"
-              onClick={() => onPreset('plus7')}
-              className="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-medium transition-colors flex items-center justify-center gap-1 border border-slate-700/60"
-            >
-              +7 Days
-            </button>
-            <button
-              type="button"
-              onClick={() => onPreset('plus15')}
-              className="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-medium transition-colors flex items-center justify-center gap-1 border border-slate-700/60"
-            >
-              +15 Days
-            </button>
-            <button
-              type="button"
-              onClick={() => onPreset('plus30')}
-              className="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-medium transition-colors flex items-center justify-center gap-1 border border-slate-700/60"
-            >
-              +30 Days
-            </button>
-            <button
-              type="button"
-              onClick={() => onPreset('endOfMonth')}
-              className="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-medium transition-colors flex items-center justify-center gap-1 border border-slate-700/60"
-            >
-              Month End
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Footer Selected Summary & Done Button */}
       {value && (
