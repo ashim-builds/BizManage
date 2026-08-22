@@ -70,6 +70,7 @@ export default function SubscriptionPage() {
   
   // Payment Modal State
   const [qrModalPackage, setQrModalPackage] = useState<SubscriptionPackage | null>(null);
+  const [confirmUpgradePackage, setConfirmUpgradePackage] = useState<SubscriptionPackage | null>(null);
   const [copied, setCopied] = useState(false);
   const [referenceId, setReferenceId] = useState('');
   const [senderName, setSenderName] = useState('');
@@ -78,7 +79,7 @@ export default function SubscriptionPage() {
 
   // Block background scroll when modal is open
   useEffect(() => {
-    if (qrModalPackage) {
+    if (qrModalPackage || confirmUpgradePackage) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -86,7 +87,7 @@ export default function SubscriptionPage() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [qrModalPackage]);
+  }, [qrModalPackage, confirmUpgradePackage]);
 
   const toggleExpand = (pkgId: string) => {
     setExpandedPackages((prev) =>
@@ -132,7 +133,19 @@ export default function SubscriptionPage() {
 
   const handleSelectPlan = async (pkg: SubscriptionPackage) => {
     if (Number(pkg.price) > 0 && !pkg.isDefault) {
-      // Open Garima Bank QR Code Payment Modal
+      const hasPendingPayment = myRequests.some((r) => r.status === 'PENDING');
+      const hasActivePaidPlan =
+        currentBiz?.subscriptionStatus === 'ACTIVE' &&
+        Boolean(currentBiz?.subscriptionPackage) &&
+        currentBiz?.subscriptionPackage?.name?.toLowerCase() !== 'free';
+
+      // If user has pending verification or already has an active paid plan, show warning first
+      if (hasPendingPayment || hasActivePaidPlan) {
+        setConfirmUpgradePackage(pkg);
+        return;
+      }
+
+      // Otherwise open QR Code Payment Modal directly
       setQrModalPackage(pkg);
       setReferenceId('');
       setSenderName(user?.name || '');
@@ -153,6 +166,16 @@ export default function SubscriptionPage() {
         toast.error('Failed to update subscription plan.');
       }
     }
+  };
+
+  const handleProceedToPayment = () => {
+    if (!confirmUpgradePackage) return;
+    const pkg = confirmUpgradePackage;
+    setConfirmUpgradePackage(null);
+    setQrModalPackage(pkg);
+    setReferenceId('');
+    setSenderName(user?.name || '');
+    setNotes('');
   };
 
   const handleManualPaymentSubmit = async (e: React.FormEvent) => {
@@ -441,6 +464,105 @@ export default function SubscriptionPage() {
           </table>
         </div>
       </div>
+
+      {/* PRE-UPGRADE CONFIRMATION WARNING MODAL */}
+      {confirmUpgradePackage && (
+        <ModalPortal>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+            <div
+              className="w-full max-w-md rounded-2xl sm:rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden font-sans text-slate-200 animate-in zoom-in-95 duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950/80">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                    <AlertTriangle className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white leading-tight">
+                      Plan Re-Selection Notice (अपग्रेड सूचना)
+                    </h3>
+                    <p className="text-[11px] text-slate-400">
+                      Selecting: <span className="text-blue-400 font-bold">{confirmUpgradePackage.name}</span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setConfirmUpgradePackage(null)}
+                  className="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-all border border-slate-700/50"
+                  title="Close modal"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-5 sm:p-6 space-y-4">
+                {/* Condition 1: Pending Payment Warning */}
+                {myRequests.some((r) => r.status === 'PENDING') && (
+                  <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs space-y-1.5">
+                    <p className="font-bold text-amber-300 flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5" /> Payment Verification In Progress
+                    </p>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      तपाईंको पहिलेको भुक्तानी अनुरोध (
+                      <span className="font-mono text-amber-300 font-bold">
+                        {myRequests.find((r) => r.status === 'PENDING')?.subscriptionPackage?.name}
+                      </span>
+                      ) हाल Superadmin बाट रुजु हुन बाँकी छ।
+                    </p>
+                    <p className="text-[10.5px] text-slate-400">
+                      You already have a pending verification. Proceeding will create an additional payment request for{' '}
+                      <strong className="text-white">{confirmUpgradePackage.name}</strong>.
+                    </p>
+                  </div>
+                )}
+
+                {/* Condition 2: Active Paid Plan Notice */}
+                {currentBiz?.subscriptionStatus === 'ACTIVE' &&
+                  Boolean(currentBiz?.subscriptionPackage) &&
+                  currentBiz?.subscriptionPackage?.name?.toLowerCase() !== 'free' && (
+                    <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-200 text-xs space-y-1.5">
+                      <p className="font-bold text-blue-300 flex items-center gap-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5" /> Active Plan Running (सक्रिय प्लान)
+                      </p>
+                      <p className="text-[11px] text-slate-300 leading-relaxed">
+                        तपाईंसँग हाल <strong className="text-white">{currentBiz.subscriptionPackage?.name}</strong> प्लान सक्रिय छ। नयाँ प्लान छान्दा बाँकी दिनहरू खेर जाँदैनन् र नयाँ प्लान अहिलेको अवधि सकिएपछि स्वतः पालो (Queue) मा रहनेछ।
+                      </p>
+                      <p className="text-[10.5px] text-slate-400">
+                        Zero days lost: Your remaining active days are 100% preserved and the new plan will be queued.
+                      </p>
+                    </div>
+                  )}
+
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  के तपाईं <strong className="text-white">{confirmUpgradePackage.name} (Rs. {confirmUpgradePackage.price})</strong> को लागि क्युआर कोड भुक्तानीमा अगाडि बढ्न चाहनुहुन्छ?
+                </p>
+
+                {/* Footer Buttons */}
+                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmUpgradePackage(null)}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                  >
+                    Cancel (रद्द)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleProceedToPayment}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-600/20"
+                  >
+                    <QrCode className="w-3.5 h-3.5" /> Continue to Payment (अगाडि बढ्नुहोस्)
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
 
       {/* BANKING QR CODE PAYMENT & VERIFICATION REQUEST MODAL */}
       {qrModalPackage && (
