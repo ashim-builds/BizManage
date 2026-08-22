@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo } from 'react';
-import { adToBs } from '@/lib/nepaliDate';
 import { Download, Printer, FileSpreadsheet } from 'lucide-react';
 
 interface VatPurchaseBookAnnex6Props {
@@ -52,8 +51,7 @@ export function VatPurchaseBookAnnex6({
   const exportCsv = () => {
     const headers = [
       'S.N.',
-      'Date (BS)',
-      'Date (AD)',
+      'Date',
       'Bill No',
       'Supplier Name',
       'Supplier PAN',
@@ -65,7 +63,6 @@ export function VatPurchaseBookAnnex6({
     ];
 
     const rows = purchases.map((p, idx) => {
-      const bs = adToBs(p.date);
       const ad = new Date(p.date).toISOString().split('T')[0];
       const amount = Number(p.totalAmount || 0);
       const vat = Number(p.taxAmount || 0);
@@ -75,7 +72,6 @@ export function VatPurchaseBookAnnex6({
 
       return [
         idx + 1,
-        `"${bs.shortNp}"`,
         `"${ad}"`,
         `"${p.billNumber || ''}"`,
         `"${p.party?.name || 'Supplier'}"`,
@@ -210,8 +206,7 @@ export function VatPurchaseBookAnnex6({
               </tr>
             ) : (
               purchases.map((p, idx) => {
-                const bs = adToBs(p.date);
-                const ad = new Date(p.date).toLocaleDateString();
+                const ad = new Date(p.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
                 const amount = Number(p.totalAmount || 0);
                 const vat = Number(p.taxAmount || 0);
                 const isVat = vat > 0;
@@ -221,9 +216,8 @@ export function VatPurchaseBookAnnex6({
                 return (
                   <tr key={p.id || idx} className="hover:bg-slate-800/30 print:hover:bg-transparent transition-colors">
                     <td className="px-3 py-3 text-center font-mono text-slate-500">{idx + 1}</td>
-                    <td className="px-4 py-3 font-mono">
-                      <span className="font-bold text-white print:text-black">{bs.shortNp}</span>
-                      <span className="text-[10px] text-slate-500 block">{ad}</span>
+                    <td className="px-4 py-3 font-mono font-medium text-white print:text-black">
+                      {ad}
                     </td>
                     <td className="px-4 py-3 font-mono font-bold text-purple-400 print:text-black">
                       {p.billNumber || '-'}

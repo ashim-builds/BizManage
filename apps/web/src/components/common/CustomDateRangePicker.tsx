@@ -405,7 +405,7 @@ export function CustomDateRangePicker({
                 <div className="pt-2.5 border-t border-slate-800 flex items-center gap-3 text-xs">
                   <div className="flex-1">
                     <label className="text-[10px] font-semibold text-slate-400 block mb-1">
-                      Start Date (सुरु मिति)
+                      Start Date
                     </label>
                     <input
                       type="date"
@@ -414,12 +414,12 @@ export function CustomDateRangePicker({
                         setTempStart(e.target.value);
                         setTempPreset('custom');
                       }}
-                      className="w-full px-2.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-none focus:border-blue-500"
+                      className="w-full px-2.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-none focus:border-blue-500 font-mono"
                     />
                   </div>
                   <div className="flex-1">
                     <label className="text-[10px] font-semibold text-slate-400 block mb-1">
-                      End Date (अन्तिम मिति)
+                      End Date
                     </label>
                     <input
                       type="date"
@@ -428,7 +428,7 @@ export function CustomDateRangePicker({
                         setTempEnd(e.target.value);
                         setTempPreset('custom');
                       }}
-                      className="w-full px-2.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-none focus:border-blue-500"
+                      className="w-full px-2.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-none focus:border-blue-500 font-mono"
                     />
                   </div>
                 </div>

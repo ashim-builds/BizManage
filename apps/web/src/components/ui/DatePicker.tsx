@@ -12,7 +12,6 @@ import {
   CalendarDays,
   ChevronDown,
 } from 'lucide-react';
-import { adToBs, toNepaliNumerals } from '@/lib/nepaliDate';
 import { ModalPortal } from './ModalPortal';
 
 export interface DatePickerProps {
@@ -25,7 +24,6 @@ export interface DatePickerProps {
   error?: string;
   minDate?: string;
   maxDate?: string;
-  showNepaliDate?: boolean;
   showPresets?: boolean;
   className?: string;
   id?: string;
@@ -59,7 +57,6 @@ export function DatePicker({
   error,
   minDate,
   maxDate,
-  showNepaliDate = true,
   showPresets = true,
   className = '',
   id,
@@ -124,13 +121,13 @@ export function DatePicker({
       setViewDate(selectedDateObj || new Date());
       updatePosition();
     }
-  }, [isOpen, value]);
+  }, [isOpen, normalizedValue]);
 
   // Compute position relative to trigger button
   const updatePosition = () => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const popoverHeight = 440;
+    const popoverHeight = 390;
     const spaceBelow = window.innerHeight - rect.bottom;
     const placeAbove = spaceBelow < popoverHeight && rect.top > popoverHeight;
 
@@ -185,22 +182,13 @@ export function DatePicker({
   // Formatted date string for label display
   const displayFormatted = useMemo(() => {
     if (!selectedDateObj) return '';
-    return selectedDateObj.toLocaleDateString('en-GB', {
+    return selectedDateObj.toLocaleDateString('en-US', {
+      weekday: 'short',
       day: 'numeric',
       month: 'short',
       year: 'numeric',
     });
   }, [selectedDateObj]);
-
-  // Nepali Date Conversion for selected value
-  const nepaliDateSelected = useMemo(() => {
-    if (!normalizedValue) return null;
-    try {
-      return adToBs(normalizedValue);
-    } catch {
-      return null;
-    }
-  }, [normalizedValue]);
 
   // Calendar math for viewDate
   const viewYear = viewDate.getFullYear();
@@ -273,7 +261,7 @@ export function DatePicker({
   const currentYear = new Date().getFullYear();
   const yearOptions = useMemo(() => {
     const list: number[] = [];
-    for (let y = currentYear - 5; y <= currentYear + 10; y++) {
+    for (let y = currentYear - 6; y <= currentYear + 10; y++) {
       list.push(y);
     }
     return list;
@@ -281,40 +269,26 @@ export function DatePicker({
 
   // Calendar Day Grid Items
   const calendarCells = useMemo(() => {
-    const cells: { dateStr: string; dayNum: number; isCurrentMonth: boolean; bsDay?: string }[] = [];
+    const cells: { dateStr: string; dayNum: number; isCurrentMonth: boolean }[] = [];
 
     // 1. Previous month trailing days
     for (let i = firstDayOfWeek - 1; i >= 0; i--) {
       const day = daysInPrevMonth - i;
       const prevDate = new Date(viewYear, viewMonth - 1, day);
-      const iso = formatISO(prevDate);
-      let bsDay = '';
-      try {
-        const bs = adToBs(iso);
-        bsDay = String(bs.day);
-      } catch {}
       cells.push({
-        dateStr: iso,
+        dateStr: formatISO(prevDate),
         dayNum: day,
         isCurrentMonth: false,
-        bsDay,
       });
     }
 
     // 2. Current month days
     for (let day = 1; day <= daysInCurrentMonth; day++) {
       const d = new Date(viewYear, viewMonth, day);
-      const iso = formatISO(d);
-      let bsDay = '';
-      try {
-        const bs = adToBs(iso);
-        bsDay = String(bs.day);
-      } catch {}
       cells.push({
-        dateStr: iso,
+        dateStr: formatISO(d),
         dayNum: day,
         isCurrentMonth: true,
-        bsDay,
       });
     }
 
@@ -322,33 +296,15 @@ export function DatePicker({
     const remaining = (7 - (cells.length % 7)) % 7;
     for (let day = 1; day <= remaining; day++) {
       const nextDate = new Date(viewYear, viewMonth + 1, day);
-      const iso = formatISO(nextDate);
-      let bsDay = '';
-      try {
-        const bs = adToBs(iso);
-        bsDay = String(bs.day);
-      } catch {}
       cells.push({
-        dateStr: iso,
+        dateStr: formatISO(nextDate),
         dayNum: day,
         isCurrentMonth: false,
-        bsDay,
       });
     }
 
     return cells;
   }, [viewYear, viewMonth, daysInCurrentMonth, firstDayOfWeek, daysInPrevMonth]);
-
-  // Nepali month name for current viewing month
-  const currentViewBs = useMemo(() => {
-    try {
-      const midMonth = new Date(viewYear, viewMonth, 15);
-      const bs = adToBs(midMonth);
-      return `${bs.monthNameEn} / ${bs.monthNameNp} ${toNepaliNumerals(bs.year)}`;
-    } catch {
-      return '';
-    }
-  }, [viewYear, viewMonth]);
 
   return (
     <div className={`relative flex flex-col ${className}`} ref={containerRef}>
@@ -358,7 +314,7 @@ export function DatePicker({
         </label>
       )}
 
-      {/* Hidden input for standard forms / accessibility */}
+      {/* Hidden input for standard forms */}
       <input type="hidden" name={name} id={id} value={normalizedValue} />
 
       {/* Clickable Trigger Button */}
@@ -395,16 +351,7 @@ export function DatePicker({
 
           <div className="min-w-0 flex-1">
             {normalizedValue ? (
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-semibold text-white font-mono tracking-tight">{displayFormatted}</span>
-                {showNepaliDate && nepaliDateSelected && (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-blue-500/15 text-blue-300 border border-blue-500/25">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
-                    {nepaliDateSelected.monthNameEn} {String(nepaliDateSelected.day).padStart(2, '0')},{' '}
-                    {nepaliDateSelected.year} BS
-                  </span>
-                )}
-              </div>
+              <span className="text-xs font-semibold text-white font-mono tracking-tight">{displayFormatted}</span>
             ) : (
               <span className="text-xs text-slate-500 font-normal">{placeholder}</span>
             )}
@@ -439,10 +386,10 @@ export function DatePicker({
             <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[120] flex items-center justify-center p-3 animate-in fade-in duration-200">
               <div
                 ref={popoverRef}
-                className="w-full max-w-[350px] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-4 space-y-3.5 animate-in zoom-in-95 duration-150"
+                className="w-full max-w-[340px] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-4 space-y-3 animate-in zoom-in-95 duration-150"
               >
                 {/* Mobile Header with Close */}
-                <div className="flex items-center justify-between pb-2.5 border-b border-slate-800">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
                   <div className="flex items-center gap-2">
                     <CalendarDays className="w-4 h-4 text-blue-400" />
                     <span className="text-xs font-bold text-white">Select Date</span>
@@ -460,8 +407,6 @@ export function DatePicker({
                 <CalendarContent
                   viewYear={viewYear}
                   viewMonth={viewMonth}
-                  viewDate={viewDate}
-                  currentViewBs={currentViewBs}
                   yearOptions={yearOptions}
                   calendarCells={calendarCells}
                   value={normalizedValue}
@@ -469,7 +414,6 @@ export function DatePicker({
                   minDate={minDate}
                   maxDate={maxDate}
                   showPresets={showPresets}
-                  nepaliDateSelected={nepaliDateSelected}
                   displayFormatted={displayFormatted}
                   onPrevMonth={handlePrevMonth}
                   onNextMonth={handleNextMonth}
@@ -492,13 +436,11 @@ export function DatePicker({
                   bottom: coords.placeAbove ? `${window.innerHeight - coords.top}px` : 'auto',
                   left: `${coords.left}px`,
                 }}
-                className="z-[120] w-[350px] bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl shadow-slate-950/90 p-4 space-y-3.5 animate-in fade-in zoom-in-95 duration-150"
+                className="z-[120] w-[340px] bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl shadow-slate-950/90 p-4 space-y-3 animate-in fade-in zoom-in-95 duration-150"
               >
                 <CalendarContent
                   viewYear={viewYear}
                   viewMonth={viewMonth}
-                  viewDate={viewDate}
-                  currentViewBs={currentViewBs}
                   yearOptions={yearOptions}
                   calendarCells={calendarCells}
                   value={normalizedValue}
@@ -506,7 +448,6 @@ export function DatePicker({
                   minDate={minDate}
                   maxDate={maxDate}
                   showPresets={showPresets}
-                  nepaliDateSelected={nepaliDateSelected}
                   displayFormatted={displayFormatted}
                   onPrevMonth={handlePrevMonth}
                   onNextMonth={handleNextMonth}
@@ -529,16 +470,13 @@ export function DatePicker({
 interface CalendarContentProps {
   viewYear: number;
   viewMonth: number;
-  viewDate: Date;
-  currentViewBs: string;
   yearOptions: number[];
-  calendarCells: { dateStr: string; dayNum: number; isCurrentMonth: boolean; bsDay?: string }[];
+  calendarCells: { dateStr: string; dayNum: number; isCurrentMonth: boolean }[];
   value: string;
   todayISO: string;
   minDate?: string;
   maxDate?: string;
   showPresets?: boolean;
-  nepaliDateSelected: any;
   displayFormatted: string;
   onPrevMonth: () => void;
   onNextMonth: () => void;
@@ -552,7 +490,6 @@ interface CalendarContentProps {
 function CalendarContent({
   viewYear,
   viewMonth,
-  currentViewBs,
   yearOptions,
   calendarCells,
   value,
@@ -560,7 +497,6 @@ function CalendarContent({
   minDate,
   maxDate,
   showPresets,
-  nepaliDateSelected,
   displayFormatted,
   onPrevMonth,
   onNextMonth,
@@ -588,7 +524,7 @@ function CalendarContent({
           <select
             value={viewMonth}
             onChange={(e) => onMonthChange(Number(e.target.value))}
-            className="px-2 py-1 rounded-lg bg-slate-800/90 border border-slate-700/80 text-white text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+            className="px-2.5 py-1.5 rounded-lg bg-slate-800/90 border border-slate-700/80 text-white text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
           >
             {MONTH_NAMES.map((name, idx) => (
               <option key={name} value={idx} className="bg-slate-900 text-white">
@@ -601,7 +537,7 @@ function CalendarContent({
           <select
             value={viewYear}
             onChange={(e) => onYearChange(Number(e.target.value))}
-            className="px-2 py-1 rounded-lg bg-slate-800/90 border border-slate-700/80 text-white text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer font-mono"
+            className="px-2.5 py-1.5 rounded-lg bg-slate-800/90 border border-slate-700/80 text-white text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer font-mono"
           >
             {yearOptions.map((year) => (
               <option key={year} value={year} className="bg-slate-900 text-white">
@@ -621,18 +557,10 @@ function CalendarContent({
         </button>
       </div>
 
-      {/* Nepali Context Banner */}
-      {currentViewBs && (
-        <div className="px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-between text-[11px] text-blue-300">
-          <span className="font-medium">BS Calendar:</span>
-          <span className="font-semibold">{currentViewBs}</span>
-        </div>
-      )}
-
       {/* Days of Week Header */}
       <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-bold text-slate-400 py-1 border-b border-slate-800">
         {DAY_NAMES.map((name, i) => (
-          <span key={name} className={i === 6 ? 'text-rose-400' : ''}>
+          <span key={name} className={i === 0 || i === 6 ? 'text-blue-400' : ''}>
             {name}
           </span>
         ))}
@@ -643,7 +571,6 @@ function CalendarContent({
         {calendarCells.map((cell, idx) => {
           const isSelected = cell.dateStr === value;
           const isToday = cell.dateStr === todayISO;
-          const isSaturday = (idx % 7) === 6;
 
           let isDisabled = false;
           if (minDate && cell.dateStr < minDate) isDisabled = true;
@@ -655,30 +582,19 @@ function CalendarContent({
               type="button"
               disabled={isDisabled}
               onClick={() => onSelectDate(cell.dateStr)}
-              className={`relative h-9 rounded-xl flex flex-col items-center justify-center transition-all group ${
+              className={`h-8 rounded-xl flex items-center justify-center transition-all text-xs ${
                 isDisabled
-                  ? 'opacity-20 cursor-not-allowed'
+                  ? 'opacity-20 cursor-not-allowed text-slate-600'
                   : isSelected
                   ? 'bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold shadow-md shadow-blue-600/30 scale-105 z-10'
                   : isToday
                   ? 'bg-blue-500/15 border border-blue-400/50 text-blue-300 font-bold hover:bg-blue-500/25'
                   : cell.isCurrentMonth
-                  ? isSaturday
-                    ? 'text-rose-300 hover:bg-slate-800 hover:text-white font-medium'
-                    : 'text-slate-200 hover:bg-slate-800 hover:text-white font-medium'
-                  : 'text-slate-600 hover:bg-slate-800/40 hover:text-slate-400 text-xs'
+                  ? 'text-slate-200 hover:bg-slate-800 hover:text-white font-medium'
+                  : 'text-slate-600 hover:bg-slate-800/40 hover:text-slate-400'
               }`}
             >
-              <span className="text-xs leading-none">{cell.dayNum}</span>
-              {cell.bsDay && (
-                <span
-                  className={`text-[8px] leading-none mt-0.5 ${
-                    isSelected ? 'text-blue-100 opacity-90' : isToday ? 'text-blue-400 font-semibold' : 'text-slate-500'
-                  }`}
-                >
-                  {cell.bsDay}
-                </span>
-              )}
+              {cell.dayNum}
             </button>
           );
         })}
@@ -743,11 +659,6 @@ function CalendarContent({
         <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
           <div className="min-w-0 pr-2">
             <p className="text-[11px] font-semibold text-white truncate font-mono">{displayFormatted}</p>
-            {nepaliDateSelected && (
-              <p className="text-[10px] text-blue-400 font-medium truncate">
-                {nepaliDateSelected.formattedNp} ({nepaliDateSelected.formattedEn})
-              </p>
-            )}
           </div>
           <button
             type="button"
