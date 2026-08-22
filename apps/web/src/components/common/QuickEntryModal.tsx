@@ -59,11 +59,25 @@ interface QuickEntryModalProps {
 
 export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: QuickEntryModalProps) {
   const [activeType, setActiveType] = useState<QuickEntryType>(defaultType);
-  const [successMsg, setSuccessMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    setActiveType(defaultType);
-  }, [defaultType]);
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setActiveType(defaultType);
+      setSuccessMsg(null);
+    }
+  }, [isOpen, defaultType]);
 
   // Global Keyboard ShortCut (Escape to close)
   useEffect(() => {

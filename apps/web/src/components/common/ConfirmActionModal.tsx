@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useEffect } from 'react';
 import { AlertTriangle, X, Loader2, Trash2 } from 'lucide-react';
 import { ModalPortal } from './ModalPortal';
 
@@ -30,6 +31,17 @@ export function ConfirmActionModal({
   variant = 'danger',
   icon,
 }: ConfirmActionModalProps) {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   // Variants styling

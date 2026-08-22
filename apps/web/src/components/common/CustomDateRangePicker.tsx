@@ -10,6 +10,7 @@ import {
   RotateCcw,
   Sparkles,
 } from 'lucide-react';
+import { ModalPortal } from './ModalPortal';
 
 export interface CustomDateRangePickerProps {
   startDate: string; // YYYY-MM-DD
@@ -27,6 +28,18 @@ export function CustomDateRangePicker({
   className = '',
 }: CustomDateRangePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  // Block background scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
   // Temporary selection state while modal is open
   const [tempStart, setTempStart] = useState(startDate);
@@ -197,12 +210,13 @@ export function CustomDateRangePicker({
 
       {/* FULLY ACCESSIBLE CENTERED CALENDAR MODAL WITH BACKDROP */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
-          {/* Modal Container */}
-          <div
-            className="w-full max-w-[560px] rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden font-sans text-slate-200 animate-in zoom-in-95 duration-150"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <ModalPortal>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-150">
+            {/* Modal Container */}
+            <div
+              className="w-full max-w-[560px] rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden font-sans text-slate-200 animate-in zoom-in-95 duration-150"
+              onClick={(e) => e.stopPropagation()}
+            >
             {/* Modal Header */}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-950/60">
               <div className="flex items-center gap-2.5">
@@ -450,7 +464,8 @@ export function CustomDateRangePicker({
             </div>
           </div>
         </div>
-      )}
+      </ModalPortal>
+    )}
     </div>
   );
 }

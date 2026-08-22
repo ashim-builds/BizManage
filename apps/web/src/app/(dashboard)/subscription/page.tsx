@@ -28,6 +28,7 @@ import { api } from '@/lib/api';
 import { useUpdateBusiness } from '@/services/businessService';
 import { AVAILABLE_FEATURES } from '@/lib/constants';
 import { toast } from 'react-hot-toast';
+import { ModalPortal } from '@/components/common/ModalPortal';
 
 interface SubscriptionPackage {
   id: string;
@@ -74,6 +75,18 @@ export default function SubscriptionPage() {
   const [senderName, setSenderName] = useState('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Block background scroll when modal is open
+  useEffect(() => {
+    if (qrModalPackage) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [qrModalPackage]);
 
   const toggleExpand = (pkgId: string) => {
     setExpandedPackages((prev) =>
@@ -431,11 +444,12 @@ export default function SubscriptionPage() {
 
       {/* BANKING QR CODE PAYMENT & VERIFICATION REQUEST MODAL */}
       {qrModalPackage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
-          <div
-            className="w-full max-w-lg max-h-[92vh] flex flex-col rounded-2xl sm:rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden font-sans text-slate-200 animate-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <ModalPortal>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-2.5 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+            <div
+              className="w-full max-w-lg max-h-[92vh] flex flex-col rounded-2xl sm:rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden font-sans text-slate-200 animate-in zoom-in-95 duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
             {/* Modal Header (Sticky) */}
             <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-950/80 shrink-0">
               <div className="flex items-center gap-2.5">
@@ -650,7 +664,8 @@ export default function SubscriptionPage() {
             </form>
           </div>
         </div>
-      )}
+      </ModalPortal>
+    )}
     </div>
   );
 }
