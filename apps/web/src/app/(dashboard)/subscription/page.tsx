@@ -68,9 +68,11 @@ export default function SubscriptionPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [expandedPackages, setExpandedPackages] = useState<string[]>([]);
   
-  // Payment Modal State
+  // Payment & Downgrade Modal State
   const [qrModalPackage, setQrModalPackage] = useState<SubscriptionPackage | null>(null);
   const [confirmUpgradePackage, setConfirmUpgradePackage] = useState<SubscriptionPackage | null>(null);
+  const [confirmDowngradePackage, setConfirmDowngradePackage] = useState<SubscriptionPackage | null>(null);
+  const [isDowngrading, setIsDowngrading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [referenceId, setReferenceId] = useState('');
   const [senderName, setSenderName] = useState('');
@@ -79,7 +81,7 @@ export default function SubscriptionPage() {
 
   // Block background scroll when modal is open
   useEffect(() => {
-    if (qrModalPackage || confirmUpgradePackage) {
+    if (qrModalPackage || confirmUpgradePackage || confirmDowngradePackage) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -87,7 +89,7 @@ export default function SubscriptionPage() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [qrModalPackage, confirmUpgradePackage]);
+  }, [qrModalPackage, confirmUpgradePackage, confirmDowngradePackage]);
 
   const toggleExpand = (pkgId: string) => {
     setExpandedPackages((prev) =>
@@ -131,13 +133,34 @@ export default function SubscriptionPage() {
     fetchPackagesAndRequests();
   }, []);
 
+  const handleExecuteFreePlan = async (pkg: SubscriptionPackage) => {
+    try {
+      setIsDowngrading(true);
+      setSelectedPlanId(pkg.id);
+      await updateBusiness.mutateAsync({
+        name: currentBiz?.name || 'My Business',
+        currency: currentBiz?.currency || 'NPR',
+        subscriptionPackageId: pkg.id,
+      });
+      await refreshUser();
+      setConfirmDowngradePackage(null);
+      toast.success(`${pkg.name} activated. Switched to Free tier.`);
+      setMsg(`${pkg.name} activated! You are now on the Free tier.`);
+    } catch (error) {
+      toast.error('Failed to update subscription plan.');
+    } finally {
+      setIsDowngrading(false);
+    }
+  };
+
   const handleSelectPlan = async (pkg: SubscriptionPackage) => {
     if (Number(pkg.price) > 0 && !pkg.isDefault) {
       const hasPendingPayment = myRequests.some((r) => r.status === 'PENDING');
       const hasActivePaidPlan =
         currentBiz?.subscriptionStatus === 'ACTIVE' &&
         Boolean(currentBiz?.subscriptionPackage) &&
-        currentBiz?.subscriptionPackage?.name?.toLowerCase() !== 'free';
+        currentBiz?.subscriptionPackage?.name?.toLowerCase() !== 'free' &&
+        Number(currentBiz?.subscriptionPackage?.price || 0) > 0;
 
       // If user has pending verification or already has an active paid plan, show warning first
       if (hasPendingPayment || hasActivePaidPlan) {
@@ -151,20 +174,21 @@ export default function SubscriptionPage() {
       setSenderName(user?.name || '');
       setNotes('');
     } else {
-      // Free or Default Plan: Activate directly
-      try {
-        setSelectedPlanId(pkg.id);
-        await updateBusiness.mutateAsync({
-          name: currentBiz?.name || 'My Business',
-          currency: currentBiz?.currency || 'NPR',
-          subscriptionPackageId: pkg.id,
-        });
-        await refreshUser();
-        toast.success(`${pkg.name} activated successfully!`);
-        setMsg(`${pkg.name} activated! You now have access to all core features.`);
-      } catch (error) {
-        toast.error('Failed to update subscription plan.');
+      // Free or Default Plan: Check if user is currently on an active paid plan
+      const isCurrentPaidPlan =
+        currentBiz?.subscriptionStatus === 'ACTIVE' &&
+        Boolean(currentBiz?.subscriptionPackage) &&
+        currentBiz?.subscriptionPackage?.name?.toLowerCase() !== 'free' &&
+        Number(currentBiz?.subscriptionPackage?.price || 0) > 0;
+
+      if (isCurrentPaidPlan) {
+        // Show Downgrade Warning Modal first!
+        setConfirmDowngradePackage(pkg);
+        return;
       }
+
+      // Otherwise activate Free plan directly
+      await handleExecuteFreePlan(pkg);
     }
   };
 
@@ -577,6 +601,94 @@ export default function SubscriptionPage() {
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md shadow-rose-600/20"
                   >
                     <QrCode className="w-3.5 h-3.5" /> Continue to Payment (अगाडि बढ्नुहोस्)
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+
+      {/* DOWNGRADE TO FREE PLAN CONFIRMATION WARNING MODAL (RED THEME & BILINGUAL) */}
+      {confirmDowngradePackage && (
+        <ModalPortal>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+            <div
+              className="w-full max-w-md rounded-2xl sm:rounded-3xl bg-slate-900 border border-rose-500/40 shadow-2xl overflow-hidden font-sans text-slate-200 animate-in zoom-in-95 duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-rose-500/20 bg-rose-950/40">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
+                    <AlertTriangle className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white leading-tight">
+                      Downgrade to Free Plan (निःशुल्क प्लानमा झर्ने चेतावनी)
+                    </h3>
+                    <p className="text-[11px] text-rose-300">
+                      Current Plan: <span className="text-white font-bold">{currentBiz?.subscriptionPackage?.name}</span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setConfirmDowngradePackage(null)}
+                  className="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-all border border-slate-700/50"
+                  title="Close modal"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-5 sm:p-6 space-y-4">
+                <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-200 text-xs space-y-2.5">
+                  <p className="font-bold text-rose-300 flex items-center gap-1.5 text-xs sm:text-sm">
+                    ⚠️ Paid Days Will Be Forfeited & Lost (बाँकी दिन खेर जानेछ)
+                  </p>
+                  
+                  <div className="text-[11px] text-slate-300 space-y-2 leading-relaxed">
+                    <p className="p-2.5 rounded-xl bg-slate-950/80 border border-rose-500/20">
+                      🇳🇵 <strong>नेपाली:</strong> तपाईं हाल <strong className="text-white">{currentBiz?.subscriptionPackage?.name}</strong> सशुल्क (Paid) प्लानमा हुनुहुन्छ। यदि तपाईं अहिले Free प्लानमा जानुभयो भने, <strong>तपाईंका बाँकी सबै दिनहरू तुरुन्तै खारेज (नष्ट) हुनेछन् र बाँकी दिनको कुनै पनि रकम फिर्ता (No Refund) हुने छैन</strong>।
+                    </p>
+                    <p className="p-2.5 rounded-xl bg-slate-950/80 border border-rose-500/20 text-slate-400">
+                      🇬🇧 <strong>English:</strong> Switching to the Free plan will immediately cancel your active paid plan. <strong>All remaining paid days are forfeited with ZERO cash refund</strong>, and premium BMS features/limits will be downgraded immediately.
+                    </p>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  के तपाईं बाँकी दिन त्यागेर <strong className="text-white">{confirmDowngradePackage.name}</strong> प्लानमा स्विच गर्न निश्चित हुनुहुन्छ?
+                </p>
+
+                {/* Footer Buttons */}
+                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-800">
+                  <button
+                    type="button"
+                    disabled={isDowngrading}
+                    onClick={() => setConfirmDowngradePackage(null)}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors disabled:opacity-50"
+                  >
+                    Cancel / Keep Paid Plan (रद्द गर्नुहोस्)
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isDowngrading}
+                    onClick={() => handleExecuteFreePlan(confirmDowngradePackage)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md shadow-rose-600/20 disabled:opacity-50"
+                  >
+                    {isDowngrading ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Downgrading...
+                      </>
+                    ) : (
+                      <>
+                        <AlertTriangle className="w-3.5 h-3.5" /> Confirm Downgrade (Free मा जानुहोस्)
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
