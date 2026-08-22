@@ -647,7 +647,12 @@ export async function adminRoutes(fastify: FastifyInstance) {
 
     const payment = await globalPrisma.subscriptionPayment.findUnique({
       where: { id },
-      include: { subscriptionPackage: true, business: true },
+      include: {
+        subscriptionPackage: true,
+        business: {
+          include: { subscriptionPackage: true },
+        },
+      },
     });
 
     if (!payment) {
@@ -658,13 +663,20 @@ export async function adminRoutes(fastify: FastifyInstance) {
       throw new AppError('Payment request is already approved.', 400, 'BAD_REQUEST');
     }
 
-    // Calculate new period end date using Rule Option 3 (No Lost Days / Plan Queueing)
-    // If the business already has an active period in the future, add the new plan duration onto the remaining days!
+    // Check if the business already has a CURRENT ACTIVE PAID PLAN (Free plan dates are NOT extended)
+    const currentPkg = payment.business.subscriptionPackage;
+    const isCurrentPaidPlan =
+      payment.business.subscriptionStatus === 'ACTIVE' &&
+      Boolean(currentPkg) &&
+      currentPkg?.name?.toLowerCase() !== 'free' &&
+      Number(currentPkg?.price || 0) > 0;
+
     const now = new Date();
     const existingEnd = payment.business.currentPeriodEnd ? new Date(payment.business.currentPeriodEnd) : null;
-    const isFutureActive = existingEnd && !isNaN(existingEnd.getTime()) && existingEnd > now;
+    const isFutureActive = isCurrentPaidPlan && existingEnd && !isNaN(existingEnd.getTime()) && existingEnd > now;
 
-    const baseDate = isFutureActive ? existingEnd : now;
+    // If on Free plan or expired, start fresh from now (today). Only extend if on an active Paid plan!
+    const baseDate = isFutureActive ? existingEnd! : now;
     const durationDays = payment.subscriptionPackage.billingPeriod === 'YEARLY' ? 365 : 30;
     const periodEnd = new Date(baseDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
 
