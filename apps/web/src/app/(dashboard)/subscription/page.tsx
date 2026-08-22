@@ -431,25 +431,25 @@ export default function SubscriptionPage() {
 
       {/* BANKING QR CODE PAYMENT & VERIFICATION REQUEST MODAL */}
       {qrModalPackage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
           <div
-            className="w-full max-w-lg rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden font-sans text-slate-200 animate-in zoom-in-95 duration-200"
+            className="w-full max-w-lg max-h-[92vh] flex flex-col rounded-2xl sm:rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden font-sans text-slate-200 animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950/60">
+            {/* Modal Header (Sticky) */}
+            <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-950/80 shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                <div className="w-8 h-8 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0">
                   <QrCode className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white">
+                  <h3 className="text-xs sm:text-sm font-bold text-white leading-tight">
                     Scan & Pay (क्युआर कोडबाट भुक्तानी)
                   </h3>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[10.5px] sm:text-[11px] text-slate-400">
                     Plan: <span className="text-blue-400 font-bold">{qrModalPackage.name}</span> •{' '}
                     <span className="text-emerald-400 font-mono font-bold">
-                      Rs. {qrModalPackage.price}
+                      Rs. {qrModalPackage.price} / {qrModalPackage.billingPeriod.toLowerCase()}
                     </span>
                   </p>
                 </div>
@@ -458,16 +458,17 @@ export default function SubscriptionPage() {
                 type="button"
                 onClick={() => setQrModalPackage(null)}
                 className="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-all border border-slate-700/50"
+                title="Close modal"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Modal Body */}
-            <form onSubmit={handleManualPaymentSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+            {/* Modal Body (Scrollable) */}
+            <form onSubmit={handleManualPaymentSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-slate-800">
               {/* QR Image Card */}
-              <div className="flex flex-col items-center justify-center p-3.5 rounded-2xl bg-white text-slate-900 border border-slate-200 shadow-md">
-                <div className="relative w-56 h-60">
+              <div className="flex flex-col items-center justify-center p-3 sm:p-4 rounded-2xl bg-white text-slate-900 border border-slate-200 shadow-md">
+                <div className="relative w-48 h-52 sm:w-56 sm:h-60">
                   <Image
                     src="/payment-qr.jpg"
                     alt="Garima Bikas Bank Payment QR"
@@ -476,45 +477,45 @@ export default function SubscriptionPage() {
                     priority
                   />
                 </div>
-                <p className="text-[11px] font-bold text-slate-600 mt-2">
+                <p className="text-[10px] sm:text-[11px] font-bold text-slate-600 mt-2 text-center">
                   Scan using Fonepay, eSewa, Khalti, or any Mobile Banking App
                 </p>
               </div>
 
               {/* Bank Details Card */}
-              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
+              <div className="p-3 sm:p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
                 <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/80">
-                  <span className="text-slate-400 flex items-center gap-1.5">
-                    <Building2 className="w-3.5 h-3.5 text-blue-400" /> Bank Name:
+                  <span className="text-slate-400 flex items-center gap-1.5 text-[11px] sm:text-xs">
+                    <Building2 className="w-3.5 h-3.5 text-blue-400 shrink-0" /> Bank Name:
                   </span>
-                  <span className="font-bold text-white">Garima Bikas Bank Ltd. (गरिमा विकास बैंक)</span>
+                  <span className="font-bold text-white text-[11px] sm:text-xs text-right">Garima Bikas Bank Ltd.</span>
                 </div>
 
                 <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/80">
-                  <span className="text-slate-400 flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-purple-400" /> Account Holder:
+                  <span className="text-slate-400 flex items-center gap-1.5 text-[11px] sm:text-xs">
+                    <User className="w-3.5 h-3.5 text-purple-400 shrink-0" /> Account Holder:
                   </span>
-                  <span className="font-bold text-white tracking-wide">ASHIM ADHIKARI</span>
+                  <span className="font-bold text-white tracking-wide text-[11px] sm:text-xs">ASHIM ADHIKARI</span>
                 </div>
 
                 <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/80">
-                  <span className="text-slate-400 flex items-center gap-1.5">
-                    <CreditCard className="w-3.5 h-3.5 text-emerald-400" /> Account Type:
+                  <span className="text-slate-400 flex items-center gap-1.5 text-[11px] sm:text-xs">
+                    <CreditCard className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> Account Type:
                   </span>
-                  <span className="font-semibold text-slate-300">MERO SHARE BACHAT KHATA</span>
+                  <span className="font-semibold text-slate-300 text-[10.5px] sm:text-xs">MERO SHARE BACHAT KHATA</span>
                 </div>
 
                 <div className="flex items-center justify-between pt-1">
                   <div>
-                    <span className="text-slate-400 block text-[10px]">Account Number:</span>
-                    <span className="font-mono font-bold text-sm text-blue-400 tracking-wider">
+                    <span className="text-slate-400 block text-[9.5px] sm:text-[10px]">Account Number:</span>
+                    <span className="font-mono font-bold text-xs sm:text-sm text-blue-400 tracking-wider">
                       08510900873121000001
                     </span>
                   </div>
                   <button
                     type="button"
                     onClick={copyAccountNumber}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
                       copied
                         ? 'bg-emerald-600 text-white'
                         : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700'
@@ -526,7 +527,7 @@ export default function SubscriptionPage() {
                       </>
                     ) : (
                       <>
-                        <Copy className="w-3.5 h-3.5" /> Copy
+                        <Copy className="w-3.5 h-3.5" /> Copy A/C
                       </>
                     )}
                   </button>
@@ -534,39 +535,39 @@ export default function SubscriptionPage() {
               </div>
 
               {/* RULE OPTION 3: NO REFUND / PLAN QUEUEING & VERIFICATION POLICY */}
-              <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border-2 border-amber-500/30 text-slate-200 text-xs space-y-3 shadow-md">
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-slate-200 text-xs space-y-2.5 shadow-md">
                 {/* 1. Headline */}
-                <div className="flex items-start gap-2.5 text-amber-400 font-bold text-xs sm:text-sm">
+                <div className="flex items-start gap-2 text-amber-400 font-bold text-xs sm:text-sm">
                   <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-amber-400 mt-0.5" />
                   <div>
                     <h4 className="text-white font-bold leading-tight">
-                      Upgrading to {qrModalPackage.billingPeriod === 'YEARLY' ? 'Yearly' : 'Premium'} Plan? Please Read Before Paying
+                      Upgrading to {qrModalPackage.billingPeriod === 'YEARLY' ? 'Yearly' : 'Premium'} Plan? Please Read
                     </h4>
-                    <span className="text-[11px] text-amber-300 font-normal">
-                      (मासिकबाट वार्षिक वा नयाँ प्लानमा अपग्रेड गर्दा कृपया ध्यान दिनुहोस्)
+                    <span className="text-[10px] sm:text-[11px] text-amber-300 font-normal">
+                      (मासिकबाट वार्षिक वा नयाँ प्लानमा अपग्रेड गर्दा ध्यान दिनुहोस्)
                     </span>
                   </div>
                 </div>
 
                 {/* 2. Key Bullets (Rule Option 3: No Refund / Plan Queueing) */}
-                <ul className="space-y-1.5 text-slate-300 pl-5 list-disc text-[11px] sm:text-xs leading-relaxed">
+                <ul className="space-y-1.5 text-slate-300 pl-4 list-disc text-[10.5px] sm:text-xs leading-relaxed">
                   <li>
-                    <strong className="text-white">No Cash Refunds (रिफन्ड नहुने):</strong> Unused days left on your active monthly plan are not refunded in cash.
+                    <strong className="text-white">No Cash Refunds:</strong> Unused days left on your active monthly plan are not refunded in cash.
                   </li>
                   <li>
-                    <strong className="text-white">Zero Days Lost (बाँकी दिन खेर जाँदैन):</strong> You will <u>not</u> lose your remaining monthly days. Your current plan stays 100% active until its expiry date.
+                    <strong className="text-white">Zero Days Lost:</strong> Your remaining monthly days remain 100% active and protected.
                   </li>
                   <li>
-                    <strong className="text-white">Automatic Plan Queueing (स्वतः पालोमा रहने):</strong> Your new {qrModalPackage.name} plan is queued and will start automatically the moment your current period ends.
+                    <strong className="text-white">Automatic Plan Queueing:</strong> Your new {qrModalPackage.name} plan is queued and starts automatically right after your current period ends.
                   </li>
                   <li>
-                    <strong className="text-amber-300">Exact Details Required (सटीक विवरण):</strong> If you enter a wrong Business Name, incorrect Transaction Reference ID, or wrong Sender Name, we cannot verify your deposit in Garima Bikas Bank and cannot activate your plan.
+                    <strong className="text-amber-300">Exact Details Required:</strong> If you enter a wrong Business Name, incorrect Transaction Reference ID, or wrong Sender Name, we cannot verify your bank deposit and cannot activate your plan.
                   </li>
                 </ul>
 
                 {/* 3. CTA & Instructions */}
-                <div className="pt-2 border-t border-amber-500/20 text-[11px] text-amber-200/90 flex items-start gap-2">
-                  <span className="text-base leading-none">📸</span>
+                <div className="pt-2 border-t border-amber-500/20 text-[10.5px] sm:text-[11px] text-amber-200/90 flex items-start gap-1.5">
+                  <span className="text-sm leading-none">📸</span>
                   <span>
                     <strong>Next Step:</strong> After transferring funds, enter your <strong>Transaction ID</strong> and <strong>Sender Mobile/Name</strong> below to submit your verification request.
                   </span>
@@ -574,7 +575,7 @@ export default function SubscriptionPage() {
               </div>
 
               {/* Transaction Verification Inputs */}
-              <div className="space-y-3 pt-2">
+              <div className="space-y-3 pt-1">
                 <div>
                   <label className="block text-xs font-semibold text-slate-200 mb-1">
                     Transaction ID / Reference Number (रकम ट्रान्सफर नम्बर / Ref ID) *
@@ -620,11 +621,11 @@ export default function SubscriptionPage() {
               </div>
 
               {/* Modal Footer */}
-              <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-between pt-4 border-t border-slate-800 gap-2">
                 <button
                   type="button"
                   onClick={() => setQrModalPackage(null)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                  className="px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
                 >
                   Cancel
                 </button>
@@ -632,7 +633,7 @@ export default function SubscriptionPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white text-xs font-bold transition-all shadow-lg shadow-emerald-600/20 disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white text-xs font-bold transition-all shadow-lg shadow-emerald-600/20 disabled:opacity-50 flex-1 sm:flex-none text-center"
                 >
                   {isSubmitting ? (
                     <>

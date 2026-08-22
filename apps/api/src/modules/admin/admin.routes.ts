@@ -658,8 +658,15 @@ export async function adminRoutes(fastify: FastifyInstance) {
       throw new AppError('Payment request is already approved.', 400, 'BAD_REQUEST');
     }
 
+    // Calculate new period end date using Rule Option 3 (No Lost Days / Plan Queueing)
+    // If the business already has an active period in the future, add the new plan duration onto the remaining days!
+    const now = new Date();
+    const existingEnd = payment.business.currentPeriodEnd ? new Date(payment.business.currentPeriodEnd) : null;
+    const isFutureActive = existingEnd && !isNaN(existingEnd.getTime()) && existingEnd > now;
+
+    const baseDate = isFutureActive ? existingEnd : now;
     const durationDays = payment.subscriptionPackage.billingPeriod === 'YEARLY' ? 365 : 30;
-    const periodEnd = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
+    const periodEnd = new Date(baseDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
 
     // Update payment, business subscription, and log system action
     await globalPrisma.$transaction([
@@ -689,14 +696,21 @@ export async function adminRoutes(fastify: FastifyInstance) {
             packageName: payment.subscriptionPackage.name,
             amount: Number(payment.amount),
             referenceId: payment.referenceId,
+            wasQueued: isFutureActive,
+            previousPeriodEnd: existingEnd ? existingEnd.toISOString() : null,
+            newPeriodEnd: periodEnd.toISOString(),
           },
         },
       }),
     ]);
 
+    const queueMessage = isFutureActive
+      ? ` (Remaining monthly days preserved. New plan queued until ${periodEnd.toLocaleDateString()})`
+      : '';
+
     return reply.send({
       success: true,
-      message: `Payment approved successfully. ${payment.business.name} is now on ${payment.subscriptionPackage.name} plan.`,
+      message: `Payment approved successfully. ${payment.business.name} is now on ${payment.subscriptionPackage.name} plan${queueMessage}.`,
     });
   });
 
