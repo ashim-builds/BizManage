@@ -281,7 +281,7 @@ export default function AccountsPage() {
                   placeholder={
                     form.accountType === 'CASH' ? 'e.g. Shop Cash Register'
                     : form.accountType === 'BANK' ? 'e.g. NIC Asia Current A/C'
-                    : 'e.g. eSewa Business'
+                    : 'e.g. Mobile Wallet A/C'
                   }
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all"
                   required

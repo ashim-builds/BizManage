@@ -53,14 +53,6 @@ const envSchema = z.object({
     .string()
     .default('*'),
 
-  ESEWA_MERCHANT_CODE: z
-    .string()
-    .default('EPAYTEST'),
-    
-  ESEWA_SECRET_KEY: z
-    .string()
-    .min(1, 'ESEWA_SECRET_KEY is required'),
-  ESEWA_ENVIRONMENT: z.enum(['uat', 'production']).optional(),
   FRONTEND_URL: z.string().url().default('http://localhost:3000'),
 
   GOOGLE_CLIENT_ID: z.string().optional(),
@@ -83,14 +75,6 @@ if (!parsed.success) {
   process.exit(1);
 }
 
-const configuredEnvironment = parsed.data.ESEWA_ENVIRONMENT
-  ?? (parsed.data.NODE_ENV === 'production' ? 'production' : 'uat');
-
-if (configuredEnvironment === 'production' && parsed.data.ESEWA_MERCHANT_CODE === 'EPAYTEST') {
-  console.warn('⚠️  WARNING: ESEWA_MERCHANT_CODE is set to EPAYTEST in a production environment. eSewa payments will not work. Set a real ESEWA_MERCHANT_CODE to enable production payments.');
-}
-
 export const env = {
   ...parsed.data,
-  ESEWA_ENVIRONMENT: configuredEnvironment,
 };

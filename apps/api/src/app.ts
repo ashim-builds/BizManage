@@ -13,7 +13,6 @@ import { itemRoutes } from './modules/item/item.routes.js';
 import { purchaseRoutes } from './modules/purchase/purchase.routes.js';
 import { saleRoutes } from './modules/sale/sale.routes.js';
 import { paymentRoutes } from './modules/payment/payment.routes.js';
-import { esewaRoutes } from './modules/payment/esewa.routes.js';
 import { expenseRoutes } from './modules/expense/expense.routes.js';
 import { incomeRoutes } from './modules/income/income.routes.js';
 import { cashflowRoutes } from './modules/cashflow/cashflow.routes.js';
@@ -157,7 +156,6 @@ export function buildApp() {
   app.register(purchaseRoutes, { prefix: '/api/v1/purchases' });
   app.register(saleRoutes,     { prefix: '/api/v1/sales' });
   app.register(paymentRoutes,  { prefix: '/api/v1/payments' });
-  app.register(esewaRoutes,  { prefix: '/api/v1/esewa' });
   app.register(expenseRoutes,  { prefix: '/api/v1/expenses' });
   app.register(incomeRoutes,   { prefix: '/api/v1/income' });
   app.register(cashflowRoutes, { prefix: '/api/v1/cashflow' });
