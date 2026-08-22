@@ -28,6 +28,7 @@ import {
   Sparkles,
   Printer,
   Box,
+  X,
 } from 'lucide-react';
 
 export default function ExecutiveDashboardPage() {
@@ -35,6 +36,16 @@ export default function ExecutiveDashboardPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [preset, setPreset] = useState<'all' | 'today' | 'week' | 'month' | 'custom'>('all');
+  const [isProfileBannerDismissed, setIsProfileBannerDismissed] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const dismissed = localStorage.getItem('bizmanage_profile_complete_dismissed');
+      if (dismissed === 'true') {
+        setIsProfileBannerDismissed(true);
+      }
+    }
+  }, []);
 
   const currentBiz = user?.memberships?.[0]?.business;
   const selectedPlan = currentBiz?.subscriptionPackage;
@@ -349,23 +360,41 @@ export default function ExecutiveDashboardPage() {
           </div>
 
           {/* Complete Profile Banner (Mobile Mockup Style) */}
-          <Link href="/settings" className={`block mb-6 p-4 sm:p-5 rounded-2xl shadow-md flex items-center justify-between text-white relative overflow-hidden group hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer z-10 ${profileCompletionPercent >= 100 ? 'bg-emerald-600' : 'bg-[#00A86B]'}`}>
-            <div className="relative z-20 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full border-[3px] border-white/30 flex items-center justify-center shrink-0 bg-black/10">
-                <span className="text-xs font-bold text-white">{profileCompletionPercent}%</span>
-              </div>
-              <div>
-                <h3 className="text-sm sm:text-base font-bold flex items-center gap-2 text-white">
-                  {profileCompletionPercent >= 100 ? 'Business Profile Complete' : 'Complete your Profile'} <ArrowRight className="w-4 h-4" />
-                </h3>
-                <p className="text-[11px] sm:text-xs text-white/90 mt-1 max-w-[220px] sm:max-w-none">
-                  {profileCompletionPercent >= 100
-                    ? 'Your profile is fully set up. Click to view or edit.'
-                    : 'You can use more app features after completing your business profile.'}
-                </p>
-              </div>
+          {(!isProfileBannerDismissed || profileCompletionPercent < 100) && (
+            <div className={`mb-6 p-4 sm:p-5 rounded-2xl shadow-md flex items-center justify-between text-white relative overflow-hidden group transition-all ${profileCompletionPercent >= 100 ? 'bg-emerald-600' : 'bg-[#00A86B]'}`}>
+              <Link href="/settings" className="flex-1 flex items-center gap-4 cursor-pointer hover:opacity-95">
+                <div className="w-12 h-12 rounded-full border-[3px] border-white/30 flex items-center justify-center shrink-0 bg-black/10">
+                  <span className="text-xs font-bold text-white">{profileCompletionPercent}%</span>
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold flex items-center gap-2 text-white">
+                    {profileCompletionPercent >= 100 ? 'Business Profile Complete' : 'Complete your Profile'} <ArrowRight className="w-4 h-4" />
+                  </h3>
+                  <p className="text-[11px] sm:text-xs text-white/90 mt-1 max-w-[220px] sm:max-w-none">
+                    {profileCompletionPercent >= 100
+                      ? 'Your profile is fully set up. Click to view or edit.'
+                      : 'You can use more app features after completing your business profile.'}
+                  </p>
+                </div>
+              </Link>
+
+              {profileCompletionPercent >= 100 && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsProfileBannerDismissed(true);
+                    localStorage.setItem('bizmanage_profile_complete_dismissed', 'true');
+                  }}
+                  className="p-2 rounded-xl bg-black/20 hover:bg-black/40 text-white/80 hover:text-white transition-all ml-3 shrink-0"
+                  title="Dismiss notice"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
-          </Link>
+          )}
 
           {/* Row 3 - Audit Feed & Low Stock */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
