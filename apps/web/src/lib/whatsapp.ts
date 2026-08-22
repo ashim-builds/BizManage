@@ -113,6 +113,45 @@ export function generatePaymentReceiptWhatsAppMessage(params: {
   return msg;
 }
 
+export function generateCustomerDueReminderMessage(params: {
+  businessName: string;
+  businessPhone?: string | null;
+  customerName: string;
+  totalDue: number;
+  oldestInvoiceDate?: string;
+  agingStatus?: string;
+}): string {
+  const {
+    businessName,
+    businessPhone,
+    customerName,
+    totalDue,
+    oldestInvoiceDate,
+    agingStatus,
+  } = params;
+
+  let msg = `*🔔 PAYMENT DUE REMINDER (भुक्तानी सम्झाउनी)*\n`;
+  msg += `*${businessName}*\n`;
+  if (businessPhone) msg += `📞 Contact: ${businessPhone}\n`;
+  msg += `─────────────────────────\n`;
+  msg += `Namaste ${customerName} ji 🙏,\n\n`;
+  msg += `This is a gentle reminder regarding your outstanding account balance with *${businessName}*.\n\n`;
+  msg += `💵 *Total Outstanding Balance:* *Rs. ${totalDue.toLocaleString()}*\n`;
+  if (agingStatus) {
+    msg += `⏳ *Aging Status:* ${agingStatus}\n`;
+  }
+  if (oldestInvoiceDate) {
+    msg += `📅 *Oldest Pending Bill:* ${oldestInvoiceDate}\n`;
+  }
+  msg += `─────────────────────────\n`;
+  msg += `Kindly arrange for the settlement of this pending amount at your earliest convenience via Cash, Bank Transfer, or FONEPAY QR.\n\n`;
+  msg += `If you have already made this payment, please disregard this notice or share the payment slip.\n\n`;
+  msg += `_Thank you for your cooperation!_\n`;
+  msg += `_BizManage ERP Account Statement_`;
+
+  return msg;
+}
+
 export function openWhatsAppChat(phone: string, text: string) {
   const formattedPhone = formatNepaliPhone(phone);
   const encodedText = encodeURIComponent(text);

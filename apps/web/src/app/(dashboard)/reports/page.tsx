@@ -18,6 +18,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { CustomDateRangePicker } from '@/components/common/CustomDateRangePicker';
 import { VatSalesBookAnnex5 } from '@/components/reports/VatSalesBookAnnex5';
 import { VatPurchaseBookAnnex6 } from '@/components/reports/VatPurchaseBookAnnex6';
+import { CustomerAgingReport } from '@/components/reports/CustomerAgingReport';
 import {
   FileText,
   Search,
@@ -32,6 +33,7 @@ import {
   TrendingUp,
   Scale,
   FileSpreadsheet,
+  Clock,
 } from 'lucide-react';
 
 type ReportTab =
@@ -39,6 +41,7 @@ type ReportTab =
   | 'purchases'
   | 'annex5-sales'
   | 'annex6-purchases'
+  | 'customer-aging'
   | 'expenses'
   | 'payments'
   | 'party-balance'
@@ -98,7 +101,7 @@ export default function ReportsPage() {
       ? expenseQuery
       : activeTab === 'payments'
       ? paymentQuery
-      : activeTab === 'party-balance'
+      : activeTab === 'party-balance' || activeTab === 'customer-aging'
       ? partyBalQuery
       : activeTab === 'inventory-valuation'
       ? inventoryQuery
@@ -179,6 +182,17 @@ export default function ReportsPage() {
           }`}
         >
           <FileSpreadsheet className="w-3.5 h-3.5" /> Annex-6 (खरिद खाता)
+        </button>
+
+        <button
+          onClick={() => setActiveTab('customer-aging')}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
+            activeTab === 'customer-aging'
+              ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/20'
+              : 'text-amber-400 hover:text-amber-300 hover:bg-amber-500/10'
+          }`}
+        >
+          <Clock className="w-3.5 h-3.5" /> Receivables Aging (उधारो)
         </button>
 
         <button
@@ -681,6 +695,17 @@ export default function ReportsPage() {
           endDate={endDate}
           businessName={business?.name}
           businessPan={business?.taxNumber || '-'}
+        />
+      )}
+
+      {/* ---------------------------------------------------- */}
+      {/* 9. CUSTOMER AGING REPORT VIEW */}
+      {/* ---------------------------------------------------- */}
+      {activeTab === 'customer-aging' && (
+        <CustomerAgingReport
+          partyBalances={reportData?.rows || []}
+          businessName={business?.name}
+          businessPhone={business?.phone}
         />
       )}
     </div>

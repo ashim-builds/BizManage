@@ -1,10 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import { useParty } from '@/services/partyService';
+import { useCurrentBusiness } from '@/services/businessService';
 import { formatPartyBalance } from '@/lib/balance';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
+import { WhatsAppShareModal } from '@/components/common/WhatsAppShareModal';
+import { generateCustomerDueReminderMessage } from '@/lib/whatsapp';
 import {
   Users,
   Phone,
@@ -17,12 +21,15 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   Receipt,
+  MessageSquare,
 } from 'lucide-react';
 import Link from 'next/link';
 import { PartyType } from '@bizmanage/types';
 
 export default function PartyDetailsPage({ params }: { params: { id: string } }) {
   const { data: party, isLoading, isError, refetch } = useParty(params.id);
+  const { data: business } = useCurrentBusiness();
+  const [isReminderOpen, setIsReminderOpen] = useState(false);
 
   if (isLoading) return <LoadingState message="Loading party statement & details..." />;
   if (isError || !party) return <ErrorState title="Failed to load party profile" onRetry={refetch} />;
@@ -80,7 +87,7 @@ export default function PartyDetailsPage({ params }: { params: { id: string } })
   return (
     <div className="space-y-8">
       {/* Top Header & Back Link */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-5">
+      <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-5 gap-4">
         <div className="flex items-center gap-4">
           <Link
             href="/parties"
@@ -110,6 +117,16 @@ export default function PartyDetailsPage({ params }: { params: { id: string } })
             )}
           </div>
         </div>
+
+        {currentBal > 0 && (
+          <button
+            type="button"
+            onClick={() => setIsReminderOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition-all shadow-sm"
+          >
+            <MessageSquare className="w-4 h-4" /> Send WhatsApp Due Reminder
+          </button>
+        )}
       </div>
 
       {/* Grid: Left Contact Info / Right Balance Cards */}
@@ -257,6 +274,22 @@ export default function PartyDetailsPage({ params }: { params: { id: string } })
           </div>
         )}
       </div>
+
+      {/* WhatsApp Payment Due Reminder Modal */}
+      {isReminderOpen && (
+        <WhatsAppShareModal
+          isOpen={isReminderOpen}
+          onClose={() => setIsReminderOpen(false)}
+          title={`Send Payment Reminder to ${party.name}`}
+          defaultPhone={party.phone}
+          message={generateCustomerDueReminderMessage({
+            businessName: business?.name || 'BizManage Store',
+            businessPhone: business?.phone,
+            customerName: party.name,
+            totalDue: currentBal,
+          })}
+        />
+      )}
     </div>
   );
 }
