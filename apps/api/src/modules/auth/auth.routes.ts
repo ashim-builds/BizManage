@@ -711,7 +711,9 @@ export async function authRoutes(fastify: FastifyInstance) {
         phone: true,
         avatarUrl: true,
         isVerified: true,
-        readNotifications: true,
+        readNotifications: {
+          select: { notificationId: true },
+        },
         activeBusinessId: true,
         isSystemAdmin: true,
         createdAt: true,
@@ -735,6 +737,7 @@ export async function authRoutes(fastify: FastifyInstance) {
                 setupCompleted: true,
                 isActive: true,
                 subscriptionStatus: true,
+                currentPeriodEnd: true,
                 planOverrides: true,
                 subscriptionPackage: true,
               },

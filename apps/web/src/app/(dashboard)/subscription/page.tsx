@@ -250,24 +250,36 @@ export default function SubscriptionPage() {
           </div>
           <div>
             <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Current Status</p>
-            <p className="text-sm font-bold text-white flex items-center gap-1.5">
-              {activePackage ? activePackage.name : 'No Plan'}
-              {activePackage ? (
-                currentBiz?.subscriptionStatus === 'ACTIVE' ? (
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] border border-emerald-500/20 font-semibold">
-                    Online
-                  </span>
-                ) : currentBiz?.subscriptionStatus === 'EXPIRED' ? (
-                  <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 text-[10px] border border-red-500/20 font-semibold">
-                    Expired
-                  </span>
-                ) : (
-                  <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-[10px] border border-amber-500/20 font-semibold">
-                    Active
-                  </span>
-                )
-              ) : null}
-            </p>
+            <div className="flex flex-col">
+              <p className="text-sm font-bold text-white flex items-center gap-1.5">
+                {activePackage ? activePackage.name : 'No Plan'}
+                {activePackage ? (
+                  currentBiz?.subscriptionStatus === 'ACTIVE' ? (
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] border border-emerald-500/20 font-semibold">
+                      Online & Active
+                    </span>
+                  ) : currentBiz?.subscriptionStatus === 'EXPIRED' ? (
+                    <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 text-[10px] border border-red-500/20 font-semibold">
+                      Expired
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-[10px] border border-amber-500/20 font-semibold">
+                      Active
+                    </span>
+                  )
+                ) : null}
+              </p>
+              {currentBiz?.currentPeriodEnd && (
+                <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                  Valid until: <span className="text-slate-200 font-semibold">{new Date(currentBiz.currentPeriodEnd).toLocaleDateString()}</span>
+                  {new Date(currentBiz.currentPeriodEnd).getTime() > Date.now() && (
+                    <span className="text-blue-400 ml-1 font-semibold">
+                      ({Math.max(1, Math.ceil((new Date(currentBiz.currentPeriodEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} days remaining)
+                    </span>
+                  )}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -465,26 +477,26 @@ export default function SubscriptionPage() {
         </div>
       </div>
 
-      {/* PRE-UPGRADE CONFIRMATION WARNING MODAL */}
+      {/* PRE-UPGRADE CONFIRMATION WARNING MODAL (RED THEME & BILINGUAL) */}
       {confirmUpgradePackage && (
         <ModalPortal>
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
             <div
-              className="w-full max-w-md rounded-2xl sm:rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden font-sans text-slate-200 animate-in zoom-in-95 duration-200"
+              className="w-full max-w-md rounded-2xl sm:rounded-3xl bg-slate-900 border border-rose-500/40 shadow-2xl overflow-hidden font-sans text-slate-200 animate-in zoom-in-95 duration-200"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950/80">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-rose-500/20 bg-rose-950/30">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
                     <AlertTriangle className="w-4 h-4" />
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-white leading-tight">
-                      Plan Re-Selection Notice (अपग्रेड सूचना)
+                      Plan Re-Selection Notice (प्लान छनोट जरुरी सूचना)
                     </h3>
-                    <p className="text-[11px] text-slate-400">
-                      Selecting: <span className="text-blue-400 font-bold">{confirmUpgradePackage.name}</span>
+                    <p className="text-[11px] text-rose-300">
+                      Selecting: <span className="text-white font-bold">{confirmUpgradePackage.name}</span>
                     </p>
                   </div>
                 </div>
@@ -502,21 +514,23 @@ export default function SubscriptionPage() {
               <div className="p-5 sm:p-6 space-y-4">
                 {/* Condition 1: Pending Payment Warning */}
                 {myRequests.some((r) => r.status === 'PENDING') && (
-                  <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs space-y-1.5">
-                    <p className="font-bold text-amber-300 flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" /> Payment Verification In Progress
+                  <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-200 text-xs space-y-2">
+                    <p className="font-bold text-rose-300 flex items-center gap-1.5 text-xs sm:text-sm">
+                      <Clock className="w-4 h-4 text-rose-400" /> Payment Verification In Progress (भुक्तानी रुजु बाँकी)
                     </p>
-                    <p className="text-[11px] text-slate-300 leading-relaxed">
-                      तपाईंको पहिलेको भुक्तानी अनुरोध (
-                      <span className="font-mono text-amber-300 font-bold">
-                        {myRequests.find((r) => r.status === 'PENDING')?.subscriptionPackage?.name}
-                      </span>
-                      ) हाल Superadmin बाट रुजु हुन बाँकी छ।
-                    </p>
-                    <p className="text-[10.5px] text-slate-400">
-                      You already have a pending verification. Proceeding will create an additional payment request for{' '}
-                      <strong className="text-white">{confirmUpgradePackage.name}</strong>.
-                    </p>
+                    <div className="text-[11px] text-slate-300 space-y-1 leading-relaxed">
+                      <p>
+                        🇳🇵 <strong>नेपाली:</strong> तपाईंको अघिल्लो भुक्तानी अनुरोध (
+                        <span className="font-mono text-rose-300 font-bold">
+                          {myRequests.find((r) => r.status === 'PENDING')?.subscriptionPackage?.name}
+                        </span>
+                        ) हाल Superadmin बाट रुजु हुन बाँकी छ। अगाडि बढेमा अर्को नयाँ भुक्तानी अनुरोध पेश हुनेछ।
+                      </p>
+                      <p className="text-slate-400">
+                        🇬🇧 <strong>English:</strong> You already have a pending verification request. Proceeding will create an additional payment request for{' '}
+                        <strong className="text-white">{confirmUpgradePackage.name}</strong>.
+                      </p>
+                    </div>
                   </div>
                 )}
 
@@ -524,22 +538,29 @@ export default function SubscriptionPage() {
                 {currentBiz?.subscriptionStatus === 'ACTIVE' &&
                   Boolean(currentBiz?.subscriptionPackage) &&
                   currentBiz?.subscriptionPackage?.name?.toLowerCase() !== 'free' && (
-                    <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-200 text-xs space-y-1.5">
-                      <p className="font-bold text-blue-300 flex items-center gap-1.5">
-                        <ShieldCheck className="w-3.5 h-3.5" /> Active Plan Running (सक्रिय प्लान)
+                    <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-200 text-xs space-y-2">
+                      <p className="font-bold text-rose-300 flex items-center gap-1.5 text-xs sm:text-sm">
+                        <ShieldCheck className="w-4 h-4 text-rose-400" /> Active Plan Running (चालु सक्रिय प्लान)
                       </p>
-                      <p className="text-[11px] text-slate-300 leading-relaxed">
-                        तपाईंसँग हाल <strong className="text-white">{currentBiz.subscriptionPackage?.name}</strong> प्लान सक्रिय छ। नयाँ प्लान छान्दा बाँकी दिनहरू खेर जाँदैनन् र नयाँ प्लान अहिलेको अवधि सकिएपछि स्वतः पालो (Queue) मा रहनेछ।
-                      </p>
-                      <p className="text-[10.5px] text-slate-400">
-                        Zero days lost: Your remaining active days are 100% preserved and the new plan will be queued.
-                      </p>
+                      <div className="text-[11px] text-slate-300 space-y-1.5 leading-relaxed">
+                        <p>
+                          🇳🇵 <strong>नेपाली:</strong> तपाईंसँग हाल <strong className="text-white">{currentBiz.subscriptionPackage?.name}</strong> प्लान सक्रिय छ। नयाँ प्लान खरिद गर्दा तपाईंको कुनै पनि दिन खेर जाँदैन (०% दिन नष्ट)। तपाईंका बाँकी सबै दिनहरू १००% सुरक्षित रहन्छन् र नयाँ प्लान अहिलेको अवधि समाप्त भएपछि स्वतः पालो (Queue) मा रहनेछ र सुरु हुनेछ।
+                        </p>
+                        <p className="text-slate-400">
+                          🇬🇧 <strong>English:</strong> Zero days lost: Your remaining active days are 100% preserved. The new plan will be queued and will start automatically once your current period expires.
+                        </p>
+                      </div>
                     </div>
                   )}
 
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  के तपाईं <strong className="text-white">{confirmUpgradePackage.name} (Rs. {confirmUpgradePackage.price})</strong> को लागि क्युआर कोड भुक्तानीमा अगाडि बढ्न चाहनुहुन्छ?
-                </p>
+                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 space-y-1">
+                  <p className="text-white font-semibold">
+                    Proceed to Bank QR Payment for <strong className="text-emerald-400">{confirmUpgradePackage.name} (Rs. {confirmUpgradePackage.price})</strong>?
+                  </p>
+                  <p className="text-[11px] text-slate-400">
+                    के तपाईं क्युआर कोड भुक्तानी स्क्रिनमा अगाडि बढ्न निश्चित हुनुहुन्छ?
+                  </p>
+                </div>
 
                 {/* Footer Buttons */}
                 <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-800">
@@ -553,7 +574,7 @@ export default function SubscriptionPage() {
                   <button
                     type="button"
                     onClick={handleProceedToPayment}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-600/20"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md shadow-rose-600/20"
                   >
                     <QrCode className="w-3.5 h-3.5" /> Continue to Payment (अगाडि बढ्नुहोस्)
                   </button>
@@ -670,42 +691,60 @@ export default function SubscriptionPage() {
                 </div>
               </div>
 
-              {/* RULE OPTION 3: NO REFUND / PLAN QUEUEING & VERIFICATION POLICY */}
-              <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-slate-200 text-xs space-y-2.5 shadow-md">
+              {/* RULE OPTION 3: NO REFUND / PLAN QUEUEING (RED WARNING THEME & BILINGUAL) */}
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-slate-200 text-xs space-y-3 shadow-md">
                 {/* 1. Headline */}
-                <div className="flex items-start gap-2 text-amber-400 font-bold text-xs sm:text-sm">
-                  <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-amber-400 mt-0.5" />
+                <div className="flex items-start gap-2.5 text-rose-400 font-bold text-xs sm:text-sm">
+                  <AlertTriangle className="w-5 h-5 shrink-0 text-rose-400 mt-0.5" />
                   <div>
                     <h4 className="text-white font-bold leading-tight">
                       Upgrading to {qrModalPackage.billingPeriod === 'YEARLY' ? 'Yearly' : 'Premium'} Plan? Please Read
                     </h4>
-                    <span className="text-[10px] sm:text-[11px] text-amber-300 font-normal">
-                      (मासिकबाट वार्षिक वा नयाँ प्लानमा अपग्रेड गर्दा ध्यान दिनुहोस्)
+                    <span className="text-[10.5px] sm:text-[11px] text-rose-300 font-normal">
+                      (मासिकबाट वार्षिक वा नयाँ प्लानमा अपग्रेड गर्दा ध्यान दिनुपर्ने जरुरी नियमहरू)
                     </span>
                   </div>
                 </div>
 
-                {/* 2. Key Bullets (Rule Option 3: No Refund / Plan Queueing) */}
-                <ul className="space-y-1.5 text-slate-300 pl-4 list-disc text-[10.5px] sm:text-xs leading-relaxed">
-                  <li>
-                    <strong className="text-white">No Cash Refunds:</strong> Unused days left on your active monthly plan are not refunded in cash.
-                  </li>
-                  <li>
-                    <strong className="text-white">Zero Days Lost:</strong> Your remaining monthly days remain 100% active and protected.
-                  </li>
-                  <li>
-                    <strong className="text-white">Automatic Plan Queueing:</strong> Your new {qrModalPackage.name} plan is queued and starts automatically right after your current period ends.
-                  </li>
-                  <li>
-                    <strong className="text-amber-300">Exact Details Required:</strong> If you enter a wrong Business Name, incorrect Transaction Reference ID, or wrong Sender Name, we cannot verify your bank deposit and cannot activate your plan.
-                  </li>
-                </ul>
+                {/* 2. Key Bullets (Rule Option 3: No Refund / Plan Queueing - Bilingual) */}
+                <div className="space-y-2 text-[10.5px] sm:text-xs leading-relaxed">
+                  <div className="p-2.5 rounded-xl bg-slate-950/60 border border-rose-500/20 space-y-1">
+                    <p className="font-bold text-white flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span> 1. No Cash Refunds (नगद फिर्ता नहुने):
+                    </p>
+                    <p className="text-slate-300 pl-3">
+                      🇳🇵 चालु मासिक प्लानका बाँकी दिनहरूको नगद फिर्ता हुने छैन।<br />
+                      <span className="text-slate-400">🇬🇧 Unused days left on your active monthly plan are not refunded in cash.</span>
+                    </p>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-slate-950/60 border border-rose-500/20 space-y-1">
+                    <p className="font-bold text-white flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span> 2. Zero Days Lost & Plan Queueing (दिन खेर नजाने र पालोमा रहने):
+                    </p>
+                    <p className="text-slate-300 pl-3">
+                      🇳🇵 तपाईंका बाँकी दिनहरू १००% सुरक्षित रहन्छन्। नयाँ {qrModalPackage.name} प्लान अहिलेको अवधि सकिएपछि स्वतः पालो (Queue) बाट सुरु हुनेछ।<br />
+                      <span className="text-slate-400">🇬🇧 Zero days lost: Your remaining monthly days are 100% preserved. The new plan starts automatically right after your current plan expires.</span>
+                    </p>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-slate-950/60 border border-rose-500/20 space-y-1">
+                    <p className="font-bold text-white flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span> 3. Accurate Verification Details Required (सहि विवरण अनिवार्य):
+                    </p>
+                    <p className="text-slate-300 pl-3">
+                      🇳🇵 यदि गलत Business Name, गलत Transaction Ref ID वा गलत पठाउनेको नाम पेश गर्नुभयो भने बैंक दाखिला रुजु गर्न सकिने छैन र प्लान सुरु हुने छैन।<br />
+                      <span className="text-slate-400">🇬🇧 If you enter a wrong Business Name, incorrect Transaction ID, or wrong Sender Name, we cannot verify your deposit and cannot activate your plan.</span>
+                    </p>
+                  </div>
+                </div>
 
                 {/* 3. CTA & Instructions */}
-                <div className="pt-2 border-t border-amber-500/20 text-[10.5px] sm:text-[11px] text-amber-200/90 flex items-start gap-1.5">
+                <div className="pt-2 border-t border-rose-500/20 text-[10.5px] sm:text-[11px] text-rose-200 flex items-start gap-1.5">
                   <span className="text-sm leading-none">📸</span>
                   <span>
-                    <strong>Next Step:</strong> After transferring funds, enter your <strong>Transaction ID</strong> and <strong>Sender Mobile/Name</strong> below to submit your verification request.
+                    <strong>Next Step (अर्को चरण):</strong> After transferring funds, enter your <strong>Transaction ID</strong> and <strong>Sender Name/Mobile</strong> below to submit for instant Superadmin review.<br />
+                    <span className="text-slate-400">रकम ट्रान्सफर गरेपछि तल कारोबार नम्बर र पठाउनेको नाम भरेर प्रमाणीकरण अनुरोध पठाउनुहोस्।</span>
                   </span>
                 </div>
               </div>

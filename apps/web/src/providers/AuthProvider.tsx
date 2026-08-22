@@ -27,6 +27,7 @@ export interface UserProfile {
       setupCompleted: boolean;
       isActive: boolean;
       subscriptionStatus: string;
+      currentPeriodEnd?: string | null;
       planOverrides: any | null;
       subscriptionPackage: any | null;
     };
