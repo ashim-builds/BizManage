@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Users, Building2, Activity, ShieldBan, CreditCard, ArrowRight, Clock } from 'lucide-react';
