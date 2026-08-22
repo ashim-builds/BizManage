@@ -9,7 +9,7 @@ import { loginSchema, LoginInput } from '@bizmanage/validation';
 import { useAuth } from '@/providers/AuthProvider';
 import { api, setAccessToken } from '@/lib/api';
 import { E2EECrypto } from '@/lib/crypto';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, AlertTriangle } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(searchParams.get('error') || null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const isSessionExpired = searchParams.get('sessionExpired') === 'true';
 
   const {
     register,
@@ -83,6 +84,17 @@ export default function LoginPage() {
           <h2 className="text-2xl font-bold text-white">Sign in to BizManage</h2>
           <p className="text-sm text-slate-400 mt-1">Enter your credentials to access your business accounts</p>
         </div>
+
+        {/* Session Expired Banner */}
+        {isSessionExpired && (
+          <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-start gap-2.5 shadow-md animate-in fade-in duration-200">
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-white text-xs">Your session has expired (सेसन समाप्त भयो)</p>
+              <p className="text-[11px] text-amber-300/80 mt-0.5">Please sign in again to access your business workspace.</p>
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">

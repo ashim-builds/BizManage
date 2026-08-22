@@ -2,20 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, LoginInput } from '@bizmanage/validation';
 import { useAuth } from '@/providers/AuthProvider';
 import { api, setAccessToken } from '@/lib/api';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, AlertTriangle } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, refreshUser } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const isSessionExpired = searchParams.get('sessionExpired') === 'true';
 
   // If already logged in as admin, redirect to admin dashboard
   useEffect(() => {
@@ -71,6 +73,17 @@ export default function AdminLoginPage() {
           <h2 className="text-2xl font-bold text-white">System Admin</h2>
           <p className="text-sm text-slate-400 mt-1">Authorized personnel only</p>
         </div>
+
+        {/* Session Expired Banner */}
+        {isSessionExpired && (
+          <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-start gap-2.5 shadow-md animate-in fade-in duration-200">
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-white text-xs">Admin Session Expired (सेसन समाप्त भयो)</p>
+              <p className="text-[11px] text-amber-300/80 mt-0.5">Please sign in again to access the administrator portal.</p>
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
