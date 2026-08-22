@@ -10,6 +10,7 @@ import {
   Receipt,
 } from 'lucide-react';
 import Link from 'next/link';
+import { adToBs } from '@/lib/nepaliDate';
 import { InvoiceStatus } from '@bizmanage/types';
 
 export default function SaleInvoiceDetailsPage({ params }: { params: { id: string } }) {
@@ -81,8 +82,11 @@ export default function SaleInvoiceDetailsPage({ params }: { params: { id: strin
             <h3 className="text-xl font-bold font-mono text-white print:text-slate-900 mt-2">
               {sale.invoiceNumber}
             </h3>
-            <p className="text-xs text-slate-400 print:text-slate-600 mt-1">
-              Date: {new Date(sale.date).toLocaleDateString()}
+            <p className="text-xs text-slate-300 print:text-slate-800 font-medium mt-1">
+              मिति (BS): <span className="font-bold">{adToBs(sale.date).formattedNp}</span>
+            </p>
+            <p className="text-[11px] text-slate-400 print:text-slate-600 mt-0.5">
+              Date (AD): {new Date(sale.date).toLocaleDateString()}
             </p>
           </div>
         </div>
