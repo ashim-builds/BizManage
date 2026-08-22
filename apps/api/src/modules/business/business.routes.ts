@@ -100,7 +100,7 @@ export async function businessRoutes(fastify: FastifyInstance) {
       if (body.subscriptionPackageId) {
         const currentBiz = await tx.business.findUnique({
           where: { id: request.tenant!.businessId },
-          select: { subscriptionPackageId: true }
+          include: { subscriptionPackage: true },
         });
 
         // Only process if it's a new package
@@ -115,7 +115,19 @@ export async function businessRoutes(fastify: FastifyInstance) {
             throw new AppError('Paid plans must be purchased through a payment gateway', 400, 'BAD_REQUEST');
           }
 
-          // It's a free plan, so we can securely auto-assign it
+          // Compute forfeited days if previously on a paid plan
+          const wasPaidPlan =
+            currentBiz?.subscriptionPackage &&
+            currentBiz.subscriptionPackage.name?.toLowerCase() !== 'free' &&
+            Number(currentBiz.subscriptionPackage.price || 0) > 0;
+
+          const prevExpiry = currentBiz?.currentPeriodEnd ? new Date(currentBiz.currentPeriodEnd) : null;
+          const forfeitedDays =
+            wasPaidPlan && prevExpiry && prevExpiry > new Date()
+              ? Math.ceil((prevExpiry.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+              : 0;
+
+          // Free plan expiration
           let addDays = 30;
           if (pkg.billingPeriod === 'YEARLY') addDays = 365;
           let trialDays = pkg.trialDays || 0;
@@ -130,8 +142,8 @@ export async function businessRoutes(fastify: FastifyInstance) {
               subscriptionPackageId: pkg.id,
               status: 'ACTIVE',
               startDate: now,
-              endDate
-            }
+              endDate,
+            },
           });
 
           subUpdateData = {
@@ -140,6 +152,59 @@ export async function businessRoutes(fastify: FastifyInstance) {
             currentPeriodEnd: endDate,
             isActive: true,
           };
+
+          // 1. Audit Log for Plan Switch
+          await tx.auditLog.create({
+            data: {
+              userId: request.user!.id,
+              businessId: request.tenant!.businessId,
+              action: 'PLAN_SWITCH',
+              module: 'SUBSCRIPTION',
+              recordId: pkg.id,
+              ipAddress: request.ip,
+              details: {
+                fromPackage: currentBiz?.subscriptionPackage?.name || 'None',
+                toPackage: pkg.name,
+                wasPaidPlan,
+                forfeitedDays,
+                previousPeriodEnd: prevExpiry ? prevExpiry.toISOString() : null,
+                newPeriodEnd: endDate.toISOString(),
+                userAgent: request.headers['user-agent'],
+              },
+              oldValue: {
+                packageId: currentBiz?.subscriptionPackageId,
+                packageName: currentBiz?.subscriptionPackage?.name,
+                status: currentBiz?.subscriptionStatus,
+                currentPeriodEnd: prevExpiry ? prevExpiry.toISOString() : null,
+              },
+              newValue: {
+                packageId: pkg.id,
+                packageName: pkg.name,
+                status: 'ACTIVE',
+                currentPeriodEnd: endDate.toISOString(),
+              },
+            },
+          });
+
+          // 2. System Log for Superadmin visibility
+          await tx.systemLog.create({
+            data: {
+              adminId: request.user!.id,
+              action: 'USER_PLAN_SWITCH',
+              targetId: request.tenant!.businessId,
+              targetType: 'Business',
+              ipAddress: request.ip,
+              details: {
+                businessName: currentBiz?.name,
+                fromPackage: currentBiz?.subscriptionPackage?.name || 'None',
+                toPackage: pkg.name,
+                wasPaidPlan,
+                forfeitedDays,
+                previousPeriodEnd: prevExpiry ? prevExpiry.toISOString() : null,
+                newPeriodEnd: endDate.toISOString(),
+              },
+            },
+          });
         }
       }
 
