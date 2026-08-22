@@ -188,7 +188,7 @@ export default function PurchaseReturnPage() {
             setIsCreateOpen(true);
             setErrorBanner('');
           }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-sm font-semibold transition-all shadow-lg shadow-purple-600/25 active:scale-95"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-sm font-semibold transition-all shadow-lg shadow-purple-600/20 active:scale-95"
         >
           <Plus className="w-4 h-4" /> Issue Debit Note (Purchase Return)
         </button>
@@ -347,7 +347,7 @@ export default function PurchaseReturnPage() {
               {/* Modal Sticky Header */}
               <div className="px-5 py-4 border-b border-slate-800 bg-slate-900/90 backdrop-blur-md flex items-center justify-between gap-3 shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 text-purple-400 border border-purple-500/30">
+                  <div className="p-2.5 rounded-2xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
                     <RotateCcw className="w-5 h-5" />
                   </div>
                   <div>
@@ -759,7 +759,7 @@ export default function PurchaseReturnPage() {
                     type="submit"
                     form="purchase-return-form"
                     disabled={createPurchaseReturn.isPending || fields.length === 0}
-                    className="px-5 sm:px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-xs sm:text-sm font-semibold transition-all shadow-lg shadow-purple-600/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 active:scale-95"
+                    className="px-5 sm:px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs sm:text-sm font-semibold transition-all shadow-lg shadow-purple-600/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 active:scale-95"
                   >
                     {createPurchaseReturn.isPending ? (
                       'Processing...'

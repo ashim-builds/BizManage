@@ -551,7 +551,7 @@ function CalendarContent({
                 isDisabled
                   ? 'opacity-20 cursor-not-allowed text-slate-600'
                   : isSelected
-                  ? 'bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold shadow-md shadow-blue-600/30 scale-105 z-10'
+                  ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/30 scale-105 z-10'
                   : isToday
                   ? 'bg-blue-500/15 border border-blue-400/50 text-blue-300 font-bold hover:bg-blue-500/25'
                   : cell.isCurrentMonth
