@@ -595,7 +595,22 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
         }
       }
 
-      // 5. Decrease Stock atomically
+      // 5. Check and decrease Stock atomically
+      for (const line of body.items) {
+        const item = await tx.item.findFirst({ where: { id: line.itemId, businessId: request.tenant!.businessId } });
+        if (item && item.type === 'PRODUCT') {
+          const curStock = new Prisma.Decimal(item.currentStock || 0);
+          const reqQty = new Prisma.Decimal(line.quantity);
+          if (curStock.lessThan(reqQty)) {
+            throw new AppError(
+              `Cannot return "${item.name}". Current available inventory (${curStock.toNumber()} ${item.unit}) is less than return quantity (${reqQty.toNumber()} ${item.unit}).`,
+              400,
+              'INSUFFICIENT_STOCK'
+            );
+          }
+        }
+      }
+
       for (const line of body.items) {
         await updateStock(tx as any, line.itemId, request.tenant!.businessId, line.quantity, 'REDUCE');
         await tx.stockMovement.create({

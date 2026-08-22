@@ -229,6 +229,41 @@ export async function saleRoutes(fastify: FastifyInstance) {
         partyId = cashParty.id;
       }
 
+      // 3.5 Check stock availability for all physical products before creating the sale
+      const requestedItemQuantities = new Map<string, Prisma.Decimal>();
+      for (const line of body.items) {
+        const currentQty = requestedItemQuantities.get(line.itemId) || new Prisma.Decimal(0);
+        requestedItemQuantities.set(line.itemId, currentQty.add(new Prisma.Decimal(line.quantity)));
+      }
+
+      for (const [itemId, totalRequiredQty] of requestedItemQuantities.entries()) {
+        const item = await tx.item.findFirst({
+          where: { id: itemId, businessId: request.tenant!.businessId },
+        });
+
+        if (!item) {
+          throw new AppError('Item not found or unauthorized', 404, 'ITEM_NOT_FOUND');
+        }
+
+        if (item.type === 'PRODUCT') {
+          const curStock = new Prisma.Decimal(item.currentStock || 0);
+          if (curStock.lessThanOrEqualTo(0)) {
+            throw new AppError(
+              `Item "${item.name}" is out of stock (Available: 0 ${item.unit}). Cannot create bill without available stock.`,
+              400,
+              'OUT_OF_STOCK'
+            );
+          }
+          if (curStock.lessThan(totalRequiredQty)) {
+            throw new AppError(
+              `Insufficient stock for "${item.name}". Available: ${curStock.toNumber()} ${item.unit}, Total Requested in bill: ${totalRequiredQty.toNumber()} ${item.unit}.`,
+              400,
+              'INSUFFICIENT_STOCK'
+            );
+          }
+        }
+      }
+
       const preparedItems = body.items.map((line, idx) => ({
         itemId: line.itemId,
         quantity: line.quantity,
@@ -820,14 +855,26 @@ export async function saleRoutes(fastify: FastifyInstance) {
       }
 
       // Check stock availability
+      const requestedItemQuantities = new Map<string, Prisma.Decimal>();
       for (const line of quotation.items) {
-        const item = await tx.item.findFirst({ where: { id: line.itemId , businessId: request.tenant!.businessId } });
+        const currentQty = requestedItemQuantities.get(line.itemId) || new Prisma.Decimal(0);
+        requestedItemQuantities.set(line.itemId, currentQty.add(new Prisma.Decimal(line.quantity)));
+      }
+
+      for (const [itemId, totalRequiredQty] of requestedItemQuantities.entries()) {
+        const item = await tx.item.findFirst({ where: { id: itemId, businessId: request.tenant!.businessId } });
         if (item && item.type === 'PRODUCT') {
           const curStock = new Prisma.Decimal(item.currentStock || 0);
-          const reqQty = new Prisma.Decimal(line.quantity);
-          if (curStock.lessThan(reqQty)) {
+          if (curStock.lessThanOrEqualTo(0)) {
             throw new AppError(
-              `Insufficient stock for "${item.name}". Available: ${curStock}, Required: ${reqQty}`,
+              `Item "${item.name}" is out of stock (Available: 0 ${item.unit}). Cannot convert quotation to invoice.`,
+              400,
+              'OUT_OF_STOCK'
+            );
+          }
+          if (curStock.lessThan(totalRequiredQty)) {
+            throw new AppError(
+              `Insufficient stock for "${item.name}". Available: ${curStock.toNumber()} ${item.unit}, Required: ${totalRequiredQty.toNumber()} ${item.unit}.`,
               400,
               'INSUFFICIENT_STOCK'
             );

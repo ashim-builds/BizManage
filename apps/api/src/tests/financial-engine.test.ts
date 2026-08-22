@@ -43,8 +43,58 @@ export async function runFinancialEngineTests() {
   });
   const itemId = JSON.parse(itemRes.body).data.id;
 
+  const zeroStockItemRes = await app.inject({
+    method: 'POST',
+    url: '/api/v1/items',
+    headers,
+    payload: { name: 'Zero Stock Item', type: 'PRODUCT', salePrice: 500, purchasePrice: 300, openingStock: 0 },
+  });
+  const zeroStockItemId = JSON.parse(zeroStockItemRes.body).data.id;
+
   // Initial Check: Stock=50, Customer Bal=0, Supplier Bal=0, Cash=0
   console.log('   Initial State: Stock=50 Pcs, Customer Bal=Rs. 0, Cash=Rs. 0');
+
+  // --- RULE 0A: TEST OUT-OF-STOCK BILLING BLOCKED ---
+  console.log('   Rule 0A Check: Prevent creating bill for out-of-stock item (Stock = 0)...');
+  const outOfStockRes = await app.inject({
+    method: 'POST',
+    url: '/api/v1/sales',
+    headers,
+    payload: {
+      partyId: customerId,
+      date: new Date().toISOString().split('T')[0],
+      items: [{ itemId: zeroStockItemId, quantity: 1, unitPrice: 500 }],
+    },
+  });
+  if (outOfStockRes.statusCode !== 400) {
+    throw new Error(`Expected 400 for out-of-stock sale, got ${outOfStockRes.statusCode}`);
+  }
+  const outOfStockErr = JSON.parse(outOfStockRes.body);
+  if (outOfStockErr.error?.code !== 'OUT_OF_STOCK') {
+    throw new Error(`Expected OUT_OF_STOCK code, got ${outOfStockErr.error?.code}`);
+  }
+  console.log('   ✅ Rule 0A Passed: Out-of-stock product billing is strictly blocked.');
+
+  // --- RULE 0B: TEST INSUFFICIENT STOCK BILLING BLOCKED ---
+  console.log('   Rule 0B Check: Prevent creating bill when requested quantity exceeds stock (Req: 100, Avail: 50)...');
+  const overStockRes = await app.inject({
+    method: 'POST',
+    url: '/api/v1/sales',
+    headers,
+    payload: {
+      partyId: customerId,
+      date: new Date().toISOString().split('T')[0],
+      items: [{ itemId, quantity: 100, unitPrice: 1000 }],
+    },
+  });
+  if (overStockRes.statusCode !== 400) {
+    throw new Error(`Expected 400 for over-stock sale, got ${overStockRes.statusCode}`);
+  }
+  const overStockErr = JSON.parse(overStockRes.body);
+  if (overStockErr.error?.code !== 'INSUFFICIENT_STOCK') {
+    throw new Error(`Expected INSUFFICIENT_STOCK code, got ${overStockErr.error?.code}`);
+  }
+  console.log('   ✅ Rule 0B Passed: Insufficient stock sale is strictly blocked.');
 
   // --- RULE 1: SALE (Sell 10 @ 1,000 = 10,000. Paid 4,000, Due 6,000) ---
   console.log('   Rule 1 Check: Sale Invoice (Sell 10 Pcs @ Rs. 1,000. Paid 4,000, Due 6,000)...');

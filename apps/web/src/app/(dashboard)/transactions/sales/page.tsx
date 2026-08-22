@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,7 +18,6 @@ import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ModalPortal } from '@/components/ui/ModalPortal';
-import { NepaliDateBadge } from '@/components/common/NepaliDateBadge';
 import {
   TrendingUp,
   Plus,
@@ -89,6 +88,7 @@ export default function SalesPage() {
     (p: any) => p.type === 'CUSTOMER' || p.type === 'BOTH'
   );
   const availableItems = itemsData?.data || [];
+  const accounts = accountsData?.data || [];
 
   // Form
   const form = useForm<CreateSaleInput>({
@@ -107,16 +107,43 @@ export default function SalesPage() {
     name: 'items',
   });
 
-  const watchItems = form.watch('items');
+  const watchItems = form.watch('items') || [];
   const watchIsVatBill = form.watch('isVatBill');
+  const watchPaymentMode = form.watch('paymentMode');
 
-  const mappedItems = watchItems.map((item) => ({
-    unitPrice: Number(item.unitPrice) || 0,
-    quantity: Number(item.quantity) || 0,
-    discountPercent: Number(item.discount) || 0,
-  }));
+  // Compute stock validation errors for the current form state
+  const stockErrors = useMemo(() => {
+    const qtyMap = new Map<string, number>();
+    for (const line of watchItems) {
+      if (!line?.itemId) continue;
+      const cur = qtyMap.get(line.itemId) || 0;
+      qtyMap.set(line.itemId, cur + Number(line.quantity || 0));
+    }
 
-  const totals = calculateInvoiceTotals(mappedItems, watchIsVatBill);
+    const errors: string[] = [];
+    for (const [itemId, totalQty] of qtyMap.entries()) {
+      const item = availableItems.find((i: any) => i.id === itemId);
+      if (item && item.type === 'PRODUCT') {
+        const stock = Number(item.currentStock || 0);
+        if (stock <= 0) {
+          errors.push(`"${item.name}" is out of stock (Available: 0 ${item.unit}). Cannot create bill.`);
+        } else if (totalQty > stock) {
+          errors.push(`"${item.name}" exceeds available inventory (Available: ${stock} ${item.unit}, Total Requested: ${totalQty} ${item.unit}).`);
+        }
+      }
+    }
+    return errors;
+  }, [watchItems, availableItems]);
+
+  const totals = calculateInvoiceTotals(
+    watchItems.map((item) => ({
+      quantity: Number(item.quantity || 0),
+      unitPrice: Number(item.unitPrice || 0),
+      discountPercent: Number(item.discount || 0),
+    })),
+    watchIsVatBill
+  );
+  
   const { subTotal, discount, taxableAmount, taxAmount, totalAmount } = totals;
 
   useEffect(() => {
@@ -124,9 +151,6 @@ export default function SalesPage() {
       form.setValue('paidAmount', totalAmount);
     }
   }, [totalAmount, isCreateOpen]);
-
-  const accounts = accountsData?.data || [];
-  const watchPaymentMode = form.watch('paymentMode');
 
   const desiredAccountType =
     watchPaymentMode === PaymentMode.BANK || watchPaymentMode === PaymentMode.CHEQUE
@@ -166,6 +190,29 @@ export default function SalesPage() {
   };
 
   const handleCreateSubmit = async (data: CreateSaleInput) => {
+    // Client-side stock validation check
+    const itemQtyMap = new Map<string, number>();
+    for (const line of data.items) {
+      if (!line.itemId) continue;
+      const current = itemQtyMap.get(line.itemId) || 0;
+      itemQtyMap.set(line.itemId, current + Number(line.quantity || 0));
+    }
+
+    for (const [itemId, totalQty] of itemQtyMap.entries()) {
+      const sel = availableItems.find((i: any) => i.id === itemId);
+      if (sel && sel.type === 'PRODUCT') {
+        const stock = Number(sel.currentStock || 0);
+        if (stock <= 0) {
+          toast.error(`"${sel.name}" is out of stock (Available: 0 ${sel.unit}). Cannot create bill.`);
+          return;
+        }
+        if (totalQty > stock) {
+          toast.error(`Insufficient stock for "${sel.name}". Available: ${stock} ${sel.unit}, Total requested in bill: ${totalQty} ${sel.unit}.`);
+          return;
+        }
+      }
+    }
+
     try {
       const formattedItems = data.items.map((item) => {
         return {
@@ -430,9 +477,9 @@ export default function SalesPage() {
                       >
                         {s.invoiceNumber}
                       </Link>
-                      <div className="mt-1">
-                        <NepaliDateBadge date={s.date} />
-                      </div>
+                      <p className="text-[10px] text-slate-500 mt-0.5">
+                        {new Date(s.date).toLocaleDateString()}
+                      </p>
                     </td>
 
                     <td className="px-6 py-4 text-slate-300 font-semibold">
@@ -628,7 +675,10 @@ export default function SalesPage() {
                     const lineTotal = lineSubtotal - lineDiscAmt + lineTax;
 
                     const curStock = Number(selectedItem?.currentStock || 0);
-                    const isOverStock = selectedItem?.type === 'PRODUCT' && lineQty > curStock;
+                    const isProduct = selectedItem?.type === 'PRODUCT';
+                    const isOutOfStock = isProduct && curStock <= 0;
+                    const isInsufficientStock = isProduct && curStock > 0 && lineQty > curStock;
+                    const isOverStock = isOutOfStock || isInsufficientStock;
 
                     return (
                       <div
@@ -654,21 +704,28 @@ export default function SalesPage() {
                             <div className="flex items-center gap-2 mt-1.5 px-0.5">
                               <span
                                 className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                                  curStock <= Number(selectedItem.minStockAlert)
+                                  curStock <= 0
+                                    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                                    : curStock <= Number(selectedItem.minStockAlert)
                                     ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                                     : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                                 }`}
                               >
-                                Stock: {curStock} {selectedItem.unit}
+                                {curStock <= 0 ? `Out of Stock (0 ${selectedItem.unit})` : `Stock: ${curStock} ${selectedItem.unit}`}
                               </span>
                               <span className="text-[10px] text-slate-400 font-mono">
                                 MRP: Rs. {Number(selectedItem.salePrice)}
                               </span>
                             </div>
                           )}
-                          {isOverStock && (
+                          {isOutOfStock && (
                             <p className="text-[10px] text-rose-400 font-semibold flex items-center gap-1 mt-1">
-                              <AlertCircle className="w-3 h-3" /> Insufficient Stock ({curStock} {selectedItem?.unit} available)
+                              <AlertCircle className="w-3 h-3 shrink-0" /> Out of stock! Available: 0 {selectedItem?.unit}. Cannot bill.
+                            </p>
+                          )}
+                          {isInsufficientStock && (
+                            <p className="text-[10px] text-rose-400 font-semibold flex items-center gap-1 mt-1">
+                              <AlertCircle className="w-3 h-3 shrink-0" /> Insufficient stock ({curStock} {selectedItem?.unit} available, {lineQty} requested)
                             </p>
                           )}
                         </div>
@@ -679,7 +736,11 @@ export default function SalesPage() {
                             step="any"
                             placeholder="Qty"
                             {...form.register(`items.${idx}.quantity`, { valueAsNumber: true })}
-                            className="w-full px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700/80 text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+                            className={`w-full px-3 py-2 rounded-xl bg-slate-800/90 border text-white text-xs font-mono focus:outline-none focus:ring-2 transition-all ${
+                              isOverStock
+                                ? 'border-rose-500/80 focus:ring-rose-500/40 focus:border-rose-500'
+                                : 'border-slate-700/80 focus:ring-blue-500/40 focus:border-blue-500'
+                            }`}
                           />
                         </div>
 
@@ -750,21 +811,21 @@ export default function SalesPage() {
                       >
                         <option value={PaymentMode.CASH}>Cash</option>
                         <option value={PaymentMode.BANK}>Bank Transfer</option>
-                        <option value={PaymentMode.ONLINE}>Mobile Wallet / Online</option>
                         <option value={PaymentMode.CHEQUE}>Cheque</option>
+                        <option value={PaymentMode.ONLINE}>Mobile Wallet</option>
                       </select>
                     </div>
 
                     <div className="col-span-2">
-                      <label className="block text-[11px] text-slate-400 mb-1">Account</label>
+                      <label className="block text-[11px] text-slate-400 mb-1">Deposit To Account</label>
                       <select
                         {...form.register('accountId')}
                         className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       >
-                        <option value="">Default {desiredAccountType.replace('_', ' ')} Account</option>
+                        <option value="">Default Account</option>
                         {filteredAccounts.map((a: any) => (
                           <option key={a.id} value={a.id}>
-                            {a.bankName || a.accountName} — Rs. {formatCurrency(a.balance)} Available
+                            {a.bankName || a.accountName} — Rs. {formatCurrency(a.balance)}
                           </option>
                         ))}
                       </select>
@@ -805,6 +866,21 @@ export default function SalesPage() {
                 </div>
               </div>
 
+              {/* Stock Warning Banner */}
+              {stockErrors.length > 0 && (
+                <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5 shadow-sm">
+                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-white text-xs">Cannot Create Bill: Stock Unavailable</p>
+                    <ul className="list-disc list-inside text-[11px] text-rose-300/90 mt-1 space-y-0.5">
+                      {stockErrors.map((err, i) => (
+                        <li key={i}>{err}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
               {/* Actions */}
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
                 <button
@@ -816,8 +892,9 @@ export default function SalesPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={createSale.isPending}
-                  className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50"
+                  disabled={createSale.isPending || stockErrors.length > 0}
+                  className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={stockErrors.length > 0 ? 'Cannot issue bill: One or more products are out of stock or exceed inventory.' : ''}
                 >
                   {createSale.isPending ? 'Processing Transaction...' : 'Save & Issue Sales Invoice'}
                 </button>

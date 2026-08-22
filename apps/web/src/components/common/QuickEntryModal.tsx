@@ -39,6 +39,7 @@ import {
   UserPlus,
   PackagePlus,
   CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 
 export type QuickEntryType =
@@ -248,6 +249,25 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
 
   // Form Submit Handlers
   const handleSaleSubmit = async (data: any) => {
+    if (data.items && Array.isArray(data.items)) {
+      for (const line of data.items) {
+        if (!line.itemId) continue;
+        const sel = items.find((i: any) => i.id === line.itemId);
+        if (sel && sel.type === 'PRODUCT') {
+          const stock = Number(sel.currentStock || 0);
+          const reqQty = Number(line.quantity || 0);
+          if (stock <= 0) {
+            toast.error(`"${sel.name}" is out of stock (Available: 0 ${sel.unit}). Cannot record sale.`);
+            return;
+          }
+          if (reqQty > stock) {
+            toast.error(`Insufficient stock for "${sel.name}". Available: ${stock} ${sel.unit}, Requested: ${reqQty} ${sel.unit}.`);
+            return;
+          }
+        }
+      }
+    }
+
     try {
       await createSale.mutateAsync(data);
       showSuccess('Quick Sale recorded successfully!');
@@ -480,30 +500,77 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
                 </div>
               </div>
 
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Item & Quantity *</label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <ItemSearchSelect
-                    items={items}
-                    value={saleForm.watch('items.0.itemId') || ''}
-                    onChange={(id) => {
-                      saleForm.setValue('items.0.itemId', id);
-                      const sel = items.find((i: any) => i.id === id);
-                      if (sel) saleForm.setValue('items.0.unitPrice', Number(sel.salePrice || 0));
-                    }}
-                    placeholder="Search product…"
-                    priceField="salePrice"
-                    className="col-span-2"
-                  />
-                  <input
-                    type="number"
-                    step="any"
-                    placeholder="Qty"
-                    {...saleForm.register('items.0.quantity', { valueAsNumber: true })}
-                    className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono font-bold"
-                  />
-                </div>
-              </div>
+              {(() => {
+                const selectedQuickSaleItemId = saleForm.watch('items.0.itemId');
+                const selectedQuickSaleItem = items.find((i: any) => i.id === selectedQuickSaleItemId);
+                const quickSaleQty = Number(saleForm.watch('items.0.quantity') || 0);
+                const quickSaleStock = Number(selectedQuickSaleItem?.currentStock || 0);
+                const isQuickSaleProduct = selectedQuickSaleItem?.type === 'PRODUCT';
+                const isQuickSaleOutOfStock = isQuickSaleProduct && quickSaleStock <= 0;
+                const isQuickSaleInsufficient = isQuickSaleProduct && quickSaleStock > 0 && quickSaleQty > quickSaleStock;
+                const isQuickSaleOverStock = isQuickSaleOutOfStock || isQuickSaleInsufficient;
+
+                return (
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1">Item & Quantity *</label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <ItemSearchSelect
+                        items={items}
+                        value={selectedQuickSaleItemId || ''}
+                        onChange={(id) => {
+                          saleForm.setValue('items.0.itemId', id);
+                          const sel = items.find((i: any) => i.id === id);
+                          if (sel) saleForm.setValue('items.0.unitPrice', Number(sel.salePrice || 0));
+                        }}
+                        placeholder="Search product…"
+                        priceField="salePrice"
+                        className="col-span-2"
+                      />
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="Qty"
+                        {...saleForm.register('items.0.quantity', { valueAsNumber: true })}
+                        className={`px-3 py-2 rounded-xl bg-slate-800 border text-white font-mono font-bold focus:outline-none focus:ring-2 transition-all ${
+                          isQuickSaleOverStock
+                            ? 'border-rose-500 focus:ring-rose-500/40 focus:border-rose-500'
+                            : 'border-slate-700 focus:ring-blue-500/40 focus:border-blue-500'
+                        }`}
+                      />
+                    </div>
+                    {selectedQuickSaleItem && (
+                      <div className="flex items-center gap-2 mt-1.5 px-0.5">
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                            quickSaleStock <= 0
+                              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                              : quickSaleStock <= Number(selectedQuickSaleItem.minStockAlert)
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                              : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                          }`}
+                        >
+                          {quickSaleStock <= 0
+                            ? `Out of Stock (0 ${selectedQuickSaleItem.unit})`
+                            : `Stock: ${quickSaleStock} ${selectedQuickSaleItem.unit}`}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          MRP: Rs. {Number(selectedQuickSaleItem.salePrice)}
+                        </span>
+                      </div>
+                    )}
+                    {isQuickSaleOutOfStock && (
+                      <p className="text-[10px] text-rose-400 font-semibold flex items-center gap-1 mt-1">
+                        <AlertCircle className="w-3 h-3 shrink-0" /> Out of stock! Available: 0 {selectedQuickSaleItem?.unit}. Cannot record sale.
+                      </p>
+                    )}
+                    {isQuickSaleInsufficient && (
+                      <p className="text-[10px] text-rose-400 font-semibold flex items-center gap-1 mt-1">
+                        <AlertCircle className="w-3 h-3 shrink-0" /> Insufficient stock ({quickSaleStock} {selectedQuickSaleItem?.unit} available, {quickSaleQty} requested)
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
