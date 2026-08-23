@@ -465,6 +465,55 @@ export function UserGuide({ initialLanguage = 'np', showLanguageSelector = true 
       quickLinkTextNp: 'ब्याकअप सेटिङ्स →',
       quickLinkTextEn: 'Backup Settings →',
     },
+    {
+      id: 'pos-billing',
+      icon: Zap,
+      badgeNp: 'पीओएस बिलिङ',
+      badgeEn: 'POS Billing',
+      titleNp: '१०. पीओएस क्विक बिलिङ र थर्मल रसिद (POS Counter Mode & Thermal Bill)',
+      titleEn: '10. POS Counter Mode & Thermal Receipt Printing',
+      summaryNp: 'काउन्टरमा बारकोड स्क्यान गरी सेकेन्डमै बिल काट्ने, फिर्ता रकम हिसाब गर्ने र थर्मल प्रिन्टरबाट बिल निकाल्ने तरिका।',
+      summaryEn: 'High-speed counter billing with hardware barcode scanning, live stock deduction, cash change calculator, and thermal printing.',
+      stepsNp: [
+        {
+          title: 'बारकोड स्क्यानिङ र स्वचालित थप (Barcode Scanning)',
+          desc: 'काउन्टरमा सामानको बारकोड स्क्यान गर्दा वा Enter थिच्दा सामान सिधै कार्टमा जोडिन्छ। खोज्दा पहिलो, बिचको वा अन्तिम नामको कुनै पनि शब्द टाइप गरेर सजिलै फेला पार्न सकिन्छ।',
+        },
+        {
+          title: 'लाइभ स्टक र ब्यालेन्स घट्ने (Live Stock Tracking)',
+          desc: 'प्रत्येक सामानको कार्डमा अहिले भएको स्टक (जस्तै: Stock: 50 Pcs) देखिन्छ। कार्टमा सामान थप्दै जाँदा स्टक संख्या स्वतः घट्छ (जस्तै: 2 in cart, Stock: 48 Pcs)।',
+        },
+        {
+          title: 'फिर्ता रकम हिसाब (Cash Change Calculator)',
+          desc: 'ग्राहकले दिएको नगद रकम (Cash Received) टाइप गर्नासाथ ग्राहकलाई फिर्ता दिनुपर्ने रकम (Change Return) स्वतः हिसाब हुन्छ।',
+        },
+        {
+          title: '८० मिमी / ५८ मिमी थर्मल बिल प्रिन्ट (POS Thermal Print)',
+          desc: 'Checkout थिच्नासाथ ८० मिमी वा ५८ मिमी थर्मल रसिद खुल्छ, जसमा पसलको नाम, PAN/VAT, क्यूआर कोड, बारकोड र विस्तृत हिसाब प्रिन्ट हुन्छ।',
+        },
+      ],
+      stepsEn: [
+        {
+          title: 'Hardware Barcode Scanning & Smart Search',
+          desc: 'Scanning a barcode SKU or pressing Enter automatically matches products and adds them to cart. Multi-word search matches any first, middle, or last name words in any order.',
+        },
+        {
+          title: 'Live Stock Tracking & Cart Deduction',
+          desc: 'Product cards show live available inventory (e.g. Stock: 50 Pcs). Adding units to cart dynamically deducts available stock in real-time (e.g. 2 in cart, Stock: 48 Pcs).',
+        },
+        {
+          title: 'Cash Change Return Calculator',
+          desc: 'Enter the cash amount tendered by the customer to automatically calculate exact change due.',
+        },
+        {
+          title: '80mm / 58mm Thermal Receipt Printing',
+          desc: 'Instantly generates authentic thermal receipt rolls complete with Store Header, PAN/VAT, Verification QR code, Barcode graphic, and line item breakdown.',
+        },
+      ],
+      quickLink: '/transactions/pos',
+      quickLinkTextNp: 'POS Counter Mode खोल्नुहोस् →',
+      quickLinkTextEn: 'Open POS Counter →',
+    },
   ];
 
   // Filtered sections by search and category
