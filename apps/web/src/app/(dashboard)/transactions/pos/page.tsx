@@ -600,7 +600,10 @@ function POSThermalReceiptModal({
     window.print();
   };
 
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(
+  const totalLineItems = sale.items.length;
+  const totalUnits = sale.items.reduce((sum, item) => sum + item.qty, 0);
+
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(
     sale.voucherNo || 'POS-INV'
   )}`;
 
@@ -689,7 +692,7 @@ function POSThermalReceiptModal({
           </div>
 
           {/* Authentic POS Thermal Paper Roll Preview */}
-          <div className="bg-slate-950/90 p-3 sm:p-4 rounded-2xl border border-slate-800 flex justify-center max-h-[390px] overflow-y-auto shadow-inner">
+          <div className="bg-slate-950/90 p-3 sm:p-4 rounded-2xl border border-slate-800 flex justify-center max-h-[410px] overflow-y-auto shadow-inner">
             <div
               id="thermal-printable-area"
               className={`bg-white text-slate-950 font-mono text-[11px] p-4 shadow-2xl border border-slate-300 space-y-3 transition-all rounded-md w-full select-text ${
@@ -698,21 +701,26 @@ function POSThermalReceiptModal({
             >
               {/* Receipt Store Header */}
               <div className="text-center space-y-0.5 border-b border-dashed border-slate-400 pb-2.5">
-                <h2 className="text-sm font-black uppercase tracking-tight text-slate-900">{business?.name || 'BizManage Store'}</h2>
+                <h2 className="text-base font-black uppercase tracking-tight text-slate-900">{business?.name || 'BizManage Store'}</h2>
                 <p className="text-[10px] text-slate-700 leading-tight">{business?.address || 'Main Road, Kathmandu, Nepal'}</p>
                 {business?.panNo && <p className="text-[10px] text-slate-700">PAN/VAT: {business.panNo}</p>}
                 {business?.phone && <p className="text-[10px] text-slate-700">Tel: {business.phone}</p>}
+                <p className="text-[9px] text-slate-500 pt-0.5 font-bold uppercase">RETAIL TAX INVOICE</p>
               </div>
 
               {/* Bill Details */}
               <div className="text-[10px] border-b border-dashed border-slate-400 pb-2 space-y-1">
                 <div className="flex justify-between font-bold">
                   <span>Bill No: {sale.voucherNo}</span>
-                  <span>{sale.paymentMode}</span>
+                  <span className="px-1 bg-slate-100 rounded border border-slate-300 text-[9px]">{sale.paymentMode}</span>
                 </div>
                 <div className="flex justify-between text-slate-700">
                   <span className="truncate pr-1">Customer: {sale.customerName}</span>
                   <span className="shrink-0">{sale.date}</span>
+                </div>
+                <div className="flex justify-between text-[9px] text-slate-500">
+                  <span>Counter: #01</span>
+                  <span>Operator: Cashier</span>
                 </div>
               </div>
 
@@ -739,10 +747,16 @@ function POSThermalReceiptModal({
                 </tbody>
               </table>
 
+              {/* Item Summary Line */}
+              <div className="border-t border-b border-slate-300 py-1 text-[9px] font-bold text-slate-700 flex justify-between">
+                <span>Items: {totalLineItems}</span>
+                <span>Total Qty: {totalUnits} Pcs</span>
+              </div>
+
               {/* Financial Breakdown */}
-              <div className="border-t border-dashed border-slate-400 pt-2 space-y-1 text-[11px]">
+              <div className="pt-1 space-y-1 text-[11px]">
                 <div className="flex justify-between font-black text-xs pt-0.5 border-b border-slate-300 pb-1">
-                  <span>TOTAL PAYABLE:</span>
+                  <span>NET TOTAL PAYABLE:</span>
                   <span>Rs. {sale.totalAmount.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-slate-700 text-[10px]">
@@ -757,12 +771,24 @@ function POSThermalReceiptModal({
                 )}
               </div>
 
-              {/* Footer QR & Message */}
-              <div className="text-center pt-2 border-t border-dashed border-slate-400 space-y-1.5 text-[9px] text-slate-700">
-                <img src={qrCodeUrl} alt="Invoice QR" className="w-16 h-16 mx-auto object-contain" />
-                <p className="font-bold text-slate-900 uppercase">*** THANK YOU FOR SHOPPING ***</p>
-                <p>Please keep this receipt for return/warranty.</p>
-                <p className="text-[8px] text-slate-500 font-mono">BizManage POS System</p>
+              {/* Footer QR & Barcode */}
+              <div className="text-center pt-2 border-t border-dashed border-slate-400 space-y-2 text-[9px] text-slate-700">
+                <div className="space-y-1">
+                  <img src={qrCodeUrl} alt="Invoice Verification QR" className="w-20 h-20 mx-auto object-contain p-1 bg-white border border-slate-300 rounded" />
+                  <p className="text-[8px] font-mono text-slate-500">Scan QR to verify invoice</p>
+                </div>
+
+                {/* Simulated Barcode */}
+                <div className="py-1 space-y-0.5">
+                  <div className="h-6 w-3/4 mx-auto bg-[repeating-linear-gradient(90deg,#000_0px,#000_2px,#fff_2px,#fff_4px,#000_4px,#000_7px,#fff_7px,#fff_8px)] opacity-85" />
+                  <p className="font-mono text-[9px] text-slate-800 tracking-wider">*{sale.voucherNo}*</p>
+                </div>
+
+                <div className="space-y-0.5">
+                  <p className="font-bold text-slate-900 uppercase">*** THANK YOU FOR SHOPPING ***</p>
+                  <p className="text-[8px] text-slate-600">Goods once sold can be exchanged within 7 days with bill.</p>
+                  <p className="text-[8px] text-slate-500 font-mono pt-1">Powered by BizManage POS</p>
+                </div>
               </div>
             </div>
           </div>
