@@ -392,32 +392,39 @@ export default function SalesPage() {
             {sales.map((s: any) => {
               const total = Number(s.totalAmount || 0);
               const due = Number(s.dueAmount || 0);
+              const totalQty = (s.items || []).reduce((acc: number, it: any) => acc + Number(it.quantity || 0), 0);
+              const lineCount = s.items?.length || 0;
 
               return (
-                <div key={s.id} className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col gap-3 shadow-sm">
-                  {/* Header */}
-                  <div className="flex items-start justify-between border-b border-slate-800/60 pb-3">
+                <div key={s.id} className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                  {/* Top Row */}
+                  <div className="flex items-center justify-between">
                     <div>
-                      <Link href={`/transactions/sales/${s.id}`} className="font-bold text-blue-400 hover:text-blue-300 font-mono text-sm">
+                      <Link href={`/transactions/sales/${s.id}`} className="font-bold text-white font-mono text-sm hover:text-blue-400">
                         {s.invoiceNumber}
                       </Link>
-                      <p className="text-[11px] text-slate-500 mt-0.5">{new Date(s.date).toLocaleDateString()}</p>
+                      <p className="text-[10px] text-slate-500">{new Date(s.date).toLocaleDateString()}</p>
                     </div>
-                    <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider ${
-                      s.status === InvoiceStatus.PAID ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                      : s.status === InvoiceStatus.PARTIAL ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                      : s.status === InvoiceStatus.RETURNED ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
-                      : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                    }`}>
+                    <span
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                        s.status === InvoiceStatus.PAID
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          : s.status === InvoiceStatus.PARTIAL
+                          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                          : s.status === InvoiceStatus.RETURNED
+                          ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+                          : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                      }`}
+                    >
                       {s.status}
                     </span>
                   </div>
-                  
+
                   {/* Body */}
                   <div className="flex justify-between items-center">
                      <div>
                        <p className="text-sm font-semibold text-slate-200">{s.party?.name || 'Walk-in Customer'}</p>
-                       <p className="text-xs text-slate-500 mt-0.5">{s.items?.length || 0} items</p>
+                       <p className="text-xs text-slate-500 mt-0.5">{totalQty} {totalQty === 1 ? 'Pc' : 'Pcs'} ({lineCount} {lineCount === 1 ? 'item' : 'items'})</p>
                      </div>
                      <div className="text-right">
                        <p className="font-mono font-bold text-white text-base">Rs. {total.toLocaleString()}</p>

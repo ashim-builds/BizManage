@@ -347,6 +347,9 @@ export default function PurchasesPage() {
                 const total = Number(p.totalAmount || 0);
                 const paid = Number(p.paidAmount || 0);
                 const due = Number(p.dueAmount || 0);
+                const totalQty = (p.items || []).reduce((acc: number, it: any) => acc + Number(it.quantity || 0), 0);
+                const lineCount = p.items?.length || 0;
+
                 return (
                   <tr key={p.id} className="hover:bg-slate-800/40 transition-colors group">
                     <td className="px-6 py-4 font-semibold text-white">
@@ -361,7 +364,7 @@ export default function PurchasesPage() {
                     <td className="px-6 py-4 text-slate-300 font-semibold">{p.party?.name || 'Unknown Supplier'}</td>
                     <td className="px-6 py-4 text-slate-400">
                       <span className="px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono text-[11px]">
-                        {p.items?.length || 0} items
+                        {totalQty} {totalQty === 1 ? 'Pc' : 'Pcs'} ({lineCount} {lineCount === 1 ? 'item' : 'items'})
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right font-mono font-bold text-white">
