@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Search, Package, X, ChevronDown, Tag, QrCode } from 'lucide-react';
+import { Search, Package, X, ChevronDown, Tag, QrCode, Plus } from 'lucide-react';
 
 export interface SelectableItem {
   id: string;
@@ -23,6 +23,7 @@ interface ItemSearchSelectProps {
   placeholder?: string;
   priceField?: 'salePrice' | 'purchasePrice';
   className?: string;
+  onCreateNewItem?: (initialName?: string) => void;
 }
 
 export function ItemSearchSelect({
@@ -32,6 +33,7 @@ export function ItemSearchSelect({
   placeholder = 'Search product or scan barcode (SKU)…',
   priceField = 'salePrice',
   className = '',
+  onCreateNewItem,
 }: ItemSearchSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -229,9 +231,21 @@ export function ItemSearchSelect({
           {/* Item List */}
           <div className="overflow-y-auto flex-1 overscroll-contain divide-y divide-slate-800/40">
             {filtered.length === 0 ? (
-              <div className="px-4 py-8 text-center text-slate-500 text-xs">
-                <Package className="w-6 h-6 mx-auto mb-2 text-slate-600 opacity-50" />
-                No products match &quot;{query}&quot;
+              <div className="px-4 py-6 text-center text-slate-500 text-xs space-y-2">
+                <Package className="w-6 h-6 mx-auto text-slate-600 opacity-50" />
+                <p>No products match &quot;{query}&quot;</p>
+                {onCreateNewItem && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpen(false);
+                      onCreateNewItem(query);
+                    }}
+                    className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md active:scale-95"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Quick Create &quot;{query || 'Product'}&quot;
+                  </button>
+                )}
               </div>
             ) : (
               filtered.map((item, idx) => {

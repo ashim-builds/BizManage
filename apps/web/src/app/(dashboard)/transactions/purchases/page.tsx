@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';;
 import { createPurchaseSchema, CreatePurchaseInput } from '@bizmanage/validation';
-import { InvoiceStatus, PaymentMode } from '@bizmanage/types';
+import { InvoiceStatus, PaymentMode, ItemType } from '@bizmanage/types';
 import {
   usePurchases,
   usePurchasesSummary,
@@ -14,7 +14,7 @@ import {
 } from '@/services/purchaseService';
 import { useParties } from '@/services/partyService';
 import { getPartyBalanceDisplay } from '@/lib/balance';
-import { useItems } from '@/services/itemService';
+import { useItems, useCreateItem } from '@/services/itemService';
 import { ItemSearchSelect } from '@/components/ui/ItemSearchSelect';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { useAccounts } from '@/services/accountService';
@@ -48,6 +48,46 @@ export default function PurchasesPage() {
   const [selectedStatus, setSelectedStatus] = useState<InvoiceStatus | ''>('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [payDueCustomAmount, setPayDueCustomAmount] = useState('');
+
+  // Quick Create Item modal state
+  const [isQuickItemOpen, setIsQuickItemOpen] = useState(false);
+  const [targetItemRowIdx, setTargetItemRowIdx] = useState<number>(0);
+  const [quickItemData, setQuickItemData] = useState({
+    name: '',
+    code: '',
+    unit: 'Pcs',
+    purchasePrice: 0,
+    salePrice: 0,
+  });
+
+  const createItemMutation = useCreateItem();
+
+  const handleQuickCreateItemSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickItemData.name.trim()) return;
+    try {
+      const created = await createItemMutation.mutateAsync({
+        name: quickItemData.name.trim(),
+        code: quickItemData.code?.trim() || undefined,
+        type: ItemType.PRODUCT,
+        unit: quickItemData.unit || 'Pcs',
+        purchasePrice: Number(quickItemData.purchasePrice || 0),
+        salePrice: Number(quickItemData.salePrice || 0),
+        openingStock: 0,
+        minStockAlert: 0,
+      });
+
+      if (created && created.id) {
+        form.setValue(`items.${targetItemRowIdx}.itemId`, created.id);
+        form.setValue(`items.${targetItemRowIdx}.unitPrice`, Number(created.purchasePrice || 0));
+        toast.success(`Product "${created.name}" created & added to bill!`);
+      }
+      setIsQuickItemOpen(false);
+      setQuickItemData({ name: '', code: '', unit: 'Pcs', purchasePrice: 0, salePrice: 0 });
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || 'Failed to create product.');
+    }
+  };
 
   // Pay Due modal state
   const [payDueId, setPayDueId] = useState<string | null>(null);
@@ -518,13 +558,26 @@ export default function PurchasesPage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Bill Line Items</h4>
-                  <button
-                    type="button"
-                    onClick={() => append({ itemId: '', quantity: 1, unitPrice: 0, discountPercent: 0, discount: 0, taxAmount: 0 })}
-                    className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 transition-all"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Add Item
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTargetItemRowIdx(fields.length - 1 < 0 ? 0 : fields.length - 1);
+                        setQuickItemData({ name: '', code: '', unit: 'Pcs', purchasePrice: 0, salePrice: 0 });
+                        setIsQuickItemOpen(true);
+                      }}
+                      className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 transition-all"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Quick Create Product
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => append({ itemId: '', quantity: 1, unitPrice: 0, discountPercent: 0, discount: 0, taxAmount: 0 })}
+                      className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 transition-all"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add Row
+                    </button>
+                  </div>
                 </div>
 
                 {/* Table Headers */}
@@ -559,6 +612,11 @@ export default function PurchasesPage() {
                             }}
                             placeholder="Search item…"
                             priceField="purchasePrice"
+                            onCreateNewItem={(typedName) => {
+                              setTargetItemRowIdx(idx);
+                              setQuickItemData({ name: typedName || '', code: '', unit: 'Pcs', purchasePrice: 0, salePrice: 0 });
+                              setIsQuickItemOpen(true);
+                            }}
                           />
                           {selItem && (
                             <div className="flex items-center gap-2 mt-1.5">
@@ -806,6 +864,116 @@ export default function PurchasesPage() {
             </div>
           </div>
         </div></ModalPortal>
+      )}
+
+      {/* QUICK CREATE PRODUCT MODAL */}
+      {isQuickItemOpen && (
+        <ModalPortal>
+          <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[110] flex items-center justify-center p-4">
+            <form
+              onSubmit={handleQuickCreateItemSubmit}
+              className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4 font-sans"
+            >
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <Package className="w-5 h-5 text-emerald-400" /> Quick Create Product
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsQuickItemOpen(false)}
+                  className="text-slate-400 hover:text-white p-1 rounded-lg"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Product / Item Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={quickItemData.name}
+                    onChange={(e) => setQuickItemData({ ...quickItemData, name: e.target.value })}
+                    placeholder="e.g. Duracell AA Battery Pack"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1">Barcode SKU (Optional)</label>
+                    <input
+                      type="text"
+                      value={quickItemData.code}
+                      onChange={(e) => setQuickItemData({ ...quickItemData, code: e.target.value })}
+                      placeholder="e.g. 890123456"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1">Unit of Measure</label>
+                    <select
+                      value={quickItemData.unit}
+                      onChange={(e) => setQuickItemData({ ...quickItemData, unit: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-blue-500"
+                    >
+                      <option value="Pcs">Pcs (Pieces)</option>
+                      <option value="Kg">Kg (Kilogram)</option>
+                      <option value="Ltr">Ltr (Liter)</option>
+                      <option value="Box">Box</option>
+                      <option value="Dzn">Dzn (Dozen)</option>
+                      <option value="Meter">Meter</option>
+                      <option value="Pack">Pack</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1">Purchase Cost Rate (Rs.)</label>
+                    <input
+                      type="number"
+                      step="any"
+                      min="0"
+                      value={quickItemData.purchasePrice}
+                      onChange={(e) => setQuickItemData({ ...quickItemData, purchasePrice: Number(e.target.value) })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-emerald-400 font-mono focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1">Selling Rate (Rs.)</label>
+                    <input
+                      type="number"
+                      step="any"
+                      min="0"
+                      value={quickItemData.salePrice}
+                      onChange={(e) => setQuickItemData({ ...quickItemData, salePrice: Number(e.target.value) })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-blue-400 font-mono focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsQuickItemOpen(false)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold hover:bg-slate-700 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={createItemMutation.isPending}
+                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/30 disabled:opacity-50 transition-all"
+                >
+                  {createItemMutation.isPending ? 'Creating...' : 'Save & Add to Bill'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </ModalPortal>
       )}
     </div>
   );
