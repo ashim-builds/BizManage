@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/providers/AuthProvider';
 import { useItems } from '@/services/itemService';
+import { useCurrentBusiness } from '@/services/businessService';
+import { saveOfflineSale } from '@/services/offlineSyncService';
 import { useCreateSale } from '@/services/saleService';
 import { useParties } from '@/services/partyService';
 import { ModalPortal } from '@/components/common/ModalPortal';
@@ -228,7 +230,7 @@ export default function POSPage() {
       const selectedParty = partiesList.find((p: any) => p.id === selectedPartyId);
       const partyName = selectedParty ? selectedParty.name : customerName;
 
-      const res = await createSale.mutateAsync({
+      const salePayload = {
         date: new Date().toISOString(),
         isVatBill: false,
         partyId: selectedPartyId || undefined,
@@ -242,7 +244,31 @@ export default function POSPage() {
         })),
         paidAmount: paidVal,
         paymentMode,
-      });
+      };
+
+      if (typeof window !== 'undefined' && !navigator.onLine) {
+        const offlineRecord = saveOfflineSale(salePayload);
+        setCompletedSale({
+          id: offlineRecord.id,
+          voucherNo: offlineRecord.voucherNo,
+          date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ', ' + new Date().toLocaleDateString(),
+          customerName: partyName + ' (Offline Bill)',
+          paymentMode,
+          items: cart.map((c) => ({ name: c.name, qty: c.qty, price: c.price, total: c.price * c.qty })),
+          totalAmount: subTotal,
+          paidAmount: paidVal,
+          changeDue,
+        });
+
+        toast.success('⚡ POS Bill Saved Offline! Will auto-sync when online.', { duration: 4000 });
+        setCart([]);
+        setSearchTerm('');
+        setAmountReceived('');
+        searchInputRef.current?.focus();
+        return;
+      }
+
+      const res = await createSale.mutateAsync(salePayload);
 
       const saleRecord = res?.data || res;
 

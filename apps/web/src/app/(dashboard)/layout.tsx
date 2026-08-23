@@ -41,6 +41,7 @@ import {
   XCircle,
   BellOff,
 } from 'lucide-react';
+import { useNetworkStatus } from '@/services/offlineSyncService';
 
 import { sidebarSections, NavSection, NavGroupItem } from '@/components/layout/navConfig';
 
@@ -49,6 +50,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { user, activeBusinessId, loading, setActiveBusinessId, logout } = useAuth();
   const { data: notifData } = useNotifications(activeBusinessId);
+  const { isOnline, pendingCount, isSyncing, triggerManualSync } = useNetworkStatus();
 
   const [readNotifIds, setReadNotifIds] = useState<string[]>([]);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -377,6 +379,37 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Network / Offline Mode Indicator */}
+            <div className="flex items-center gap-1.5">
+              {!isOnline ? (
+                <button
+                  type="button"
+                  onClick={triggerManualSync}
+                  disabled={isSyncing}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] font-bold shadow-sm hover:bg-amber-500/30 transition-all"
+                  title="Working Offline. Click to retry syncing pending transactions."
+                >
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                  <span>Offline {pendingCount > 0 ? `(${pendingCount})` : ''}</span>
+                </button>
+              ) : pendingCount > 0 ? (
+                <button
+                  type="button"
+                  onClick={triggerManualSync}
+                  disabled={isSyncing}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-blue-500/20 text-blue-300 border border-blue-500/40 text-[11px] font-bold shadow-sm hover:bg-blue-500/30 transition-all"
+                >
+                  <RotateCcw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                  <span>Syncing ({pendingCount})</span>
+                </button>
+              ) : (
+                <div className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-extrabold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <span>Online</span>
+                </div>
+              )}
+            </div>
+
             {/* Quick Entry Trigger Button */}
             <button
               onClick={() => setQuickEntryOpen(true)}

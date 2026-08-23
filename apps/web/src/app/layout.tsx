@@ -5,12 +5,14 @@ import { QueryProvider } from '@/providers/QueryProvider';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { Toaster } from 'react-hot-toast';
 import { GlobalNumberInputFix } from '@/components/layout/GlobalNumberInputFix';
+import { PWAInstaller } from '@/components/common/PWAInstaller';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'BizManage - Business Management & Accounting SaaS',
   description: 'Manage sales, purchases, inventory, cashflow, and financial reports in one place.',
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -18,6 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className={inter.className}>
         <QueryProvider>
+          <PWAInstaller />
           <GlobalNumberInputFix />
           <AuthProvider>{children}</AuthProvider>
           <Toaster 
