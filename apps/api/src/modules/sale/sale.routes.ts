@@ -583,12 +583,43 @@ export async function saleRoutes(fastify: FastifyInstance) {
         returnNumber = `${prefix}${String(count + 1).padStart(5, '0')}`;
       }
 
-      // Check if it's returning against a specific sale
-      let isVatBill = false;
-      if (body.saleId) {
-        const sale = await tx.sale.findFirst({ where: { id: body.saleId , businessId: request.tenant!.businessId } });
-        if (sale) {
-          isVatBill = sale.isVatBill;
+      if (!body.saleId) {
+        throw new AppError('A valid Sales Invoice must be linked to process a Sales Return.', 400, 'SALE_ID_REQUIRED');
+      }
+
+      const sale = await tx.sale.findFirst({
+        where: { id: body.saleId, businessId: request.tenant!.businessId },
+        include: { items: { include: { item: true } } },
+      });
+
+      if (!sale) {
+        throw new AppError('Linked Sales Invoice not found.', 404, 'SALE_NOT_FOUND');
+      }
+
+      const isVatBill = sale.isVatBill;
+
+      // Validate every returned line item against the original sale invoice
+      for (const line of body.items) {
+        const saleItem = sale.items.find((si) => si.itemId === line.itemId);
+        if (!saleItem) {
+          throw new AppError(
+            `Item was not part of original Sales Invoice #${sale.invoiceNumber}. Unlinked items cannot be returned.`,
+            400,
+            'INVALID_RETURN_ITEM'
+          );
+        }
+
+        const currentRet = new Prisma.Decimal(saleItem.returnedQuantity || 0);
+        const reqRet = new Prisma.Decimal(line.quantity);
+        const maxAllowed = new Prisma.Decimal(saleItem.quantity);
+        const remainingReturnable = maxAllowed.sub(currentRet);
+
+        if (reqRet.greaterThan(remainingReturnable)) {
+          throw new AppError(
+            `Cannot return more than originally sold for "${saleItem.item?.name || 'Item'}". Max remaining returnable: ${remainingReturnable.toNumber()} ${saleItem.item?.unit || 'Pcs'}.`,
+            400,
+            'EXCEEDS_RETURNABLE_QUANTITY'
+          );
         }
       }
 
@@ -613,8 +644,8 @@ export async function saleRoutes(fastify: FastifyInstance) {
       const newReturn = await tx.saleReturn.create({
         data: {
           businessId: request.tenant!.businessId,
-          partyId: body.partyId,
-          saleId: body.saleId || null,
+          partyId: body.partyId || sale.partyId,
+          saleId: body.saleId,
           returnNumber,
           date: new Date(body.date),
           subTotal: totals.subTotal,
@@ -632,31 +663,20 @@ export async function saleRoutes(fastify: FastifyInstance) {
       });
 
       // 4. Update Original Sale and Quantities
-      if (body.saleId) {
-        await tx.sale.update({
-          where: { id: body.saleId },
-          data: { status: 'RETURNED' },
+      await tx.sale.update({
+        where: { id: body.saleId },
+        data: { status: 'RETURNED' },
+      });
+
+      for (const line of body.items) {
+        const saleItem = sale.items.find((si) => si.itemId === line.itemId)!;
+        const currentRet = new Prisma.Decimal(saleItem.returnedQuantity || 0);
+        const reqRet = new Prisma.Decimal(line.quantity);
+
+        await tx.saleItem.update({
+          where: { id: saleItem.id },
+          data: { returnedQuantity: currentRet.add(reqRet) },
         });
-
-        for (const line of body.items) {
-          const saleItem = await tx.saleItem.findFirst({
-            where: { saleId: body.saleId, itemId: line.itemId },
-          });
-          if (saleItem) {
-            const currentRet = new Prisma.Decimal(saleItem.returnedQuantity || 0);
-            const reqRet = new Prisma.Decimal(line.quantity);
-            const maxAllowed = new Prisma.Decimal(saleItem.quantity);
-
-            if (currentRet.add(reqRet).greaterThan(maxAllowed)) {
-              throw new AppError(`Cannot return more than originally sold. Allowed remaining: ${maxAllowed.sub(currentRet).toNumber()}`, 400);
-            }
-
-            await tx.saleItem.update({
-              where: { id: saleItem.id },
-              data: { returnedQuantity: currentRet.add(reqRet) },
-            });
-          }
-        }
       }
 
       // 5. Increase Stock atomically
@@ -692,13 +712,15 @@ export async function saleRoutes(fastify: FastifyInstance) {
           });
         }
 
+        const finalPartyId = (body.partyId || sale.partyId)!;
+
         // Refund means money out
         await updateAccountBalance(tx as any, targetAccount.id, request.tenant!.businessId, refundAmt.toNumber(), 'REDUCE');
 
         await tx.paymentOut.create({
           data: {
             businessId: request.tenant!.businessId,
-            partyId: body.partyId,
+            partyId: finalPartyId,
             accountId: targetAccount.id,
             amount: refundAmt,
             mode: body.paymentMode || PaymentMode.CASH,
@@ -723,8 +745,9 @@ export async function saleRoutes(fastify: FastifyInstance) {
 
       // Adjust customer balance (Credit note reduces what they owe us)
       // For a customer, positive balance means receivable. Reducing receivable means subtract.
-      if (!creditToBalance.isZero()) {
-        await updatePartyBalance(tx as any, body.partyId, request.tenant!.businessId, creditToBalance.toNumber(), 'REDUCE_RECEIVABLE');
+      const finalPartyId = body.partyId || sale.partyId;
+      if (!creditToBalance.isZero() && finalPartyId) {
+        await updatePartyBalance(tx as any, finalPartyId, request.tenant!.businessId, creditToBalance.toNumber(), 'REDUCE_RECEIVABLE');
       }
 
       return newReturn;

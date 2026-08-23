@@ -148,8 +148,8 @@ export const createPurchaseSchema = z.object({
 
 // Purchase Return Schema
 export const createPurchaseReturnSchema = z.object({
-  partyId: z.string().min(1, 'Supplier selection is required'),
-  purchaseId: z.string().optional().nullable(),
+  partyId: z.string().optional().nullable().or(z.literal('')),
+  purchaseId: z.string().min(1, 'Purchase Bill selection is required'),
   returnNumber: z.string().optional(),
   date: z.string().or(z.date()),
   items: z.array(invoiceItemSchema).min(1, 'At least one item is required'),
@@ -175,8 +175,8 @@ export const createSaleSchema = z.object({
 
 // Sale Return Schema
 export const createSaleReturnSchema = z.object({
-  partyId: z.string().min(1, 'Customer selection is required'),
-  saleId: z.string().optional().nullable(),
+  partyId: z.string().optional().nullable().or(z.literal('')),
+  saleId: z.string().min(1, 'Sales Invoice selection is required'),
   returnNumber: z.string().optional(),
   date: z.string().or(z.date()),
   items: z.array(invoiceItemSchema).min(1, 'At least one item is required'),

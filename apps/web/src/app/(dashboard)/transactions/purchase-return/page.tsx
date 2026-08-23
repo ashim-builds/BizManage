@@ -89,10 +89,24 @@ export default function PurchaseReturnPage() {
   // Filter purchase bills for selected supplier
   const supplierPurchases = purchasesList.filter((p: any) => !watchPartyId || p.partyId === watchPartyId);
 
+  const selectedPurchase = supplierPurchases.find((p: any) => p.id === selectedPurchaseId);
+  const isVatBill = selectedPurchase?.isVatBill || false;
+
+  const getReturnableInfo = (itemId: string) => {
+    if (!selectedPurchase || !selectedPurchase.items) return null;
+    const originalLine = selectedPurchase.items.find((line: any) => line.itemId === itemId);
+    if (!originalLine) return null;
+    const purchasedQty = Number(originalLine.quantity || 0);
+    const returnedQty = Number(originalLine.returnedQuantity || 0);
+    const returnableQty = Math.max(0, purchasedQty - returnedQty);
+    return { purchasedQty, returnedQty, returnableQty, unitPrice: Number(originalLine.unitPrice) };
+  };
+
   // Auto-fill return line items when a Purchase Bill is selected
   const handleSelectPurchase = (purchaseId: string) => {
     setSelectedPurchaseId(purchaseId);
     form.setValue('purchaseId', purchaseId);
+    setErrorBanner('');
     if (!purchaseId) {
       replace([]);
       return;
@@ -104,33 +118,62 @@ export default function PurchaseReturnPage() {
     }
 
     if (purchase && purchase.items) {
-      const defaultReturnItems = purchase.items.map((line: any) => ({
-        itemId: line.itemId,
-        quantity: Number(line.quantity),
-        unitPrice: Number(line.unitPrice),
-        discountPercent: Number(line.discountPercent || 0),
-        discount: Number(line.discount || 0),
-        taxAmount: Number(line.taxAmount || 0),
-      }));
-      replace(defaultReturnItems);
+      const returnableItems = purchase.items
+        .map((line: any) => {
+          const purchased = Number(line.quantity || 0);
+          const returned = Number(line.returnedQuantity || 0);
+          const returnable = Math.max(0, purchased - returned);
+          return {
+            itemId: line.itemId,
+            quantity: returnable,
+            unitPrice: Number(line.unitPrice),
+            discountPercent: Number(line.discountPercent || 0),
+            discount: Number(line.discount || 0),
+            taxAmount: Number(line.taxAmount || 0),
+          };
+        })
+        .filter((item: any) => item.quantity > 0);
+
+      if (returnableItems.length === 0) {
+        setErrorBanner(`All items in Purchase Bill #${purchase.billNumber} have already been fully returned.`);
+      }
+      replace(returnableItems);
     }
   };
 
   const handleManualAddItem = (itemId: string) => {
     if (!itemId) return;
+    if (!selectedPurchaseId) {
+      setErrorBanner('Please select an original Purchase Bill first before adding items to return.');
+      return;
+    }
+
+    const returnableInfo = getReturnableInfo(itemId);
+    if (!returnableInfo) {
+      setErrorBanner('Item was not part of the selected Purchase Bill. Unlinked items cannot be returned.');
+      return;
+    }
+
     const item = itemsMap.get(itemId);
     if (!item) return;
 
-    // Check if already in fields
     const existingIndex = fields.findIndex((f) => f.itemId === itemId);
     if (existingIndex >= 0) {
       const currentQty = form.getValues(`items.${existingIndex}.quantity`) || 0;
+      if (currentQty + 1 > returnableInfo.returnableQty) {
+        setErrorBanner(`Cannot return more than originally purchased. Remaining returnable for "${item.name}": ${returnableInfo.returnableQty} ${item.unit || 'Pcs'}.`);
+        return;
+      }
       form.setValue(`items.${existingIndex}.quantity`, currentQty + 1);
     } else {
+      if (returnableInfo.returnableQty <= 0) {
+        setErrorBanner(`"${item.name}" has already been fully returned for this bill.`);
+        return;
+      }
       append({
         itemId: item.id,
-        quantity: 1,
-        unitPrice: Number(item.purchasePrice || item.salePrice || 0),
+        quantity: Math.min(1, returnableInfo.returnableQty),
+        unitPrice: returnableInfo.unitPrice,
         discountPercent: 0,
         discount: 0,
         taxAmount: 0,
@@ -138,9 +181,6 @@ export default function PurchaseReturnPage() {
     }
     setSelectedAddItem('');
   };
-
-  const selectedPurchase = supplierPurchases.find((p: any) => p.id === selectedPurchaseId);
-  const isVatBill = selectedPurchase?.isVatBill || false;
 
   const mappedItems = watchItems.map((item) => ({
     unitPrice: Number(item.unitPrice) || 0,
@@ -153,6 +193,31 @@ export default function PurchaseReturnPage() {
 
   const handleCreateSubmit = async (data: CreatePurchaseReturnInput) => {
     setErrorBanner('');
+
+    if (!data.purchaseId || !selectedPurchaseId) {
+      setErrorBanner('Selecting an original Purchase Bill is mandatory for processing a Purchase Return.');
+      return;
+    }
+
+    if (!data.items || data.items.length === 0) {
+      setErrorBanner('At least one item with valid return quantity is required.');
+      return;
+    }
+
+    for (const line of data.items) {
+      const info = getReturnableInfo(line.itemId);
+      if (!info) {
+        const itemObj = itemsMap.get(line.itemId);
+        setErrorBanner(`Item "${itemObj?.name || 'Item'}" was not part of the selected Purchase Bill.`);
+        return;
+      }
+      if (line.quantity > info.returnableQty) {
+        const itemObj = itemsMap.get(line.itemId);
+        setErrorBanner(`Cannot return ${line.quantity} of "${itemObj?.name || 'Item'}". Maximum remaining returnable: ${info.returnableQty} ${itemObj?.unit || 'Pcs'}.`);
+        return;
+      }
+    }
+
     try {
       await createPurchaseReturn.mutateAsync({
         ...data,
@@ -162,7 +227,7 @@ export default function PurchaseReturnPage() {
       form.reset();
       setSelectedPurchaseId('');
     } catch (err: any) {
-      setErrorBanner(err.response?.data?.error?.message || 'Failed to create purchase return debit note.');
+      setErrorBanner(err.response?.data?.error?.message || 'Failed to issue Debit Note.');
     }
   };
 

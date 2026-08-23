@@ -93,10 +93,24 @@ export default function SalesReturnPage() {
   // Filter sales for selected customer
   const customerSales = salesList.filter((s: any) => !watchPartyId || s.partyId === watchPartyId);
 
+  const selectedSale = customerSales.find((s: any) => s.id === selectedSaleId);
+  const isVatBill = selectedSale?.isVatBill || false;
+
+  const getReturnableInfo = (itemId: string) => {
+    if (!selectedSale || !selectedSale.items) return null;
+    const originalLine = selectedSale.items.find((line: any) => line.itemId === itemId);
+    if (!originalLine) return null;
+    const soldQty = Number(originalLine.quantity || 0);
+    const returnedQty = Number(originalLine.returnedQuantity || 0);
+    const returnableQty = Math.max(0, soldQty - returnedQty);
+    return { soldQty, returnedQty, returnableQty, unitPrice: Number(originalLine.unitPrice) };
+  };
+
   // Auto-fill return line items when a Sale Invoice is selected
   const handleSelectSale = (saleId: string) => {
     setSelectedSaleId(saleId);
     form.setValue('saleId', saleId);
+    setErrorBanner('');
     if (!saleId) {
       replace([]);
       return;
@@ -108,33 +122,62 @@ export default function SalesReturnPage() {
     }
 
     if (sale && sale.items) {
-      const defaultReturnItems = sale.items.map((line: any) => ({
-        itemId: line.itemId,
-        quantity: Number(line.quantity),
-        unitPrice: Number(line.unitPrice),
-        discountPercent: Number(line.discountPercent || 0),
-        discount: Number(line.discount || 0),
-        taxAmount: Number(line.taxAmount || 0),
-      }));
-      replace(defaultReturnItems);
+      const returnableItems = sale.items
+        .map((line: any) => {
+          const sold = Number(line.quantity || 0);
+          const returned = Number(line.returnedQuantity || 0);
+          const returnable = Math.max(0, sold - returned);
+          return {
+            itemId: line.itemId,
+            quantity: returnable,
+            unitPrice: Number(line.unitPrice),
+            discountPercent: Number(line.discountPercent || 0),
+            discount: Number(line.discount || 0),
+            taxAmount: Number(line.taxAmount || 0),
+          };
+        })
+        .filter((item: any) => item.quantity > 0);
+
+      if (returnableItems.length === 0) {
+        setErrorBanner(`All items in Sales Invoice #${sale.invoiceNumber} have already been fully returned.`);
+      }
+      replace(returnableItems);
     }
   };
 
   const handleManualAddItem = (itemId: string) => {
     if (!itemId) return;
+    if (!selectedSaleId) {
+      setErrorBanner('Please select an original Sales Invoice first before adding items to return.');
+      return;
+    }
+
+    const returnableInfo = getReturnableInfo(itemId);
+    if (!returnableInfo) {
+      setErrorBanner('Item was not part of the selected Sales Invoice. Unlinked items cannot be returned.');
+      return;
+    }
+
     const item = itemsMap.get(itemId);
     if (!item) return;
 
-    // Check if already in fields
     const existingIndex = fields.findIndex((f) => f.itemId === itemId);
     if (existingIndex >= 0) {
       const currentQty = form.getValues(`items.${existingIndex}.quantity`) || 0;
+      if (currentQty + 1 > returnableInfo.returnableQty) {
+        setErrorBanner(`Cannot return more than originally sold. Remaining returnable for "${item.name}": ${returnableInfo.returnableQty} ${item.unit || 'Pcs'}.`);
+        return;
+      }
       form.setValue(`items.${existingIndex}.quantity`, currentQty + 1);
     } else {
+      if (returnableInfo.returnableQty <= 0) {
+        setErrorBanner(`"${item.name}" has already been fully returned for this invoice.`);
+        return;
+      }
       append({
         itemId: item.id,
-        quantity: 1,
-        unitPrice: Number(item.salePrice || 0),
+        quantity: Math.min(1, returnableInfo.returnableQty),
+        unitPrice: returnableInfo.unitPrice,
         discountPercent: 0,
         discount: 0,
         taxAmount: 0,
@@ -142,9 +185,6 @@ export default function SalesReturnPage() {
     }
     setSelectedAddItem('');
   };
-
-  const selectedSale = customerSales.find((s: any) => s.id === selectedSaleId);
-  const isVatBill = selectedSale?.isVatBill || false;
 
   const mappedItems = watchItems.map((item) => ({
     unitPrice: Number(item.unitPrice) || 0,
@@ -157,6 +197,31 @@ export default function SalesReturnPage() {
 
   const handleCreateSubmit = async (data: CreateSaleReturnInput) => {
     setErrorBanner('');
+
+    if (!data.saleId || !selectedSaleId) {
+      setErrorBanner('Selecting an original Sales Invoice is mandatory for processing a Sales Return.');
+      return;
+    }
+
+    if (!data.items || data.items.length === 0) {
+      setErrorBanner('At least one item with valid return quantity is required.');
+      return;
+    }
+
+    for (const line of data.items) {
+      const info = getReturnableInfo(line.itemId);
+      if (!info) {
+        const itemObj = itemsMap.get(line.itemId);
+        setErrorBanner(`Item "${itemObj?.name || 'Item'}" was not part of the selected Sales Invoice.`);
+        return;
+      }
+      if (line.quantity > info.returnableQty) {
+        const itemObj = itemsMap.get(line.itemId);
+        setErrorBanner(`Cannot return ${line.quantity} of "${itemObj?.name || 'Item'}". Maximum remaining returnable: ${info.returnableQty} ${itemObj?.unit || 'Pcs'}.`);
+        return;
+      }
+    }
+
     try {
       await createSaleReturn.mutateAsync({
         ...data,
@@ -166,7 +231,7 @@ export default function SalesReturnPage() {
       form.reset();
       setSelectedSaleId('');
     } catch (err: any) {
-      setErrorBanner(err.response?.data?.error?.message || 'Failed to create sales return credit note.');
+      setErrorBanner(err.response?.data?.error?.message || 'Failed to issue Credit Note.');
     }
   };
 

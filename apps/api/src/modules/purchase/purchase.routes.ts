@@ -519,12 +519,43 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
         returnNumber = `${prefix}${String(count + 1).padStart(5, '0')}`;
       }
 
-      // Check if it's returning against a specific purchase
-      let isVatBill = false;
-      if (body.purchaseId) {
-        const purchase = await tx.purchase.findFirst({ where: { id: body.purchaseId , businessId: request.tenant!.businessId } });
-        if (purchase) {
-          isVatBill = purchase.isVatBill;
+      if (!body.purchaseId) {
+        throw new AppError('A valid Purchase Bill must be linked to process a Purchase Return.', 400, 'PURCHASE_ID_REQUIRED');
+      }
+
+      const purchase = await tx.purchase.findFirst({
+        where: { id: body.purchaseId, businessId: request.tenant!.businessId },
+        include: { items: { include: { item: true } } },
+      });
+
+      if (!purchase) {
+        throw new AppError('Linked Purchase Bill not found.', 404, 'PURCHASE_NOT_FOUND');
+      }
+
+      const isVatBill = purchase.isVatBill;
+
+      // Validate every returned line item against the original purchase bill
+      for (const line of body.items) {
+        const purchaseItem = purchase.items.find((pi) => pi.itemId === line.itemId);
+        if (!purchaseItem) {
+          throw new AppError(
+            `Item was not part of original Purchase Bill #${purchase.billNumber}. Unlinked items cannot be returned to supplier.`,
+            400,
+            'INVALID_RETURN_ITEM'
+          );
+        }
+
+        const currentRet = new Prisma.Decimal(purchaseItem.returnedQuantity || 0);
+        const reqRet = new Prisma.Decimal(line.quantity);
+        const maxAllowed = new Prisma.Decimal(purchaseItem.quantity);
+        const remainingReturnable = maxAllowed.sub(currentRet);
+
+        if (reqRet.greaterThan(remainingReturnable)) {
+          throw new AppError(
+            `Cannot return more than originally purchased for "${purchaseItem.item?.name || 'Item'}". Max remaining returnable: ${remainingReturnable.toNumber()} ${purchaseItem.item?.unit || 'Pcs'}.`,
+            400,
+            'EXCEEDS_RETURNABLE_QUANTITY'
+          );
         }
       }
 
@@ -549,8 +580,8 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
       const newReturn = await tx.purchaseReturn.create({
         data: {
           businessId: request.tenant!.businessId,
-          partyId: body.partyId,
-          purchaseId: body.purchaseId || null,
+          partyId: body.partyId || purchase.partyId,
+          purchaseId: body.purchaseId,
           returnNumber,
           date: new Date(body.date),
           subTotal: totals.subTotal,
@@ -568,31 +599,20 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
       });
 
       // 4. Update Original Purchase and Quantities
-      if (body.purchaseId) {
-        await tx.purchase.update({
-          where: { id: body.purchaseId },
-          data: { status: 'RETURNED' },
+      await tx.purchase.update({
+        where: { id: body.purchaseId },
+        data: { status: 'RETURNED' },
+      });
+
+      for (const line of body.items) {
+        const purchaseItem = purchase.items.find((pi) => pi.itemId === line.itemId)!;
+        const currentRet = new Prisma.Decimal(purchaseItem.returnedQuantity || 0);
+        const reqRet = new Prisma.Decimal(line.quantity);
+
+        await tx.purchaseItem.update({
+          where: { id: purchaseItem.id },
+          data: { returnedQuantity: currentRet.add(reqRet) },
         });
-
-        for (const line of body.items) {
-          const purchaseItem = await tx.purchaseItem.findFirst({
-            where: { purchaseId: body.purchaseId, itemId: line.itemId },
-          });
-          if (purchaseItem) {
-            const currentRet = new Prisma.Decimal(purchaseItem.returnedQuantity || 0);
-            const reqRet = new Prisma.Decimal(line.quantity);
-            const maxAllowed = new Prisma.Decimal(purchaseItem.quantity);
-
-            if (currentRet.add(reqRet).greaterThan(maxAllowed)) {
-              throw new AppError(`Cannot return more than originally purchased. Allowed remaining: ${maxAllowed.sub(currentRet).toNumber()}`, 400);
-            }
-
-            await tx.purchaseItem.update({
-              where: { id: purchaseItem.id },
-              data: { returnedQuantity: currentRet.add(reqRet) },
-            });
-          }
-        }
       }
 
       // 5. Check and decrease Stock atomically
@@ -643,13 +663,15 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
           });
         }
 
+        const finalPartyId = (body.partyId || purchase.partyId)!;
+
         // Refund means money in (supplier gives us money back)
         await updateAccountBalance(tx as any, targetAccount.id, request.tenant!.businessId, refundAmt.toNumber(), 'ADD');
 
         await tx.paymentIn.create({
           data: {
             businessId: request.tenant!.businessId,
-            partyId: body.partyId,
+            partyId: finalPartyId,
             accountId: targetAccount.id,
             amount: refundAmt,
             mode: body.paymentMode || PaymentMode.CASH,
@@ -674,8 +696,9 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
 
       // Adjust supplier balance (Debit note reduces what we owe them)
       // For a supplier, negative balance means payable. Reducing payable means ADD.
-      if (!debitToBalance.isZero()) {
-        await updatePartyBalance(tx as any, body.partyId, request.tenant!.businessId, debitToBalance.toNumber(), 'REDUCE_PAYABLE');
+      const finalPartyId = body.partyId || purchase.partyId;
+      if (!debitToBalance.isZero() && finalPartyId) {
+        await updatePartyBalance(tx as any, finalPartyId, request.tenant!.businessId, debitToBalance.toNumber(), 'REDUCE_PAYABLE');
       }
 
       return newReturn;
