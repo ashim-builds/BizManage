@@ -571,9 +571,6 @@ export default function POSPage() {
   );
 }
 
-// ---------------------------------------------------------
-// POS Thermal Receipt Print Modal Component
-// ---------------------------------------------------------
 function POSThermalReceiptModal({
   isOpen,
   onClose,
@@ -609,8 +606,18 @@ function POSThermalReceiptModal({
 
   return (
     <ModalPortal>
-      <style flex-shrink-0>{`
+      <style>{`
+        @page {
+          size: ${paperWidth === '80mm' ? '80mm auto' : '58mm auto'};
+          margin: 0mm;
+        }
         @media print {
+          html, body {
+            width: ${paperWidth === '80mm' ? '80mm' : '58mm'} !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+          }
           body * {
             visibility: hidden !important;
           }
@@ -623,26 +630,27 @@ function POSThermalReceiptModal({
             top: 0 !important;
             width: ${paperWidth === '80mm' ? '78mm' : '56mm'} !important;
             margin: 0 !important;
-            padding: 4mm !important;
+            padding: 3mm !important;
             background: white !important;
             color: black !important;
             box-shadow: none !important;
-            font-family: monospace !important;
+            border: none !important;
+            font-family: 'Courier New', Courier, monospace !important;
           }
         }
       `}</style>
 
       <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[100] flex items-center justify-center p-4 overflow-y-auto font-sans">
-        <div className="w-full max-w-lg bg-slate-900 border border-emerald-500/30 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 my-8">
+        <div className="w-full max-w-lg bg-slate-900 border border-emerald-500/30 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4 my-8">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-3 gap-2">
             <div className="flex items-center gap-2.5">
               <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20 shadow-inner">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
               <div>
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  Order Completed
+                  POS Bill Receipt
                   <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 text-[10px] font-extrabold border border-emerald-500/25">
                     SUCCESS
                   </span>
@@ -661,7 +669,7 @@ function POSThermalReceiptModal({
                     paperWidth === '80mm' ? 'bg-emerald-500 text-slate-950 font-extrabold shadow' : 'hover:text-white'
                   }`}
                 >
-                  80mm Standard
+                  80mm Roll
                 </button>
                 <button
                   type="button"
@@ -681,16 +689,16 @@ function POSThermalReceiptModal({
           </div>
 
           {/* Authentic POS Thermal Paper Roll Preview */}
-          <div className="bg-slate-950/80 p-3 rounded-2xl border border-slate-800 flex justify-center max-h-[380px] overflow-y-auto">
+          <div className="bg-slate-950/90 p-3 sm:p-4 rounded-2xl border border-slate-800 flex justify-center max-h-[390px] overflow-y-auto shadow-inner">
             <div
               id="thermal-printable-area"
-              className={`bg-amber-50/95 text-slate-950 font-mono text-[11px] p-4 shadow-xl border border-slate-300 space-y-3 transition-all rounded-sm ${
-                paperWidth === '80mm' ? 'w-[320px]' : 'w-[250px]'
+              className={`bg-white text-slate-950 font-mono text-[11px] p-4 shadow-2xl border border-slate-300 space-y-3 transition-all rounded-md w-full select-text ${
+                paperWidth === '80mm' ? 'max-w-[320px]' : 'max-w-[250px]'
               }`}
             >
               {/* Receipt Store Header */}
               <div className="text-center space-y-0.5 border-b border-dashed border-slate-400 pb-2.5">
-                <h2 className="text-sm font-black uppercase tracking-tight">{business?.name || 'BizManage Store'}</h2>
+                <h2 className="text-sm font-black uppercase tracking-tight text-slate-900">{business?.name || 'BizManage Store'}</h2>
                 <p className="text-[10px] text-slate-700 leading-tight">{business?.address || 'Main Road, Kathmandu, Nepal'}</p>
                 {business?.panNo && <p className="text-[10px] text-slate-700">PAN/VAT: {business.panNo}</p>}
                 {business?.phone && <p className="text-[10px] text-slate-700">Tel: {business.phone}</p>}
@@ -720,12 +728,12 @@ function POSThermalReceiptModal({
                 <tbody className="divide-y divide-slate-200">
                   {sale.items.map((item, idx) => (
                     <tr key={idx}>
-                      <td className="py-1.5 truncate max-w-[130px] pr-1">
-                        <div className="font-semibold text-slate-900">{item.name}</div>
-                        <div className="text-[9px] text-slate-500">@ Rs. {item.price.toLocaleString()}</div>
+                      <td className="py-1.5 pr-1">
+                        <div className="font-bold text-slate-900 leading-tight">{item.name}</div>
+                        <div className="text-[9px] text-slate-600">@ Rs. {item.price.toLocaleString()}</div>
                       </td>
                       <td className="py-1.5 text-center font-bold align-top">{item.qty}</td>
-                      <td className="py-1.5 text-right font-mono font-bold align-top">{item.total.toLocaleString()}</td>
+                      <td className="py-1.5 text-right font-mono font-bold align-top">Rs. {item.total.toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
