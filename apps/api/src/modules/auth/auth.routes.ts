@@ -299,7 +299,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 
     const accessToken = fastify.jwt.sign(
       { userId: user.id, email: user.email },
-      { expiresIn: '15m' }
+      { expiresIn: '1d' }
     );
 
     reply.setCookie('accessToken', accessToken, {
@@ -307,7 +307,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: cookieSameSite,
       path: '/',
-      maxAge: 15 * 60, // 15 minutes
+      maxAge: 24 * 60 * 60, // 24 hours (1 day)
     });
 
     AuditService.logEvent({ action: 'LOGIN_SUCCESS', module: 'Auth', userId: user.id, recordId: user.id, ipAddress: request.ip });
@@ -409,7 +409,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 
     const accessToken = fastify.jwt.sign(
       { userId: user.id, email: user.email },
-      { expiresIn: '15m' }
+      { expiresIn: '1d' }
     );
 
     reply.setCookie('accessToken', accessToken, {
@@ -417,7 +417,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: cookieSameSite,
       path: '/',
-      maxAge: 15 * 60,
+      maxAge: 24 * 60 * 60, // 24 hours (1 day)
     });
 
     AuditService.logEvent({ action: 'EMAIL_VERIFIED', module: 'Auth', userId: user.id, recordId: user.id, ipAddress: request.ip });
@@ -596,7 +596,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 
     const accessToken = fastify.jwt.sign(
       { userId: user.id, email: user.email },
-      { expiresIn: '15m' }
+      { expiresIn: '1d' }
     );
 
     reply.setCookie('accessToken', accessToken, {
@@ -604,7 +604,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: cookieSameSite,
       path: '/',
-      expires: new Date(Date.now() + 15 * 60 * 1000),
+      expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours (1 day)
     });
 
     AuditService.logEvent({ action: 'ADMIN_LOGIN', module: 'Auth', userId: user.id, recordId: user.id, ipAddress: request.ip });
@@ -651,7 +651,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 
     const accessToken = fastify.jwt.sign(
       { userId: session.user.id, email: session.user.email },
-      { expiresIn: '15m' }
+      { expiresIn: '1d' }
     );
 
     reply.setCookie('accessToken', accessToken, {
@@ -659,7 +659,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: cookieSameSite,
       path: '/',
-      maxAge: 15 * 60, // 15 minutes
+      maxAge: 24 * 60 * 60, // 24 hours (1 day)
     });
 
     return reply.send({
@@ -1152,7 +1152,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 
       const accessToken = fastify.jwt.sign(
         { userId: user.id, email: user.email },
-        { expiresIn: '15m' }
+        { expiresIn: '1d' }
       );
 
       reply.setCookie('accessToken', accessToken, {
@@ -1160,7 +1160,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         secure: process.env.NODE_ENV === 'production',
         sameSite: cookieSameSite,
         path: '/',
-        maxAge: 15 * 60,
+        maxAge: 24 * 60 * 60, // 24 hours (1 day)
       });
 
       AuditService.logEvent({ action: 'LOGIN_SUCCESS', module: 'Auth', userId: user.id, recordId: user.id, ipAddress: request.ip });
