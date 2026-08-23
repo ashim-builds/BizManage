@@ -199,11 +199,11 @@ export function ThermalReceiptModal({
           </div>
 
           {/* THERMAL PAPER CONTAINER */}
-          <div className="flex-1 overflow-y-auto p-4 bg-slate-950/90 rounded-2xl flex justify-center border border-slate-800 shadow-inner max-h-[410px]">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-950/95 rounded-2xl flex justify-center items-start border border-slate-800 shadow-inner max-h-[520px] min-h-[320px]">
             <div
               id="thermal-receipt-printable"
               ref={printAreaRef}
-              className={`bg-white text-slate-950 p-4 font-mono shadow-2xl border border-slate-300 rounded-md text-[11px] leading-tight space-y-3 transition-all w-full select-text ${
+              className={`bg-white text-slate-950 p-4 sm:p-5 font-mono shadow-2xl border border-slate-300 rounded-md text-[11px] leading-tight space-y-3 transition-all w-full h-fit min-h-max shrink-0 select-text ${
                 paperWidth === '80mm' ? 'max-w-[320px]' : 'max-w-[250px]'
               }`}
             >

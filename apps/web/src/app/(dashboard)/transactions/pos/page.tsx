@@ -692,10 +692,10 @@ function POSThermalReceiptModal({
           </div>
 
           {/* Authentic POS Thermal Paper Roll Preview */}
-          <div className="bg-slate-950/90 p-3 sm:p-4 rounded-2xl border border-slate-800 flex justify-center max-h-[410px] overflow-y-auto shadow-inner">
+          <div className="bg-slate-950/95 p-4 sm:p-6 rounded-2xl border border-slate-800 flex justify-center items-start max-h-[520px] min-h-[320px] overflow-y-auto shadow-inner">
             <div
               id="thermal-printable-area"
-              className={`bg-white text-slate-950 font-mono text-[11px] p-4 shadow-2xl border border-slate-300 space-y-3 transition-all rounded-md w-full select-text ${
+              className={`bg-white text-slate-950 font-mono text-[11px] p-4 sm:p-5 shadow-2xl border border-slate-300 space-y-3 transition-all rounded-md w-full h-fit min-h-max shrink-0 select-text ${
                 paperWidth === '80mm' ? 'max-w-[320px]' : 'max-w-[250px]'
               }`}
             >
