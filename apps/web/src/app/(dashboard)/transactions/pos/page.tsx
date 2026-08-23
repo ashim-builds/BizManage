@@ -266,9 +266,9 @@ export default function POSPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-6rem)] flex flex-col md:flex-row gap-4 font-sans animate-in fade-in duration-300">
+    <div className="min-h-[calc(100vh-6rem)] md:h-[calc(100vh-6rem)] flex flex-col md:flex-row gap-4 font-sans animate-in fade-in duration-300">
       {/* Left Column: Product Search & Grid */}
-      <div className="flex-1 flex flex-col bg-slate-900 border border-slate-800 rounded-3xl p-4 overflow-hidden shadow-xl">
+      <div className="flex-1 flex flex-col bg-slate-900 border border-slate-800 rounded-3xl p-4 overflow-hidden shadow-xl min-h-[350px]">
         {/* Header & Barcode Scanner Input */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
           <div className="flex items-center gap-2.5">
@@ -327,7 +327,7 @@ export default function POSPage() {
         )}
 
         {/* Product Grid */}
-        <div className="flex-1 overflow-y-auto pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="flex-1 overflow-y-auto pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 content-start">
           {loadingItems ? (
             <div className="col-span-full py-12 text-center text-xs text-slate-500">Loading inventory...</div>
           ) : filteredItems.length === 0 ? (
@@ -350,13 +350,13 @@ export default function POSPage() {
                   addToCart(item);
                   toast.success(`Added ${item.name}`, { duration: 1200 });
                 }}
-                className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 hover:bg-slate-850 text-left transition-all flex flex-col justify-between group active:scale-95 shadow-sm"
+                className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800/90 hover:border-amber-500/60 hover:bg-slate-850/80 text-left transition-all flex flex-col justify-between group active:scale-95 shadow-sm min-h-[110px] max-h-[135px]"
               >
                 <div>
-                  <p className="text-xs font-bold text-white group-hover:text-amber-300 line-clamp-2">{item.name}</p>
-                  {item.code && <p className="text-[10px] text-amber-400/80 font-mono mt-0.5">SKU: {item.code}</p>}
+                  <p className="text-xs font-bold text-white group-hover:text-amber-300 line-clamp-2 leading-snug">{item.name}</p>
+                  {item.code && <p className="text-[10px] text-amber-400/80 font-mono mt-1 truncate">SKU: {item.code}</p>}
                 </div>
-                <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                <div className="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between">
                   <span className="text-xs font-mono font-bold text-emerald-400">Rs. {Number(item.salePrice).toLocaleString()}</span>
                   <span className="text-[10px] text-slate-400">{item.unit || 'Pcs'}</span>
                 </div>
