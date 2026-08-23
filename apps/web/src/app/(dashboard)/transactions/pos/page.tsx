@@ -286,19 +286,21 @@ export default function POSPage() {
             </div>
           </div>
 
-          {/* Search Input with Auto Barcode Scanner focus */}
-          <div className="relative w-full sm:w-72">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+          {/* Search Input with Auto Barcode / QR Scanner focus */}
+          <div className="relative w-full sm:w-80">
+            <div className="absolute left-3 top-2.5 flex items-center text-amber-400">
+              <QrCode className="w-4 h-4" />
+            </div>
             <input
               ref={searchInputRef}
               type="text"
-              placeholder="Scan Barcode or Search (Enter to add)..."
+              placeholder="Scan QR / Barcode or Search (Enter to add)..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="w-full pl-9 pr-8 py-2 rounded-xl bg-slate-950 border border-amber-500/40 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-inner placeholder:text-slate-500"
+              className="w-full pl-9 pr-14 py-2 rounded-xl bg-slate-950 border border-amber-500/40 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-inner placeholder:text-slate-500"
             />
-            {searchTerm && (
+            {searchTerm ? (
               <button
                 type="button"
                 onClick={() => setSearchTerm('')}
@@ -306,6 +308,10 @@ export default function POSPage() {
               >
                 <X className="w-3.5 h-3.5" />
               </button>
+            ) : (
+              <div className="absolute right-2.5 top-2 text-[10px] font-mono font-extrabold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">
+                SCAN
+              </div>
             )}
           </div>
         </div>
