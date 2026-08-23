@@ -10,6 +10,7 @@ apps/web/out/
 dist
 build
 *win32-x64
+apps/web/public/downloads/
 
 # Environment files
 .env

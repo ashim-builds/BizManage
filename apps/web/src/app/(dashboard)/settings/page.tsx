@@ -555,7 +555,7 @@ function SettingsPageContent() {
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white"
-                placeholder="e.g. New Road, Kathmandu, Nepal"
+                placeholder="e.g. New Road, Pokhara, Nepal"
               />
             </div>
 

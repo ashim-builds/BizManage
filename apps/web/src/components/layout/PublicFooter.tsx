@@ -113,7 +113,7 @@ export function PublicFooter() {
             <div className="space-y-2 text-xs text-slate-400 pt-1">
               <div className="flex items-center gap-2.5">
                 <MapPin className="w-4 h-4 text-blue-400 shrink-0" />
-                <span>Kathmandu, Nepal · Global Cloud Host</span>
+                <span>Pokhara, Nepal · Global Cloud Host</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -140,6 +140,11 @@ export function PublicFooter() {
               Core Products
             </h4>
             <ul className="space-y-2.5 text-xs text-slate-400">
+              <li>
+                <Link href="/download" className="hover:text-amber-300 transition-colors flex items-center gap-1 text-amber-400 font-bold group">
+                  <span className="group-hover:translate-x-0.5 transition-transform">🖥️ Download Desktop App (.EXE)</span>
+                </Link>
+              </li>
               <li>
                 <Link href="/transactions/pos" className="hover:text-white transition-colors flex items-center gap-1 group">
                   <span className="group-hover:translate-x-0.5 transition-transform">POS Quick Billing & Thermal</span>
