@@ -62,45 +62,14 @@ export function PublicHeader({ activePage }: PublicHeaderProps) {
           </Link>
           <Link
             href="/download"
-            className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
               activePage === "download"
-                ? "text-blue-400 bg-blue-500/10 font-semibold"
-                : "text-amber-300 hover:text-white hover:bg-slate-800/50 font-bold"
+                ? "text-blue-400 bg-blue-500/10 font-semibold border border-blue-500/20"
+                : "text-amber-300 hover:text-white hover:bg-amber-500/10 font-bold border border-amber-500/30 bg-amber-500/5"
             }`}
           >
-            <Download className="w-3.5 h-3.5" />
-            Download App
-          </Link>
-          <Link
-            href="/security"
-            className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
-              activePage === "security"
-                ? "text-blue-400 bg-blue-500/10 font-semibold"
-                : "hover:text-white hover:bg-slate-800/50"
-            }`}
-          >
-            <Shield className="w-3.5 h-3.5" />
-            Security
-          </Link>
-          <Link
-            href="/privacy"
-            className={`px-3 py-1.5 rounded-lg transition-colors ${
-              activePage === "privacy"
-                ? "text-blue-400 bg-blue-500/10 font-semibold"
-                : "hover:text-white hover:bg-slate-800/50"
-            }`}
-          >
-            Privacy
-          </Link>
-          <Link
-            href="/terms"
-            className={`px-3 py-1.5 rounded-lg transition-colors ${
-              activePage === "terms"
-                ? "text-blue-400 bg-blue-500/10 font-semibold"
-                : "hover:text-white hover:bg-slate-800/50"
-            }`}
-          >
-            Terms
+            <Download className="w-3.5 h-3.5 text-amber-400" />
+            Download App (.EXE)
           </Link>
         </nav>
 
