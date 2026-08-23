@@ -595,116 +595,194 @@ function POSThermalReceiptModal({
   };
   business?: any;
 }) {
+  const [paperWidth, setPaperWidth] = useState<'80mm' | '58mm'>('80mm');
+
   if (!isOpen) return null;
 
   const handlePrintThermal = () => {
     window.print();
   };
 
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(
+    sale.voucherNo || 'POS-INV'
+  )}`;
+
   return (
     <ModalPortal>
-      <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[100] flex items-center justify-center p-4 overflow-y-auto">
-        <div className="w-full max-w-lg bg-slate-900 border border-emerald-500/30 rounded-3xl p-6 shadow-2xl space-y-5 text-sans my-8">
+      <style flex-shrink-0>{`
+        @media print {
+          body * {
+            visibility: hidden !important;
+          }
+          #thermal-printable-area, #thermal-printable-area * {
+            visibility: visible !important;
+          }
+          #thermal-printable-area {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: ${paperWidth === '80mm' ? '78mm' : '56mm'} !important;
+            margin: 0 !important;
+            padding: 4mm !important;
+            background: white !important;
+            color: black !important;
+            box-shadow: none !important;
+            font-family: monospace !important;
+          }
+        }
+      `}</style>
+
+      <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[100] flex items-center justify-center p-4 overflow-y-auto font-sans">
+        <div className="w-full max-w-lg bg-slate-900 border border-emerald-500/30 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 my-8">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20 shadow-inner">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white">Sale Completed Successfully</h3>
-                <p className="text-[11px] text-slate-400">Invoice #{sale.voucherNo}</p>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  Order Completed
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 text-[10px] font-extrabold border border-emerald-500/25">
+                    SUCCESS
+                  </span>
+                </h3>
+                <p className="text-[11px] text-slate-400 font-mono">Invoice #{sale.voucherNo}</p>
               </div>
             </div>
-            <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">
-              <X className="w-4 h-4" />
-            </button>
+
+            <div className="flex items-center gap-2">
+              {/* Paper Roll Width Switcher */}
+              <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-[10px] font-bold text-slate-400">
+                <button
+                  type="button"
+                  onClick={() => setPaperWidth('80mm')}
+                  className={`px-2 py-1 rounded-lg transition-all ${
+                    paperWidth === '80mm' ? 'bg-emerald-500 text-slate-950 font-extrabold shadow' : 'hover:text-white'
+                  }`}
+                >
+                  80mm Standard
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaperWidth('58mm')}
+                  className={`px-2 py-1 rounded-lg transition-all ${
+                    paperWidth === '58mm' ? 'bg-emerald-500 text-slate-950 font-extrabold shadow' : 'hover:text-white'
+                  }`}
+                >
+                  58mm Mini
+                </button>
+              </div>
+
+              <button onClick={onClose} className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
-          {/* Printable 80mm Thermal Receipt Layout Container */}
-          <div className="p-4 rounded-2xl bg-white text-slate-950 font-mono text-xs shadow-inner space-y-3 leading-tight border border-slate-300 max-h-96 overflow-y-auto">
-            <div id="thermal-receipt-content" className="space-y-2">
-              <div className="text-center space-y-0.5 border-b border-dashed border-slate-400 pb-2">
-                <h2 className="text-base font-extrabold uppercase">{business?.name || 'BizManage Store'}</h2>
-                <p className="text-[10px]">{business?.address || 'Main Road, Kathmandu, Nepal'}</p>
-                {business?.panNo && <p className="text-[10px]">PAN/VAT: {business.panNo}</p>}
-                {business?.phone && <p className="text-[10px]">Tel: {business.phone}</p>}
+          {/* Authentic POS Thermal Paper Roll Preview */}
+          <div className="bg-slate-950/80 p-3 rounded-2xl border border-slate-800 flex justify-center max-h-[380px] overflow-y-auto">
+            <div
+              id="thermal-printable-area"
+              className={`bg-amber-50/95 text-slate-950 font-mono text-[11px] p-4 shadow-xl border border-slate-300 space-y-3 transition-all rounded-sm ${
+                paperWidth === '80mm' ? 'w-[320px]' : 'w-[250px]'
+              }`}
+            >
+              {/* Receipt Store Header */}
+              <div className="text-center space-y-0.5 border-b border-dashed border-slate-400 pb-2.5">
+                <h2 className="text-sm font-black uppercase tracking-tight">{business?.name || 'BizManage Store'}</h2>
+                <p className="text-[10px] text-slate-700 leading-tight">{business?.address || 'Main Road, Kathmandu, Nepal'}</p>
+                {business?.panNo && <p className="text-[10px] text-slate-700">PAN/VAT: {business.panNo}</p>}
+                {business?.phone && <p className="text-[10px] text-slate-700">Tel: {business.phone}</p>}
               </div>
 
-              <div className="text-[11px] border-b border-dashed border-slate-400 pb-2 space-y-0.5">
-                <div className="flex justify-between">
+              {/* Bill Details */}
+              <div className="text-[10px] border-b border-dashed border-slate-400 pb-2 space-y-1">
+                <div className="flex justify-between font-bold">
                   <span>Bill No: {sale.voucherNo}</span>
-                  <span>{sale.date}</span>
+                  <span>{sale.paymentMode}</span>
                 </div>
-                <div>Customer: {sale.customerName}</div>
-                <div>Payment: {sale.paymentMode}</div>
+                <div className="flex justify-between text-slate-700">
+                  <span className="truncate pr-1">Customer: {sale.customerName}</span>
+                  <span className="shrink-0">{sale.date}</span>
+                </div>
               </div>
 
-              <table className="w-full text-left text-[11px]">
+              {/* Items Table */}
+              <table className="w-full text-left text-[10px]">
                 <thead>
-                  <tr className="border-b border-dashed border-slate-400">
-                    <th className="py-1 font-bold">Item</th>
+                  <tr className="border-b border-dashed border-slate-400 text-slate-800">
+                    <th className="py-1 font-bold">Item Description</th>
                     <th className="py-1 text-center font-bold">Qty</th>
-                    <th className="py-1 text-right font-bold">Amount</th>
+                    <th className="py-1 text-right font-bold">Total</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-slate-200">
                   {sale.items.map((item, idx) => (
-                    <tr key={idx} className="border-b border-slate-100">
-                      <td className="py-1 truncate max-w-[120px]">{item.name}</td>
-                      <td className="py-1 text-center">{item.qty}</td>
-                      <td className="py-1 text-right">{item.total.toLocaleString()}</td>
+                    <tr key={idx}>
+                      <td className="py-1.5 truncate max-w-[130px] pr-1">
+                        <div className="font-semibold text-slate-900">{item.name}</div>
+                        <div className="text-[9px] text-slate-500">@ Rs. {item.price.toLocaleString()}</div>
+                      </td>
+                      <td className="py-1.5 text-center font-bold align-top">{item.qty}</td>
+                      <td className="py-1.5 text-right font-mono font-bold align-top">{item.total.toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
+              {/* Financial Breakdown */}
               <div className="border-t border-dashed border-slate-400 pt-2 space-y-1 text-[11px]">
-                <div className="flex justify-between font-bold text-xs">
+                <div className="flex justify-between font-black text-xs pt-0.5 border-b border-slate-300 pb-1">
                   <span>TOTAL PAYABLE:</span>
                   <span>Rs. {sale.totalAmount.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Cash Paid:</span>
+                <div className="flex justify-between text-slate-700 text-[10px]">
+                  <span>Amount Tendered ({sale.paymentMode}):</span>
                   <span>Rs. {sale.paidAmount.toLocaleString()}</span>
                 </div>
                 {sale.changeDue > 0 && (
-                  <div className="flex justify-between font-bold text-emerald-800">
-                    <span>Change Due:</span>
+                  <div className="flex justify-between font-extrabold text-emerald-900 text-[10px]">
+                    <span>Change Returned:</span>
                     <span>Rs. {sale.changeDue.toLocaleString()}</span>
                   </div>
                 )}
               </div>
 
-              <div className="text-center pt-3 border-t border-dashed border-slate-400 text-[10px] space-y-0.5">
-                <p className="font-bold">*** THANK YOU FOR YOUR BUSINESS ***</p>
-                <p>Powered by BizManage POS</p>
+              {/* Footer QR & Message */}
+              <div className="text-center pt-2 border-t border-dashed border-slate-400 space-y-1.5 text-[9px] text-slate-700">
+                <img src={qrCodeUrl} alt="Invoice QR" className="w-16 h-16 mx-auto object-contain" />
+                <p className="font-bold text-slate-900 uppercase">*** THANK YOU FOR SHOPPING ***</p>
+                <p>Please keep this receipt for return/warranty.</p>
+                <p className="text-[8px] text-slate-500 font-mono">BizManage POS System</p>
               </div>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
+          {/* Thermal Print Modal Action Buttons */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2">
             <button
               type="button"
               onClick={handlePrintThermal}
-              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/20"
+              className="px-4 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 active:scale-95"
             >
-              <Printer className="w-4 h-4" /> Print Thermal Bill
+              <Printer className="w-4 h-4" /> Print Thermal Bill ({paperWidth})
             </button>
+
             {sale.id && (
               <Link
                 href={`/transactions/sales/${sale.id}`}
                 onClick={onClose}
-                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition-colors text-center flex items-center justify-center gap-1.5"
+                className="px-4 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition-all text-center flex items-center justify-center gap-2 border border-slate-700"
               >
-                <Receipt className="w-4 h-4" /> View Full Invoice
+                <FileText className="w-4 h-4 text-blue-400" /> Full A4 Invoice
               </Link>
             )}
+
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
+              className="px-4 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-extrabold text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95"
             >
               <Plus className="w-4 h-4" /> Start Next Sale
             </button>
