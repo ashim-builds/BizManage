@@ -346,26 +346,73 @@ export default function POSPage() {
               </button>
             </div>
           ) : (
-            filteredItems.map((item: any) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => {
-                  addToCart(item);
-                  toast.success(`Added ${item.name}`, { duration: 1200 });
-                }}
-                className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800/90 hover:border-amber-500/60 hover:bg-slate-850/80 text-left transition-all flex flex-col justify-between group active:scale-95 shadow-sm min-h-[110px] max-h-[135px]"
-              >
-                <div>
-                  <p className="text-xs font-bold text-white group-hover:text-amber-300 line-clamp-2 leading-snug">{item.name}</p>
-                  {item.code && <p className="text-[10px] text-amber-400/80 font-mono mt-1 truncate">SKU: {item.code}</p>}
-                </div>
-                <div className="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between">
-                  <span className="text-xs font-mono font-bold text-emerald-400">Rs. {Number(item.salePrice).toLocaleString()}</span>
-                  <span className="text-[10px] text-slate-400">{item.unit || 'Pcs'}</span>
-                </div>
-              </button>
-            ))
+            filteredItems.map((item: any) => {
+              const inCartItem = cart.find((c) => c.id === item.id);
+              const inCartQty = inCartItem ? inCartItem.qty : 0;
+              const totalStock = Number(item.currentStock ?? 0);
+              const isService = item.type === 'SERVICE';
+              const remainingStock = Math.max(0, totalStock - inCartQty);
+              const isOutOfStock = !isService && remainingStock <= 0;
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    if (isOutOfStock && totalStock <= 0) {
+                      toast.error(`Out of stock! (${item.name})`);
+                      return;
+                    }
+                    addToCart(item);
+                    toast.success(`Added ${item.name}`, { duration: 1200 });
+                  }}
+                  className={`p-3.5 rounded-2xl bg-slate-950 border text-left transition-all flex flex-col justify-between group active:scale-95 shadow-sm min-h-[125px] max-h-[155px] relative ${
+                    inCartQty > 0
+                      ? 'border-amber-500/80 bg-amber-500/5 ring-1 ring-amber-500/30'
+                      : isOutOfStock
+                      ? 'border-rose-900/40 opacity-75 hover:border-rose-500/60'
+                      : 'border-slate-800/90 hover:border-amber-500/60 hover:bg-slate-850/80'
+                  }`}
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-start justify-between gap-1">
+                      <p className="text-xs font-bold text-white group-hover:text-amber-300 line-clamp-2 leading-snug">
+                        {item.name}
+                      </p>
+                      {inCartQty > 0 && (
+                        <span className="px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 font-mono font-extrabold text-[10px] shrink-0 shadow">
+                          {inCartQty} in cart
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] gap-1 flex-wrap">
+                      {item.code && <span className="text-amber-400/80 font-mono truncate">SKU: {item.code}</span>}
+                      {!isService ? (
+                        <span
+                          className={`font-semibold font-mono ${
+                            isOutOfStock
+                              ? 'text-rose-400 font-bold'
+                              : remainingStock <= (item.minStockAlert || 5)
+                              ? 'text-amber-400'
+                              : 'text-slate-400'
+                          }`}
+                        >
+                          {isOutOfStock ? 'Out of Stock' : `Stock: ${remainingStock} ${item.unit || 'Pcs'}`}
+                        </span>
+                      ) : (
+                        <span className="text-purple-400 font-semibold">Service</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                    <span className="text-xs font-mono font-bold text-emerald-400">Rs. {Number(item.salePrice).toLocaleString()}</span>
+                    <span className="text-[10px] text-slate-400">{item.unit || 'Pcs'}</span>
+                  </div>
+                </button>
+              );
+            })
           )}
         </div>
       </div>
