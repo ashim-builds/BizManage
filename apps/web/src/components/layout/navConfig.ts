@@ -23,6 +23,7 @@ export interface NavGroupItem {
   name: string;
   href: string;
   icon: any;
+  requiredFeature?: string;
 }
 
 export interface NavSection {
@@ -39,7 +40,7 @@ export const sidebarSections: NavSection[] = [
     name: 'Transactions',
     icon: Receipt,
     children: [
-      { name: 'POS Quick Billing', href: '/transactions/pos', icon: Zap },
+      { name: 'POS Quick Billing', href: '/transactions/pos', icon: Zap, requiredFeature: 'POS_BILLING' },
       { name: 'Payment In', href: '/transactions/payment-in', icon: ArrowDownLeft },
       { name: 'Sales Invoices', href: '/transactions/sales', icon: Receipt },
       { name: 'Sales Return', href: '/transactions/sales-return', icon: RotateCcw },

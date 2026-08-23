@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Receipt, Plus, ShoppingBag, Menu, X, ChevronRight } from 'lucide-react';
+import { Home, Receipt, Plus, ShoppingBag, Menu, X, ChevronRight, Crown } from 'lucide-react';
 import { sidebarSections } from '@/components/layout/navConfig';
+import { useAuth } from '@/providers/AuthProvider';
 
 interface MobileBottomNavProps {
   onQuickEntry: () => void;
@@ -12,6 +13,8 @@ interface MobileBottomNavProps {
 
 export function MobileBottomNav({ onQuickEntry }: MobileBottomNavProps) {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const currentBusiness = user?.memberships?.[0]?.business;
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
   const isMoreActive = !['/dashboard', '/transactions/sales', '/transactions/purchases'].includes(pathname || '');
@@ -132,18 +135,23 @@ export function MobileBottomNav({ onQuickEntry }: MobileBottomNavProps) {
                         if (['Sales Invoices', 'Purchase Bills'].includes(child.name)) return null;
                         
                         const ChildIcon = child.icon;
+                        const isChildLocked = child.requiredFeature && !(currentBusiness?.subscriptionPackage?.features || []).includes(child.requiredFeature);
                         return (
                           <Link
                             key={cIdx}
-                            href={child.href}
+                            href={isChildLocked ? '/subscription' : child.href}
                             onClick={() => setMoreMenuOpen(false)}
                             className="flex items-center justify-between p-4 active:bg-slate-800 transition-colors"
                           >
                             <div className="flex items-center gap-3">
-                              <ChildIcon className="w-5 h-5 text-slate-400" />
-                              <span className="text-sm font-medium text-slate-300">{child.name}</span>
+                              <ChildIcon className={`w-5 h-5 ${isChildLocked ? 'text-slate-600' : 'text-slate-400'}`} />
+                              <span className={`text-sm font-medium ${isChildLocked ? 'text-slate-500' : 'text-slate-300'}`}>{child.name}</span>
                             </div>
-                            <ChevronRight className="w-4 h-4 text-slate-600" />
+                            {isChildLocked ? (
+                              <Crown className="w-4 h-4 text-amber-500/80" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4 text-slate-600" />
+                            )}
                           </Link>
                         );
                       })}

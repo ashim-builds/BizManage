@@ -308,17 +308,30 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     {section.children.map((child) => {
                       const ChildIcon = child.icon;
                       const isChildActive = pathname === child.href;
+                      const isChildLocked = child.requiredFeature && !(currentBusiness?.subscriptionPackage?.features || []).includes(child.requiredFeature);
                       return (
                         <Link
                           key={child.name}
-                          href={child.href}
-                          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[11px] font-medium transition-all ${isChildActive
+                          href={isChildLocked ? '/subscription' : child.href}
+                          onClick={(e) => {
+                            if (isChildLocked) {
+                              e.preventDefault();
+                              toast.error(`Please upgrade your plan to access ${child.name}`);
+                              router.push('/subscription');
+                            }
+                          }}
+                          className={`flex items-center justify-between gap-2.5 px-3 py-2 rounded-lg text-[11px] font-medium transition-all ${isChildActive
                             ? 'bg-blue-500/10 text-blue-400 font-bold border border-blue-500/20'
-                            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                            : isChildLocked
+                              ? 'text-slate-500 opacity-70 hover:opacity-100 hover:bg-slate-800/40'
+                              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
                             }`}
                         >
-                          <ChildIcon className="w-3.5 h-3.5 text-slate-400" />
-                          {child.name}
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <ChildIcon className={`w-3.5 h-3.5 ${isChildActive ? 'text-blue-400' : isChildLocked ? 'text-slate-600' : 'text-slate-400'}`} />
+                            <span className="truncate">{child.name}</span>
+                          </div>
+                          {isChildLocked && <Crown className="w-3.5 h-3.5 text-amber-500/70 shrink-0" />}
                         </Link>
                       );
                     })}
