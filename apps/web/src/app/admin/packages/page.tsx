@@ -158,7 +158,7 @@ export default function AdminPackagesPage() {
   const applyStandardPreset = () => {
     setFormData(prev => ({
       ...prev,
-      features: AVAILABLE_FEATURES.filter(f => f.id !== 'POS_BILLING' && f.id !== 'BARCODE_PRINTING').map(f => f.id)
+      features: AVAILABLE_FEATURES.filter(f => f.id !== 'POS_BILLING' && f.id !== 'BARCODE_PRINTING' && f.id !== 'STAFF_PAYROLL').map(f => f.id)
     }));
   };
 
@@ -394,7 +394,7 @@ export default function AdminPackagesPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-64 overflow-y-auto p-3.5 bg-slate-950 border border-slate-800 rounded-xl scrollbar-thin">
                       {AVAILABLE_FEATURES.map(feat => {
                         const isChecked = formData.features.includes(feat.id);
-                        const isPremiumFeat = feat.id === 'POS_BILLING' || feat.id === 'BARCODE_PRINTING';
+                        const isPremiumFeat = feat.id === 'POS_BILLING' || feat.id === 'BARCODE_PRINTING' || feat.id === 'STAFF_PAYROLL';
                         return (
                           <div
                             key={feat.id}

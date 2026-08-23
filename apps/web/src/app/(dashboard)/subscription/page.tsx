@@ -530,7 +530,7 @@ export default function SubscriptionPage() {
                 <div className="grid grid-cols-1 gap-2">
                   {AVAILABLE_FEATURES.map((feat) => {
                     const isUnlocked = currentMatrixPkg.features.includes(feat.id);
-                    const isPremiumFeature = feat.id === 'POS_BILLING' || feat.id === 'BARCODE_PRINTING';
+                    const isPremiumFeature = feat.id === 'POS_BILLING' || feat.id === 'BARCODE_PRINTING' || feat.id === 'STAFF_PAYROLL';
 
                     return (
                       <div
@@ -584,7 +584,7 @@ export default function SubscriptionPage() {
             </thead>
             <tbody className="divide-y divide-slate-800/60 text-slate-300">
               {AVAILABLE_FEATURES.map((feat) => {
-                const isPremiumFeat = feat.id === 'POS_BILLING' || feat.id === 'BARCODE_PRINTING';
+                const isPremiumFeat = feat.id === 'POS_BILLING' || feat.id === 'BARCODE_PRINTING' || feat.id === 'STAFF_PAYROLL';
                 return (
                   <tr key={feat.id} className="hover:bg-slate-800/30 transition-colors">
                     <td className="py-3.5 px-3 font-semibold text-white flex items-center gap-2">

@@ -9,5 +9,6 @@ export const AVAILABLE_FEATURES = [
   { id: 'ADVANCED_REPORTS', label: 'Advanced P&L & Daybook Reports', category: 'Analytics' },
   { id: 'POS_BILLING', label: 'POS Quick Billing & Counter Mode (Premium)', category: 'Sales & POS' },
   { id: 'BARCODE_PRINTING', label: 'Print Barcode & Price Tag Stickers (Premium)', category: 'Sales & POS' },
+  { id: 'STAFF_PAYROLL', label: 'Staff Attendance, Shifts & Salary Payroll (Premium)', category: 'HR & Payroll' },
   { id: 'PRIORITY_SUPPORT', label: 'Priority 24/7 Technical Support', category: 'Support' },
 ];
