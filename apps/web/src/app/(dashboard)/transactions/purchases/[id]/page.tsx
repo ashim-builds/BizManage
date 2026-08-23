@@ -13,13 +13,17 @@ import {
   User,
   Phone,
   FileText,
+  Receipt,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useState } from 'react';
 import { InvoiceStatus } from '@bizmanage/types';
+import { ThermalReceiptModal } from '@/components/pos/ThermalReceiptModal';
 
 export default function PurchaseBillDetailsPage({ params }: { params: { id: string } }) {
   const { data: purchase, isLoading, isError, refetch } = usePurchase(params.id);
   const { data: business } = useCurrentBusiness();
+  const [isThermalOpen, setIsThermalOpen] = useState(false);
 
   if (isLoading) return <LoadingState message="Loading purchase bill document..." />;
   if (isError || !purchase) return <ErrorState title="Failed to load purchase bill" onRetry={refetch} />;
@@ -34,7 +38,7 @@ export default function PurchaseBillDetailsPage({ params }: { params: { id: stri
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
       {/* Top Bar (Actions & Back) - Hidden on Print */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-5 print:hidden">
+      <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-5 gap-3 print:hidden">
         <div className="flex items-center gap-4">
           <Link
             href="/transactions/purchases"
@@ -50,12 +54,22 @@ export default function PurchaseBillDetailsPage({ params }: { params: { id: stri
           </div>
         </div>
 
-        <button
-          onClick={() => window.print()}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition-all border border-slate-700 shadow-lg"
-        >
-          <Printer className="w-4 h-4" /> Print / Save PDF
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsThermalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-semibold transition-all border border-slate-700 shadow-sm"
+          >
+            <Receipt className="w-4 h-4 text-emerald-400" /> Thermal Receipt
+          </button>
+
+          <button
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-all shadow-lg shadow-blue-600/20"
+          >
+            <Printer className="w-4 h-4" /> Print / Save PDF
+          </button>
+        </div>
       </div>
 
       {/* PRINTABLE BILL DOCUMENT CONTAINER */}
@@ -234,6 +248,48 @@ export default function PurchaseBillDetailsPage({ params }: { params: { id: stri
           </div>
         </div>
       </div>
+
+      {/* POS Thermal Receipt Modal */}
+      <ThermalReceiptModal
+        isOpen={isThermalOpen}
+        onClose={() => setIsThermalOpen(false)}
+        business={{
+          name: business?.name,
+          address: business?.address,
+          phone: business?.phone,
+          taxNumber: business?.taxNumber,
+          logoUrl: business?.logoUrl,
+        }}
+        sale={{
+          invoiceNumber: purchase.billNumber,
+          date: purchase.date,
+          isVatBill: purchase.isVatBill,
+          paymentMode: purchase.paymentMode || 'CASH',
+          subTotal: purchase.subTotal,
+          discount: purchase.discount,
+          taxAmount: purchase.taxAmount,
+          totalAmount: purchase.totalAmount,
+          paidAmount: purchase.paidAmount,
+          dueAmount: purchase.dueAmount,
+          party: purchase.party ? {
+            name: purchase.party.name,
+            phone: purchase.party.phone,
+            taxNumber: purchase.party.taxNumber,
+          } : null,
+          items: (purchase.items || []).map((line: any) => ({
+            id: line.id,
+            quantity: line.quantity,
+            unitPrice: line.unitPrice,
+            discount: line.discount,
+            total: line.total,
+            item: line.item ? {
+              name: line.item.name,
+              code: line.item.code,
+              unit: line.item.unit,
+            } : undefined,
+          })),
+        }}
+      />
     </div>
   );
 }
