@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
-import { Package, Plus, Edit2, Trash2, CheckCircle2, XCircle } from 'lucide-react';
+import { Package, Plus, Edit2, Trash2, CheckCircle2, XCircle, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ModalPortal } from '@/components/ui/ModalPortal';
 import { AVAILABLE_FEATURES } from '@/lib/constants';
@@ -57,6 +57,19 @@ export default function AdminPackagesPage() {
       toast.error('Failed to fetch packages');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResetDefaults = async () => {
+    if (!confirm('This will remove legacy old packages and reset the database to Free Starter, Standard Monthly, Premium Monthly, and Premium Yearly. Continue?')) return;
+    try {
+      const res = await api.post('/admin/packages/reset-defaults');
+      if (res.data.success) {
+        toast.success(res.data.message || 'Packages synchronized successfully');
+        fetchPackages();
+      }
+    } catch (err: any) {
+      toast.error('Failed to reset packages');
     }
   };
 
@@ -168,15 +181,24 @@ export default function AdminPackagesPage() {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Packages</h1>
-          <p className="text-slate-400 text-sm">Manage subscription tiers and limits</p>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Subscription Packages</h1>
+          <p className="text-slate-400 text-sm">Manage subscription tiers and pricing plans</p>
         </div>
-        <button
-          onClick={() => openModal()}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition-colors"
-        >
-          <Plus className="w-4 h-4" /> New Package
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleResetDefaults}
+            className="flex items-center gap-2 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold rounded-lg transition-colors shadow-sm"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-blue-400" /> Clean & Sync Defaults
+          </button>
+          <button
+            onClick={() => openModal()}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition-colors text-xs"
+          >
+            <Plus className="w-4 h-4" /> New Package
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

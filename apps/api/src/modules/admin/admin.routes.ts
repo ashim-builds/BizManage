@@ -4,6 +4,7 @@ import { requireSystemAdmin } from '../../middleware/auth.js';
 import { AppError } from '../../plugins/error-handler.js';
 import argon2 from 'argon2';
 import { z } from 'zod';
+import { seedDefaultPackages } from '../../utils/seed.js';
 
 export async function adminRoutes(fastify: FastifyInstance) {
   // Apply the requireSystemAdmin middleware to all routes in this plugin
@@ -366,6 +367,21 @@ export async function adminRoutes(fastify: FastifyInstance) {
     });
 
     return reply.send({ success: true, data: packages });
+  });
+
+  fastify.post('/packages/reset-defaults', async (request, reply) => {
+    await seedDefaultPackages();
+    await logAdminAction(request.user.id, 'PACKAGE_RESET_DEFAULTS', 'all', 'SubscriptionPackage', {});
+
+    const packages = await globalPrisma.subscriptionPackage.findMany({
+      orderBy: { displayOrder: 'asc' },
+    });
+
+    return reply.send({
+      success: true,
+      message: 'Old packages removed and default subscription packages synchronized successfully.',
+      data: packages,
+    });
   });
 
   fastify.post('/packages', async (request, reply) => {
