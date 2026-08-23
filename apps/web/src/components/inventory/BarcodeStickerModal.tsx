@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { useAuth } from '@/providers/AuthProvider';
 import { ModalPortal } from '@/components/common/ModalPortal';
-import { Printer, X, Tag, QrCode, SlidersHorizontal, Layers } from 'lucide-react';
+import { Printer, X, Tag, QrCode, SlidersHorizontal, Layers, Crown, Lock } from 'lucide-react';
 
 interface BarcodeStickerModalProps {
   isOpen: boolean;
@@ -69,11 +71,68 @@ export function BarcodeStickerModal({
   businessName = 'BizManage Store',
   item,
 }: BarcodeStickerModalProps) {
+  const { user } = useAuth();
+  const currentBiz = user?.memberships?.[0]?.business;
+  const rawFeatures = currentBiz?.subscriptionPackage?.features;
+  const userFeatures = typeof rawFeatures === 'string' ? JSON.parse(rawFeatures) : (rawFeatures || []);
+  const isUnlocked = userFeatures.includes('BARCODE_PRINTING') || currentBiz?.subscriptionPackage?.name?.toLowerCase().includes('premium');
+
   const [labelCount, setLabelCount] = useState<number>(12);
   const [stickerType, setStickerType] = useState<'barcode' | 'qr' | 'both'>('barcode');
   const [showBusinessName, setShowBusinessName] = useState<boolean>(true);
 
   if (!isOpen) return null;
+
+  if (!isUnlocked) {
+    return (
+      <ModalPortal>
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-slate-900 border border-amber-500/30 rounded-3xl p-6 shadow-2xl space-y-5 text-center font-sans">
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mx-auto">
+              <Crown className="w-7 h-7" />
+            </div>
+            <div>
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] font-bold uppercase tracking-wider">
+                Premium Feature
+              </span>
+              <h3 className="text-lg font-bold text-white mt-2">Print Barcode & Price Tag Stickers</h3>
+              <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                Barcode tag printing is available exclusively on <strong>Premium Monthly</strong> and <strong>Premium Yearly</strong> subscription plans.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-400 space-y-1 text-left">
+              <p className="text-white font-semibold flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-amber-400" /> Premium Plan Perks:
+              </p>
+              <ul className="space-y-1 text-[11px] text-slate-300 pt-1">
+                <li>• Print custom Code-128 & QR Code price tags</li>
+                <li>• POS Quick Billing & Counter Mode</li>
+                <li>• Priority 24/7 dedicated technical support</li>
+              </ul>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              >
+                Close
+              </button>
+              <Link
+                href="/subscription"
+                onClick={onClose}
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-400 hover:to-indigo-500 text-white text-xs font-bold transition-all shadow-lg shadow-indigo-600/20"
+              >
+                Upgrade to Premium Plan
+              </Link>
+            </div>
+          </div>
+        </div>
+      </ModalPortal>
+    );
+  }
 
   const sku = item.code || `SKU-${item.name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 8).toUpperCase()}`;
   const price = Number(item.salePrice || 0);

@@ -128,6 +128,34 @@ export default function AdminPackagesPage() {
     }));
   };
 
+  const selectAllFeatures = () => {
+    setFormData(prev => ({
+      ...prev,
+      features: AVAILABLE_FEATURES.map(f => f.id)
+    }));
+  };
+
+  const deselectAllFeatures = () => {
+    setFormData(prev => ({
+      ...prev,
+      features: []
+    }));
+  };
+
+  const applyStandardPreset = () => {
+    setFormData(prev => ({
+      ...prev,
+      features: AVAILABLE_FEATURES.filter(f => f.id !== 'POS_BILLING' && f.id !== 'BARCODE_PRINTING').map(f => f.id)
+    }));
+  };
+
+  const applyPremiumPreset = () => {
+    setFormData(prev => ({
+      ...prev,
+      features: AVAILABLE_FEATURES.map(f => f.id)
+    }));
+  };
+
   if (loading && packages.length === 0) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -300,22 +328,85 @@ export default function AdminPackagesPage() {
 
               {/* Features & Status */}
               <div>
-                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">Features & Status</h3>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 border-b border-slate-800 pb-2">
+                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Features & Licensing</h3>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={applyStandardPreset}
+                      className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-blue-400 border border-blue-500/20 text-[11px] font-bold transition-all"
+                    >
+                      Standard Preset
+                    </button>
+                    <button
+                      type="button"
+                      onClick={applyPremiumPreset}
+                      className="px-2 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[11px] font-bold transition-all"
+                    >
+                      ⭐ Premium Preset
+                    </button>
+                    <button
+                      type="button"
+                      onClick={selectAllFeatures}
+                      className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold transition-all"
+                    >
+                      Select All
+                    </button>
+                    <button
+                      type="button"
+                      onClick={deselectAllFeatures}
+                      className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 text-[11px] font-semibold transition-all"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">Available Features</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-4 bg-slate-950 border border-slate-800 rounded-lg">
-                      {AVAILABLE_FEATURES.map(feat => (
-                        <label key={feat.id} className="flex items-start gap-2 text-sm text-slate-300 cursor-pointer group">
-                          <input 
-                            type="checkbox"
-                            checked={formData.features.includes(feat.id)}
-                            onChange={() => toggleFeature(feat.id)}
-                            className="mt-0.5 rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-blue-500"
-                          />
-                          <span className="group-hover:text-white transition-colors leading-snug">{feat.label}</span>
-                        </label>
-                      ))}
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-xs font-semibold text-slate-300">
+                        Feature Modules ({formData.features.length} / {AVAILABLE_FEATURES.length} enabled)
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-64 overflow-y-auto p-3.5 bg-slate-950 border border-slate-800 rounded-xl scrollbar-thin">
+                      {AVAILABLE_FEATURES.map(feat => {
+                        const isChecked = formData.features.includes(feat.id);
+                        const isPremiumFeat = feat.id === 'POS_BILLING' || feat.id === 'BARCODE_PRINTING';
+                        return (
+                          <div
+                            key={feat.id}
+                            onClick={() => toggleFeature(feat.id)}
+                            className={`p-2.5 rounded-xl border text-xs font-medium cursor-pointer transition-all flex items-start gap-2.5 select-none ${
+                              isChecked
+                                ? isPremiumFeat
+                                  ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-200 shadow-sm'
+                                  : 'bg-blue-600/15 border-blue-500/40 text-blue-200 shadow-sm'
+                                : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                            }`}
+                          >
+                            <input 
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {}}
+                              className="mt-0.5 rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-blue-500 shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold leading-tight text-white flex items-center gap-1.5">
+                                {feat.label}
+                                {isPremiumFeat && (
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                    PREMIUM
+                                  </span>
+                                )}
+                              </p>
+                              {feat.category && (
+                                <p className="text-[10px] text-slate-400 mt-0.5 font-mono">{feat.category}</p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">

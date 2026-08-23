@@ -16,6 +16,7 @@ import {
   Scale,
   BookOpen,
   ShieldCheck,
+  Zap,
 } from 'lucide-react';
 
 export interface NavGroupItem {
@@ -38,6 +39,7 @@ export const sidebarSections: NavSection[] = [
     name: 'Transactions',
     icon: Receipt,
     children: [
+      { name: 'POS Quick Billing', href: '/transactions/pos', icon: Zap },
       { name: 'Payment In', href: '/transactions/payment-in', icon: ArrowDownLeft },
       { name: 'Sales Invoices', href: '/transactions/sales', icon: Receipt },
       { name: 'Sales Return', href: '/transactions/sales-return', icon: RotateCcw },
