@@ -9,6 +9,7 @@ apps/web/out/
 # Build outputs
 dist
 build
+*win32-x64
 
 # Environment files
 .env
