@@ -912,20 +912,31 @@ export default function PurchasesPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">Unit of Measure</label>
-                    <select
+                    <label className="block text-slate-300 font-semibold mb-1">Unit of Measure (Type or Select)</label>
+                    <input
+                      type="text"
+                      list="unit-suggestions-purchase"
+                      required
                       value={quickItemData.unit}
                       onChange={(e) => setQuickItemData({ ...quickItemData, unit: e.target.value })}
+                      placeholder="e.g. Pcs, Bora, Kg, Ltr, Box, Dzn, Skt, Sqft, Pack..."
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-blue-500"
-                    >
-                      <option value="Pcs">Pcs (Pieces)</option>
-                      <option value="Kg">Kg (Kilogram)</option>
-                      <option value="Ltr">Ltr (Liter)</option>
+                    />
+                    <datalist id="unit-suggestions-purchase">
+                      <option value="Pcs">Pieces (Pcs)</option>
+                      <option value="Kg">Kilogram (Kg)</option>
+                      <option value="Ltr">Liter (Ltr)</option>
                       <option value="Box">Box</option>
-                      <option value="Dzn">Dzn (Dozen)</option>
+                      <option value="Dzn">Dozen (Dzn)</option>
+                      <option value="Bora">Bora / Sack</option>
+                      <option value="Carton">Carton</option>
+                      <option value="Packet">Packet</option>
                       <option value="Meter">Meter</option>
-                      <option value="Pack">Pack</option>
-                    </select>
+                      <option value="Sqft">Sq. Feet</option>
+                      <option value="Set">Set</option>
+                      <option value="Bundle">Bundle</option>
+                      <option value="Pair">Pair</option>
+                    </datalist>
                   </div>
                 </div>
 
