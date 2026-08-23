@@ -514,6 +514,55 @@ export function UserGuide({ initialLanguage = 'np', showLanguageSelector = true 
       quickLinkTextNp: 'POS Counter Mode खोल्नुहोस् →',
       quickLinkTextEn: 'Open POS Counter →',
     },
+    {
+      id: 'staff-payroll',
+      icon: Users,
+      badgeNp: 'कर्मचारी र तलब',
+      badgeEn: 'Staff & Payroll',
+      titleNp: '११. कर्मचारी र तलब व्यवस्थापन (Staff Directory, Shifts & Salary Payroll)',
+      titleEn: '11. Staff Directory, Shift Clock In/Out & Salary Payroll',
+      summaryNp: 'कर्मचारीको विवरण राख्ने, क्यासियर शिफ्ट क्लक-इन/आउट गर्ने र महिनाको तलब पेस्लिप निकाल्ने तरिका।',
+      summaryEn: 'Manage employee profiles, track cashier counter shifts, issue monthly salary vouchers, and print official payslips.',
+      stepsNp: [
+        {
+          title: 'कर्मचारी थप्ने (Add Employee)',
+          desc: 'Staff & Payroll -> "+ Add Employee" मा गएर कर्मचारीको नाम, पद (Cashier, Store Manager), फोन र मासिक आधारभूत तलब (Base Salary) लेखेर सेभ गर्नुहोस्।',
+        },
+        {
+          title: 'क्यासियर शिफ्ट क्लक-इन (Shift Clock In)',
+          desc: 'काउन्टर सुरु गर्दा "Clock In Shift" थिचेर क्यासियरको नाम र काउन्टरमा भएको सुरुवाती खुद्रा पैसा (Opening Cash Float) लेख्नुहोस्।',
+        },
+        {
+          title: 'शिफ्ट बन्द र क्यास हिसाब (Shift Clock Out)',
+          desc: 'काउन्टर बन्द गर्दा "Clock Out & Close Shift" थिचेर दराजमा भएको अन्तिम नगद रकम लेख्नुहोस्। सिस्टमले बिक्री रकम जोडेर हिसाब मिलाउँछ।',
+        },
+        {
+          title: 'मासिक तलब र पेस्लिप प्रिन्ट (Issue Salary & Payslip)',
+          desc: '"Issue Salary" थिचेर बोनस जोड्न वा एडभान्स घटाउन सकिन्छ। सेभ हुनासाथ छनौट गरिएको खाता (Cash/Bank) बाट पैसा घट्छ र Profit & Loss मा खर्च जोडिन्छ।',
+        },
+      ],
+      stepsEn: [
+        {
+          title: 'Adding Staff Members',
+          desc: 'Go to Staff & Payroll -> "+ Add Employee" to record employee name, designation (Cashier, Store Manager, Accountant), phone number, and base monthly salary.',
+        },
+        {
+          title: 'Cashier Shift Clock-In',
+          desc: 'At counter shift start, click "Clock In Shift" to select cashier name and enter the starting drawer float opening cash.',
+        },
+        {
+          title: 'Shift Clock-Out & Cash Audit',
+          desc: 'At shift end, click "Clock Out & Close Shift" and enter the counted drawer cash to reconcile sales revenue and prevent cash leaks.',
+        },
+        {
+          title: 'Issuing Salary & Printing Payslips',
+          desc: 'Click "Issue Salary" to compute Net Salary (Base + Bonus - Advance), select payment mode (Cash/Bank/Fonepay), and print an official Employee Payslip.',
+        },
+      ],
+      quickLink: '/staff',
+      quickLinkTextNp: 'कर्मचारी खाता खोल्नुहोस् →',
+      quickLinkTextEn: 'Open Staff & Payroll →',
+    },
   ];
 
   // Filtered sections by search and category
