@@ -34,6 +34,7 @@ import {
   Percent,
   X,
   BanknoteIcon,
+  QrCode,
 } from 'lucide-react';
 
 export default function SalesPage() {

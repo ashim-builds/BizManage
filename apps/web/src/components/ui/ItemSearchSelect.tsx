@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Search, Package, X, ChevronDown, Tag } from 'lucide-react';
+import { Search, Package, X, ChevronDown, Tag, QrCode } from 'lucide-react';
 
 export interface SelectableItem {
   id: string;
@@ -29,7 +29,7 @@ export function ItemSearchSelect({
   items = [],
   value,
   onChange,
-  placeholder = 'Select Product / Item',
+  placeholder = 'Search product or scan barcode (SKU)…',
   priceField = 'salePrice',
   className = '',
 }: ItemSearchSelectProps) {
@@ -57,10 +57,11 @@ export function ItemSearchSelect({
       if (!item) return false;
       const name = (item.name || '').toLowerCase();
       const code = (item.code || '').toLowerCase();
+      const fallbackSku = `sku-${name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 8)}`;
       const unit = (item.unit || '').toLowerCase();
       const category = (item.category?.name || '').toLowerCase();
 
-      const combined = `${name} ${code} ${unit} ${category}`;
+      const combined = `${name} ${code} ${fallbackSku} ${unit} ${category}`;
       return terms.every((term) => combined.includes(term));
     });
   }, [safeItems, query]);
@@ -169,7 +170,7 @@ export function ItemSearchSelect({
             </>
           ) : (
             <>
-              <Search className="w-3.5 h-3.5 flex-shrink-0 text-slate-500" />
+              <QrCode className="w-3.5 h-3.5 flex-shrink-0 text-purple-400" />
               <span className="truncate">{placeholder}</span>
             </>
           )}
@@ -203,15 +204,15 @@ export function ItemSearchSelect({
           {/* Search input */}
           <div className="p-2.5 border-b border-slate-800 flex-shrink-0 bg-slate-900/90 backdrop-blur">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
+              <QrCode className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-purple-400 pointer-events-none" />
               <input
                 ref={inputRef}
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Type name, SKU, or category to search…"
-                className="w-full pl-8 pr-8 py-2 bg-slate-800/90 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+                placeholder="Scan Barcode (SKU) or type name..."
+                className="w-full pl-8 pr-8 py-2 bg-slate-800/90 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500 transition-all"
               />
               {query && (
                 <button

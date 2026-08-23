@@ -159,6 +159,27 @@ function InventoryPageContent() {
 
   const handleCreateSubmit = async (data: ItemInput) => {
     setCreateError('');
+
+    // Check duplicate item name
+    const duplicateName = rawItems.find(
+      (i: any) => i.name && i.name.trim().toLowerCase() === data.name.trim().toLowerCase()
+    );
+    if (duplicateName) {
+      setCreateError(`A product named "${data.name.trim()}" already exists in your inventory! Please use a unique name or edit the existing product.`);
+      return;
+    }
+
+    // Check duplicate SKU code if provided
+    if (data.code && data.code.trim()) {
+      const duplicateCode = rawItems.find(
+        (i: any) => i.code && i.code.trim().toLowerCase() === data.code!.trim().toLowerCase()
+      );
+      if (duplicateCode) {
+        setCreateError(`A product with SKU / Code "${data.code.trim()}" already exists ("${duplicateCode.name}")! SKU codes must be unique.`);
+        return;
+      }
+    }
+
     try {
       await createItem.mutateAsync(data);
       setIsCreateOpen(false);
@@ -171,6 +192,27 @@ function InventoryPageContent() {
   const handleEditSubmit = async (data: UpdateItemInput) => {
     if (!editingItem) return;
     setEditError('');
+
+    if (data.name) {
+      const duplicateName = rawItems.find(
+        (i: any) => i.id !== editingItem.id && i.name && i.name.trim().toLowerCase() === data.name!.trim().toLowerCase()
+      );
+      if (duplicateName) {
+        setEditError(`Another product named "${data.name.trim()}" already exists in your inventory!`);
+        return;
+      }
+    }
+
+    if (data.code && data.code.trim()) {
+      const duplicateCode = rawItems.find(
+        (i: any) => i.id !== editingItem.id && i.code && i.code.trim().toLowerCase() === data.code!.trim().toLowerCase()
+      );
+      if (duplicateCode) {
+        setEditError(`Another product with SKU / Code "${data.code.trim()}" already exists ("${duplicateCode.name}")!`);
+        return;
+      }
+    }
+
     try {
       await updateItem.mutateAsync({ id: editingItem.id, data });
       setEditingItem(null);
