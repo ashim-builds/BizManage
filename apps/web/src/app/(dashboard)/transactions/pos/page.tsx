@@ -29,8 +29,14 @@ export default function POSPage() {
   const userFeatures = typeof rawFeatures === 'string' ? JSON.parse(rawFeatures) : (rawFeatures || []);
   const isUnlocked = userFeatures.includes('POS_BILLING') || currentBiz?.subscriptionPackage?.name?.toLowerCase().includes('premium');
 
-  const { data: items = [], isLoading: loadingItems } = useItems();
+  const { data: itemsData, isLoading: loadingItems } = useItems({ limit: 1000 });
   const createSale = useCreateSale();
+
+  const itemsList = Array.isArray(itemsData?.data)
+    ? itemsData.data
+    : Array.isArray(itemsData)
+    ? itemsData
+    : [];
 
   const [cart, setCart] = useState<{ id: string; name: string; price: number; unit: string; qty: number; code?: string }[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -87,9 +93,9 @@ export default function POSPage() {
   }
 
   // Active POS Billing UI for Premium Users
-  const filteredItems = items.filter(
+  const filteredItems = itemsList.filter(
     (i: any) =>
-      i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      i.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (i.code && i.code.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
