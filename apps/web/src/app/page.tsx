@@ -152,7 +152,7 @@ export default function Home() {
         {/* =========================================================
             FEATURE GRID
         ========================================================= */}
-        <section className="py-16 px-6 max-w-7xl mx-auto border-t border-slate-800/80">
+        <section id="features" className="scroll-mt-20 py-16 px-6 max-w-7xl mx-auto border-t border-slate-800/80">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Sales */}
             <div className="p-6 rounded-2xl border border-slate-800 bg-slate-900/40 hover:border-slate-700 transition-all">
@@ -210,7 +210,7 @@ export default function Home() {
         {/* =========================================================
             PRICING & PLANS
         ========================================================= */}
-        <section className="py-20 px-6 max-w-7xl mx-auto border-t border-slate-800/80">
+        <section id="pricing" className="scroll-mt-20 py-20 px-6 max-w-7xl mx-auto border-t border-slate-800/80">
           {/* Pricing Header */}
           <div className="text-center mb-16">
             <span className="px-3.5 py-1.5 rounded-full bg-blue-500/10 text-blue-400 text-xs font-bold uppercase tracking-wider border border-blue-500/20 inline-flex items-center gap-1.5">
