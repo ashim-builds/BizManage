@@ -50,6 +50,7 @@ export const sidebarSections: NavSection[] = [
     ],
   },
   { name: 'Parties', href: '/parties', icon: Users, requiredFeature: 'AUTO_LEDGER' },
+  { name: 'Staff & Payroll', href: '/staff', icon: ShieldCheck, requiredFeature: 'AUTO_LEDGER' },
   { name: 'Inventory', href: '/inventory', icon: Package, requiredFeature: 'INVENTORY_TRACKING' },
   { name: 'Cash & Bank', href: '/accounts', icon: Wallet, requiredFeature: 'WALLET_SYNC' },
   { name: 'Expenses', href: '/expenses', icon: TrendingDown, requiredFeature: 'WALLET_SYNC' },
