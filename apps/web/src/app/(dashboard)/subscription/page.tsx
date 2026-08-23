@@ -349,28 +349,21 @@ export default function SubscriptionPage() {
       )}
 
       {/* Subscription Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:items-center">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:items-stretch">
         {[...packages]
-          .sort((a, b) => {
-            const getOrder = (pkg: SubscriptionPackage) => {
-              if (pkg.isDefault) return 0;
-              if (pkg.name.toLowerCase().includes('pro')) return 1;
-              return 2;
-            };
-            return getOrder(a) - getOrder(b);
-          })
+          .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
           .map((pkg) => {
             const isActive = selectedPlanId === pkg.id;
-            const isPopular = pkg.name.toLowerCase().includes('pro');
+            const isPopular = pkg.name.toLowerCase().includes('premium monthly') || pkg.name.toLowerCase().includes('pro');
 
             return (
               <div
                 key={pkg.id}
-                className={`relative p-6 sm:p-8 rounded-3xl border flex flex-col justify-between transition-all ${
+                className={`relative p-6 rounded-3xl border flex flex-col justify-between transition-all ${
                   isActive
                     ? 'bg-slate-900 border-emerald-500 ring-2 ring-emerald-500/20 shadow-xl'
                     : isPopular
-                    ? 'bg-gradient-to-b from-blue-950/80 to-slate-900 border-blue-500 ring-2 ring-blue-500/20 shadow-2xl shadow-blue-500/10 md:scale-105 md:z-10'
+                    ? 'bg-gradient-to-b from-blue-950/80 to-slate-900 border-blue-500 ring-2 ring-blue-500/20 shadow-2xl shadow-blue-500/10'
                     : 'bg-slate-900/50 border-slate-800'
                 }`}
               >
