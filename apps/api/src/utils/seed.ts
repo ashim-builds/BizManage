@@ -2,6 +2,8 @@ import { globalPrisma } from '@bizmanage/database';
 
 export async function seedDefaultPackages() {
   try {
+    const isProduction = process.env.NODE_ENV === 'production';
+
     const canonicalPlans = [
       {
         name: 'Free Starter',
@@ -80,29 +82,33 @@ export async function seedDefaultPackages() {
         isDefault: false,
         displayOrder: 4,
       },
-      {
-        name: 'Developer Testing Plan (Localhost)',
-        price: 0,
-        currency: 'NPR',
-        billingPeriod: 'MONTHLY' as const,
-        trialDays: 365,
-        features: JSON.stringify([
-          'COMPLETE_ACCOUNTING',
-          'INVENTORY_TRACKING',
-          'AUTO_LEDGER',
-          'WALLET_SYNC',
-          'E2E_ENCRYPTION',
-          'MULTI_USER_ROLES',
-          'ADVANCED_REPORTS',
-          'CUSTOM_BRANDING',
-          'POS_BILLING',
-          'BARCODE_PRINTING',
-          'PRIORITY_SUPPORT',
-        ]),
-        isActive: true,
-        isDefault: false,
-        displayOrder: 5,
-      },
+      ...(!isProduction
+        ? [
+            {
+              name: 'Developer Testing Plan (Localhost)',
+              price: 0,
+              currency: 'NPR',
+              billingPeriod: 'MONTHLY' as const,
+              trialDays: 365,
+              features: JSON.stringify([
+                'COMPLETE_ACCOUNTING',
+                'INVENTORY_TRACKING',
+                'AUTO_LEDGER',
+                'WALLET_SYNC',
+                'E2E_ENCRYPTION',
+                'MULTI_USER_ROLES',
+                'ADVANCED_REPORTS',
+                'CUSTOM_BRANDING',
+                'POS_BILLING',
+                'BARCODE_PRINTING',
+                'PRIORITY_SUPPORT',
+              ]),
+              isActive: true,
+              isDefault: false,
+              displayOrder: 5,
+            },
+          ]
+        : []),
     ];
 
     const seededPackageIds: string[] = [];

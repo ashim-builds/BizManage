@@ -350,7 +350,14 @@ export default function SubscriptionPage() {
 
       {/* Subscription Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:items-stretch">
-        {[...packages]
+        {packages
+          .filter((pkg) => {
+            const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+            if (pkg.name.toLowerCase().includes('developer testing') || pkg.name.toLowerCase().includes('localhost')) {
+              return isLocalhost;
+            }
+            return true;
+          })
           .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
           .map((pkg) => {
             const isActive = selectedPlanId === pkg.id;
