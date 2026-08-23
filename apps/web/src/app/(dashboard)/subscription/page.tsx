@@ -501,7 +501,7 @@ export default function SubscriptionPage() {
                       : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
                   }`}
                 >
-                  {isPremium && <span>⭐</span>}
+                  {isPremium && <Crown className="w-3.5 h-3.5 text-amber-400" />}
                   {pkg.name} ({pkg.currency} {pkg.price})
                 </button>
               );

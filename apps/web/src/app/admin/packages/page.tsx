@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
-import { Package, Plus, Edit2, Trash2, CheckCircle2, XCircle, RotateCcw } from 'lucide-react';
+import { Package, Plus, Edit2, Trash2, CheckCircle2, XCircle, RotateCcw, Crown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ModalPortal } from '@/components/ui/ModalPortal';
 import { AVAILABLE_FEATURES } from '@/lib/constants';
@@ -363,9 +363,9 @@ export default function AdminPackagesPage() {
                     <button
                       type="button"
                       onClick={applyPremiumPreset}
-                      className="px-2 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[11px] font-bold transition-all"
+                      className="px-2 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[11px] font-bold transition-all flex items-center gap-1"
                     >
-                      ⭐ Premium Preset
+                      <Crown className="w-3.5 h-3.5 text-amber-400" /> Premium Preset
                     </button>
                     <button
                       type="button"

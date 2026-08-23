@@ -26,6 +26,10 @@ import {
   Sparkles,
   ArrowRight,
   Calculator,
+  Banknote,
+  Landmark,
+  ShoppingCart,
+  FileText,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -194,12 +198,12 @@ export default function POSPage() {
       if (targetItem) {
         addToCart(targetItem);
         setSearchTerm('');
-        toast.success(`Added ${targetItem.name}`, { duration: 1500, icon: '🛒' });
+        toast.success(`Added ${targetItem.name}`, { duration: 1500 });
       } else if (filteredItems.length > 0) {
         // Add the first filtered item
         addToCart(filteredItems[0]);
         setSearchTerm('');
-        toast.success(`Added ${filteredItems[0].name}`, { duration: 1500, icon: '🛒' });
+        toast.success(`Added ${filteredItems[0].name}`, { duration: 1500 });
       } else {
         toast.error(`No product found matching "${searchTerm}"`);
       }
@@ -338,7 +342,7 @@ export default function POSPage() {
                 type="button"
                 onClick={() => {
                   addToCart(item);
-                  toast.success(`Added ${item.name}`, { duration: 1200, icon: '🛒' });
+                  toast.success(`Added ${item.name}`, { duration: 1200 });
                 }}
                 className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 hover:bg-slate-850 text-left transition-all flex flex-col justify-between group active:scale-95 shadow-sm"
               >
@@ -437,23 +441,23 @@ export default function POSPage() {
             <button
               type="button"
               onClick={() => setPaymentMode('CASH')}
-              className={`py-1.5 rounded-lg transition-all ${paymentMode === 'CASH' ? 'bg-amber-500 text-slate-950 font-extrabold shadow' : 'hover:text-white'}`}
+              className={`py-1.5 rounded-lg transition-all flex items-center justify-center gap-1.5 ${paymentMode === 'CASH' ? 'bg-amber-500 text-slate-950 font-extrabold shadow' : 'hover:text-white'}`}
             >
-              💵 Cash
+              <Banknote className="w-3.5 h-3.5" /> Cash
             </button>
             <button
               type="button"
               onClick={() => setPaymentMode('ONLINE')}
-              className={`py-1.5 rounded-lg transition-all ${paymentMode === 'ONLINE' ? 'bg-amber-500 text-slate-950 font-extrabold shadow' : 'hover:text-white'}`}
+              className={`py-1.5 rounded-lg transition-all flex items-center justify-center gap-1.5 ${paymentMode === 'ONLINE' ? 'bg-amber-500 text-slate-950 font-extrabold shadow' : 'hover:text-white'}`}
             >
-              📲 QR / Online
+              <QrCode className="w-3.5 h-3.5" /> QR / Online
             </button>
             <button
               type="button"
               onClick={() => setPaymentMode('BANK')}
-              className={`py-1.5 rounded-lg transition-all ${paymentMode === 'BANK' ? 'bg-amber-500 text-slate-950 font-extrabold shadow' : 'hover:text-white'}`}
+              className={`py-1.5 rounded-lg transition-all flex items-center justify-center gap-1.5 ${paymentMode === 'BANK' ? 'bg-amber-500 text-slate-950 font-extrabold shadow' : 'hover:text-white'}`}
             >
-              🏦 Bank
+              <Landmark className="w-3.5 h-3.5" /> Bank
             </button>
           </div>
 
