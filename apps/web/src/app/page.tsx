@@ -105,13 +105,6 @@ export default function Home() {
 
           {/* Hero Actions */}
           <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4 w-full sm:w-auto">
-            <Link
-              href="/download"
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold transition-all text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg shadow-amber-500/5 active:scale-95"
-            >
-              <Download className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
-              Download Desktop App (.EXE)
-            </Link>
 
             {!authLoading && user ? (
               <Link
