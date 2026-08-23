@@ -134,12 +134,16 @@ export default function POSPage() {
     );
   }
 
-  // Active POS Billing UI for Premium Users
-  const filteredItems = itemsList.filter(
-    (i: any) =>
-      i.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (i.code && i.code.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Active POS Billing UI for Premium Users with Multi-Word Tokenized Fuzzy Search
+  const filteredItems = itemsList.filter((i: any) => {
+    const rawTerm = searchTerm.trim().toLowerCase();
+    if (!rawTerm) return true;
+
+    const queryTokens = rawTerm.split(/\s+/).filter(Boolean);
+    const targetText = `${i.name || ''} ${i.code || ''} ${i.category?.name || ''}`.toLowerCase();
+
+    return queryTokens.every((token) => targetText.includes(token));
+  });
 
   const addToCart = (item: any) => {
     setCart((prev) => {
