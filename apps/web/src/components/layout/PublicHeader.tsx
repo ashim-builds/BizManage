@@ -12,12 +12,11 @@ import {
   FileText,
   Shield,
   Sparkles,
-  Download,
 } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 
 interface PublicHeaderProps {
-  activePage?: "home" | "privacy" | "terms" | "security" | "download";
+  activePage?: "home" | "privacy" | "terms" | "security";
 }
 
 export function PublicHeader({ activePage }: PublicHeaderProps) {
@@ -59,17 +58,6 @@ export function PublicHeader({ activePage }: PublicHeaderProps) {
             className="px-3 py-1.5 rounded-lg hover:text-white hover:bg-slate-800/50 transition-colors"
           >
             Pricing
-          </Link>
-          <Link
-            href="/download"
-            className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
-              activePage === "download"
-                ? "text-blue-400 bg-blue-500/10 font-semibold border border-blue-500/20"
-                : "text-amber-300 hover:text-white hover:bg-amber-500/10 font-bold border border-amber-500/30 bg-amber-500/5"
-            }`}
-          >
-            <Download className="w-3.5 h-3.5 text-amber-400" />
-            Download App (.EXE)
           </Link>
         </nav>
 

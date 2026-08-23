@@ -141,11 +141,6 @@ export function PublicFooter() {
             </h4>
             <ul className="space-y-2.5 text-xs text-slate-400">
               <li>
-                <Link href="/download" className="hover:text-amber-300 transition-colors flex items-center gap-1 text-amber-400 font-bold group">
-                  <span className="group-hover:translate-x-0.5 transition-transform">🖥️ Download Desktop App (.EXE)</span>
-                </Link>
-              </li>
-              <li>
                 <Link href="/transactions/pos" className="hover:text-white transition-colors flex items-center gap-1 group">
                   <span className="group-hover:translate-x-0.5 transition-transform">POS Quick Billing & Thermal</span>
                 </Link>
