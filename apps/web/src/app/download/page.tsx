@@ -57,13 +57,17 @@ export default function DownloadPage() {
                 </div>
 
                 <a
-                  href="/downloads/BizManage-Desktop-Setup.exe"
-                  download="BizManage-Desktop-Setup.exe"
+                  href="/downloads/BizManage-Desktop-Windows-x64.zip"
+                  download="BizManage-Desktop-Windows-x64.zip"
                   className="w-full py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm flex items-center justify-center gap-2.5 transition-all shadow-xl shadow-blue-600/30 active:scale-95 group"
                 >
                   <Download className="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" />
-                  Download for Windows (.EXE)
+                  Download for Windows (.ZIP Package)
                 </a>
+
+                <p className="text-[11px] text-slate-400 text-center leading-relaxed">
+                  💡 Includes <code>ffmpeg.dll</code> &amp; all runtime files. Unzip folder &amp; click <code>BizManage Desktop.exe</code> to run.
+                </p>
 
                 <div className="flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-800/80 pt-3">
                   <span>File Size: <strong>163 MB</strong></span>
