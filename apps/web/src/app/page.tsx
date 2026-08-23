@@ -20,6 +20,7 @@ import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { AVAILABLE_FEATURES } from "@/lib/constants";
 import { PublicFooter } from "@/components/layout/PublicFooter";
+import { PublicHeader } from "@/components/layout/PublicHeader";
 
 interface SubscriptionPackage {
   id: string;
@@ -72,87 +73,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-slate-950 text-white selection:bg-blue-500 selection:text-white flex flex-col justify-between">
       <div>
-        {/* =========================================================
-            HEADER
-        ========================================================= */}
-        <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-            {/* Logo */}
-            <Link
-              href="/"
-              onClick={(e) => {
-                e.preventDefault();
-                window.scrollTo({
-                  top: 0,
-                  behavior: "smooth",
-                });
-              }}
-              className="flex items-center space-x-2 sm:space-x-3 cursor-pointer group shrink-0"
-            >
-              <img
-                src="/logo-transparent.png"
-                alt="BizManage Logo"
-                className="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-lg group-hover:scale-105 transition-transform"
-              />
-
-              <span className="text-lg sm:text-xl font-bold tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent group-hover:opacity-90 transition-opacity">
-                BizManage
-              </span>
-            </Link>
-
-            {/* Header Actions */}
-            <div className="flex items-center space-x-2 sm:space-x-4 shrink-0">
-              {!authLoading && user ? (
-                <div className="flex items-center space-x-2 sm:space-x-4">
-                  {/* Welcome Message */}
-                  <span className="text-xs sm:text-sm text-slate-300 hidden md:inline">
-                    Welcome,{" "}
-                    <strong className="text-white">
-                      {user.name}
-                    </strong>
-                  </span>
-
-                  {/* Dashboard */}
-                  <Link
-                    href={dashboardHref}
-                    className="text-xs sm:text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-lg shadow-md shadow-blue-600/20 transition-all flex items-center gap-1.5 sm:gap-2"
-                  >
-                    <LayoutDashboard className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-
-                    <span className="hidden sm:inline">
-                      Go to {dashboardLabel}
-                    </span>
-
-                    <span className="sm:hidden">
-                      Dashboard
-                    </span>
-
-                    <ArrowRight className="hidden sm:inline w-4 h-4" />
-                  </Link>
-                </div>
-              ) : (
-                <>
-                  {/* Sign In */}
-                  <Link
-                    href="/login"
-                    className="text-xs sm:text-sm font-medium text-slate-300 hover:text-white transition-colors px-2 py-1.5 sm:px-4 sm:py-2"
-                  >
-                    Sign In
-                  </Link>
-
-                  {/* Get Started */}
-                  <Link
-                    href="/register"
-                    className="text-xs sm:text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-lg shadow-md shadow-blue-600/20 transition-all flex items-center gap-1.5 sm:gap-2"
-                  >
-                    Get Started
-                    <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-        </header>
+        <PublicHeader activePage="home" />
 
         {/* =========================================================
             HERO SECTION
