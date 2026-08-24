@@ -26,8 +26,7 @@ interface CartItem {
   id: string;
   name: string;
   unit: string;
-  price: number | null;
-  showPrice: boolean;
+  price: number;
   quantity: number;
 }
 
@@ -90,8 +89,7 @@ export default function PublicStorefrontPage() {
           id: product.id,
           name: product.name,
           unit: product.unit,
-          price: product.price,
-          showPrice: product.showPrice,
+          price: product.price || 0,
           quantity: 1,
         },
       ];
@@ -114,8 +112,7 @@ export default function PublicStorefrontPage() {
   };
 
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const cartTotalPrice = cart.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
-  const hasHiddenPriceItems = cart.some((item) => !item.showPrice);
+  const cartTotalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   const handleWhatsAppCheckout = () => {
     if (cart.length === 0) return;
@@ -125,17 +122,16 @@ export default function PublicStorefrontPage() {
       return;
     }
     const cleanPhone = phone.replace(/[^0-9]/g, '');
-    let msg = `*New Order Inquiry from Website*\n`;
+    let msg = `*New Order from Website*\n`;
     if (customerName) msg += `*Customer:* ${customerName}\n`;
     if (customerPhone) msg += `*Phone:* ${customerPhone}\n`;
     if (deliveryAddress) msg += `*Address:* ${deliveryAddress}\n`;
     msg += `\n*Items Ordered:*\n`;
     cart.forEach((item, idx) => {
-      const priceStr = item.showPrice ? `Rs. ${item.price}` : 'Price on Request';
-      msg += `${idx + 1}. ${item.name} x ${item.quantity} ${item.unit} (${priceStr})\n`;
+      msg += `${idx + 1}. ${item.name} x ${item.quantity} ${item.unit} (Rs. ${item.price})\n`;
     });
-    if (!hasHiddenPriceItems && cartTotalPrice > 0) {
-      msg += `\n*Total Estimated Amount:* Rs. ${cartTotalPrice.toLocaleString()}`;
+    if (cartTotalPrice > 0) {
+      msg += `\n*Total Amount:* Rs. ${cartTotalPrice.toLocaleString()}`;
     }
     if (notes) msg += `\n*Notes:* ${notes}`;
 
@@ -372,40 +368,19 @@ export default function PublicStorefrontPage() {
                   <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
                     {/* Price Visibility Display */}
                     <div>
-                      {product.showPrice && product.price !== null ? (
-                        <div>
-                          <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Price</span>
-                          <span className="text-sm font-bold font-mono text-emerald-400">
-                            Rs. {product.price.toLocaleString()}
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[11px] font-semibold">
-                          <EyeOff className="w-3.5 h-3.5 shrink-0" />
-                          Price on Request
-                        </div>
-                      )}
+                      <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Price</span>
+                      <span className="text-sm font-bold font-mono text-emerald-400">
+                        Rs. {(product.price || 0).toLocaleString()}
+                      </span>
                     </div>
 
                     <button
                       type="button"
                       disabled={!inStock}
                       onClick={() => addToCart(product)}
-                      className={`px-3.5 py-2 rounded-xl text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 shrink-0 ${
-                        !product.showPrice
-                          ? 'bg-amber-600 hover:bg-amber-500'
-                          : 'bg-blue-600 hover:bg-blue-500'
-                      } disabled:opacity-40`}
+                      className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 shrink-0 disabled:opacity-40"
                     >
-                      {!product.showPrice ? (
-                        <>
-                          <MessageSquare className="w-3.5 h-3.5" /> Inquire
-                        </>
-                      ) : (
-                        <>
-                          <Plus className="w-3.5 h-3.5" /> Add
-                        </>
-                      )}
+                      <Plus className="w-3.5 h-3.5" /> Add
                     </button>
                   </div>
                 </div>
@@ -447,7 +422,7 @@ export default function PublicStorefrontPage() {
                       <div>
                         <h4 className="text-xs font-bold text-white line-clamp-1">{item.name}</h4>
                         <p className="text-[10px] text-slate-400">
-                          {item.showPrice ? `Rs. ${item.price?.toLocaleString()} / ${item.unit}` : 'Price on Request'}
+                          Rs. {item.price.toLocaleString()} / {item.unit}
                         </p>
                       </div>
 
@@ -528,9 +503,9 @@ export default function PublicStorefrontPage() {
             {/* Bottom Checkout Actions */}
             {cart.length > 0 && (
               <div className="pt-4 border-t border-slate-800 space-y-3">
-                {!hasHiddenPriceItems && cartTotalPrice > 0 && (
+                {cartTotalPrice > 0 && (
                   <div className="flex items-center justify-between text-xs font-bold">
-                    <span className="text-slate-400">Total Estimated Price:</span>
+                    <span className="text-slate-400">Total Price:</span>
                     <span className="text-sm font-mono text-emerald-400">Rs. {cartTotalPrice.toLocaleString()}</span>
                   </div>
                 )}

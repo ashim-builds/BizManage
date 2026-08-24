@@ -258,30 +258,6 @@ export default function StorefrontSettingsPage() {
               </div>
             </div>
 
-            {/* PRICE VISIBILITY CONTROL */}
-            <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    {showStorePrices ? <Eye className="w-5 h-5 text-emerald-400" /> : <EyeOff className="w-5 h-5 text-amber-400" />}
-                    Product Price Visibility
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Show numerical prices to visitors or display "Price on Request" badges for custom quote inquiries.
-                  </p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={showStorePrices}
-                    onChange={(e) => setShowStorePrices(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600" />
-                </label>
-              </div>
-            </div>
-
             {/* Store Information */}
             <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
               <h3 className="text-base font-bold text-white">Store Information & Contact</h3>

@@ -279,9 +279,8 @@ export async function storefrontRoutes(app: FastifyInstance) {
         orderBy: { name: 'asc' },
       });
 
-      // Format products with price show/hide rules
+      // Format products with transparent selling price
       const formattedProducts = rawItems.map((item) => {
-        const showPrice = item.showPriceOnStore !== null ? item.showPriceOnStore : setting.showStorePrices;
         return {
           id: item.id,
           name: item.name,
@@ -291,9 +290,7 @@ export async function storefrontRoutes(app: FastifyInstance) {
           category: item.category,
           currentStock: Number(item.currentStock),
           inStock: item.type === 'SERVICE' || Number(item.currentStock) > 0,
-          showPrice,
-          priceHidden: !showPrice,
-          price: showPrice ? Number(item.salePrice) : null,
+          price: Number(item.salePrice),
           description: item.storeDescription || null,
         };
       });
@@ -312,7 +309,6 @@ export async function storefrontRoutes(app: FastifyInstance) {
             address: setting.business.address || '',
             whatsappNumber: setting.whatsappNumber || setting.business.phone || '',
             currency: setting.business.currency || 'NPR',
-            showStorePrices: setting.showStorePrices,
             enableOnlineOrders: setting.enableOnlineOrders,
           },
           categories,
