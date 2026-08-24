@@ -1,0 +1,305 @@
+import { FastifyInstance } from 'fastify';
+import { requireBusinessTenant, authenticateUser } from '../../middleware/auth.js';
+
+export async function storefrontRoutes(app: FastifyInstance) {
+  // ── Authenticated Routes (Business Owner Portal) ───────────────────────────
+
+  // GET /api/v1/storefront/settings
+  app.get('/settings', { preHandler: [authenticateUser, requireBusinessTenant] }, async (request, reply) => {
+    const businessId = (request as any).businessId!;
+    const setting = await request.db!.businessSetting.findUnique({
+      where: { businessId },
+    });
+
+    const business = await request.db!.business.findUnique({
+      where: { id: businessId },
+      select: { name: true, phone: true, email: true, logoUrl: true },
+    });
+
+    return reply.send({
+      success: true,
+      data: {
+        enableStorefront: setting?.enableStorefront ?? false,
+        storeSlug: setting?.storeSlug ?? '',
+        showStorePrices: setting?.showStorePrices ?? true,
+        storeTitle: setting?.storeTitle || business?.name || '',
+        storeDescription: setting?.storeDescription || '',
+        storeBannerUrl: setting?.storeBannerUrl || '',
+        whatsappNumber: setting?.whatsappNumber || business?.phone || '',
+        enableOnlineOrders: setting?.enableOnlineOrders ?? true,
+        businessName: business?.name || '',
+        businessLogo: business?.logoUrl || '',
+      },
+    });
+  });
+
+  // PUT /api/v1/storefront/settings
+  app.put('/settings', { preHandler: [authenticateUser, requireBusinessTenant] }, async (request, reply) => {
+    const businessId = (request as any).businessId!;
+    const body = request.body as any;
+
+    const {
+      enableStorefront,
+      storeSlug,
+      showStorePrices,
+      storeTitle,
+      storeDescription,
+      storeBannerUrl,
+      whatsappNumber,
+      enableOnlineOrders,
+    } = body;
+
+    // Validate slug if provided
+    let cleanSlug = storeSlug ? String(storeSlug).trim().toLowerCase().replace(/[^a-z0-9-]/g, '') : null;
+
+    if (cleanSlug) {
+      const existing = await request.db!.businessSetting.findFirst({
+        where: {
+          storeSlug: cleanSlug,
+          businessId: { not: businessId },
+        },
+      });
+
+      if (existing) {
+        return reply.status(400).send({
+          success: false,
+          error: 'SLUG_TAKEN',
+          message: `Store URL handle "${cleanSlug}" is already taken by another business. Please choose a different handle.`,
+        });
+      }
+    }
+
+    const updated = await request.db!.businessSetting.upsert({
+      where: { businessId },
+      create: {
+        businessId,
+        enableStorefront: Boolean(enableStorefront),
+        storeSlug: cleanSlug,
+        showStorePrices: showStorePrices !== undefined ? Boolean(showStorePrices) : true,
+        storeTitle: storeTitle ? String(storeTitle).trim() : null,
+        storeDescription: storeDescription ? String(storeDescription).trim() : null,
+        storeBannerUrl: storeBannerUrl || null,
+        whatsappNumber: whatsappNumber ? String(whatsappNumber).trim() : null,
+        enableOnlineOrders: enableOnlineOrders !== undefined ? Boolean(enableOnlineOrders) : true,
+      },
+      update: {
+        enableStorefront: enableStorefront !== undefined ? Boolean(enableStorefront) : undefined,
+        storeSlug: cleanSlug !== undefined ? cleanSlug : undefined,
+        showStorePrices: showStorePrices !== undefined ? Boolean(showStorePrices) : undefined,
+        storeTitle: storeTitle !== undefined ? (storeTitle ? String(storeTitle).trim() : null) : undefined,
+        storeDescription: storeDescription !== undefined ? (storeDescription ? String(storeDescription).trim() : null) : undefined,
+        storeBannerUrl: storeBannerUrl !== undefined ? (storeBannerUrl || null) : undefined,
+        whatsappNumber: whatsappNumber !== undefined ? (whatsappNumber ? String(whatsappNumber).trim() : null) : undefined,
+        enableOnlineOrders: enableOnlineOrders !== undefined ? Boolean(enableOnlineOrders) : undefined,
+      },
+    });
+
+    return reply.send({
+      success: true,
+      data: updated,
+      message: 'Storefront settings updated successfully',
+    });
+  });
+
+  // ── Public Routes (Customer Facing) ────────────────────────────────────────
+
+  // GET /api/v1/storefront/public/:storeSlug
+  app.get('/public/:storeSlug', async (request, reply) => {
+    const { storeSlug } = request.params as { storeSlug: string };
+    const cleanSlug = String(storeSlug).trim().toLowerCase();
+
+    const setting = await request.db!.businessSetting.findFirst({
+      where: { storeSlug: cleanSlug, enableStorefront: true },
+      include: {
+        business: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            email: true,
+            address: true,
+            logoUrl: true,
+            currency: true,
+          },
+        },
+      },
+    });
+
+    if (!setting || !setting.business) {
+      return reply.status(404).send({
+        success: false,
+        error: 'STORE_NOT_FOUND',
+        message: 'Online store not found or currently unavailable',
+      });
+    }
+
+    const businessId = setting.businessId;
+
+    // Fetch published categories & items
+    const categories = await request.db!.itemCategory.findMany({
+      where: { businessId },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    });
+
+    const rawItems = await request.db!.item.findMany({
+      where: { businessId, isPublishedToStore: true },
+      include: { category: { select: { id: true, name: true } } },
+      orderBy: { name: 'asc' },
+    });
+
+    // Format products with price show/hide rules
+    const formattedProducts = rawItems.map((item) => {
+      const showPrice = item.showPriceOnStore !== null ? item.showPriceOnStore : setting.showStorePrices;
+      return {
+        id: item.id,
+        name: item.name,
+        code: item.code,
+        type: item.type,
+        unit: item.unit,
+        category: item.category,
+        currentStock: Number(item.currentStock),
+        inStock: item.type === 'SERVICE' || Number(item.currentStock) > 0,
+        showPrice,
+        priceHidden: !showPrice,
+        price: showPrice ? Number(item.salePrice) : null,
+        description: item.storeDescription || null,
+      };
+    });
+
+    return reply.send({
+      success: true,
+      data: {
+        store: {
+          id: setting.business.id,
+          name: setting.storeTitle || setting.business.name,
+          description: setting.storeDescription || '',
+          logoUrl: setting.business.logoUrl || null,
+          bannerUrl: setting.storeBannerUrl || null,
+          phone: setting.business.phone || '',
+          email: setting.business.email || '',
+          address: setting.business.address || '',
+          whatsappNumber: setting.whatsappNumber || setting.business.phone || '',
+          currency: setting.business.currency || 'NPR',
+          showStorePrices: setting.showStorePrices,
+          enableOnlineOrders: setting.enableOnlineOrders,
+        },
+        categories,
+        products: formattedProducts,
+      },
+    });
+  });
+
+  // POST /api/v1/storefront/public/:storeSlug/orders
+  app.post('/public/:storeSlug/orders', async (request, reply) => {
+    const { storeSlug } = request.params as { storeSlug: string };
+    const body = request.body as any;
+
+    const cleanSlug = String(storeSlug).trim().toLowerCase();
+    const setting = await request.db!.businessSetting.findFirst({
+      where: { storeSlug: cleanSlug, enableStorefront: true },
+      include: { business: true },
+    });
+
+    if (!setting || !setting.business) {
+      return reply.status(404).send({
+        success: false,
+        error: 'STORE_NOT_FOUND',
+        message: 'Store not found',
+      });
+    }
+
+    const { customerName, customerPhone, deliveryAddress, notes, items } = body;
+    if (!customerName || !customerPhone || !Array.isArray(items) || items.length === 0) {
+      return reply.status(400).send({
+        success: false,
+        error: 'INVALID_ORDER',
+        message: 'Customer name, phone, and items are required',
+      });
+    }
+
+    const businessId = setting.businessId;
+
+    // Create or find customer party
+    let party = await request.db!.party.findFirst({
+      where: { businessId, phone: String(customerPhone).trim() },
+    });
+
+    if (!party) {
+      party = await request.db!.party.create({
+        data: {
+          businessId,
+          name: String(customerName).trim(),
+          phone: String(customerPhone).trim(),
+          type: 'CUSTOMER',
+          address: deliveryAddress ? String(deliveryAddress).trim() : null,
+        },
+      });
+    }
+
+    // Build sale items & calculate total
+    let totalAmt = 0;
+    const saleItemsData: any[] = [];
+
+    for (const line of items) {
+      const dbItem = await request.db!.item.findFirst({
+        where: { id: line.itemId, businessId },
+      });
+      if (dbItem) {
+        const qty = Math.max(1, Number(line.quantity || 1));
+        const price = Number(dbItem.salePrice || 0);
+        const lineTot = qty * price;
+        totalAmt += lineTot;
+        saleItemsData.push({
+          itemId: dbItem.id,
+          quantity: qty,
+          unitPrice: price,
+          discount: 0,
+          taxAmount: 0,
+          total: lineTot,
+        });
+      }
+    }
+
+    // Generate online invoice number
+    const count = await request.db!.sale.count({ where: { businessId } });
+    const invoiceNumber = `WEB-${String(count + 1).padStart(5, '0')}`;
+
+    // Create Sales record (Status: UNPAID for online order lead)
+    const order = await request.db!.sale.create({
+      data: {
+        businessId,
+        invoiceNumber,
+        partyId: party.id,
+        date: new Date(),
+        subTotal: totalAmt,
+        discountPercent: 0,
+        discount: 0,
+        taxAmount: 0,
+        totalAmount: totalAmt,
+        paidAmount: 0,
+        dueAmount: totalAmt,
+        status: 'UNPAID',
+        notes: `[Online Storefront Order] ${notes || ''}`.trim(),
+        items: {
+          create: saleItemsData,
+        },
+      },
+      include: {
+        party: true,
+        items: { include: { item: true } },
+      },
+    });
+
+    return reply.send({
+      success: true,
+      data: {
+        orderId: order.id,
+        invoiceNumber: order.invoiceNumber,
+        totalAmount: Number(order.totalAmount),
+        status: order.status,
+      },
+      message: 'Online order submitted successfully!',
+    });
+  });
+}

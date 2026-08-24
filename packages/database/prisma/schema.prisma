@@ -1,7 +1,6 @@
 datasource db {
   provider = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -235,6 +234,17 @@ model BusinessSetting {
   saleReturnPrefix     String   @default("CN-")
   purchaseReturnPrefix String   @default("DN-")
   lowStockAlert        Boolean  @default(true)
+  
+  // Storefront Settings
+  enableStorefront     Boolean  @default(false)
+  storeSlug            String?  @unique
+  showStorePrices      Boolean  @default(true)
+  storeTitle           String?
+  storeDescription     String?
+  storeBannerUrl       String?
+  whatsappNumber       String?
+  enableOnlineOrders   Boolean  @default(true)
+  
   business             Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 }
 
@@ -306,6 +316,12 @@ model Item {
   openingStock        Decimal              @default(0) @db.Decimal(12, 3)
   currentStock        Decimal              @default(0) @db.Decimal(12, 3)
   minStockAlert       Decimal              @default(0) @db.Decimal(12, 3)
+  
+  // Storefront fields
+  isPublishedToStore  Boolean              @default(true)
+  showPriceOnStore    Boolean?
+  storeDescription    String?
+  
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   business            Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)

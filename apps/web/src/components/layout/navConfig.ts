@@ -17,6 +17,7 @@ import {
   BookOpen,
   ShieldCheck,
   Zap,
+  Globe,
 } from 'lucide-react';
 
 export interface NavGroupItem {
@@ -52,6 +53,7 @@ export const sidebarSections: NavSection[] = [
   { name: 'Parties', href: '/parties', icon: Users, requiredFeature: 'AUTO_LEDGER' },
   { name: 'Staff & Payroll', href: '/staff', icon: ShieldCheck, requiredFeature: 'STAFF_PAYROLL' },
   { name: 'Inventory', href: '/inventory', icon: Package, requiredFeature: 'INVENTORY_TRACKING' },
+  { name: 'Online Website', href: '/storefront', icon: Globe },
   { name: 'Cash & Bank', href: '/accounts', icon: Wallet, requiredFeature: 'WALLET_SYNC' },
   { name: 'Expenses', href: '/expenses', icon: TrendingDown, requiredFeature: 'WALLET_SYNC' },
   { name: 'Other Income', href: '/income', icon: TrendingUp, requiredFeature: 'WALLET_SYNC' },

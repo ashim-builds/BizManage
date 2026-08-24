@@ -24,6 +24,7 @@ import { transferRoutes } from './modules/transfer/transfer.routes.js';
 import { adminRoutes } from './modules/admin/admin.routes.js';
 import { publicPackageRoutes } from './modules/package/package.routes.js';
 import { auditRoutes } from './modules/audit/audit.routes.js';
+import { storefrontRoutes } from './modules/storefront/storefront.routes.js';
 import { globalPrisma as prisma } from '@bizmanage/database';
 
 const isProduction = env.NODE_ENV === 'production';
@@ -168,6 +169,7 @@ export function buildApp() {
   app.register(adminRoutes,    { prefix: '/api/v1/admin' });
   app.register(publicPackageRoutes, { prefix: '/api/v1/packages' });
   app.register(auditRoutes,    { prefix: '/api/v1/audit-logs' });
+  app.register(storefrontRoutes, { prefix: '/api/v1/storefront' });
 
   return app;
 }
