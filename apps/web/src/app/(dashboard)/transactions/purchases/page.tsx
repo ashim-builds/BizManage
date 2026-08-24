@@ -596,6 +596,13 @@ export default function PurchasesPage() {
                     const selItemId = form.watch(`items.${idx}.itemId`);
                     const selItem = availableItems.find((i: any) => i.id === selItemId);
 
+                    const lineQty = Number(form.watch(`items.${idx}.quantity`) || 0);
+                    const linePrice = Number(form.watch(`items.${idx}.unitPrice`) || 0);
+                    const lineDiscPercent = Number(form.watch(`items.${idx}.discount`) || 0);
+                    const lineSubtotal = lineQty * linePrice;
+                    const lineDiscAmt = (lineSubtotal * lineDiscPercent) / 100;
+                    const computedLineTotal = Math.max(0, lineSubtotal - lineDiscAmt);
+
                     return (
                       <div
                         key={field.id}
@@ -683,7 +690,7 @@ export default function PurchasesPage() {
                         {/* Line Total */}
                         <div className="col-span-8 md:col-span-2 text-left md:text-right font-mono font-bold text-white text-xs pt-1 md:pt-0">
                           <span className="block md:hidden text-[10px] text-slate-400 font-semibold mb-0.5">Line Total</span>
-                          Rs. {formatCurrency(totals.items[idx]?.total || 0)}
+                          Rs. {formatCurrency(totals.items[idx]?.total ?? computedLineTotal)}
                         </div>
 
                         {/* Remove */}

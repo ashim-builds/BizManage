@@ -790,7 +790,7 @@ export default function SalesPage() {
 
                         <div className="col-span-8 md:col-span-1 text-left md:text-right font-mono font-bold text-white text-xs pt-1 md:pt-0">
                           <span className="block md:hidden text-[10px] text-slate-400 font-semibold mb-0.5">Line Total</span>
-                          Rs. {formatCurrency(totals.items[idx]?.total || 0)}
+                          Rs. {formatCurrency(totals.items[idx]?.total ?? lineTotal)}
                         </div>
 
                         <div className="col-span-4 md:col-span-1 text-right flex items-center justify-end">

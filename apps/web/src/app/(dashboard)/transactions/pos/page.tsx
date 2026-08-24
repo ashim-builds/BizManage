@@ -32,8 +32,10 @@ import {
   Landmark,
   ShoppingCart,
   FileText,
+  Camera,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { CameraScannerModal } from '@/components/common/CameraScannerModal';
 
 export default function POSPage() {
   const { user } = useAuth();
@@ -64,6 +66,27 @@ export default function POSPage() {
   const [customerName, setCustomerName] = useState('Walk-in Customer');
   const [paymentMode, setPaymentMode] = useState<'CASH' | 'ONLINE' | 'BANK'>('CASH');
   const [amountReceived, setAmountReceived] = useState<number | ''>('');
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'scan' | 'cart'>('scan');
+  const [showFullCatalogMobile, setShowFullCatalogMobile] = useState(false);
+
+  const handleCameraScan = (scannedText: string) => {
+    const term = scannedText.trim().toLowerCase();
+    const matched = itemsList.find((i: any) => {
+      if (!i) return false;
+      const code = (i.code || '').toLowerCase();
+      const name = (i.name || '').toLowerCase();
+      return code === term || code.includes(term) || name === term;
+    });
+
+    if (matched) {
+      addToCart(matched);
+      toast.success(`Added ${matched.name}`, { duration: 1500 });
+    } else {
+      setSearchTerm(scannedText);
+      toast.error(`Scanned code: "${scannedText}". Search set.`, { duration: 2500 });
+    }
+  };
 
   // Receipt Modal State
   const [completedSale, setCompletedSale] = useState<{
@@ -338,159 +361,237 @@ export default function POSPage() {
     }
   };
 
+  const isSearching = searchTerm.trim().length > 0;
+  const shouldShowGrid = isSearching || showFullCatalogMobile;
+
   return (
-    <div className="min-h-[calc(100vh-6rem)] md:h-[calc(100vh-6rem)] flex flex-col md:flex-row gap-4 font-sans animate-in fade-in duration-300">
-      {/* Left Column: Product Search & Grid */}
-      <div className="flex-1 flex flex-col bg-slate-900 border border-slate-800 rounded-3xl p-4 overflow-hidden shadow-xl min-h-[350px]">
-        {/* Header & Barcode Scanner Input */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm">
-              <Zap className="w-5 h-5" />
+    <div className="space-y-4 font-sans animate-in fade-in duration-300">
+      {/* Mobile Mode Switcher Tabs (Scan vs Cart) */}
+      <div className="flex md:hidden items-center gap-1.5 p-1.5 rounded-2xl bg-slate-900 border border-slate-800 text-xs font-bold shadow-lg">
+        <button
+          type="button"
+          onClick={() => setMobileTab('scan')}
+          className={`flex-1 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all ${
+            mobileTab === 'scan' ? 'bg-amber-500 text-slate-950 font-extrabold shadow-md' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Zap className="w-4 h-4" /> 1. Scan & Search
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileTab('cart')}
+          className={`flex-1 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all ${
+            mobileTab === 'cart' ? 'bg-amber-500 text-slate-950 font-extrabold shadow-md' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <ShoppingBag className="w-4 h-4" /> 2. Cart ({cart.reduce((a, b) => a + b.qty, 0)}) · Rs. {subTotal.toLocaleString()}
+        </button>
+      </div>
+
+      <div className="min-h-[calc(100vh-8rem)] md:h-[calc(100vh-6rem)] flex flex-col md:flex-row gap-4">
+        {/* Left Column: Product Search & Scanner */}
+        <div className={`flex-1 flex-col bg-slate-900 border border-slate-800 rounded-3xl p-4 overflow-hidden shadow-xl min-h-[350px] ${mobileTab === 'scan' ? 'flex' : 'hidden md:flex'}`}>
+          {/* Header & Barcode Scanner Input */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm">
+                <Zap className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                  POS Counter Mode
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-extrabold uppercase">
+                    Scanner Ready
+                  </span>
+                </h2>
+                <p className="text-[11px] text-slate-400">Scan code or type name/SKU and press Enter</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                POS Counter Mode
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-extrabold uppercase">
-                  Scanner Active
-                </span>
-              </h2>
-              <p className="text-[11px] text-slate-400">Scan barcode or press Enter to add item directly</p>
+
+            {/* Input & Camera Scanner Button */}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="relative flex-1 sm:w-72">
+                <div className="absolute left-3 top-2.5 flex items-center text-amber-400">
+                  <QrCode className="w-4 h-4" />
+                </div>
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Scan QR / Barcode or type product (Enter)..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className="w-full pl-9 pr-14 py-2.5 rounded-xl bg-slate-950 border border-amber-500/40 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-inner placeholder:text-slate-500"
+                />
+                {searchTerm ? (
+                  <button
+                    type="button"
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-2.5 top-2.5 text-slate-400 hover:text-white"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                ) : (
+                  <div className="absolute right-2.5 top-2 text-[10px] font-mono font-extrabold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">
+                    SCAN
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsCameraOpen(true)}
+                title="Open Camera QR & Barcode Scanner"
+                className="px-3 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-extrabold transition-all shadow-md shadow-purple-600/20 flex items-center gap-1.5 shrink-0"
+              >
+                <Camera className="w-4 h-4" />
+                <span>Camera Scan</span>
+              </button>
             </div>
           </div>
 
-          {/* Search Input with Auto Barcode / QR Scanner focus */}
-          <div className="relative w-full sm:w-80">
-            <div className="absolute left-3 top-2.5 flex items-center text-amber-400">
-              <QrCode className="w-4 h-4" />
-            </div>
-            <input
-              ref={searchInputRef}
-              type="text"
-              placeholder="Scan QR / Barcode or Search (Enter to add)..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="w-full pl-9 pr-14 py-2 rounded-xl bg-slate-950 border border-amber-500/40 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-inner placeholder:text-slate-500"
-            />
-            {searchTerm ? (
-              <button
-                type="button"
-                onClick={() => setSearchTerm('')}
-                className="absolute right-2.5 top-2.5 text-slate-400 hover:text-white"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+          {/* Catalog Toggle Bar for Mobile / Compact Mode */}
+          <div className="mt-2.5 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between text-xs flex-wrap gap-2">
+            <span className="text-slate-400">
+              {isSearching ? (
+                <>Results for: <strong className="text-amber-400 font-mono">&quot;{searchTerm}&quot;</strong> ({filteredItems.length})</>
+              ) : (
+                <>Mode: <strong className="text-emerald-400 font-medium">{showFullCatalogMobile ? 'Full Grid Catalog' : 'Scan & Search Only'}</strong></>
+              )}
+            </span>
+
+            <button
+              type="button"
+              onClick={() => setShowFullCatalogMobile((v) => !v)}
+              className="text-[11px] font-bold text-amber-400 hover:text-amber-300 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20 transition-all"
+            >
+              {showFullCatalogMobile ? 'Hide Product Grid' : `Show All Products (${itemsList.length})`}
+            </button>
+          </div>
+
+          {/* Product View Section */}
+          <div className="flex-1 overflow-y-auto pt-3">
+            {loadingItems ? (
+              <div className="py-12 text-center text-xs text-slate-500">Loading inventory...</div>
+            ) : !shouldShowGrid ? (
+              /* Compact Scan-First Empty State for Mobile & Quick Counter Mode */
+              <div className="h-full flex flex-col items-center justify-center p-6 text-center space-y-4 border border-dashed border-slate-800 rounded-3xl bg-slate-950/40 my-auto">
+                <div className="w-16 h-16 rounded-3xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shadow-inner">
+                  <QrCode className="w-8 h-8" />
+                </div>
+                <div className="space-y-1.5 max-w-sm">
+                  <h3 className="text-sm font-bold text-white">Ready for Scanning & Quick Add</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Scan any product barcode/QR code via device camera or USB scanner, or type name/SKU and press Enter to instantly add to order.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsCameraOpen(true)}
+                    className="px-4 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-lg shadow-purple-600/20 flex items-center gap-2"
+                  >
+                    <Camera className="w-4 h-4" /> Open Device Camera Scanner
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowFullCatalogMobile(true)}
+                    className="px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700"
+                  >
+                    Browse All Products ({itemsList.length})
+                  </button>
+                </div>
+              </div>
+            ) : filteredItems.length === 0 ? (
+              <div className="py-12 text-center text-xs text-slate-500 space-y-2">
+                <QrCode className="w-8 h-8 text-slate-600 mx-auto" />
+                <p>No products found matching &quot;{searchTerm}&quot;</p>
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold rounded-lg"
+                >
+                  Clear Search
+                </button>
+              </div>
             ) : (
-              <div className="absolute right-2.5 top-2 text-[10px] font-mono font-extrabold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">
-                SCAN
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 content-start">
+                {filteredItems.map((item: any) => {
+                  const inCartItem = cart.find((c) => c.id === item.id);
+                  const inCartQty = inCartItem ? inCartItem.qty : 0;
+                  const totalStock = Number(item.currentStock ?? 0);
+                  const isService = item.type === 'SERVICE';
+                  const remainingStock = Math.max(0, totalStock - inCartQty);
+                  const isOutOfStock = !isService && remainingStock <= 0;
+
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        if (isOutOfStock && totalStock <= 0) {
+                          toast.error(`Out of stock! (${item.name})`);
+                          return;
+                        }
+                        addToCart(item);
+                        toast.success(`Added ${item.name}`, { duration: 1200 });
+                      }}
+                      className={`p-3.5 rounded-2xl bg-slate-950 border text-left transition-all flex flex-col justify-between group active:scale-95 shadow-sm min-h-[135px] relative ${
+                        inCartQty > 0
+                          ? 'border-amber-500/80 bg-amber-500/5 ring-1 ring-amber-500/30'
+                          : isOutOfStock
+                          ? 'border-rose-900/40 opacity-75 hover:border-rose-500/60'
+                          : 'border-slate-800/90 hover:border-amber-500/60 hover:bg-slate-850/80'
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-start justify-between gap-1">
+                          <p
+                            title={item.name}
+                            className="text-xs font-bold text-white group-hover:text-amber-300 break-words line-clamp-3 leading-snug"
+                          >
+                            {item.name}
+                          </p>
+                          {inCartQty > 0 && (
+                            <span className="px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 font-mono font-extrabold text-[10px] shrink-0 shadow">
+                              {inCartQty} in cart
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between text-[10px] gap-1 flex-wrap">
+                          {item.code && <span className="text-amber-400/80 font-mono truncate">SKU: {item.code}</span>}
+                          {!isService ? (
+                            <span
+                              className={`font-semibold font-mono ${
+                                isOutOfStock
+                                  ? 'text-rose-400 font-bold'
+                                  : remainingStock <= (item.minStockAlert || 5)
+                                  ? 'text-amber-400'
+                                  : 'text-slate-400'
+                              }`}
+                            >
+                              {isOutOfStock ? 'Out of Stock' : `Stock: ${remainingStock} ${item.unit || 'Pcs'}`}
+                            </span>
+                          ) : (
+                            <span className="text-purple-400 font-semibold">Service</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                        <span className="text-xs font-mono font-bold text-emerald-400">Rs. {Number(item.salePrice).toLocaleString()}</span>
+                        <span className="text-[10px] text-slate-400">{item.unit || 'Pcs'}</span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
         </div>
 
-        {/* Search Results Filter Banner */}
-        {searchTerm && (
-          <div className="mt-2.5 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between text-xs">
-            <span className="text-slate-400">
-              Showing matching products for: <strong className="text-amber-400 font-mono">"{searchTerm}"</strong>
-            </span>
-            <span className="text-slate-500 font-mono text-[11px]">{filteredItems.length} results</span>
-          </div>
-        )}
-
-        {/* Product Grid */}
-        <div className="flex-1 overflow-y-auto pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 content-start">
-          {loadingItems ? (
-            <div className="col-span-full py-12 text-center text-xs text-slate-500">Loading inventory...</div>
-          ) : filteredItems.length === 0 ? (
-            <div className="col-span-full py-12 text-center text-xs text-slate-500 space-y-2">
-              <QrCode className="w-8 h-8 text-slate-600 mx-auto" />
-              <p>No products found matching "{searchTerm}"</p>
-              <button
-                onClick={() => setSearchTerm('')}
-                className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold rounded-lg"
-              >
-                Show All Inventory
-              </button>
-            </div>
-          ) : (
-            filteredItems.map((item: any) => {
-              const inCartItem = cart.find((c) => c.id === item.id);
-              const inCartQty = inCartItem ? inCartItem.qty : 0;
-              const totalStock = Number(item.currentStock ?? 0);
-              const isService = item.type === 'SERVICE';
-              const remainingStock = Math.max(0, totalStock - inCartQty);
-              const isOutOfStock = !isService && remainingStock <= 0;
-
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => {
-                    if (isOutOfStock && totalStock <= 0) {
-                      toast.error(`Out of stock! (${item.name})`);
-                      return;
-                    }
-                    addToCart(item);
-                    toast.success(`Added ${item.name}`, { duration: 1200 });
-                  }}
-                  className={`p-3.5 rounded-2xl bg-slate-950 border text-left transition-all flex flex-col justify-between group active:scale-95 shadow-sm min-h-[135px] relative ${
-                    inCartQty > 0
-                      ? 'border-amber-500/80 bg-amber-500/5 ring-1 ring-amber-500/30'
-                      : isOutOfStock
-                      ? 'border-rose-900/40 opacity-75 hover:border-rose-500/60'
-                      : 'border-slate-800/90 hover:border-amber-500/60 hover:bg-slate-850/80'
-                  }`}
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-start justify-between gap-1">
-                      <p
-                        title={item.name}
-                        className="text-xs font-bold text-white group-hover:text-amber-300 break-words line-clamp-3 leading-snug"
-                      >
-                        {item.name}
-                      </p>
-                      {inCartQty > 0 && (
-                        <span className="px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 font-mono font-extrabold text-[10px] shrink-0 shadow">
-                          {inCartQty} in cart
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-between text-[10px] gap-1 flex-wrap">
-                      {item.code && <span className="text-amber-400/80 font-mono truncate">SKU: {item.code}</span>}
-                      {!isService ? (
-                        <span
-                          className={`font-semibold font-mono ${
-                            isOutOfStock
-                              ? 'text-rose-400 font-bold'
-                              : remainingStock <= (item.minStockAlert || 5)
-                              ? 'text-amber-400'
-                              : 'text-slate-400'
-                          }`}
-                        >
-                          {isOutOfStock ? 'Out of Stock' : `Stock: ${remainingStock} ${item.unit || 'Pcs'}`}
-                        </span>
-                      ) : (
-                        <span className="text-purple-400 font-semibold">Service</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between">
-                    <span className="text-xs font-mono font-bold text-emerald-400">Rs. {Number(item.salePrice).toLocaleString()}</span>
-                    <span className="text-[10px] text-slate-400">{item.unit || 'Pcs'}</span>
-                  </div>
-                </button>
-              );
-            })
-          )}
-        </div>
-      </div>
-
-      {/* Right Column: Active Order & Counter Controls */}
-      <div className="w-full md:w-80 lg:w-96 bg-slate-900 border border-slate-800 rounded-3xl p-4 flex flex-col justify-between shadow-2xl">
+        {/* Right Column: Active Order & Counter Controls */}
+        <div className={`w-full md:w-80 lg:w-96 bg-slate-900 border border-slate-800 rounded-3xl p-4 flex-col justify-between shadow-2xl ${mobileTab === 'cart' ? 'flex' : 'hidden md:flex'}`}>
         <div className="space-y-3">
           {/* Active Order Title & Clear */}
           <div className="flex items-center justify-between pb-3 border-b border-slate-800">
@@ -631,6 +732,7 @@ export default function POSPage() {
           </div>
         </div>
       </div>
+      </div>
 
       {/* POS Thermal Receipt & Sales Invoice Modal */}
       {completedSale && (
@@ -641,6 +743,14 @@ export default function POSPage() {
           business={currentBiz}
         />
       )}
+
+      {/* Camera QR & Barcode Scanner Modal */}
+      <CameraScannerModal
+        isOpen={isCameraOpen}
+        onClose={() => setIsCameraOpen(false)}
+        onScan={handleCameraScan}
+        title="Scan QR Code / Barcode with Device Camera"
+      />
     </div>
   );
 }

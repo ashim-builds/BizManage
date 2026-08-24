@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Search, Package, X, ChevronDown, Tag, QrCode, Plus } from 'lucide-react';
+import { Search, Package, X, ChevronDown, Tag, QrCode, Plus, Camera } from 'lucide-react';
+import { CameraScannerModal } from '@/components/common/CameraScannerModal';
 
 export interface SelectableItem {
   id: string;
@@ -38,6 +39,7 @@ export function ItemSearchSelect({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [highlighted, setHighlighted] = useState(0);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -180,6 +182,23 @@ export function ItemSearchSelect({
     return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
   };
 
+  const handleCameraScan = (scannedText: string) => {
+    setIsCameraOpen(false);
+    const term = scannedText.trim().toLowerCase();
+    const matched = safeItems.find((i) => {
+      if (!i) return false;
+      const code = (i.code || '').toLowerCase();
+      const name = (i.name || '').toLowerCase();
+      return code === term || code.includes(term) || name === term;
+    });
+    if (matched) {
+      select(matched.id);
+    } else {
+      setQuery(scannedText);
+      setOpen(true);
+    }
+  };
+
   return (
     <div ref={containerRef} className={`relative ${className}`}>
       {/* Trigger button */}
@@ -222,6 +241,18 @@ export function ItemSearchSelect({
         </span>
 
         <span className="flex items-center gap-1 flex-shrink-0 ml-1">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsCameraOpen(true);
+            }}
+            title="Scan QR/Barcode with Camera"
+            className="p-1 rounded-md text-purple-400 hover:text-purple-300 hover:bg-slate-700/80 transition-all flex items-center gap-1 text-[10px] font-bold"
+          >
+            <Camera className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Camera Scan</span>
+          </button>
           {selectedItem && (
             <span
               role="button"
@@ -248,26 +279,37 @@ export function ItemSearchSelect({
         >
           {/* Search input */}
           <div className="p-2.5 border-b border-slate-800 flex-shrink-0 bg-slate-900/90 backdrop-blur">
-            <div className="relative">
-              <QrCode className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-purple-400 pointer-events-none" />
-              <input
-                ref={inputRef}
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Scan Barcode (SKU) or type name..."
-                className="w-full pl-8 pr-8 py-2 bg-slate-800/90 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500 transition-all"
-              />
-              {query && (
-                <button
-                  type="button"
-                  onClick={() => setQuery('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-500 hover:text-white"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
+            <div className="relative flex items-center gap-1.5">
+              <div className="relative flex-1">
+                <QrCode className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-purple-400 pointer-events-none" />
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Scan Barcode (SKU) or type name..."
+                  className="w-full pl-8 pr-8 py-2 bg-slate-800/90 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500 transition-all"
+                />
+                {query && (
+                  <button
+                    type="button"
+                    onClick={() => setQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-500 hover:text-white"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCameraOpen(true)}
+                title="Scan QR Code / Barcode with Camera"
+                className="px-2.5 py-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 text-xs font-bold transition-all flex items-center gap-1 shrink-0"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Camera</span>
+              </button>
             </div>
           </div>
 
@@ -381,6 +423,14 @@ export function ItemSearchSelect({
           )}
         </div>
       )}
+
+      {/* Camera QR & Barcode Scanner Modal */}
+      <CameraScannerModal
+        isOpen={isCameraOpen}
+        onClose={() => setIsCameraOpen(false)}
+        onScan={handleCameraScan}
+        title="Scan Product Barcode / QR Code"
+      />
     </div>
   );
 }

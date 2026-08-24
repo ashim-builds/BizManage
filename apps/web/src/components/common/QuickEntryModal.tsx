@@ -572,7 +572,7 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
                 );
               })()}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-slate-300 font-semibold mb-1">Unit Price (Rs.) *</label>
                   <input
@@ -590,6 +590,12 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
                     {...saleForm.register('items.0.discountPercent', { valueAsNumber: true })}
                     className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono font-bold"
                   />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Item Line Total</label>
+                  <div className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-emerald-400 font-mono font-bold text-xs flex items-center h-[38px]">
+                    Rs. {formatCurrency(saleTotals.items[0]?.total || 0)}
+                  </div>
                 </div>
               </div>
 
@@ -711,7 +717,7 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-slate-300 font-semibold mb-1">Purchase Cost (Rs.) *</label>
                   <input
@@ -729,6 +735,12 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
                     {...purchaseForm.register('items.0.discountPercent', { valueAsNumber: true })}
                     className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono font-bold"
                   />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Item Line Total</label>
+                  <div className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-purple-400 font-mono font-bold text-xs flex items-center h-[38px]">
+                    Rs. {formatCurrency(purchaseTotals.items[0]?.total || 0)}
+                  </div>
                 </div>
               </div>
 

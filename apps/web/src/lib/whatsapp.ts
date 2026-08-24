@@ -49,8 +49,11 @@ export function generateInvoiceWhatsAppMessage(params: {
   msg += `*ITEMS:*\n`;
 
   items.slice(0, 10).forEach((it, idx) => {
+    const itemTotal = it.total !== undefined && it.total !== null && Number(it.total) > 0
+      ? Number(it.total)
+      : (it.quantity * it.price);
     msg += `${idx + 1}. ${it.name}\n`;
-    msg += `   ${it.quantity} ${it.unit || 'pcs'} × Rs. ${it.price.toLocaleString()} = *Rs. ${it.total.toLocaleString()}*\n`;
+    msg += `   ${it.quantity} ${it.unit || 'pcs'} × Rs. ${it.price.toLocaleString()} = *Rs. ${itemTotal.toLocaleString()}*\n`;
   });
 
   if (items.length > 10) {

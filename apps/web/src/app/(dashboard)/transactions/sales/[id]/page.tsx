@@ -185,35 +185,44 @@ export default function SaleInvoiceDetailsPage({ params }: { params: { id: strin
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 print:divide-slate-200 text-slate-300 print:text-slate-800">
-              {(sale.items || []).map((line: any) => (
-                <tr key={line.id}>
-                  <td className="px-4 py-3 font-semibold text-white print:text-slate-900">
-                    {line.item?.name}
-                    {line.item?.code && (
-                      <span className="text-[10px] text-slate-400 print:text-slate-500 block font-mono">
-                        SKU: {line.item.code}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right font-mono">
-                    {Number(line.quantity)} {line.item?.unit}
-                    {Number(line.returnedQuantity || 0) > 0 && (
-                      <span className="block text-[10px] text-rose-400 font-semibold mt-1">
-                        Returned: {Number(line.returnedQuantity)} {line.item?.unit}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right font-mono">
-                    Rs. {Number(line.unitPrice).toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3 text-right font-mono text-rose-400 print:text-slate-700">
-                    {Number(line.discount) > 0 ? `-Rs. ${Number(line.discount).toLocaleString()}` : '-'}
-                  </td>
-                  <td className="px-4 py-3 text-right font-mono font-bold text-white print:text-slate-900">
-                    Rs. {Number(line.total).toLocaleString()}
-                  </td>
-                </tr>
-              ))}
+              {(sale.items || []).map((line: any) => {
+                const qty = Number(line.quantity || 0);
+                const price = Number(line.unitPrice || 0);
+                const disc = Number(line.discount || 0);
+                const itemLineTotal = line.total !== undefined && line.total !== null && Number(line.total) > 0
+                  ? Number(line.total)
+                  : Math.max(0, qty * price - disc);
+
+                return (
+                  <tr key={line.id}>
+                    <td className="px-4 py-3 font-semibold text-white print:text-slate-900">
+                      {line.item?.name}
+                      {line.item?.code && (
+                        <span className="text-[10px] text-slate-400 print:text-slate-500 block font-mono">
+                          SKU: {line.item.code}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono">
+                      {qty} {line.item?.unit}
+                      {Number(line.returnedQuantity || 0) > 0 && (
+                        <span className="block text-[10px] text-rose-400 font-semibold mt-1">
+                          Returned: {Number(line.returnedQuantity)} {line.item?.unit}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono">
+                      Rs. {price.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono text-rose-400 print:text-slate-700">
+                      {disc > 0 ? `-Rs. ${disc.toLocaleString()}` : '-'}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-white print:text-slate-900">
+                      Rs. {itemLineTotal.toLocaleString()}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

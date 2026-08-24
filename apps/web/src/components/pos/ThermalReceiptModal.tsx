@@ -258,11 +258,19 @@ export function ThermalReceiptModal({
                     {(sale.items || []).map((line, idx) => {
                       const qty = Number(line.quantity || 1);
                       const rate = Number(line.unitPrice || 0);
-                      const lineTotal = Number(line.total || qty * rate);
+                      const disc = Number(line.discount || 0);
+                      const rawTotal = line.total !== undefined && line.total !== null && Number(line.total) > 0 
+                        ? Number(line.total) 
+                        : Math.max(0, qty * rate - disc);
                       return (
                         <tr key={idx}>
                           <td className="py-1.5 font-bold text-slate-900 pr-1">
                             {line.item?.name || 'Item'}
+                            {disc > 0 && (
+                              <span className="block text-[8px] text-rose-600 font-medium">
+                                Disc: -Rs. {disc.toLocaleString()}
+                              </span>
+                            )}
                           </td>
                           <td className="py-1.5 text-center font-bold align-top">
                             {qty}
@@ -271,7 +279,7 @@ export function ThermalReceiptModal({
                             {rate.toLocaleString()}
                           </td>
                           <td className="py-1.5 text-right font-mono font-bold align-top">
-                            Rs. {lineTotal.toLocaleString()}
+                            Rs. {rawTotal.toLocaleString()}
                           </td>
                         </tr>
                       );
