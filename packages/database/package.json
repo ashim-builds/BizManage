@@ -17,7 +17,9 @@
     "build": "prisma generate && tsc --build",
     "dev": "tsc --build --watch",
     "db:generate": "prisma generate",
+    "db:push": "prisma db push --accept-data-loss",
     "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma db push --accept-data-loss",
     "db:studio": "prisma studio"
   },
   "dependencies": {
