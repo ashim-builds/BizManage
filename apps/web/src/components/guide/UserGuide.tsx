@@ -223,16 +223,16 @@ export function UserGuide({ initialLanguage = 'np', showLanguageSelector = true 
           desc: '• Normal Bill (साधारण बिल): यदि "VAT Bill" टिक गर्नुभएन भने बिलमा PAN नम्बर देखिँदैन (सामान्य बिल)।\n• VAT Bill (कर बीजक): यदि "VAT Bill" टिक गर्नुभयो भने तपाईंको र ग्राहकको PAN/VAT नम्बर स्वतः बिलमा देखिन्छ र १३% भ्याट हिसाब हुन्छ।',
         },
         {
-          title: 'सामान र ग्राहक छान्ने',
-          desc: '• Customer: ग्राहकको नाम छान्नुहोस् वा नयाँ थप्नुहोस् (वा Walk-in Customer राख्नुहोस्)।\n• Items: सामान छानेर Quantity (संख्या) र Discount (छुट) राख्नुहोस्।',
+          title: 'सामान, डिस्काउन्ट र सामानको जम्मा रकम (Item Line Net Total)',
+          desc: '• Customer: ग्राहकको नाम छान्नुहोस् वा नयाँ थप्नुहोस् (वा Walk-in Customer राख्नुहोस्)।\n• Items & Line Totals: सामान छानेर परिमाण (Qty), बिक्री मूल्य (Price) र डिस्काउन्ट (Discount) राख्नुहोस्। प्रत्येक सामानको खुद रकम (Item Line Total = Qty × Price - Discount) बिल, रसिद र ह्वाट्सएप मेसेजमा स्पष्ट हिसाब भएर देखिन्छ।\n• Camera Scan: सामान छान्दा वा खोजी गर्दा "📷 Camera Scan" थिचेर मोबाइल/ल्यापटपको क्यामेराबाटै बारकोड स्क्यान गर्न सकिन्छ।',
         },
         {
           title: 'नगद वा उधारो भुक्तानी',
           desc: '• ग्राहकले तुरुन्तै पैसा दिएमा "Received Amount" मा रकम लेख्नुहोस् (Bill Status = PAID)।\n• यदि उधारो हो भने Received Amount मा ० राख्नुहोस् (Bill Status = UNPAID, र ग्राहकको खातामा रकम स्वतः चढ्छ)।',
         },
         {
-          title: 'प्रिन्ट / डाउनलोड',
-          desc: 'बिल सेभ गरेपछि "Print / Export" थिचेर सिधै प्रिन्टरबाट बिल निकाल्न वा PDF सेभ गर्न सक्नुहुन्छ।',
+          title: 'प्रिन्ट / ह्वाट्सएप सेयर',
+          desc: 'बिल सेभ गरेपछि "Print / Export" थिचेर सिधै प्रिन्टरबाट बिल निकाल्न वा PDF सेभ गर्न सक्नुहुन्छ। "Share on WhatsApp" बटन थिचेर ग्राहकको फोनमा समानको जम्मा हिसाब सहितको बिल पठाउन सकिन्छ।',
         },
       ],
       stepsEn: [
@@ -245,16 +245,16 @@ export function UserGuide({ initialLanguage = 'np', showLanguageSelector = true 
           desc: '• Normal Bill (Unchecked): Standard receipt without PAN numbers displayed.\n• VAT Bill (Checked): Official Tax Invoice displaying 9-digit PAN numbers for both business and customer, with 13% VAT breakdown.',
         },
         {
-          title: 'Selecting Party & Line Items',
-          desc: '• Select an existing customer or Walk-in Customer.\n• Add inventory items, specify quantities, and apply unit discounts.',
+          title: 'Selecting Party, Line Items & Net Totals',
+          desc: '• Select an existing customer or Walk-in Customer.\n• Line Items & Totals: Add inventory items, set quantities, prices, and line discounts. The net line total (Qty × Price - Discount) is dynamically computed and rendered on invoices, printouts, and WhatsApp shares.\n• Camera Scanner: Use the "📷 Camera Scan" option beside product search inputs to scan barcodes/QR codes directly using device cameras.',
         },
         {
           title: 'Payment Status (Cash vs Credit)',
           desc: '• Full cash payment: Enter amount in Received Amount (marked as PAID).\n• Credit sale (उधारो): Leave Received Amount empty or 0 (marked as UNPAID and posted to customer ledger).',
         },
         {
-          title: 'Printing & Invoicing',
-          desc: 'Click "Print Tax Invoice / Receipt" for a high-contrast, ink-friendly printable bill layout.',
+          title: 'Printing & WhatsApp Invoice Sharing',
+          desc: 'Click "Print Tax Invoice / Receipt" for high-contrast printable bills, or tap "Share on WhatsApp" to send structured digital receipts with complete item line totals directly to customers.',
         },
       ],
       quickLink: '/transactions/sales',
@@ -471,14 +471,18 @@ export function UserGuide({ initialLanguage = 'np', showLanguageSelector = true 
       icon: Zap,
       badgeNp: 'पीओएस बिलिङ',
       badgeEn: 'POS Billing',
-      titleNp: '१०. पीओएस क्विक बिलिङ र थर्मल रसिद (POS Counter Mode & Thermal Bill)',
-      titleEn: '10. POS Counter Mode & Thermal Receipt Printing',
-      summaryNp: 'काउन्टरमा बारकोड स्क्यान गरी सेकेन्डमै बिल काट्ने, फिर्ता रकम हिसाब गर्ने र थर्मल प्रिन्टरबाट बिल निकाल्ने तरिका।',
-      summaryEn: 'High-speed counter billing with hardware barcode scanning, live stock deduction, cash change calculator, and thermal printing.',
+      titleNp: '१०. पीओएस क्विक बिलिङ र क्यामेरा स्क्यान (POS Counter Mode & Camera Scan)',
+      titleEn: '10. POS Counter Mode, Camera Scanner & Thermal Billing',
+      summaryNp: 'काउन्टरमा क्यामेरा वा बारकोड स्क्यान गरी सेकेन्डमै बिल काट्ने, मोबाइलमा स्क्यान-ओन्ली मोड चलाउने र थर्मल बिल निकाल्ने तरिका।',
+      summaryEn: 'High-speed counter billing with device camera QR/barcode scanning, mobile-responsive scan-first mode, live stock deduction, and thermal printing.',
       stepsNp: [
         {
-          title: 'बारकोड स्क्यानिङ र स्वचालित थप (Barcode Scanning)',
-          desc: 'काउन्टरमा सामानको बारकोड स्क्यान गर्दा वा Enter थिच्दा सामान सिधै कार्टमा जोडिन्छ। खोज्दा पहिलो, बिचको वा अन्तिम नामको कुनै पनि शब्द टाइप गरेर सजिलै फेला पार्न सकिन्छ।',
+          title: 'मोबाइल/ल्यापटप क्यामेराबाट क्यूआर र बारकोड स्क्यान (Device Camera Scanner)',
+          desc: 'काउन्टर वा सर्च बारमा रहेको "📷 Camera Scan" बटन थिचेर मोबाइल वा कम्प्युटरको क्यामेराबाटै सामानको बारकोड वा क्यूआर कोड स्क्यान गर्न सकिन्छ। स्क्यान हुनासाथ आवाज (Beep) सहित सामान सिधै कार्टमा जोडिन्छ।',
+        },
+        {
+          title: 'मोबाइलमा रेस्पोन्सिभ स्क्यान मोड (Mobile Responsive POS Mode)',
+          desc: 'मोबाइल स्क्रिनमा पूरै सामानको सूची नदेखाई स्क्यान वा टाइपिङ गरेपछि मात्र सामान देखिन्छ, जसले मोबाइलमा काम गर्न अति सहज बनाउँछ। माथिको "1. Scan & Search" र "2. Cart" ट्याबबाट सिधै कार्टमा जान सकिन्छ।',
         },
         {
           title: 'लाइभ स्टक र ब्यालेन्स घट्ने (Live Stock Tracking)',
@@ -495,8 +499,12 @@ export function UserGuide({ initialLanguage = 'np', showLanguageSelector = true 
       ],
       stepsEn: [
         {
-          title: 'Hardware Barcode Scanning & Smart Search',
-          desc: 'Scanning a barcode SKU or pressing Enter automatically matches products and adds them to cart. Multi-word search matches any first, middle, or last name words in any order.',
+          title: 'Device Camera QR & Barcode Scanner',
+          desc: 'Tap the "📷 Camera Scan" button in POS counter or item select dropdowns to scan QR codes and barcodes directly using your device camera with sound beep confirmation.',
+        },
+        {
+          title: 'Mobile-Responsive Scan-Only POS Mode',
+          desc: 'On mobile screens, POS counter operates in a streamlined scan-first mode — items render dynamically after scan, search query, or Enter press. Switch between "1. Scan & Search" and "2. Cart" via top mobile tabs.',
         },
         {
           title: 'Live Stock Tracking & Cart Deduction',
