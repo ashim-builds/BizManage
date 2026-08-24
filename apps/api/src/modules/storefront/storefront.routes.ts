@@ -275,7 +275,18 @@ export async function storefrontRoutes(app: FastifyInstance) {
 
       const rawItems = await globalPrisma.item.findMany({
         where: { businessId, isPublishedToStore: true },
-        include: { category: { select: { id: true, name: true } } },
+        select: {
+          id: true,
+          name: true,
+          code: true,
+          type: true,
+          unit: true,
+          salePrice: true,
+          currentStock: true,
+          storeDescription: true,
+          imageUrl: true,
+          category: { select: { id: true, name: true } },
+        },
         orderBy: { name: 'asc' },
       });
 

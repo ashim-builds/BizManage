@@ -20,6 +20,7 @@ async function syncProductionSchema() {
     `ALTER TABLE "Item" ADD COLUMN IF NOT EXISTS "isPublishedToStore" BOOLEAN DEFAULT true;`,
     `ALTER TABLE "Item" ADD COLUMN IF NOT EXISTS "showPriceOnStore" BOOLEAN;`,
     `ALTER TABLE "Item" ADD COLUMN IF NOT EXISTS "storeDescription" TEXT;`,
+    `ALTER TABLE "Item" ADD COLUMN IF NOT EXISTS "imageUrl" TEXT;`,
   ];
 
   try {
