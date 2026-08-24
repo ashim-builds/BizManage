@@ -292,6 +292,7 @@ export async function storefrontRoutes(app: FastifyInstance) {
           inStock: item.type === 'SERVICE' || Number(item.currentStock) > 0,
           price: Number(item.salePrice),
           description: item.storeDescription || null,
+          imageUrl: item.imageUrl || null,
         };
       });
 

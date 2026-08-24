@@ -106,6 +106,8 @@ export const itemSchema = z.object({
   purchasePrice: z.number().min(0, 'Purchase price cannot be negative').default(0),
   minStockAlert: z.number().min(0).default(0),
   openingStock: z.number().default(0),
+  imageUrl: z.string().optional().nullable(),
+  storeDescription: z.string().optional().nullable(),
   // E2EE Metadata
   encryptedDeks: z.record(z.string()).optional(),
   iv: z.string().optional(),

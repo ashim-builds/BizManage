@@ -259,6 +259,8 @@ export async function itemRoutes(fastify: FastifyInstance) {
           minStockAlert: body.minStockAlert,
           openingStock: body.openingStock,
           currentStock: body.openingStock,
+          imageUrl: body.imageUrl || null,
+          storeDescription: body.storeDescription || null,
           // E2EE Metadata
           encryptedDeks: body.encryptedDeks ? body.encryptedDeks : Prisma.JsonNull,
           iv: body.iv || null,
@@ -319,6 +321,8 @@ export async function itemRoutes(fastify: FastifyInstance) {
         salePrice: body.salePrice ?? existing.salePrice,
         purchasePrice: body.purchasePrice ?? existing.purchasePrice,
         minStockAlert: body.minStockAlert ?? existing.minStockAlert,
+        imageUrl: body.imageUrl !== undefined ? (body.imageUrl || null) : existing.imageUrl,
+        storeDescription: body.storeDescription !== undefined ? (body.storeDescription || null) : existing.storeDescription,
         // E2EE Metadata
         encryptedDeks: body.encryptedDeks !== undefined 
           ? (body.encryptedDeks ? body.encryptedDeks : Prisma.JsonNull) 

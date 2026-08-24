@@ -332,7 +332,23 @@ export default function PublicStorefrontPage() {
                   key={product.id}
                   className="rounded-2xl bg-slate-900/90 border border-slate-800/90 hover:border-slate-700/90 transition-all p-4 flex flex-col justify-between space-y-4 shadow-sm hover:shadow-md"
                 >
-                  <div className="space-y-2">
+                  <div className="space-y-3">
+                    {/* Product Image Preview */}
+                    <div className="w-full h-40 rounded-xl bg-slate-950/80 border border-slate-800/80 flex items-center justify-center overflow-hidden relative group">
+                      {product.imageUrl ? (
+                        <img
+                          src={product.imageUrl}
+                          alt={product.name}
+                          className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center text-slate-600 space-y-1">
+                          <Package className="w-8 h-8 text-slate-700" />
+                          <span className="text-[10px] text-slate-600 font-medium">No Image</span>
+                        </div>
+                      )}
+                    </div>
+
                     <div className="flex items-start justify-between gap-2">
                       <span
                         className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${

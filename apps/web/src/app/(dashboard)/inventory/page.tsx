@@ -48,6 +48,7 @@ import {
   XCircle,
   Calendar,
   RotateCcw,
+  Globe,
 } from 'lucide-react';
 
 const numberInputProps = {
@@ -247,6 +248,8 @@ function InventoryPageContent() {
       salePrice: Number(item.salePrice),
       purchasePrice: Number(item.purchasePrice),
       minStockAlert: Number(item.minStockAlert),
+      imageUrl: item.imageUrl || '',
+      storeDescription: item.storeDescription || '',
     });
   };
 
@@ -877,6 +880,30 @@ function InventoryPageContent() {
                   </div>
                 )}
 
+                <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-800 space-y-3">
+                  <p className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                    <Globe className="w-4 h-4 text-blue-400" /> Storefront Product Image &amp; Details
+                  </p>
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">Product Image URL (e.g. https://example.com/image.jpg)</label>
+                    <input
+                      type="url"
+                      {...createForm.register('imageUrl')}
+                      placeholder="https://example.com/product-photo.jpg"
+                      className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">Store Description (Optional)</label>
+                    <textarea
+                      rows={2}
+                      {...createForm.register('storeDescription')}
+                      placeholder="Item description for public website visitors…"
+                      className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
                 <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
                   <button
                     type="button"
@@ -1004,6 +1031,30 @@ function InventoryPageContent() {
                       {...numberInputProps}
                       {...editForm.register('minStockAlert', { valueAsNumber: true })}
                       className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-800 space-y-3">
+                  <p className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                    <Globe className="w-4 h-4 text-blue-400" /> Storefront Product Image &amp; Details
+                  </p>
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">Product Image URL (e.g. https://example.com/image.jpg)</label>
+                    <input
+                      type="url"
+                      {...editForm.register('imageUrl')}
+                      placeholder="https://example.com/product-photo.jpg"
+                      className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">Store Description (Optional)</label>
+                    <textarea
+                      rows={2}
+                      {...editForm.register('storeDescription')}
+                      placeholder="Item description for public website visitors…"
+                      className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   </div>
                 </div>
