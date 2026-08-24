@@ -391,9 +391,21 @@ export default function PublicStorefrontPage() {
                       type="button"
                       disabled={!inStock}
                       onClick={() => addToCart(product)}
-                      className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:hover:bg-blue-600 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 shrink-0"
+                      className={`px-3.5 py-2 rounded-xl text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 shrink-0 ${
+                        !product.showPrice
+                          ? 'bg-amber-600 hover:bg-amber-500'
+                          : 'bg-blue-600 hover:bg-blue-500'
+                      } disabled:opacity-40`}
                     >
-                      <Plus className="w-3.5 h-3.5" /> Add
+                      {!product.showPrice ? (
+                        <>
+                          <MessageSquare className="w-3.5 h-3.5" /> Inquire
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-3.5 h-3.5" /> Add
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
