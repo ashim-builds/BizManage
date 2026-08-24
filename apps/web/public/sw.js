@@ -42,13 +42,22 @@ self.addEventListener('fetch', (event) => {
         }
         return networkResponse;
       })
-      .catch(() => {
-        return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) return cachedResponse;
-          if (event.request.headers.get('accept')?.includes('text/html')) {
-            return caches.match('/');
+      .catch(async () => {
+        const cachedResponse = await caches.match(event.request);
+        if (cachedResponse) return cachedResponse;
+
+        if (event.request.headers.get('accept')?.includes('text/html')) {
+          const fallbackHome = await caches.match('/');
+          if (fallbackHome) return fallbackHome;
+        }
+
+        return new Response(
+          JSON.stringify({ success: false, error: 'OFFLINE', message: 'Network request failed' }),
+          {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' },
           }
-        });
+        );
       })
   );
 });
