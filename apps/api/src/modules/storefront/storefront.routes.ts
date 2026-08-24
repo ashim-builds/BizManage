@@ -11,11 +11,11 @@ export async function storefrontRoutes(app: FastifyInstance) {
     if (!businessId) {
       return reply.status(400).send({ success: false, error: 'NO_BUSINESS', message: 'Active business tenant is required' });
     }
-    const setting = await request.db!.businessSetting.findUnique({
+    const setting = await globalPrisma.businessSetting.findUnique({
       where: { businessId },
     });
 
-    const business = await request.db!.business.findUnique({
+    const business = await globalPrisma.business.findUnique({
       where: { id: businessId },
       select: { name: true, phone: true, email: true, logoUrl: true },
     });
@@ -60,7 +60,7 @@ export async function storefrontRoutes(app: FastifyInstance) {
     let cleanSlug = storeSlug ? String(storeSlug).trim().toLowerCase().replace(/[^a-z0-9-]/g, '') : null;
 
     if (cleanSlug) {
-      const existing = await request.db!.businessSetting.findFirst({
+      const existing = await globalPrisma.businessSetting.findFirst({
         where: {
           storeSlug: cleanSlug,
           businessId: { not: businessId },
@@ -76,7 +76,7 @@ export async function storefrontRoutes(app: FastifyInstance) {
       }
     }
 
-    const updated = await request.db!.businessSetting.upsert({
+    const updated = await globalPrisma.businessSetting.upsert({
       where: { businessId },
       create: {
         businessId,
