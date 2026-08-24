@@ -103,29 +103,49 @@ export async function itemRoutes(fastify: FastifyInstance) {
       }
     }
 
-    if (search) {
-      // Dual-path search: support both E2EE-encrypted items and legacy plaintext items.
-      //
-      // • Encrypted items  → match via HMAC column (exact match on hmacName / hmacCode)
-      // • Plaintext items  → match via ILIKE contains on name / code
-      //
-      // Using OR across both paths means search works for ALL items regardless of
-      // whether E2EE was active when they were originally saved.
+    if (search && search.trim()) {
+      const rawSearch = search.replace(/[\r\n\t]/g, '').trim();
+      const cleanSku = rawSearch.replace(/^(sku|code)[-:\s]*/i, '').trim();
+      const tokens = rawSearch.split(/\s+/).filter(Boolean);
+
       const searchHmac = crypto
         .createHmac('sha256', 'bms_hmac_secret')
-        .update(search.toLowerCase().trim())
+        .update(rawSearch.toLowerCase())
         .digest('base64');
 
-      whereClause.OR = [
-        // E2EE path — exact HMAC match
-        { hmacName: searchHmac },
-        { hmacCode: searchHmac },
-        // Plaintext path — partial / case-insensitive match
-        { name: { contains: search, mode: 'insensitive' } },
-        { code: { contains: search, mode: 'insensitive' } },
-        // Category name always plaintext
-        { category: { name: { contains: search, mode: 'insensitive' } } },
-      ];
+      const cleanSkuHmac = crypto
+        .createHmac('sha256', 'bms_hmac_secret')
+        .update(cleanSku.toLowerCase())
+        .digest('base64');
+
+      if (tokens.length > 1) {
+        // Multi-word tokenized search (e.g. "w1 3.6" matching "Silk Base-w1 (3.6 L)")
+        whereClause.AND = tokens.map((token) => ({
+          OR: [
+            { name: { contains: token, mode: 'insensitive' } },
+            { code: { contains: token, mode: 'insensitive' } },
+            { category: { name: { contains: token, mode: 'insensitive' } } },
+          ],
+        }));
+      } else {
+        const orConditions: any[] = [
+          // E2EE path — exact HMAC match (raw query or prefix-stripped SKU)
+          { hmacName: searchHmac },
+          { hmacCode: searchHmac },
+          { hmacCode: cleanSkuHmac },
+          // Plaintext path — partial / case-insensitive match on name, code, clean SKU, category
+          { name: { contains: rawSearch, mode: 'insensitive' } },
+          { code: { contains: rawSearch, mode: 'insensitive' } },
+          // Category name always plaintext
+          { category: { name: { contains: rawSearch, mode: 'insensitive' } } },
+        ];
+
+        if (cleanSku && cleanSku !== rawSearch) {
+          orConditions.push({ code: { contains: cleanSku, mode: 'insensitive' } });
+        }
+
+        whereClause.OR = orConditions;
+      }
     }
 
     const [items, total] = await Promise.all([

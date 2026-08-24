@@ -97,7 +97,7 @@ export function GlobalSearch() {
                         <Package className="w-4 h-4 text-blue-400" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-white truncate">{item.name}</p>
+                        <p title={item.name} className="text-xs sm:text-sm font-semibold text-white break-words leading-snug">{item.name}</p>
                         <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400">
                           <span className="font-mono">CODE: {item.code || 'N/A'}</span>
                           <span>&bull;</span>

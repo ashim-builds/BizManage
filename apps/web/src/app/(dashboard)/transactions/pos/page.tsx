@@ -136,15 +136,35 @@ export default function POSPage() {
     );
   }
 
-  // Active POS Billing UI for Premium Users with Multi-Word Tokenized Fuzzy Search
+  // Active POS Billing UI for Premium Users with Multi-Word Tokenized & Barcode SKU Fuzzy Search
   const filteredItems = itemsList.filter((i: any) => {
-    const rawTerm = searchTerm.trim().toLowerCase();
+    const rawTerm = searchTerm.replace(/[\r\n\t]/g, '').trim().toLowerCase();
     if (!rawTerm) return true;
 
-    const queryTokens = rawTerm.split(/\s+/).filter(Boolean);
-    const targetText = `${i.name || ''} ${i.code || ''} ${i.category?.name || ''}`.toLowerCase();
+    const cleanSkuTerm = rawTerm.replace(/^(sku|code)[-:\s]*/i, '').trim();
+    const code = (i.code || '').toLowerCase();
+    const fallbackSku = `sku-${(i.name || '').replace(/[^a-zA-Z0-9]/g, '').substring(0, 8)}`.toLowerCase();
 
-    return queryTokens.every((token) => targetText.includes(token));
+    if (code && (code === rawTerm || code === cleanSkuTerm || code.includes(rawTerm) || code.includes(cleanSkuTerm))) {
+      return true;
+    }
+    if (fallbackSku.includes(rawTerm) || fallbackSku.includes(cleanSkuTerm)) {
+      return true;
+    }
+
+    const queryTokens = rawTerm.split(/\s+/).filter(Boolean);
+    const targetText = `${i.name || ''} ${i.code || ''} ${fallbackSku} ${i.category?.name || ''}`.toLowerCase();
+    const normalizedTarget = targetText.replace(/[^a-z0-9]/g, ' ');
+    const cleanTarget = targetText.replace(/[^a-z0-9]/g, '');
+
+    return queryTokens.every((token) => {
+      const cleanToken = token.replace(/[^a-z0-9]/g, '');
+      return (
+        targetText.includes(token) ||
+        normalizedTarget.includes(token) ||
+        (cleanToken.length > 0 && cleanTarget.includes(cleanToken))
+      );
+    });
   });
 
   const addToCart = (item: any) => {
@@ -392,7 +412,7 @@ export default function POSPage() {
                     addToCart(item);
                     toast.success(`Added ${item.name}`, { duration: 1200 });
                   }}
-                  className={`p-3.5 rounded-2xl bg-slate-950 border text-left transition-all flex flex-col justify-between group active:scale-95 shadow-sm min-h-[125px] max-h-[155px] relative ${
+                  className={`p-3.5 rounded-2xl bg-slate-950 border text-left transition-all flex flex-col justify-between group active:scale-95 shadow-sm min-h-[135px] relative ${
                     inCartQty > 0
                       ? 'border-amber-500/80 bg-amber-500/5 ring-1 ring-amber-500/30'
                       : isOutOfStock
@@ -402,7 +422,10 @@ export default function POSPage() {
                 >
                   <div className="space-y-1">
                     <div className="flex items-start justify-between gap-1">
-                      <p className="text-xs font-bold text-white group-hover:text-amber-300 line-clamp-2 leading-snug">
+                      <p
+                        title={item.name}
+                        className="text-xs font-bold text-white group-hover:text-amber-300 break-words line-clamp-3 leading-snug"
+                      >
                         {item.name}
                       </p>
                       {inCartQty > 0 && (
@@ -489,7 +512,9 @@ export default function POSPage() {
               cart.map((c) => (
                 <div key={c.id} className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
                   <div className="min-w-0 flex-1 pr-2">
-                    <p className="font-semibold text-white truncate">{c.name}</p>
+                    <p title={c.name} className="font-semibold text-white break-words leading-tight text-xs">
+                      {c.name}
+                    </p>
                     <p className="text-[10px] text-slate-400 font-mono">
                       Rs. {c.price} x {c.qty} = <span className="text-emerald-400 font-bold">Rs. {(c.price * c.qty).toLocaleString()}</span>
                     </p>

@@ -263,10 +263,47 @@ function InventoryPageContent() {
 
   const rawItems = itemsResponse?.data || [];
 
-  // Apply date-range filtering + sorting client-side (search/category/type/lowStock
-  // are already applied server-side via useItems above).
+  // Apply search/barcode SKU filtering + date-range filtering + sorting client-side
   const items = useMemo(() => {
     let result = [...rawItems];
+
+    const rawTerm = search.replace(/[\r\n\t]/g, '').trim().toLowerCase();
+    if (rawTerm) {
+      const cleanSkuTerm = rawTerm.replace(/^(sku|code)[-:\s]*/i, '').trim();
+      const terms = rawTerm.split(/\s+/).filter(Boolean);
+
+      result = result.filter((item: any) => {
+        if (!item) return false;
+        const name = (item.name || '').toLowerCase();
+        const code = (item.code || '').toLowerCase();
+        const fallbackSku = `sku-${name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 8)}`;
+        const category = (item.category?.name || '').toLowerCase();
+
+        // 1. Barcode SKU or SKU code match
+        if (code && (code === rawTerm || code === cleanSkuTerm || code.includes(rawTerm) || code.includes(cleanSkuTerm))) {
+          return true;
+        }
+
+        // 2. Fallback SKU match
+        if (fallbackSku.includes(rawTerm) || fallbackSku.includes(cleanSkuTerm)) {
+          return true;
+        }
+
+        // 3. Multi-word tokenized search across name, code, fallback SKU, category
+        const combined = `${name} ${code} ${fallbackSku} ${category}`;
+        const normalizedCombined = combined.replace(/[^a-z0-9]/g, ' ');
+        const cleanCombined = combined.replace(/[^a-z0-9]/g, '');
+
+        return terms.every((term) => {
+          const cleanTerm = term.replace(/[^a-z0-9]/g, '');
+          return (
+            combined.includes(term) ||
+            normalizedCombined.includes(term) ||
+            (cleanTerm.length > 0 && cleanCombined.includes(cleanTerm))
+          );
+        });
+      });
+    }
 
     result.sort((a: any, b: any) => {
       switch (sortBy) {
@@ -284,7 +321,7 @@ function InventoryPageContent() {
     });
 
     return result;
-  }, [rawItems, sortBy]);
+  }, [rawItems, search, sortBy]);
 
   const hasActiveFilters =
     !!search || !!selectedCategory || !!selectedType || lowStockOnly || !!dateFrom || !!dateTo || sortBy !== 'name-asc';
@@ -472,7 +509,7 @@ function InventoryPageContent() {
                   {/* Header */}
                   <div className="flex items-start justify-between border-b border-slate-800/60 pb-3">
                     <div>
-                      <Link href={`/inventory/${item.id}`} className="font-bold text-blue-400 hover:text-blue-300 text-sm">
+                      <Link title={item.name} href={`/inventory/${item.id}`} className="font-bold text-blue-400 hover:text-blue-300 text-sm break-words leading-snug">
                         {item.name}
                       </Link>
                       {item.code && <p className="text-[11px] text-slate-500 font-mono mt-0.5">SKU: {item.code}</p>}

@@ -48,11 +48,12 @@ export function ItemSearchSelect({
     [safeItems, value]
   );
 
-  // Multi-term fuzzy / partial filter matching across Name, Code/SKU, Unit, Category
+  // Multi-term fuzzy / punctuation-agnostic filter matching across Name, Code/SKU, Unit, Category
   const filtered = useMemo(() => {
-    const rawQuery = query.trim().toLowerCase();
+    const rawQuery = query.replace(/[\r\n\t]/g, '').trim().toLowerCase();
     if (!rawQuery) return safeItems;
 
+    const cleanSkuQuery = rawQuery.replace(/^(sku|code)[-:\s]*/i, '').trim();
     const terms = rawQuery.split(/\s+/).filter(Boolean);
 
     return safeItems.filter((item) => {
@@ -63,8 +64,26 @@ export function ItemSearchSelect({
       const unit = (item.unit || '').toLowerCase();
       const category = (item.category?.name || '').toLowerCase();
 
+      // Direct barcode SKU or fallback SKU match
+      if (code && (code === rawQuery || code === cleanSkuQuery || code.includes(rawQuery) || code.includes(cleanSkuQuery))) {
+        return true;
+      }
+      if (fallbackSku.includes(rawQuery) || fallbackSku.includes(cleanSkuQuery)) {
+        return true;
+      }
+
       const combined = `${name} ${code} ${fallbackSku} ${unit} ${category}`;
-      return terms.every((term) => combined.includes(term));
+      const normalizedCombined = combined.replace(/[^a-z0-9]/g, ' ');
+      const cleanCombined = combined.replace(/[^a-z0-9]/g, '');
+
+      return terms.every((term) => {
+        const cleanTerm = term.replace(/[^a-z0-9]/g, '');
+        return (
+          combined.includes(term) ||
+          normalizedCombined.includes(term) ||
+          (cleanTerm.length > 0 && cleanCombined.includes(cleanTerm))
+        );
+      });
     });
   }, [safeItems, query]);
 
@@ -147,7 +166,7 @@ export function ItemSearchSelect({
         onClick={() => setOpen((o) => !o)}
         onKeyDown={handleKeyDown}
         className={[
-          'w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-medium text-left',
+          'w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left min-h-[42px]',
           'bg-slate-800/90 border transition-all',
           'focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500',
           open ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-slate-700/80 hover:border-slate-600',
@@ -156,25 +175,27 @@ export function ItemSearchSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        <span className="truncate flex items-center gap-2 min-w-0">
+        <span className="flex items-center gap-2 min-w-0 flex-1 py-0.5">
           {selectedItem ? (
-            <>
+            <div className="flex flex-wrap items-center gap-1.5 min-w-0" title={selectedItem.name}>
               <Package className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
-              <span className="truncate font-semibold">{selectedItem.name}</span>
+              <span className="font-semibold text-white break-words text-xs leading-snug">
+                {selectedItem.name}
+              </span>
               {selectedItem.code && (
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-700 hidden sm:inline-block">
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-700">
                   {selectedItem.code}
                 </span>
               )}
-              <span className="text-slate-500 font-normal flex-shrink-0">
+              <span className="text-slate-400 font-normal text-[11px] flex-shrink-0">
                 · {selectedItem.unit}
               </span>
-            </>
+            </div>
           ) : (
-            <>
+            <div className="flex items-center gap-2 text-slate-400 min-w-0">
               <QrCode className="w-3.5 h-3.5 flex-shrink-0 text-purple-400" />
-              <span className="truncate">{placeholder}</span>
-            </>
+              <span className="break-words text-xs">{placeholder}</span>
+            </div>
           )}
         </span>
 
@@ -200,7 +221,7 @@ export function ItemSearchSelect({
       {open && (
         <div
           className="absolute z-[200] left-0 right-0 mt-1.5 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100"
-          style={{ maxHeight: '19rem' }}
+          style={{ maxHeight: '20rem' }}
           role="listbox"
         >
           {/* Search input */}
@@ -276,7 +297,10 @@ export function ItemSearchSelect({
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <p className={`text-xs font-semibold truncate ${isSelected ? 'text-blue-300' : 'text-white'}`}>
+                          <p
+                            title={item.name}
+                            className={`text-xs font-semibold break-words leading-snug ${isSelected ? 'text-blue-300' : 'text-white'}`}
+                          >
                             {item.name}
                           </p>
                           {item.code && (
