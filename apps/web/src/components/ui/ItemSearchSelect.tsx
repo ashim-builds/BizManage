@@ -54,21 +54,43 @@ export function ItemSearchSelect({
     if (!rawQuery) return safeItems;
 
     const cleanSkuQuery = rawQuery.replace(/^(sku|code)[-:\s]*/i, '').trim();
+    const cleanAlphaQuery = rawQuery.replace(/[^a-z0-9]/g, '');
     const terms = rawQuery.split(/\s+/).filter(Boolean);
 
     return safeItems.filter((item) => {
       if (!item) return false;
       const name = (item.name || '').toLowerCase();
       const code = (item.code || '').toLowerCase();
-      const fallbackSku = `sku-${name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 8)}`;
+      const cleanCode = code.replace(/[^a-z0-9]/g, '');
+      const cleanName = name.replace(/[^a-z0-9]/g, '');
+      const fallbackSku = `sku-${cleanName.substring(0, 8)}`;
       const unit = (item.unit || '').toLowerCase();
       const category = (item.category?.name || '').toLowerCase();
 
-      // Direct barcode SKU or fallback SKU match
-      if (code && (code === rawQuery || code === cleanSkuQuery || code.includes(rawQuery) || code.includes(cleanSkuQuery))) {
+      // Direct barcode SKU or clean code match
+      if (
+        code &&
+        (code === rawQuery ||
+          code === cleanSkuQuery ||
+          code.includes(rawQuery) ||
+          code.includes(cleanSkuQuery) ||
+          (cleanAlphaQuery && cleanCode.includes(cleanAlphaQuery)) ||
+          (cleanAlphaQuery && cleanAlphaQuery.includes(cleanCode)))
+      ) {
         return true;
       }
-      if (fallbackSku.includes(rawQuery) || fallbackSku.includes(cleanSkuQuery)) {
+
+      // Direct name or clean name match
+      if (
+        cleanAlphaQuery &&
+        (name.includes(rawQuery) ||
+          cleanName.includes(cleanAlphaQuery) ||
+          cleanAlphaQuery.includes(cleanName))
+      ) {
+        return true;
+      }
+
+      if (fallbackSku.includes(rawQuery) || fallbackSku.includes(cleanSkuQuery) || (cleanAlphaQuery && fallbackSku.includes(cleanAlphaQuery))) {
         return true;
       }
 

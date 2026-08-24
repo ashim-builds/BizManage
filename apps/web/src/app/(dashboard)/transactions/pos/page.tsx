@@ -142,13 +142,36 @@ export default function POSPage() {
     if (!rawTerm) return true;
 
     const cleanSkuTerm = rawTerm.replace(/^(sku|code)[-:\s]*/i, '').trim();
+    const cleanAlphaQuery = rawTerm.replace(/[^a-z0-9]/g, '');
     const code = (i.code || '').toLowerCase();
-    const fallbackSku = `sku-${(i.name || '').replace(/[^a-zA-Z0-9]/g, '').substring(0, 8)}`.toLowerCase();
+    const cleanCode = code.replace(/[^a-z0-9]/g, '');
+    const cleanName = (i.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const fallbackSku = `sku-${cleanName.substring(0, 8)}`;
 
-    if (code && (code === rawTerm || code === cleanSkuTerm || code.includes(rawTerm) || code.includes(cleanSkuTerm))) {
+    // Direct barcode SKU or clean code match
+    if (
+      code &&
+      (code === rawTerm ||
+        code === cleanSkuTerm ||
+        code.includes(rawTerm) ||
+        code.includes(cleanSkuTerm) ||
+        (cleanAlphaQuery && cleanCode.includes(cleanAlphaQuery)) ||
+        (cleanAlphaQuery && cleanAlphaQuery.includes(cleanCode)))
+    ) {
       return true;
     }
-    if (fallbackSku.includes(rawTerm) || fallbackSku.includes(cleanSkuTerm)) {
+
+    // Direct name or clean name match (e.g. 1" CPVC Pipe matching 1CPVCPIP)
+    if (
+      cleanAlphaQuery &&
+      (i.name?.toLowerCase().includes(rawTerm) ||
+        cleanName.includes(cleanAlphaQuery) ||
+        cleanAlphaQuery.includes(cleanName))
+    ) {
+      return true;
+    }
+
+    if (fallbackSku.includes(rawTerm) || fallbackSku.includes(cleanSkuTerm) || (cleanAlphaQuery && fallbackSku.includes(cleanAlphaQuery))) {
       return true;
     }
 

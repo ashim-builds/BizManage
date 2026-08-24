@@ -106,6 +106,7 @@ export async function itemRoutes(fastify: FastifyInstance) {
     if (search && search.trim()) {
       const rawSearch = search.replace(/[\r\n\t]/g, '').trim();
       const cleanSku = rawSearch.replace(/^(sku|code)[-:\s]*/i, '').trim();
+      const cleanAlpha = rawSearch.replace(/[^a-zA-Z0-9]/g, '').trim();
       const tokens = rawSearch.split(/\s+/).filter(Boolean);
 
       const searchHmac = crypto
@@ -118,21 +119,33 @@ export async function itemRoutes(fastify: FastifyInstance) {
         .update(cleanSku.toLowerCase())
         .digest('base64');
 
+      const cleanAlphaHmac = crypto
+        .createHmac('sha256', 'bms_hmac_secret')
+        .update(cleanAlpha.toLowerCase())
+        .digest('base64');
+
       if (tokens.length > 1) {
-        // Multi-word tokenized search (e.g. "w1 3.6" matching "Silk Base-w1 (3.6 L)")
-        whereClause.AND = tokens.map((token) => ({
-          OR: [
+        // Multi-word tokenized search
+        whereClause.AND = tokens.map((token) => {
+          const tokenAlpha = token.replace(/[^a-zA-Z0-9]/g, '');
+          const orList: any[] = [
             { name: { contains: token, mode: 'insensitive' } },
             { code: { contains: token, mode: 'insensitive' } },
             { category: { name: { contains: token, mode: 'insensitive' } } },
-          ],
-        }));
+          ];
+          if (tokenAlpha && tokenAlpha !== token) {
+            orList.push({ name: { contains: tokenAlpha, mode: 'insensitive' } });
+            orList.push({ code: { contains: tokenAlpha, mode: 'insensitive' } });
+          }
+          return { OR: orList };
+        });
       } else {
         const orConditions: any[] = [
-          // E2EE path — exact HMAC match (raw query or prefix-stripped SKU)
+          // E2EE path — exact HMAC match (raw query, prefix-stripped SKU, or alpha SKU)
           { hmacName: searchHmac },
           { hmacCode: searchHmac },
           { hmacCode: cleanSkuHmac },
+          { hmacCode: cleanAlphaHmac },
           // Plaintext path — partial / case-insensitive match on name, code, clean SKU, category
           { name: { contains: rawSearch, mode: 'insensitive' } },
           { code: { contains: rawSearch, mode: 'insensitive' } },
@@ -142,6 +155,10 @@ export async function itemRoutes(fastify: FastifyInstance) {
 
         if (cleanSku && cleanSku !== rawSearch) {
           orConditions.push({ code: { contains: cleanSku, mode: 'insensitive' } });
+        }
+        if (cleanAlpha && cleanAlpha !== rawSearch && cleanAlpha !== cleanSku) {
+          orConditions.push({ code: { contains: cleanAlpha, mode: 'insensitive' } });
+          orConditions.push({ name: { contains: cleanAlpha, mode: 'insensitive' } });
         }
 
         whereClause.OR = orConditions;

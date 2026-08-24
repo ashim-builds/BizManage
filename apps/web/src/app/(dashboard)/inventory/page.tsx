@@ -270,26 +270,47 @@ function InventoryPageContent() {
     const rawTerm = search.replace(/[\r\n\t]/g, '').trim().toLowerCase();
     if (rawTerm) {
       const cleanSkuTerm = rawTerm.replace(/^(sku|code)[-:\s]*/i, '').trim();
+      const cleanAlphaQuery = rawTerm.replace(/[^a-z0-9]/g, '');
       const terms = rawTerm.split(/\s+/).filter(Boolean);
 
       result = result.filter((item: any) => {
         if (!item) return false;
         const name = (item.name || '').toLowerCase();
         const code = (item.code || '').toLowerCase();
-        const fallbackSku = `sku-${name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 8)}`;
+        const cleanCode = code.replace(/[^a-z0-9]/g, '');
+        const cleanName = name.replace(/[^a-z0-9]/g, '');
+        const fallbackSku = `sku-${cleanName.substring(0, 8)}`;
         const category = (item.category?.name || '').toLowerCase();
 
-        // 1. Barcode SKU or SKU code match
-        if (code && (code === rawTerm || code === cleanSkuTerm || code.includes(rawTerm) || code.includes(cleanSkuTerm))) {
+        // 1. Direct barcode SKU or clean code match
+        if (
+          code &&
+          (code === rawTerm ||
+            code === cleanSkuTerm ||
+            code.includes(rawTerm) ||
+            code.includes(cleanSkuTerm) ||
+            (cleanAlphaQuery && cleanCode.includes(cleanAlphaQuery)) ||
+            (cleanAlphaQuery && cleanAlphaQuery.includes(cleanCode)))
+        ) {
           return true;
         }
 
-        // 2. Fallback SKU match
-        if (fallbackSku.includes(rawTerm) || fallbackSku.includes(cleanSkuTerm)) {
+        // 2. Direct name or clean name match (e.g. 1" CPVC Pipe matching 1CPVCPIP)
+        if (
+          cleanAlphaQuery &&
+          (name.includes(rawTerm) ||
+            cleanName.includes(cleanAlphaQuery) ||
+            cleanAlphaQuery.includes(cleanName))
+        ) {
           return true;
         }
 
-        // 3. Multi-word tokenized search across name, code, fallback SKU, category
+        // 3. Fallback SKU match
+        if (fallbackSku.includes(rawTerm) || fallbackSku.includes(cleanSkuTerm) || (cleanAlphaQuery && fallbackSku.includes(cleanAlphaQuery))) {
+          return true;
+        }
+
+        // 4. Multi-word tokenized search across name, code, fallback SKU, category
         const combined = `${name} ${code} ${fallbackSku} ${category}`;
         const normalizedCombined = combined.replace(/[^a-z0-9]/g, ' ');
         const cleanCombined = combined.replace(/[^a-z0-9]/g, '');
