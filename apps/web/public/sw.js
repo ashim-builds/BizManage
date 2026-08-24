@@ -31,6 +31,12 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
+  const url = new URL(event.request.url);
+  // Bypass ServiceWorker cache for Next.js RSC data requests (_rsc=) and API calls (/api/)
+  if (url.searchParams.has('_rsc') || url.pathname.startsWith('/api/')) {
+    return;
+  }
+
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {

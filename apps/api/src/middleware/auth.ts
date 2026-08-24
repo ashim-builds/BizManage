@@ -55,9 +55,17 @@ export async function authenticateUser(request: FastifyRequest, _reply: FastifyR
 export async function requireBusinessTenant(request: FastifyRequest, _reply: FastifyReply) {
   await authenticateUser(request, _reply);
 
-  const businessId = request.headers['x-business-id'] as string;
+  let businessId = request.headers['x-business-id'] as string;
   if (!businessId) {
-    throw new AppError('Missing X-Business-Id header', 400, 'VALIDATION_ERROR');
+    const dbUser = await globalPrisma.user.findUnique({
+      where: { id: request.user.id },
+      select: { activeBusinessId: true, memberships: { select: { businessId: true }, take: 1 } },
+    });
+    businessId = dbUser?.activeBusinessId || dbUser?.memberships?.[0]?.businessId || '';
+  }
+
+  if (!businessId) {
+    throw new AppError('No active business tenant found for this account', 400, 'VALIDATION_ERROR');
   }
 
   const membership = await globalPrisma.userBusinessRole.findUnique({

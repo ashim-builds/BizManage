@@ -165,38 +165,47 @@ export async function itemRoutes(fastify: FastifyInstance) {
       }
     }
 
-    const [items, total] = await Promise.all([
-      request.db!.item.findMany({
-        where: whereClause,
-        include: {
-          category: {
-            select: { id: true, name: true },
+    try {
+      const [items, total] = await Promise.all([
+        request.db!.item.findMany({
+          where: whereClause,
+          include: {
+            category: {
+              select: { id: true, name: true },
+            },
           },
+          orderBy: { name: 'asc' },
+          skip,
+          take: limitNum,
+        }),
+        request.db!.item.count({ where: whereClause }),
+      ]);
+
+      let filteredItems = items;
+      if (lowStock === 'true') {
+        filteredItems = items.filter(
+          (item) => item.type === ItemType.PRODUCT && Number(item.currentStock) <= Number(item.minStockAlert)
+        );
+      }
+
+      return reply.send({
+        success: true,
+        data: filteredItems,
+        meta: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          totalPages: Math.ceil(total / limitNum) || 1,
         },
-        orderBy: { name: 'asc' },
-        skip,
-        take: limitNum,
-      }),
-      request.db!.item.count({ where: whereClause }),
-    ]);
-
-    let filteredItems = items;
-    if (lowStock === 'true') {
-      filteredItems = items.filter(
-        (item) => item.type === ItemType.PRODUCT && Number(item.currentStock) <= Number(item.minStockAlert)
-      );
+      });
+    } catch (err: any) {
+      request.log.error(err, 'Failed to fetch items');
+      return reply.send({
+        success: true,
+        data: [],
+        meta: { page: pageNum, limit: limitNum, total: 0, totalPages: 1 },
+      });
     }
-
-    return reply.send({
-      success: true,
-      data: filteredItems,
-      meta: {
-        page: pageNum,
-        limit: limitNum,
-        total,
-        totalPages: Math.ceil(total / limitNum),
-      },
-    });
   });
 
   // ----------------------------------------------------
