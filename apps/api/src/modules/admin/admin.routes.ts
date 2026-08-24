@@ -93,6 +93,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
+          settings: true,
           subscriptionPackage: true,
           subscriptionPayments: {
             where: { status: 'PENDING' },
@@ -121,6 +122,11 @@ export async function adminRoutes(fastify: FastifyInstance) {
       currentPeriodEnd: b.currentPeriodEnd,
       subscriptionPlan: b.subscriptionPackage ? b.subscriptionPackage.name : 'No Plan',
       subscriptionPackage: b.subscriptionPackage,
+      storefront: {
+        enableStorefront: b.settings?.enableStorefront ?? false,
+        storeSlug: b.settings?.storeSlug || null,
+        storeTitle: b.settings?.storeTitle || b.name,
+      },
       pendingPayment: b.subscriptionPayments[0] ? {
         id: b.subscriptionPayments[0].id,
         packageName: b.subscriptionPayments[0].subscriptionPackage.name,
@@ -264,6 +270,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
     const business = await globalPrisma.business.findUnique({
       where: { id },
       include: {
+        settings: true,
         subscriptionPackage: true,
         subscriptions: {
           orderBy: { endDate: 'desc' }

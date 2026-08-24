@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, Building, Mail, Phone, MapPin, User, Save, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, Building, Mail, Phone, MapPin, User, Save, ShieldAlert, CheckCircle2, Globe, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface BusinessDetail {
@@ -20,6 +20,13 @@ interface BusinessDetail {
   subscriptionStatus?: string | null;
   currentPeriodEnd?: string | null;
   subscriptionPackageId: string | null;
+  settings?: {
+    enableStorefront: boolean;
+    storeSlug: string | null;
+    storeTitle: string | null;
+    storeDescription: string | null;
+    whatsappNumber: string | null;
+  } | null;
   subscriptionPackage?: {
     id: string;
     name: string;
@@ -188,6 +195,59 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
             ) : (
               <div className="p-6 text-slate-400 text-sm">No owner found.</div>
             )}
+          </div>
+
+          {/* Online Storefront & Website Card */}
+          <div className="bg-[#121316] border border-slate-800/60 rounded-2xl overflow-hidden">
+            <div className="p-4 border-b border-slate-800/60 flex items-center justify-between">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                <Globe className="w-4 h-4 text-emerald-400" /> Online Storefront & Website
+              </h3>
+              {business.settings?.enableStorefront && business.settings?.storeSlug ? (
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">
+                  Published Live
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700 uppercase">
+                  Disabled
+                </span>
+              )}
+            </div>
+            <div className="p-6 space-y-3">
+              {business.settings?.enableStorefront && business.settings?.storeSlug ? (
+                <>
+                  <div>
+                    <span className="text-xs text-slate-400 block mb-1">Public Web Address</span>
+                    <a
+                      href={`/store/${business.settings.storeSlug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-bold text-sm border border-emerald-500/30 transition-all"
+                    >
+                      <Globe className="w-4 h-4" />
+                      <span>/store/{business.settings.storeSlug}</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                  {business.settings.storeTitle && (
+                    <div className="text-xs text-slate-300">
+                      <span className="text-slate-500">Store Title: </span>
+                      <strong className="text-white">{business.settings.storeTitle}</strong>
+                    </div>
+                  )}
+                  {business.settings.whatsappNumber && (
+                    <div className="text-xs text-slate-300">
+                      <span className="text-slate-500">WhatsApp Contact: </span>
+                      <strong className="text-white">{business.settings.whatsappNumber}</strong>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-xs text-slate-400">
+                  This business has not enabled or configured an online storefront handle yet.
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="bg-[#121316] border border-slate-800/60 rounded-2xl overflow-hidden">

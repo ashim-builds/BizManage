@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
-import { Search, Building2, User, ShieldBan, ShieldCheck } from 'lucide-react';
+import { Search, Building2, User, ShieldBan, ShieldCheck, Globe, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { ModalPortal } from '@/components/ui/ModalPortal';
@@ -22,6 +22,11 @@ interface Business {
     trialDays: number;
     billingPeriod: string;
   } | null;
+  storefront?: {
+    enableStorefront: boolean;
+    storeSlug: string | null;
+    storeTitle: string;
+  };
   createdAt: string;
   userCount: number;
   owner: { name: string; email: string } | null;
@@ -189,6 +194,7 @@ export default function AdminBusinessesPage() {
                   <th className="px-6 py-4">Business / Owner</th>
                   <th className="px-6 py-4">Status</th>
                   <th className="px-6 py-4">Plan</th>
+                  <th className="px-6 py-4">Website / Storefront</th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-left">Created Date</th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right rounded-tr-2xl">Actions</th>
                 </tr>
@@ -241,6 +247,22 @@ export default function AdminBusinessesPage() {
                         </Link>
                       ) : (
                         getExpiryDisplay(business)
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {business.storefront?.enableStorefront && business.storefront?.storeSlug ? (
+                        <a
+                          href={`/store/${business.storefront.storeSlug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-xs font-semibold border border-emerald-500/30 transition-all"
+                        >
+                          <Globe className="w-3.5 h-3.5" />
+                          <span>/store/{business.storefront.storeSlug}</span>
+                          <ExternalLink className="w-3 h-3 ml-0.5 opacity-70" />
+                        </a>
+                      ) : (
+                        <span className="text-xs text-slate-500 italic">Not Published</span>
                       )}
                     </td>
                     <td className="px-6 py-4 text-slate-400">
