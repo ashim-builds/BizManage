@@ -201,8 +201,14 @@ export default function PublicStorefrontPage() {
       <header className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold text-base shadow-inner">
-              {store.name ? store.name.substring(0, 2).toUpperCase() : <Store className="w-5 h-5" />}
+            <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+              {store.logoUrl ? (
+                <img src={store.logoUrl} alt={store.name} className="w-full h-full object-contain p-1" />
+              ) : (
+                <div className="w-full h-full bg-blue-600/20 text-blue-400 font-bold text-base flex items-center justify-center">
+                  {store.name ? store.name.substring(0, 2).toUpperCase() : <Store className="w-5 h-5" />}
+                </div>
+              )}
             </div>
             <div>
               <h1 className="text-base font-bold text-white flex items-center gap-2">
@@ -236,15 +242,24 @@ export default function PublicStorefrontPage() {
       {/* Hero Welcome Section */}
       <div className="bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 border-b border-slate-800/80 py-8 px-4">
         <div className="max-w-6xl mx-auto space-y-4">
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Welcome to {store.name}
-            </h2>
-            {store.description && (
-              <p className="text-sm text-slate-400 max-w-2xl mt-1.5 leading-relaxed">
-                {store.description}
-              </p>
+          <div className="flex items-center gap-4">
+            {store.logoUrl && (
+              <img
+                src={store.logoUrl}
+                alt={store.name}
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-contain bg-slate-900 p-2 border border-slate-800 shadow-xl shrink-0"
+              />
             )}
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                Welcome to {store.name}
+              </h2>
+              {store.description && (
+                <p className="text-sm text-slate-400 max-w-2xl mt-1.5 leading-relaxed">
+                  {store.description}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Search & Category Filter Bar */}
