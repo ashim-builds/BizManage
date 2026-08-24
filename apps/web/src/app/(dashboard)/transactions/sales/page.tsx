@@ -663,7 +663,7 @@ export default function SalesPage() {
                 </div>
 
                 {/* Line Items Table Column Headers */}
-                <div className="grid grid-cols-12 gap-2 px-3.5 py-2 bg-slate-800/60 rounded-xl border border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                <div className="hidden md:grid grid-cols-12 gap-2 px-3.5 py-2 bg-slate-800/60 rounded-xl border border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                   <div className="col-span-4">Item & Available Stock</div>
                   <div className="col-span-2">Quantity</div>
                   <div className="col-span-2">Unit Price (Rs.)</div>
@@ -702,6 +702,9 @@ export default function SalesPage() {
                         }`}
                       >
                         <div className="col-span-12 md:col-span-4">
+                          <label className="block md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                            Item & Available Stock
+                          </label>
                           <ItemSearchSelect
                             items={availableItems}
                             value={selectedItemId || ''}
@@ -742,7 +745,10 @@ export default function SalesPage() {
                           )}
                         </div>
 
-                        <div className="col-span-2">
+                        <div className="col-span-4 md:col-span-2">
+                          <label className="block md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                            Quantity
+                          </label>
                           <input
                             type="number"
                             step="any"
@@ -756,7 +762,10 @@ export default function SalesPage() {
                           />
                         </div>
 
-                        <div className="col-span-2">
+                        <div className="col-span-4 md:col-span-2">
+                          <label className="block md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                            Unit Price (Rs.)
+                          </label>
                           <input
                             type="number"
                             step="any"
@@ -766,7 +775,10 @@ export default function SalesPage() {
                           />
                         </div>
 
-                         <div className="col-span-2">
+                        <div className="col-span-4 md:col-span-2">
+                          <label className="block md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                            Disc (%)
+                          </label>
                           <input
                             type="number"
                             step="any"
@@ -776,18 +788,28 @@ export default function SalesPage() {
                           />
                         </div>
 
-                        <div className="col-span-1 text-right font-mono font-bold text-white text-xs">
+                        <div className="col-span-8 md:col-span-1 text-left md:text-right font-mono font-bold text-white text-xs pt-1 md:pt-0">
+                          <span className="block md:hidden text-[10px] text-slate-400 font-semibold mb-0.5">Line Total</span>
                           Rs. {formatCurrency(totals.items[idx]?.total || 0)}
                         </div>
 
-                        <div className="col-span-1 text-right">
+                        <div className="col-span-4 md:col-span-1 text-right flex items-center justify-end">
                           {fields.length > 1 && (
                             <button
                               type="button"
                               onClick={() => remove(idx)}
-                              className="p-1.5 text-rose-400 hover:text-white hover:bg-rose-500/20 rounded-xl transition-all"
+                              className="p-1.5 text-rose-400 hover:text-white hover:bg-rose-500/20 rounded-xl transition-all flex items-center gap-1 text-xs"
                               title="Remove item"
                             >
+                              <Trash2 className="w-4 h-4" />
+                              <span className="md:hidden">Remove</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           )}

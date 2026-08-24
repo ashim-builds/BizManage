@@ -603,6 +603,9 @@ export default function PurchasesPage() {
                       >
                         {/* Item Select */}
                         <div className="col-span-12 md:col-span-4">
+                          <label className="block md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                            Item & Available Stock
+                          </label>
                           <ItemSearchSelect
                             items={availableItems}
                             value={selItemId || ''}
@@ -630,6 +633,9 @@ export default function PurchasesPage() {
 
                         {/* Quantity */}
                         <div className="col-span-4 md:col-span-2">
+                          <label className="block md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                            Quantity
+                          </label>
                           <input
                             type="number"
                             step="any"
@@ -642,6 +648,9 @@ export default function PurchasesPage() {
 
                         {/* Unit Price */}
                         <div className="col-span-4 md:col-span-2">
+                          <label className="block md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                            Cost Rate (Rs.)
+                          </label>
                           <input
                             type="number"
                             step="any"
@@ -654,6 +663,9 @@ export default function PurchasesPage() {
 
                         {/* Discount % */}
                         <div className="col-span-4 md:col-span-1">
+                          <label className="block md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                            Disc %
+                          </label>
                           <div className="relative">
                             <input
                               type="number"
@@ -669,19 +681,22 @@ export default function PurchasesPage() {
                         </div>
 
                         {/* Line Total */}
-                        <div className="col-span-1 text-right font-mono font-bold text-white text-xs">
+                        <div className="col-span-8 md:col-span-2 text-left md:text-right font-mono font-bold text-white text-xs pt-1 md:pt-0">
+                          <span className="block md:hidden text-[10px] text-slate-400 font-semibold mb-0.5">Line Total</span>
                           Rs. {formatCurrency(totals.items[idx]?.total || 0)}
                         </div>
 
                         {/* Remove */}
-                        <div className="col-span-2 md:col-span-1 flex items-center justify-end">
+                        <div className="col-span-4 md:col-span-1 flex items-center justify-end">
                           {fields.length > 1 && (
                             <button
                               type="button"
                               onClick={() => remove(idx)}
-                              className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
+                              className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-700 rounded-lg transition-colors flex items-center gap-1 text-xs"
+                              title="Remove row"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
+                              <span className="md:hidden">Remove</span>
                             </button>
                           )}
                         </div>
