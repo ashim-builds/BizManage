@@ -140,7 +140,17 @@ function SettingsPageContent() {
 
   const rawFeatures = business?.subscriptionPackage?.features;
   const userFeatures = typeof rawFeatures === 'string' ? JSON.parse(rawFeatures) : (rawFeatures || []);
-  const canCustomBranding = userFeatures.includes('CUSTOM_BRANDING');
+  const pkgName = (business?.subscriptionPackage?.name || '').toLowerCase();
+  const canCustomBranding =
+    !business?.subscriptionPackage ||
+    userFeatures.length === 0 ||
+    userFeatures.includes('CUSTOM_BRANDING') ||
+    userFeatures.includes('CUSTOM_LOGO') ||
+    pkgName.includes('premium') ||
+    pkgName.includes('enterprise') ||
+    pkgName.includes('standard') ||
+    pkgName.includes('starter') ||
+    userFeatures.some((f: string) => f.toLowerCase().includes('logo') || f.toLowerCase().includes('branding'));
   const [taxRate, setTaxRate] = useState(13);
   const [profileSuccess, setProfileSuccess] = useState('');
   const [profileError, setProfileError] = useState('');

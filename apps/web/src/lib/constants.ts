@@ -6,6 +6,8 @@ export const AVAILABLE_FEATURES = [
   { id: 'E2E_ENCRYPTION', label: 'Military-Grade End-to-End Encryption', category: 'Security' },
   { id: 'MULTI_USER_ROLES', label: 'Role-Based Multi-User Access', category: 'Security' },
   { id: 'CUSTOM_BRANDING', label: 'Custom Logo & Invoice Branding', category: 'Branding' },
+  { id: 'CUSTOM_LOGO', label: 'Profile Business Logo Upload', category: 'Branding' },
+  { id: 'ONLINE_STOREFRONT', label: 'Online Storefront & Website Builder', category: 'Website & Store' },
   { id: 'ADVANCED_REPORTS', label: 'Advanced P&L & Daybook Reports', category: 'Analytics' },
   { id: 'POS_BILLING', label: 'POS Quick Billing & Counter Mode (Premium)', category: 'Sales & POS' },
   { id: 'BARCODE_PRINTING', label: 'Print Barcode & Price Tag Stickers (Premium)', category: 'Sales & POS' },

@@ -394,7 +394,7 @@ export default function AdminPackagesPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-64 overflow-y-auto p-3.5 bg-slate-950 border border-slate-800 rounded-xl scrollbar-thin">
                       {AVAILABLE_FEATURES.map(feat => {
                         const isChecked = formData.features.includes(feat.id);
-                        const isPremiumFeat = feat.id === 'POS_BILLING' || feat.id === 'BARCODE_PRINTING' || feat.id === 'STAFF_PAYROLL';
+                        const isPremiumFeat = feat.id === 'POS_BILLING' || feat.id === 'BARCODE_PRINTING' || feat.id === 'STAFF_PAYROLL' || feat.id === 'ONLINE_STOREFRONT';
                         return (
                           <div
                             key={feat.id}
