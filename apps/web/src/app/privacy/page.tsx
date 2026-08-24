@@ -193,8 +193,12 @@ export default function PrivacyPolicyPage() {
                   <strong className="text-white block mb-1">C. Transactional &amp; Financial Data</strong>
                   <span className="text-xs text-slate-400">Sales invoices, purchase orders, customer ledgers, supplier payments, profit/loss records, expense receipts, barcode SKU mappings, and inventory stock adjustments.</span>
                 </div>
+                <div className="border-b border-slate-800 pb-2.5">
+                  <strong className="text-white block mb-1">D. Online Storefront &amp; Customer Order Inquiries</strong>
+                  <span className="text-xs text-slate-400">When businesses publish an online store (`/store/[storeSlug]`), store titles, descriptions, uploaded business logos, and published product catalogs are displayed publicly. Customer names, delivery addresses, and phone numbers submitted via web orders or WhatsApp inquiries are strictly saved under your workspace ledger for order fulfillment.</span>
+                </div>
                 <div>
-                  <strong className="text-white block mb-1">D. Technical &amp; Security Logs</strong>
+                  <strong className="text-white block mb-1">E. Technical &amp; Security Logs</strong>
                   <span className="text-xs text-slate-400">IP addresses, browser type, device identifiers, timestamped audit logs for financial updates, and API request performance metrics.</span>
                 </div>
               </div>

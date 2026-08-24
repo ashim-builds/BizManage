@@ -67,6 +67,10 @@ export default function SecurityPage() {
 
   const securityPractices = [
     {
+      title: "Public Storefront Security & Isolated Order Intake",
+      desc: "Public e-commerce storefront endpoints (/store/[storeSlug]) execute read-only catalog queries with rate limiting. Online customer order submissions are quarantined into dedicated web lead invoices (WEB-00001) without exposing sensitive internal margins or cost prices.",
+    },
+    {
       title: "Zero Plaintext Password Policy",
       desc: "All authentication credentials and user passwords are irreversibly hashed with salted bcrypt algorithms. We never store or transmit plaintext credentials.",
     },

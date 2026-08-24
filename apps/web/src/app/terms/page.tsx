@@ -181,6 +181,7 @@ export default function TermsOfServicePage() {
               </p>
               <ul className="space-y-1.5 list-disc list-inside text-slate-300">
                 <li>Multi-tenant business management and workspace administration</li>
+                <li>Online Storefront &amp; Website Builder for public e-commerce catalogs (<code>/store/[storeSlug]</code>), price show/hide controls, and WhatsApp / direct order submissions</li>
                 <li>Point-of-Sale (POS), retail checkout, and barcode scanning</li>
                 <li>Sales invoicing, purchase orders, customer &amp; vendor ledger accounting</li>
                 <li>Real-time inventory ERP, low-stock alerts, and stock adjustments</li>
