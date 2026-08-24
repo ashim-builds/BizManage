@@ -579,16 +579,16 @@ export function UserGuide({ initialLanguage = 'np', showLanguageSelector = true 
           desc: 'Left Menu -> "Online Website" (storefront) मा जानुहोस्। "Enable Public Website & Catalog" को बटन थिचेर अनलाइन स्टोर चालू गर्नुहोस्।',
         },
         {
-          title: 'आफ्नो पसलको Web URL Link बनाउने (Set Store Web Handle)',
-          desc: 'Store Web Handle मा पसलको नाम (जस्तै: rb-hardware) लेख्नुहोस्। तपाईंको पसलको लिङ्क (https://bizmanage-web.onrender.com/store/rb-hardware) तयार हुन्छ। "Copy Link" थिचेर सेयर गर्न सकिन्छ।',
+          title: 'आफ्नो पसलको Web URL Link र Logo राख्ने (Store Link & Logo)',
+          desc: 'Store Web Handle मा पसलको नाम (जस्तै: rb-hardware) लेख्नुहोस्। तपाईंको पसलको लिङ्क (https://bizmanage-web.onrender.com/store/rb-hardware) तयार हुन्छ। पसलको प्रोफाइल लोगो अनलाइन स्टोरको Header र Welcome ब्यानरमा सिधै देखिन्छ।',
         },
         {
-          title: 'सामानको मूल्य देखाउने वा लुकाउने नियन्त्रण (Price Visibility Control)',
-          desc: '• Show Store Prices ON: ग्राहकहरूले सामानको मूल्य देख्न पाउँछन्।\n• Show Store Prices OFF: सामानको मूल्य लुक्छ र मूल्यको साटो "Price on Request" को ब्यानर र ह्वाट्सएप सोधपुछ बटन देखिन्छ।',
+          title: 'सामानको मूल्य देखाउने वा लुकाउने नियन्त्रण (Price Visibility Control & Inquire Quote)',
+          desc: '• Show Store Prices ON: ग्राहकहरूले सामानको निश्चित मूल्य (जस्तै: Rs. 1,000) देख्न पाउँछन् र "Add to Cart" गरेर खरिद गर्न सक्छन्।\n• Show Store Prices OFF: सामानको मूल्य लुक्छ र मूल्यको साटो "Price on Request" को ब्यानर र "Inquire" (मूल्य सोधपुछ) को बटन देखिन्छ। ग्राहकहरूले थोक वा बजार भाउ अनुसार मूल्य सोध्न अर्डर/कोटेशन पठाउँछन्।',
         },
         {
-          title: 'ग्राहकबाट अर्डर लिने तरिका (Order via WhatsApp & Direct Online Orders)',
-          desc: 'ग्राहकहरूले वेबसाइटबाट सामान अर्डर गर्दा दुईवटा विकल्प पाउँछन्:\n१. Order via WhatsApp: ह्वाट्सएपमा अर्डर सन्देश सिधै पठाइन्छ।\n२. Submit Direct Online Order: अर्डर बिजम्यानेजमा पन्डिङ बिक्री बिल (WEB-00001) को रूपमा दर्ता हुन्छ।',
+          title: 'ग्राहकबाट ह्वाट्सएप वा अनलाइन अर्डर लिने (Order via WhatsApp & Direct Online Lead)',
+          desc: 'ग्राहकहरूले दुईवटा विकल्प पाउँछन्:\n१. Order via WhatsApp: सामानको नाम र परिमाण सहित ह्वाट्सएपमा अर्डर/कोटेशन सन्देश पठाइन्छ।\n२. Submit Direct Online Order: अर्डर बिजम्यानेजमा पन्डिङ बिक्री बिल (WEB-00001) को रूपमा दर्ता हुन्छ र तपाईंले मूल्य हालेर बिल स्वीकृत गर्न सक्नुहुन्छ।',
         },
       ],
       stepsEn: [
@@ -597,16 +597,16 @@ export function UserGuide({ initialLanguage = 'np', showLanguageSelector = true 
           desc: 'Navigate to Sidebar Navigation -> "Online Website". Toggle the "Enable Public Website & Catalog" switch to publish your store live on the web.',
         },
         {
-          title: 'Customizing Your Unique Store URL Link',
-          desc: 'Enter your preferred store slug (e.g., rb-hardware). Your unique store URL (https://bizmanage-web.onrender.com/store/rb-hardware) is generated immediately. Click "Copy Link" to share.',
+          title: 'Customizing Store URL Handle & Logo Branding',
+          desc: 'Enter your preferred store slug (e.g., rb-hardware) to generate your unique store URL (https://bizmanage-web.onrender.com/store/rb-hardware). Upload your business logo in Profile Settings to display it prominently on your store header and hero welcome section.',
         },
         {
-          title: 'Global & Per-Item Price Visibility Controls',
-          desc: '• Show Store Prices ON: Displays standard selling prices (e.g. Rs. 1,000) to website visitors.\n• Show Store Prices OFF: Hides prices across your catalog and renders a "Price on Request" inquiry badge.',
+          title: 'Global & Per-Item Price Visibility Controls & Quote Inquiries',
+          desc: '• Show Store Prices ON: Displays standard selling prices (e.g. Rs. 1,000) with a standard "Add to Cart" checkout button.\n• Show Store Prices OFF: Hides numerical prices for wholesale or fluctuating daily rates, rendering a "Price on Request" badge and an active "Inquire" button so customers can request custom price quotations.',
         },
         {
           title: 'Processing WhatsApp Orders & Direct Invoices',
-          desc: 'Customers can place orders via two flexible workflows:\n1. Order via WhatsApp: Auto-generates a structured itemized order message.\n2. Submit Direct Online Order: Instantly registers a pending sales invoice lead (e.g. WEB-00001) in your BizManage system.',
+          desc: 'Customers can submit inquiries or orders via two flexible workflows:\n1. Order via WhatsApp: Auto-generates an itemized quote request message directly to your mobile number.\n2. Submit Direct Online Order: Instantly registers a pending sales invoice lead (e.g. WEB-00001) in your BizManage ledger for price confirmation and payment collection.',
         },
       ],
       quickLink: '/storefront',
