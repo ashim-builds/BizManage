@@ -22,6 +22,7 @@ import {
   HelpCircle,
   ExternalLink,
   Languages,
+  Store,
 } from 'lucide-react';
 
 export type GuideLanguage = 'np' | 'en';
@@ -562,6 +563,55 @@ export function UserGuide({ initialLanguage = 'np', showLanguageSelector = true 
       quickLink: '/staff',
       quickLinkTextNp: 'कर्मचारी खाता खोल्नुहोस् →',
       quickLinkTextEn: 'Open Staff & Payroll →',
+    },
+    {
+      id: 'storefront',
+      icon: Store,
+      badgeNp: 'अनलाइन वेबसाइट र स्टोर',
+      badgeEn: 'Online Website Builder',
+      titleNp: '१२. अनलाइन वेबसाइट र डिजिटल क्याटलग (Online Website Builder & E-Commerce Catalog)',
+      titleEn: '12. Online Storefront Builder, Price Visibility Controls & WhatsApp Orders',
+      summaryNp: 'तपाईंको पसलको अनलाइन वेबसाइट बनाउने, लिङ्क सेयर गर्ने, सामानको मूल्य देखाउने/लुकाउने र ह्वाट्सएप वा अनलाइन अर्डर लिने तरिका।',
+      summaryEn: 'Build your public e-commerce catalog, customize your web handle, toggle price show/hide controls, and process online orders or WhatsApp inquiries.',
+      stepsNp: [
+        {
+          title: 'अनलाइन स्टोर सुरु गर्ने (Enable Online Website)',
+          desc: 'Left Menu -> "Online Website" (storefront) मा जानुहोस्। "Enable Public Website & Catalog" को बटन थिचेर अनलाइन स्टोर चालू गर्नुहोस्।',
+        },
+        {
+          title: 'आफ्नो पसलको Web URL Link बनाउने (Set Store Web Handle)',
+          desc: 'Store Web Handle मा पसलको नाम (जस्तै: rb-hardware) लेख्नुहोस्। तपाईंको पसलको लिङ्क (https://bizmanage-web.onrender.com/store/rb-hardware) तयार हुन्छ। "Copy Link" थिचेर सेयर गर्न सकिन्छ।',
+        },
+        {
+          title: 'सामानको मूल्य देखाउने वा लुकाउने नियन्त्रण (Price Visibility Control)',
+          desc: '• Show Store Prices ON: ग्राहकहरूले सामानको मूल्य देख्न पाउँछन्।\n• Show Store Prices OFF: सामानको मूल्य लुक्छ र मूल्यको साटो "Price on Request" को ब्यानर र ह्वाट्सएप सोधपुछ बटन देखिन्छ।',
+        },
+        {
+          title: 'ग्राहकबाट अर्डर लिने तरिका (Order via WhatsApp & Direct Online Orders)',
+          desc: 'ग्राहकहरूले वेबसाइटबाट सामान अर्डर गर्दा दुईवटा विकल्प पाउँछन्:\n१. Order via WhatsApp: ह्वाट्सएपमा अर्डर सन्देश सिधै पठाइन्छ।\n२. Submit Direct Online Order: अर्डर बिजम्यानेजमा पन्डिङ बिक्री बिल (WEB-00001) को रूपमा दर्ता हुन्छ।',
+        },
+      ],
+      stepsEn: [
+        {
+          title: 'Enabling Your Online Website',
+          desc: 'Navigate to Sidebar Navigation -> "Online Website". Toggle the "Enable Public Website & Catalog" switch to publish your store live on the web.',
+        },
+        {
+          title: 'Customizing Your Unique Store URL Link',
+          desc: 'Enter your preferred store slug (e.g., rb-hardware). Your unique store URL (https://bizmanage-web.onrender.com/store/rb-hardware) is generated immediately. Click "Copy Link" to share.',
+        },
+        {
+          title: 'Global & Per-Item Price Visibility Controls',
+          desc: '• Show Store Prices ON: Displays standard selling prices (e.g. Rs. 1,000) to website visitors.\n• Show Store Prices OFF: Hides prices across your catalog and renders a "Price on Request" inquiry badge.',
+        },
+        {
+          title: 'Processing WhatsApp Orders & Direct Invoices',
+          desc: 'Customers can place orders via two flexible workflows:\n1. Order via WhatsApp: Auto-generates a structured itemized order message.\n2. Submit Direct Online Order: Instantly registers a pending sales invoice lead (e.g. WEB-00001) in your BizManage system.',
+        },
+      ],
+      quickLink: '/storefront',
+      quickLinkTextNp: 'अनलाइन वेबसाइट सेटिङ खोल्नुहोस् →',
+      quickLinkTextEn: 'Open Online Website Builder →',
     },
   ];
 

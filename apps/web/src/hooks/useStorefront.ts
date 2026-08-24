@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getStorefrontSettings,
   updateStorefrontSettings,
+  getPublicStores,
   getPublicStorefront,
   submitOnlineOrder,
   StorefrontSettings,
@@ -21,6 +22,13 @@ export function useUpdateStorefrontSettings() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['storefrontSettings'] });
     },
+  });
+}
+
+export function usePublicStores() {
+  return useQuery({
+    queryKey: ['publicStores'],
+    queryFn: getPublicStores,
   });
 }
 

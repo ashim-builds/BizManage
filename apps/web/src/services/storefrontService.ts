@@ -23,6 +23,11 @@ export async function updateStorefrontSettings(data: Partial<StorefrontSettings>
   return res.data.data;
 }
 
+export async function getPublicStores() {
+  const res = await api.get('/storefront/public-stores');
+  return res.data.data;
+}
+
 export async function getPublicStorefront(storeSlug: string) {
   const res = await api.get(`/storefront/public/${storeSlug}`);
   return res.data.data;

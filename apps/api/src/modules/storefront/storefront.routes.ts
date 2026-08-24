@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { requireBusinessTenant, authenticateUser } from '../../middleware/auth.js';
+import { globalPrisma } from '@bizmanage/database';
 
 export async function storefrontRoutes(app: FastifyInstance) {
   // ── Authenticated Routes (Business Owner Portal) ───────────────────────────
@@ -108,6 +109,51 @@ export async function storefrontRoutes(app: FastifyInstance) {
   });
 
   // ── Public Routes (Customer Facing) ────────────────────────────────────────
+
+  // GET /api/v1/storefront/public-stores (Directory of all published online stores)
+  app.get('/public-stores', async (_request, reply) => {
+    try {
+      const settings = await globalPrisma.businessSetting.findMany({
+        where: {
+          enableStorefront: true,
+          storeSlug: { not: null },
+        },
+        include: {
+          business: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+              email: true,
+              address: true,
+              logoUrl: true,
+            },
+          },
+        },
+        take: 60,
+      });
+
+      const stores = settings
+        .filter((s: any) => s.storeSlug && s.business)
+        .map((s: any) => ({
+          slug: s.storeSlug,
+          title: s.storeTitle || s.business?.name || 'Online Store',
+          description: s.storeDescription || '',
+          bannerUrl: s.storeBannerUrl || '',
+          logoUrl: s.business?.logoUrl || '',
+          address: s.business?.address || '',
+          phone: s.whatsappNumber || s.business?.phone || '',
+          showPrices: s.showStorePrices,
+        }));
+
+      return reply.send({
+        success: true,
+        data: stores,
+      });
+    } catch (err: any) {
+      return reply.send({ success: true, data: [] });
+    }
+  });
 
   // GET /api/v1/storefront/public/:storeSlug
   app.get('/public/:storeSlug', async (request, reply) => {

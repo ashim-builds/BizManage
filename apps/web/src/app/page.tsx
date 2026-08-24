@@ -14,8 +14,13 @@ import {
   Zap,
   Plus,
   Download,
+  Store,
+  MapPin,
+  ShoppingBag,
+  Globe,
 } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
+import { usePublicStores } from "@/hooks/useStorefront";
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { AVAILABLE_FEATURES } from "@/lib/constants";
@@ -37,6 +42,7 @@ interface SubscriptionPackage {
 
 export default function Home() {
   const { user, loading: authLoading } = useAuth();
+  const { data: publicStores, isLoading: storesLoading } = usePublicStores();
   const [packages, setPackages] = useState<SubscriptionPackage[]>([]);
   const [packagesLoading, setPackagesLoading] = useState(true);
 
@@ -198,6 +204,95 @@ export default function Home() {
               </p>
             </div>
           </div>
+        </section>
+
+        {/* =========================================================
+            FEATURED ONLINE STORES DIRECTORY SECTION
+        ========================================================= */}
+        <section id="stores" className="scroll-mt-20 py-20 px-6 max-w-7xl mx-auto border-t border-slate-800/80">
+          <div className="text-center mb-12">
+            <span className="px-3.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold uppercase tracking-wider border border-emerald-500/20 inline-flex items-center gap-1.5">
+              <Store className="w-3.5 h-3.5" />
+              Public E-Commerce Catalog
+            </span>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white mt-4">
+              Explore Active Online Stores
+            </h2>
+            <p className="text-slate-400 text-sm md:text-base mt-2 max-w-2xl mx-auto">
+              Browse products, request prices, and submit direct orders or WhatsApp inquiries to verified businesses powered by BizManage.
+            </p>
+          </div>
+
+          {storesLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-48 rounded-2xl bg-slate-900/60 border border-slate-800 animate-pulse" />
+              ))}
+            </div>
+          ) : publicStores && publicStores.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {publicStores.map((store: any) => (
+                <div
+                  key={store.slug}
+                  className="group rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/50 transition-all p-6 flex flex-col justify-between space-y-4 hover:shadow-xl hover:shadow-emerald-500/5"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-lg shrink-0">
+                        {store.logoUrl ? (
+                          <img src={store.logoUrl} alt={store.title} className="w-full h-full object-contain p-1 rounded-xl" />
+                        ) : (
+                          store.title.substring(0, 2).toUpperCase()
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-base font-bold text-white group-hover:text-emerald-400 transition-colors truncate">
+                          {store.title}
+                        </h3>
+                        {store.address && (
+                          <p className="text-[11px] text-slate-400 flex items-center gap-1 truncate">
+                            <MapPin className="w-3 h-3 text-slate-500 shrink-0" /> {store.address}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {store.description && (
+                      <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                        {store.description}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                    <span className="text-[10px] text-slate-500 font-mono">
+                      /store/{store.slug}
+                    </span>
+                    <Link
+                      href={`/store/${store.slug}`}
+                      className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5"
+                    >
+                      Visit Store <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-10 rounded-3xl bg-slate-900/40 border border-slate-800 text-center space-y-4 max-w-xl mx-auto">
+              <Store className="w-12 h-12 text-slate-600 mx-auto" />
+              <h3 className="text-lg font-bold text-white">Create & Publish Your Store</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Build your online catalog, toggle price visibility, receive WhatsApp inquiries, and manage inventory automatically from your BizManage dashboard.
+              </p>
+              <Link
+                href="/register"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-600/25 transition-all"
+              >
+                Create Storefront Now <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          )}
         </section>
 
         {/* =========================================================

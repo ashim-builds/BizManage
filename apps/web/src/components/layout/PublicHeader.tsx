@@ -59,6 +59,12 @@ export function PublicHeader({ activePage }: PublicHeaderProps) {
           >
             Pricing
           </Link>
+          <Link
+            href="/#stores"
+            className="px-3 py-1.5 rounded-lg text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 font-semibold transition-colors"
+          >
+            Explore Stores
+          </Link>
         </nav>
 
         {/* Header Actions */}
