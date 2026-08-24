@@ -157,201 +157,219 @@ export async function storefrontRoutes(app: FastifyInstance) {
 
   // GET /api/v1/storefront/public/:storeSlug
   app.get('/public/:storeSlug', async (request, reply) => {
-    const { storeSlug } = request.params as { storeSlug: string };
-    const cleanSlug = String(storeSlug).trim().toLowerCase();
+    try {
+      const { storeSlug } = request.params as { storeSlug: string };
+      const cleanSlug = String(storeSlug).trim().toLowerCase();
 
-    const setting = await request.db!.businessSetting.findFirst({
-      where: { storeSlug: cleanSlug, enableStorefront: true },
-      include: {
-        business: {
-          select: {
-            id: true,
-            name: true,
-            phone: true,
-            email: true,
-            address: true,
-            logoUrl: true,
-            currency: true,
+      const setting = await globalPrisma.businessSetting.findFirst({
+        where: { storeSlug: cleanSlug, enableStorefront: true },
+        include: {
+          business: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+              email: true,
+              address: true,
+              logoUrl: true,
+              currency: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    if (!setting || !setting.business) {
-      return reply.status(404).send({
+      if (!setting || !setting.business) {
+        return reply.status(404).send({
+          success: false,
+          error: 'STORE_NOT_FOUND',
+          message: 'Online store not found or currently unavailable',
+        });
+      }
+
+      const businessId = setting.businessId;
+
+      // Fetch published categories & items
+      const categories = await globalPrisma.itemCategory.findMany({
+        where: { businessId },
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' },
+      });
+
+      const rawItems = await globalPrisma.item.findMany({
+        where: { businessId, isPublishedToStore: true },
+        include: { category: { select: { id: true, name: true } } },
+        orderBy: { name: 'asc' },
+      });
+
+      // Format products with price show/hide rules
+      const formattedProducts = rawItems.map((item) => {
+        const showPrice = item.showPriceOnStore !== null ? item.showPriceOnStore : setting.showStorePrices;
+        return {
+          id: item.id,
+          name: item.name,
+          code: item.code,
+          type: item.type,
+          unit: item.unit,
+          category: item.category,
+          currentStock: Number(item.currentStock),
+          inStock: item.type === 'SERVICE' || Number(item.currentStock) > 0,
+          showPrice,
+          priceHidden: !showPrice,
+          price: showPrice ? Number(item.salePrice) : null,
+          description: item.storeDescription || null,
+        };
+      });
+
+      return reply.send({
+        success: true,
+        data: {
+          store: {
+            id: setting.business.id,
+            name: setting.storeTitle || setting.business.name,
+            description: setting.storeDescription || '',
+            logoUrl: setting.business.logoUrl || null,
+            bannerUrl: setting.storeBannerUrl || null,
+            phone: setting.business.phone || '',
+            email: setting.business.email || '',
+            address: setting.business.address || '',
+            whatsappNumber: setting.whatsappNumber || setting.business.phone || '',
+            currency: setting.business.currency || 'NPR',
+            showStorePrices: setting.showStorePrices,
+            enableOnlineOrders: setting.enableOnlineOrders,
+          },
+          categories,
+          products: formattedProducts,
+        },
+      });
+    } catch (err: any) {
+      request.log.error(err, 'Error serving public store catalog');
+      return reply.status(500).send({
         success: false,
-        error: 'STORE_NOT_FOUND',
-        message: 'Online store not found or currently unavailable',
+        error: 'SERVER_ERROR',
+        message: 'Failed to load online store catalog',
       });
     }
-
-    const businessId = setting.businessId;
-
-    // Fetch published categories & items
-    const categories = await request.db!.itemCategory.findMany({
-      where: { businessId },
-      select: { id: true, name: true },
-      orderBy: { name: 'asc' },
-    });
-
-    const rawItems = await request.db!.item.findMany({
-      where: { businessId, isPublishedToStore: true },
-      include: { category: { select: { id: true, name: true } } },
-      orderBy: { name: 'asc' },
-    });
-
-    // Format products with price show/hide rules
-    const formattedProducts = rawItems.map((item) => {
-      const showPrice = item.showPriceOnStore !== null ? item.showPriceOnStore : setting.showStorePrices;
-      return {
-        id: item.id,
-        name: item.name,
-        code: item.code,
-        type: item.type,
-        unit: item.unit,
-        category: item.category,
-        currentStock: Number(item.currentStock),
-        inStock: item.type === 'SERVICE' || Number(item.currentStock) > 0,
-        showPrice,
-        priceHidden: !showPrice,
-        price: showPrice ? Number(item.salePrice) : null,
-        description: item.storeDescription || null,
-      };
-    });
-
-    return reply.send({
-      success: true,
-      data: {
-        store: {
-          id: setting.business.id,
-          name: setting.storeTitle || setting.business.name,
-          description: setting.storeDescription || '',
-          logoUrl: setting.business.logoUrl || null,
-          bannerUrl: setting.storeBannerUrl || null,
-          phone: setting.business.phone || '',
-          email: setting.business.email || '',
-          address: setting.business.address || '',
-          whatsappNumber: setting.whatsappNumber || setting.business.phone || '',
-          currency: setting.business.currency || 'NPR',
-          showStorePrices: setting.showStorePrices,
-          enableOnlineOrders: setting.enableOnlineOrders,
-        },
-        categories,
-        products: formattedProducts,
-      },
-    });
   });
 
   // POST /api/v1/storefront/public/:storeSlug/orders
   app.post('/public/:storeSlug/orders', async (request, reply) => {
-    const { storeSlug } = request.params as { storeSlug: string };
-    const body = request.body as any;
+    try {
+      const { storeSlug } = request.params as { storeSlug: string };
+      const body = request.body as any;
 
-    const cleanSlug = String(storeSlug).trim().toLowerCase();
-    const setting = await request.db!.businessSetting.findFirst({
-      where: { storeSlug: cleanSlug, enableStorefront: true },
-      include: { business: true },
-    });
-
-    if (!setting || !setting.business) {
-      return reply.status(404).send({
-        success: false,
-        error: 'STORE_NOT_FOUND',
-        message: 'Store not found',
+      const cleanSlug = String(storeSlug).trim().toLowerCase();
+      const setting = await globalPrisma.businessSetting.findFirst({
+        where: { storeSlug: cleanSlug, enableStorefront: true },
+        include: { business: true },
       });
-    }
 
-    const { customerName, customerPhone, deliveryAddress, notes, items } = body;
-    if (!customerName || !customerPhone || !Array.isArray(items) || items.length === 0) {
-      return reply.status(400).send({
-        success: false,
-        error: 'INVALID_ORDER',
-        message: 'Customer name, phone, and items are required',
-      });
-    }
-
-    const businessId = setting.businessId;
-
-    // Create or find customer party
-    let party = await request.db!.party.findFirst({
-      where: { businessId, phone: String(customerPhone).trim() },
-    });
-
-    if (!party) {
-      party = await request.db!.party.create({
-        data: {
-          businessId,
-          name: String(customerName).trim(),
-          phone: String(customerPhone).trim(),
-          type: 'CUSTOMER',
-          address: deliveryAddress ? String(deliveryAddress).trim() : null,
-        },
-      });
-    }
-
-    // Build sale items & calculate total
-    let totalAmt = 0;
-    const saleItemsData: any[] = [];
-
-    for (const line of items) {
-      const dbItem = await request.db!.item.findFirst({
-        where: { id: line.itemId, businessId },
-      });
-      if (dbItem) {
-        const qty = Math.max(1, Number(line.quantity || 1));
-        const price = Number(dbItem.salePrice || 0);
-        const lineTot = qty * price;
-        totalAmt += lineTot;
-        saleItemsData.push({
-          itemId: dbItem.id,
-          quantity: qty,
-          unitPrice: price,
-          discount: 0,
-          taxAmount: 0,
-          total: lineTot,
+      if (!setting || !setting.business) {
+        return reply.status(404).send({
+          success: false,
+          error: 'STORE_NOT_FOUND',
+          message: 'Store not found',
         });
       }
-    }
 
-    // Generate online invoice number
-    const count = await request.db!.sale.count({ where: { businessId } });
-    const invoiceNumber = `WEB-${String(count + 1).padStart(5, '0')}`;
+      const { customerName, customerPhone, deliveryAddress, notes, items } = body;
+      if (!customerName || !customerPhone || !Array.isArray(items) || items.length === 0) {
+        return reply.status(400).send({
+          success: false,
+          error: 'INVALID_ORDER',
+          message: 'Customer name, phone, and items are required',
+        });
+      }
 
-    // Create Sales record (Status: UNPAID for online order lead)
-    const order = await request.db!.sale.create({
-      data: {
-        businessId,
-        invoiceNumber,
-        partyId: party.id,
-        date: new Date(),
-        subTotal: totalAmt,
-        discountPercent: 0,
-        discount: 0,
-        taxAmount: 0,
-        totalAmount: totalAmt,
-        paidAmount: 0,
-        dueAmount: totalAmt,
-        status: 'UNPAID',
-        notes: `[Online Storefront Order] ${notes || ''}`.trim(),
-        items: {
-          create: saleItemsData,
+      const businessId = setting.businessId;
+
+      // Create or find customer party
+      let party = await globalPrisma.party.findFirst({
+        where: { businessId, phone: String(customerPhone).trim() },
+      });
+
+      if (!party) {
+        party = await globalPrisma.party.create({
+          data: {
+            businessId,
+            name: String(customerName).trim(),
+            phone: String(customerPhone).trim(),
+            type: 'CUSTOMER',
+            address: deliveryAddress ? String(deliveryAddress).trim() : null,
+          },
+        });
+      }
+
+      // Build sale items & calculate total
+      let totalAmt = 0;
+      const saleItemsData: any[] = [];
+
+      for (const line of items) {
+        const dbItem = await globalPrisma.item.findFirst({
+          where: { id: line.itemId, businessId },
+        });
+        if (dbItem) {
+          const qty = Math.max(1, Number(line.quantity || 1));
+          const price = Number(dbItem.salePrice || 0);
+          const lineTot = qty * price;
+          totalAmt += lineTot;
+          saleItemsData.push({
+            itemId: dbItem.id,
+            quantity: qty,
+            unitPrice: price,
+            discount: 0,
+            taxAmount: 0,
+            total: lineTot,
+          });
+        }
+      }
+
+      // Generate online invoice number
+      const count = await globalPrisma.sale.count({ where: { businessId } });
+      const invoiceNumber = `WEB-${String(count + 1).padStart(5, '0')}`;
+
+      // Create Sales record (Status: UNPAID for online order lead)
+      const order = await globalPrisma.sale.create({
+        data: {
+          businessId,
+          invoiceNumber,
+          partyId: party.id,
+          date: new Date(),
+          subTotal: totalAmt,
+          discountPercent: 0,
+          discount: 0,
+          taxAmount: 0,
+          totalAmount: totalAmt,
+          paidAmount: 0,
+          dueAmount: totalAmt,
+          status: 'UNPAID',
+          notes: `[Online Storefront Order] ${notes || ''}`.trim(),
+          items: {
+            create: saleItemsData,
+          },
         },
-      },
-      include: {
-        party: true,
-        items: { include: { item: true } },
-      },
-    });
+        include: {
+          party: true,
+          items: { include: { item: true } },
+        },
+      });
 
-    return reply.send({
-      success: true,
-      data: {
-        orderId: order.id,
-        invoiceNumber: order.invoiceNumber,
-        totalAmount: Number(order.totalAmount),
-        status: order.status,
-      },
-      message: 'Online order submitted successfully!',
-    });
+      return reply.send({
+        success: true,
+        data: {
+          orderId: order.id,
+          invoiceNumber: order.invoiceNumber,
+          totalAmount: Number(order.totalAmount),
+          status: order.status,
+        },
+        message: 'Online order submitted successfully!',
+      });
+    } catch (err: any) {
+      request.log.error(err, 'Error submitting online order');
+      return reply.status(500).send({
+        success: false,
+        error: 'SERVER_ERROR',
+        message: 'Failed to process online order',
+      });
+    }
   });
 }
