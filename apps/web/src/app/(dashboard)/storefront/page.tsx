@@ -47,6 +47,24 @@ export default function StorefrontSettingsPage() {
   }, [settings]);
 
   const cleanSlug = storeSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+
+  const getSubdomainUrl = () => {
+    if (typeof window === 'undefined' || !cleanSlug) return `/store/${cleanSlug || 'my-shop'}`;
+    const host = window.location.host;
+    const protocol = window.location.protocol;
+    if (host.includes('localhost')) {
+      const port = window.location.port ? `:${window.location.port}` : '';
+      return `${protocol}//${cleanSlug}.localhost${port}`;
+    }
+    const domainParts = host.split('.');
+    if (domainParts.length >= 2) {
+      const baseDomain = domainParts.slice(-2).join('.');
+      return `${protocol}//${cleanSlug}.${baseDomain}`;
+    }
+    return `${protocol}//${host}/store/${cleanSlug}`;
+  };
+
+  const publicSubdomainUrl = getSubdomainUrl();
   const publicStoreUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/store/${cleanSlug || 'my-shop'}`
     : `/store/${cleanSlug || 'my-shop'}`;
@@ -56,9 +74,9 @@ export default function StorefrontSettingsPage() {
       toast.error('Please configure a store URL handle first');
       return;
     }
-    navigator.clipboard.writeText(publicStoreUrl);
+    navigator.clipboard.writeText(publicSubdomainUrl);
     setCopied(true);
-    toast.success('Public Store URL copied to clipboard!');
+    toast.success('Subdomain store link copied to clipboard!');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -187,9 +205,14 @@ export default function StorefrontSettingsPage() {
                 />
               </div>
               {cleanSlug && (
-                <p className="text-[11px] text-blue-400 font-mono flex items-center gap-1">
-                  <LinkIcon className="w-3 h-3" /> {publicStoreUrl}
-                </p>
+                <div className="space-y-1.5 pt-1">
+                  <p className="text-[11px] text-emerald-400 font-mono flex items-center gap-1">
+                    <Globe className="w-3 h-3 shrink-0" /> Subdomain Web Link: {publicSubdomainUrl}
+                  </p>
+                  <p className="text-[11px] text-blue-400 font-mono flex items-center gap-1">
+                    <LinkIcon className="w-3 h-3 shrink-0" /> Direct Path Link: {publicStoreUrl}
+                  </p>
+                </div>
               )}
             </div>
           </div>
