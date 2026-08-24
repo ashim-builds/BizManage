@@ -110,7 +110,6 @@ function InventoryPageContent() {
     isError,
     refetch,
   } = useItems({
-    search,
     categoryId: selectedCategory || undefined,
     type: selectedType || undefined,
     lowStock: lowStockOnly,
@@ -310,7 +309,24 @@ function InventoryPageContent() {
           return true;
         }
 
-        // 4. Multi-word tokenized search across name, code, fallback SKU, category
+        // 4. Sub-token matching (e.g. 1CPVCPIP matching 1" CPVC Pipe)
+        const subTokens = rawTerm.match(/[a-z0-9]+/g) || [];
+        if (subTokens.length > 0) {
+          const subMatch = subTokens.every((tok) => {
+            const cleanTok = tok.replace(/[^a-z0-9]/g, '');
+            return (
+              name.includes(tok) ||
+              cleanName.includes(cleanTok) ||
+              code.includes(tok) ||
+              cleanCode.includes(cleanTok) ||
+              fallbackSku.includes(tok) ||
+              category.includes(tok)
+            );
+          });
+          if (subMatch) return true;
+        }
+
+        // 5. Multi-word tokenized search across name, code, fallback SKU, category
         const combined = `${name} ${code} ${fallbackSku} ${category}`;
         const normalizedCombined = combined.replace(/[^a-z0-9]/g, ' ');
         const cleanCombined = combined.replace(/[^a-z0-9]/g, '');
