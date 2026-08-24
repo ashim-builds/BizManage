@@ -6,7 +6,10 @@ export async function storefrontRoutes(app: FastifyInstance) {
 
   // GET /api/v1/storefront/settings
   app.get('/settings', { preHandler: [authenticateUser, requireBusinessTenant] }, async (request, reply) => {
-    const businessId = (request as any).businessId!;
+    const businessId = request.tenant?.businessId || (request as any).businessId;
+    if (!businessId) {
+      return reply.status(400).send({ success: false, error: 'NO_BUSINESS', message: 'Active business tenant is required' });
+    }
     const setting = await request.db!.businessSetting.findUnique({
       where: { businessId },
     });
@@ -35,7 +38,10 @@ export async function storefrontRoutes(app: FastifyInstance) {
 
   // PUT /api/v1/storefront/settings
   app.put('/settings', { preHandler: [authenticateUser, requireBusinessTenant] }, async (request, reply) => {
-    const businessId = (request as any).businessId!;
+    const businessId = request.tenant?.businessId || (request as any).businessId;
+    if (!businessId) {
+      return reply.status(400).send({ success: false, error: 'NO_BUSINESS', message: 'Active business tenant is required' });
+    }
     const body = request.body as any;
 
     const {
