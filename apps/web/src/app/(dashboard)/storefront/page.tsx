@@ -1,7 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useStorefrontSettings, useUpdateStorefrontSettings } from '@/hooks/useStorefront';
+import {
+  useStorefrontSettings,
+  useUpdateStorefrontSettings,
+  useStorefrontOrders,
+  useUpdateOrderStatus,
+} from '@/hooks/useStorefront';
 import {
   Globe,
   Eye,
@@ -16,12 +21,25 @@ import {
   ShoppingBag,
   Save,
   Link as LinkIcon,
+  Clock,
+  XCircle,
+  Phone,
+  MapPin,
+  FileText,
+  RefreshCw,
+  Check,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Link from 'next/link';
 
 export default function StorefrontSettingsPage() {
+  const [activeTab, setActiveTab] = useState<'settings' | 'orders'>('settings');
+
   const { data: settings, isLoading, isError } = useStorefrontSettings();
   const updateSettings = useUpdateStorefrontSettings();
+
+  const { data: orders, isLoading: ordersLoading, refetch: refetchOrders } = useStorefrontOrders();
+  const updateStatus = useUpdateOrderStatus();
 
   const [enableStorefront, setEnableStorefront] = useState(false);
   const [storeSlug, setStoreSlug] = useState('');
@@ -86,6 +104,15 @@ export default function StorefrontSettingsPage() {
     }
   };
 
+  const handleStatusChange = async (orderId: string, newStatus: string) => {
+    try {
+      await updateStatus.mutateAsync({ id: orderId, status: newStatus });
+      toast.success(`Order status updated to ${newStatus}`);
+    } catch (err) {
+      toast.error('Failed to update order status');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="p-8 text-center text-slate-400 font-medium">
@@ -94,6 +121,9 @@ export default function StorefrontSettingsPage() {
       </div>
     );
   }
+
+  const pendingOrdersCount = orders?.filter((o: any) => o.status === 'UNPAID' || o.status === 'PARTIAL').length || 0;
+  const totalRevenue = orders?.reduce((acc: number, o: any) => acc + (o.status === 'PAID' ? o.totalAmount : 0), 0) || 0;
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto pb-12">
@@ -117,7 +147,7 @@ export default function StorefrontSettingsPage() {
             </span>
           </div>
           <p className="text-sm text-slate-400 mt-1">
-            Build your online catalog website, toggle product price visibility, and receive WhatsApp & online customer orders.
+            Build your online catalog website, manage online orders, and toggle price show/hide controls.
           </p>
         </div>
 
@@ -144,245 +174,367 @@ export default function StorefrontSettingsPage() {
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Left Column: Form Settings */}
-        <div className="md:col-span-2 space-y-6">
-          {/* Main Website Switch */}
-          <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Store className="w-5 h-5 text-blue-400" /> Enable Public Website & Catalog
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Publish your product catalog online for customers to browse and order.
-                </p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={enableStorefront}
-                  onChange={(e) => setEnableStorefront(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
-              </label>
-            </div>
+      {/* Main Tabs Navigation */}
+      <div className="flex items-center gap-2 border-b border-slate-800 pb-1">
+        <button
+          type="button"
+          onClick={() => setActiveTab('settings')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            activeTab === 'settings'
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <Store className="w-4 h-4" /> Website Settings
+        </button>
 
-            {/* Store URL Handle */}
-            <div className="pt-3 border-t border-slate-800 space-y-2">
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
-                Store Web Handle (URL Slug) *
-              </label>
-              <div className="flex rounded-xl bg-slate-950 border border-slate-800 overflow-hidden focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
-                <span className="px-3.5 py-2.5 bg-slate-800/80 text-slate-400 text-xs font-mono flex items-center shrink-0 border-r border-slate-800">
-                  /store/
-                </span>
-                <input
-                  type="text"
-                  value={storeSlug}
-                  onChange={(e) => setStoreSlug(e.target.value)}
-                  placeholder="e.g. rb-hardware"
-                  className="w-full px-3.5 py-2.5 bg-transparent text-white text-xs font-mono focus:outline-none placeholder-slate-600"
-                />
-              </div>
-              {cleanSlug && (
-                <p className="text-[11px] text-blue-400 font-mono flex items-center gap-1 pt-1">
-                  <LinkIcon className="w-3 h-3 shrink-0" /> Public Store Link: {publicStoreUrl}
-                </p>
-              )}
-            </div>
-          </div>
+        <button
+          type="button"
+          onClick={() => setActiveTab('orders')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 relative ${
+            activeTab === 'orders'
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <ShoppingBag className="w-4 h-4" /> Online Orders Manager
+          {pendingOrdersCount > 0 && (
+            <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-extrabold text-[10px] shadow-sm">
+              {pendingOrdersCount} New
+            </span>
+          )}
+        </button>
+      </div>
 
-          {/* PRICE VISIBILITY CONTROL */}
-          <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  {showStorePrices ? (
-                    <Eye className="w-5 h-5 text-emerald-400" />
-                  ) : (
-                    <EyeOff className="w-5 h-5 text-amber-400" />
-                  )}
-                  Product Price Visibility Control
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Choose whether product selling prices are visible to website visitors or hidden behind price inquiries.
-                </p>
-              </div>
-
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showStorePrices}
-                  onChange={(e) => setShowStorePrices(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-amber-600/60 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600" />
-              </label>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-              <div
-                onClick={() => setShowStorePrices(true)}
-                className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                  showStorePrices
-                    ? 'bg-emerald-500/10 border-emerald-500/50 text-white'
-                    : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center gap-2 font-bold text-xs mb-1">
-                  <Eye className="w-4 h-4 text-emerald-400" /> Show Product Prices
+      {/* TAB 1: WEBSITE SETTINGS */}
+      {activeTab === 'settings' ? (
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Left Column: Form Settings */}
+          <div className="md:col-span-2 space-y-6">
+            {/* Main Website Switch */}
+            <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <Store className="w-5 h-5 text-blue-400" /> Enable Public Website & Catalog
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Publish your product catalog online for customers to browse and order.
+                  </p>
                 </div>
-                <p className="text-[11px] leading-relaxed text-slate-300">
-                  Product prices (e.g. <span className="font-mono text-emerald-400">Rs. 1,000</span>) are displayed clearly to online customers.
-                </p>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={enableStorefront}
+                    onChange={(e) => setEnableStorefront(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
+                </label>
               </div>
 
-              <div
-                onClick={() => setShowStorePrices(false)}
-                className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                  !showStorePrices
-                    ? 'bg-amber-500/10 border-amber-500/50 text-white'
-                    : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center gap-2 font-bold text-xs mb-1">
-                  <EyeOff className="w-4 h-4 text-amber-400" /> Hide Prices (Inquire for Price)
+              {/* Store URL Handle */}
+              <div className="pt-3 border-t border-slate-800 space-y-2">
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  Store Web Handle (URL Slug) *
+                </label>
+                <div className="flex rounded-xl bg-slate-950 border border-slate-800 overflow-hidden focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
+                  <span className="px-3.5 py-2.5 bg-slate-800/80 text-slate-400 text-xs font-mono flex items-center shrink-0 border-r border-slate-800">
+                    /store/
+                  </span>
+                  <input
+                    type="text"
+                    value={storeSlug}
+                    onChange={(e) => setStoreSlug(e.target.value)}
+                    placeholder="e.g. rb-hardware"
+                    className="w-full px-3.5 py-2.5 bg-transparent text-white text-xs font-mono focus:outline-none placeholder-slate-600"
+                  />
                 </div>
-                <p className="text-[11px] leading-relaxed text-slate-300">
-                  Prices are hidden and replaced with a <span className="font-semibold text-amber-400">"Price on Request"</span> WhatsApp inquiry badge.
-                </p>
+                {cleanSlug && (
+                  <p className="text-[11px] text-blue-400 font-mono flex items-center gap-1 pt-1">
+                    <LinkIcon className="w-3 h-3 shrink-0" /> Public Store Link: {publicStoreUrl}
+                  </p>
+                )}
               </div>
             </div>
-          </div>
 
-          {/* Store Branding & Contact Details */}
-          <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-indigo-400" /> Store Branding & Contact Info
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Storefront Title
+            {/* PRICE VISIBILITY CONTROL */}
+            <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    {showStorePrices ? <Eye className="w-5 h-5 text-emerald-400" /> : <EyeOff className="w-5 h-5 text-amber-400" />}
+                    Product Price Visibility
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Show numerical prices to visitors or display "Price on Request" badges for custom quote inquiries.
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showStorePrices}
+                    onChange={(e) => setShowStorePrices(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600" />
                 </label>
-                <input
-                  type="text"
-                  value={storeTitle}
-                  onChange={(e) => setStoreTitle(e.target.value)}
-                  placeholder="e.g. RB Hardware & Sanitary House"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                  WhatsApp Orders Number
-                </label>
-                <input
-                  type="text"
-                  value={whatsappNumber}
-                  onChange={(e) => setWhatsappNumber(e.target.value)}
-                  placeholder="e.g. 9841000000"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-mono focus:outline-none focus:border-blue-500"
-                />
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                Store Bio / Welcome Message
-              </label>
-              <textarea
-                rows={3}
-                value={storeDescription}
-                onChange={(e) => setStoreDescription(e.target.value)}
-                placeholder="Welcome to our online store! Browse our catalog and order directly via WhatsApp or online checkout."
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-blue-500"
-              />
-            </div>
-          </div>
+            {/* Store Information */}
+            <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+              <h3 className="text-base font-bold text-white">Store Information & Contact</h3>
 
-          {/* Submit Button */}
-          <div className="flex items-center justify-end gap-3 pt-2">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    Store Title / Display Name
+                  </label>
+                  <input
+                    type="text"
+                    value={storeTitle}
+                    onChange={(e) => setStoreTitle(e.target.value)}
+                    placeholder="Leave empty to use Business Name"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder-slate-600 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    WhatsApp Contact Number
+                  </label>
+                  <input
+                    type="text"
+                    value={whatsappNumber}
+                    onChange={(e) => setWhatsappNumber(e.target.value)}
+                    placeholder="e.g. 9841000000"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder-slate-600 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    Store Description / Welcome Message
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={storeDescription}
+                    onChange={(e) => setStoreDescription(e.target.value)}
+                    placeholder="Short summary of your products and store location…"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder-slate-600 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+
             <button
               type="submit"
               disabled={updateSettings.isPending}
-              className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-500/25 transition-all flex items-center gap-2 disabled:opacity-50"
+              className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 transition-all flex items-center gap-2"
             >
               <Save className="w-4 h-4" />
-              {updateSettings.isPending ? 'Saving Configuration…' : 'Save Website Settings'}
+              {updateSettings.isPending ? 'Saving configuration…' : 'Save Storefront Settings'}
             </button>
           </div>
-        </div>
 
-        {/* Right Column: Live Website Card Preview */}
-        <div className="space-y-4">
-          <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-4 sticky top-6">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                <Globe className="w-4 h-4 text-blue-400" /> Live Website Preview
-              </span>
-              <span className="text-[10px] text-slate-500 font-mono">Customer View</span>
-            </div>
+          {/* Right Column: Preview & Status */}
+          <div className="space-y-6">
+            <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-amber-400" /> Website Features Included
+              </h3>
 
-            {/* Mock Header Card */}
-            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold text-sm">
-                  {storeTitle ? storeTitle.substring(0, 2).toUpperCase() : 'STORE'}
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white">{storeTitle || 'My Online Store'}</h4>
-                  <p className="text-[10px] text-slate-400 truncate max-w-[180px]">
-                    {storeDescription || 'Digital product catalog'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Mock Product Card */}
-            <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <span className="text-xs font-bold text-white block">1" CPVC Pipe</span>
-                  <span className="text-[10px] text-slate-400">Unit: Pcs</span>
-                </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                  In Stock
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between pt-2 border-t border-slate-800">
-                <div>
-                  {showStorePrices ? (
-                    <div>
-                      <span className="text-[10px] text-slate-400 block">Price:</span>
-                      <span className="text-xs font-mono font-bold text-emerald-400">Rs. 1,000</span>
-                    </div>
-                  ) : (
-                    <div>
-                      <span className="text-[10px] text-amber-400 font-bold block flex items-center gap-1">
-                        <EyeOff className="w-3 h-3" /> Price Hidden
-                      </span>
-                      <span className="text-[10px] text-slate-400">Inquire via WhatsApp</span>
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-[11px] font-bold flex items-center gap-1 shadow-sm"
-                >
-                  <ShoppingBag className="w-3 h-3" /> Order
-                </button>
-              </div>
+              <ul className="space-y-3 text-xs text-slate-300">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Public Store URL <code>/store/[slug]</code></span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Business Logo &amp; Banner Header</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Price Show / Hide Controls</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Direct WhatsApp Inquiries</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Direct Online Orders (<code>WEB-00001</code>)</span>
+                </li>
+              </ul>
             </div>
           </div>
+        </form>
+      ) : (
+        /* TAB 2: ONLINE ORDERS MANAGER */
+        <div className="space-y-6">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
+              <span className="text-xs text-slate-400 font-semibold block">Total Online Orders</span>
+              <p className="text-2xl font-extrabold text-white">{orders?.length || 0}</p>
+            </div>
+            <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
+              <span className="text-xs text-slate-400 font-semibold block">Pending Payment Collection</span>
+              <p className="text-2xl font-extrabold text-amber-400">{pendingOrdersCount}</p>
+            </div>
+            <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
+              <span className="text-xs text-slate-400 font-semibold block">Online Orders Revenue</span>
+              <p className="text-2xl font-extrabold text-emerald-400">Rs. {totalRevenue.toLocaleString()}</p>
+            </div>
+          </div>
+
+          {/* Orders Table */}
+          <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <ShoppingBag className="w-5 h-5 text-blue-400" /> Incoming Web Orders &amp; Leads
+              </h3>
+              <button
+                type="button"
+                onClick={() => refetchOrders()}
+                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition-all flex items-center gap-1.5"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> Refresh
+              </button>
+            </div>
+
+            {ordersLoading ? (
+              <div className="p-8 text-center text-slate-400 font-medium">
+                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                Loading incoming online orders…
+              </div>
+            ) : !orders || orders.length === 0 ? (
+              <div className="p-12 text-center text-slate-400 space-y-3">
+                <ShoppingBag className="w-12 h-12 text-slate-600 mx-auto" />
+                <h4 className="text-base font-bold text-white">No Online Orders Yet</h4>
+                <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                  When customers submit orders on your storefront website, they will appear here automatically.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-300">
+                  <thead className="bg-slate-950/60 text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider">
+                    <tr>
+                      <th className="px-4 py-3">Web Invoice #</th>
+                      <th className="px-4 py-3">Customer Info</th>
+                      <th className="px-4 py-3">Items Ordered</th>
+                      <th className="px-4 py-3">Total</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800">
+                    {orders.map((ord: any) => (
+                      <tr key={ord.id} className="hover:bg-slate-800/40 transition-colors">
+                        <td className="px-4 py-4 font-mono font-bold text-white">
+                          <Link
+                            href={`/transactions/sales/${ord.id}`}
+                            className="text-blue-400 hover:underline flex items-center gap-1"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            {ord.invoiceNumber}
+                          </Link>
+                          <span className="text-[10px] text-slate-500 block font-normal">
+                            {new Date(ord.createdAt).toLocaleDateString()}
+                          </span>
+                        </td>
+
+                        <td className="px-4 py-4 space-y-1">
+                          <strong className="text-white block text-xs">{ord.customerName}</strong>
+                          {ord.customerPhone && (
+                            <span className="text-slate-400 text-[11px] flex items-center gap-1">
+                              <Phone className="w-3 h-3 text-slate-500" /> {ord.customerPhone}
+                            </span>
+                          )}
+                          {ord.deliveryAddress && (
+                            <span className="text-slate-400 text-[11px] flex items-center gap-1">
+                              <MapPin className="w-3 h-3 text-slate-500" /> {ord.deliveryAddress}
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="px-4 py-4">
+                          <div className="space-y-1 max-w-xs">
+                            {ord.items.map((it: any) => (
+                              <div key={it.id} className="text-xs text-slate-300">
+                                • {it.name} <span className="text-slate-400">x {it.quantity} {it.unit}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+
+                        <td className="px-4 py-4 font-mono font-bold text-emerald-400">
+                          Rs. {ord.totalAmount.toLocaleString()}
+                        </td>
+
+                        <td className="px-4 py-4">
+                          {ord.status === 'PAID' ? (
+                            <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                              PAID
+                            </span>
+                          ) : ord.status === 'CANCELLED' ? (
+                            <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                              CANCELLED
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                              UNPAID / PENDING
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="px-4 py-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {ord.customerPhone && (
+                              <a
+                                href={`https://wa.me/${ord.customerPhone.replace(/[^0-9]/g, '')}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="p-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 transition-all"
+                                title="Contact Customer via WhatsApp"
+                              >
+                                <MessageSquare className="w-4 h-4" />
+                              </a>
+                            )}
+
+                            {ord.status !== 'PAID' && (
+                              <button
+                                type="button"
+                                onClick={() => handleStatusChange(ord.id, 'PAID')}
+                                className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold transition-all flex items-center gap-1"
+                              >
+                                <Check className="w-3.5 h-3.5" /> Mark Paid
+                              </button>
+                            )}
+
+                            {ord.status !== 'CANCELLED' && (
+                              <button
+                                type="button"
+                                onClick={() => handleStatusChange(ord.id, 'CANCELLED')}
+                                className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-all"
+                                title="Cancel Order"
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
-      </form>
+      )}
     </div>
   );
 }

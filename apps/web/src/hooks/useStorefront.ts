@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getStorefrontSettings,
   updateStorefrontSettings,
+  getStorefrontOrders,
+  updateOrderStatus,
   getPublicStores,
   getPublicStorefront,
   submitOnlineOrder,
@@ -21,6 +23,24 @@ export function useUpdateStorefrontSettings() {
     mutationFn: (data: Partial<StorefrontSettings>) => updateStorefrontSettings(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['storefrontSettings'] });
+    },
+  });
+}
+
+export function useStorefrontOrders() {
+  return useQuery({
+    queryKey: ['storefrontOrders'],
+    queryFn: getStorefrontOrders,
+    refetchInterval: 15000, // Auto-refresh incoming online orders every 15 seconds
+  });
+}
+
+export function useUpdateOrderStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) => updateOrderStatus(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['storefrontOrders'] });
     },
   });
 }

@@ -108,6 +108,84 @@ export async function storefrontRoutes(app: FastifyInstance) {
     });
   });
 
+  // GET /api/v1/storefront/orders (Online Orders Manager for Business Owners)
+  app.get('/orders', { preHandler: [authenticateUser, requireBusinessTenant] }, async (request, reply) => {
+    const businessId = request.tenant?.businessId || (request as any).businessId;
+    if (!businessId) {
+      return reply.status(400).send({ success: false, error: 'NO_BUSINESS', message: 'Active business tenant is required' });
+    }
+
+    const orders = await globalPrisma.sale.findMany({
+      where: {
+        businessId,
+        OR: [
+          { invoiceNumber: { startsWith: 'WEB-' } },
+          { notes: { contains: '[Online Storefront Order]' } },
+        ],
+      },
+      include: {
+        party: { select: { id: true, name: true, phone: true, address: true } },
+        items: { include: { item: { select: { id: true, name: true, unit: true } } } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+
+    return reply.send({
+      success: true,
+      data: orders.map((ord) => ({
+        id: ord.id,
+        invoiceNumber: ord.invoiceNumber,
+        customerName: ord.party?.name || 'Online Customer',
+        customerPhone: ord.party?.phone || '',
+        deliveryAddress: ord.party?.address || '',
+        totalAmount: Number(ord.totalAmount),
+        paidAmount: Number(ord.paidAmount),
+        dueAmount: Number(ord.dueAmount),
+        status: ord.status,
+        notes: ord.notes,
+        createdAt: ord.createdAt,
+        items: ord.items.map((it) => ({
+          id: it.id,
+          name: it.item?.name || 'Product',
+          unit: it.item?.unit || 'Pcs',
+          quantity: Number(it.quantity),
+          unitPrice: Number(it.unitPrice),
+          total: Number(it.total),
+        })),
+      })),
+    });
+  });
+
+  // PATCH /api/v1/storefront/orders/:id/status
+  app.patch('/orders/:id/status', { preHandler: [authenticateUser, requireBusinessTenant] }, async (request, reply) => {
+    const businessId = request.tenant?.businessId || (request as any).businessId;
+    if (!businessId) {
+      return reply.status(400).send({ success: false, error: 'NO_BUSINESS', message: 'Active business tenant is required' });
+    }
+    const { id } = request.params as { id: string };
+    const { status } = request.body as { status: string };
+
+    const existing = await globalPrisma.sale.findFirst({
+      where: { id, businessId },
+    });
+
+    if (!existing) {
+      return reply.status(404).send({ success: false, error: 'NOT_FOUND', message: 'Order not found' });
+    }
+
+    const updated = await globalPrisma.sale.update({
+      where: { id },
+      data: { status: status as any },
+    });
+
+    return reply.send({
+      success: true,
+      data: updated,
+      message: `Order status updated to ${status}`,
+    });
+  });
+
   // ── Public Routes (Customer Facing) ────────────────────────────────────────
 
   // GET /api/v1/storefront/public-stores (Directory of all published online stores)
