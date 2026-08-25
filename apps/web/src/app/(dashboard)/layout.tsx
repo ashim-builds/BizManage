@@ -109,8 +109,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       } else if (user.isSystemAdmin) {
         router.push('/admin/dashboard');
       } else if (user.memberships.length === 0) {
-        // New user - no business yet, send to setup
-        router.push('/setup-business');
+        // Customer-only user - send to explore stores instead of forcing business creation
+        router.push('/explore-stores');
       }
     }
   }, [loading, user, router]);

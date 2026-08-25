@@ -74,10 +74,10 @@ function OAuthCallbackInner() {
         // 3. Refresh user state in AuthProvider
         await refreshUser();
 
-        // 4. Navigate to dashboard
-        router.replace('/dashboard');
+        // 4. Navigate based on user role
+        router.replace('/explore-stores');
       } catch (err) {
-        router.replace('/dashboard');
+        router.replace('/explore-stores');
       }
     };
 

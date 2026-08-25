@@ -6,6 +6,8 @@ import { api, setApiBusinessId } from '@/lib/api';
 import { useAuth } from '@/providers/AuthProvider';
 import { Building2, ArrowRight, Loader2 } from 'lucide-react';
 
+import Link from 'next/link';
+
 const CURRENCIES = ['NPR', 'USD', 'EUR', 'GBP', 'INR', 'AUD', 'CAD'];
 
 export default function SetupBusinessPage() {
@@ -260,6 +262,15 @@ export default function SetupBusinessPage() {
           </button>
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </form>
+
+        <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)', textAlign: 'center' }}>
+          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>
+            Shopping as an online store customer?{' '}
+            <Link href="/explore-stores" style={{ color: '#38bdf8', fontWeight: 600, textDecoration: 'underline' }}>
+              Browse Online Stores
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

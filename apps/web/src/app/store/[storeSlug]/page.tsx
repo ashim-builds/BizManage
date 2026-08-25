@@ -24,6 +24,7 @@ import {
   Lock,
   Mail,
   User,
+  LogOut,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -41,9 +42,14 @@ export default function PublicStorefrontPage() {
   const params = useParams();
   const storeSlug = (params?.storeSlug as string) || '';
 
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { data: storeData, isLoading, isError } = usePublicStorefront(storeSlug);
   const submitOrder = useSubmitOnlineOrder(storeSlug);
+
+  const handleCustomerLogout = async () => {
+    await logout();
+    toast.success('Logged out from store account.');
+  };
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
@@ -317,9 +323,20 @@ export default function PublicStorefrontPage() {
                 </Link>
               </div>
             ) : (
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700 text-xs">
-                <User className="w-3.5 h-3.5 text-blue-400" />
-                <span className="font-semibold text-slate-200">{user.name}</span>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800/80 border border-slate-700 text-xs">
+                  <User className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="font-semibold text-slate-200">{user.name}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCustomerLogout}
+                  className="px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-bold text-xs border border-rose-500/20 transition-all flex items-center gap-1.5"
+                  title="Log out of Store Customer Account"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Logout</span>
+                </button>
               </div>
             )}
 
