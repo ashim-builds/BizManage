@@ -123,8 +123,9 @@ export async function authRoutes(fastify: FastifyInstance) {
 
       const business = await tx.business.create({
         data: {
-          name: body.businessName,
+          name: body.businessName || `${body.name}'s Workspace`,
           email: body.email,
+          phone: body.phone || null,
           settings: { create: {} },
         },
       });

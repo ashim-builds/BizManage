@@ -70,9 +70,10 @@ export default function StoreCustomerLoginPage() {
 
         const res = await api.post('/auth/register', {
           name: name.trim(),
-          phone: phone.trim().replace(/[\s\-\(\)]/g, ''),
+          phone: phone.trim().replace(/[^0-9]/g, ''),
           email: email.trim(),
           password,
+          businessName: store?.storeTitle ? `${store.storeTitle} Customer` : 'Customer Account',
         });
 
         if (res.data.success) {

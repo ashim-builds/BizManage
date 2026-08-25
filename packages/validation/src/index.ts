@@ -5,14 +5,9 @@ import { PartyType, ItemType, PaymentMode } from '@bizmanage/types';
 export const registerSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters'),
   email: z.string().trim().toLowerCase().email('Invalid email address'),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters long')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number')
-    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
-  businessName: z.string().trim().min(2, 'Business name must be at least 2 characters'),
+  password: z.string().min(6, 'Password must be at least 6 characters long'),
+  businessName: z.string().trim().optional().or(z.literal('')),
+  phone: z.string().optional().nullable().or(z.literal('')),
   // E2EE properties sent on registration
   publicKey: z.string().optional(),
   encryptedPrivateKey: z.string().optional(),
