@@ -30,12 +30,16 @@ export async function saleRoutes(fastify: FastifyInstance) {
   // ----------------------------------------------------
   fastify.get('/summary', async (request, reply) => {
     const businessId = request.tenant!.businessId;
+    const excludeUnconfirmedWebOrders: Prisma.SaleWhereInput[] = [
+      { invoiceNumber: { startsWith: 'WEB-' }, status: InvoiceStatus.UNPAID },
+    ];
 
     const [agg, unpaidCount, totalCount] = await Promise.all([
       request.db!.sale.aggregate({
         where: {
           businessId,
           status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.DRAFT] },
+          NOT: excludeUnconfirmedWebOrders,
         },
         _sum: { totalAmount: true, paidAmount: true, dueAmount: true },
       }),
@@ -43,12 +47,14 @@ export async function saleRoutes(fastify: FastifyInstance) {
         where: {
           businessId,
           status: { in: [InvoiceStatus.UNPAID, InvoiceStatus.PARTIAL] },
+          NOT: excludeUnconfirmedWebOrders,
         },
       }),
       request.db!.sale.count({
         where: {
           businessId,
           status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.DRAFT] },
+          NOT: excludeUnconfirmedWebOrders,
         },
       }),
     ]);
@@ -83,6 +89,7 @@ export async function saleRoutes(fastify: FastifyInstance) {
 
     const whereClause: Prisma.SaleWhereInput = {
       businessId: request.tenant!.businessId,
+      NOT: [{ invoiceNumber: { startsWith: 'WEB-' }, status: InvoiceStatus.UNPAID }],
     };
 
     if (partyId) {

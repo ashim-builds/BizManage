@@ -74,6 +74,7 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
         where: {
           businessId,
           status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.DRAFT] },
+          NOT: [{ invoiceNumber: { startsWith: 'WEB-' }, status: InvoiceStatus.UNPAID }],
           ...(hasDateFilter ? { date: dateFilter } : {}),
         },
         _sum: { totalAmount: true },
@@ -149,6 +150,7 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
         where: {
           businessId,
           status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.DRAFT] },
+          NOT: [{ invoiceNumber: { startsWith: 'WEB-' }, status: InvoiceStatus.UNPAID }],
           ...(hasDateFilter ? { date: dateFilter } : {}),
         },
         select: {
@@ -168,7 +170,12 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
 
       // 12. Today's Sales aggregate
       request.db!.sale.aggregate({
-        where: { businessId, status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.DRAFT] }, date: todayDateFilter },
+        where: {
+          businessId,
+          status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.DRAFT] },
+          NOT: [{ invoiceNumber: { startsWith: 'WEB-' }, status: InvoiceStatus.UNPAID }],
+          date: todayDateFilter,
+        },
         _sum: { totalAmount: true },
         _count: { id: true },
       }),
@@ -193,7 +200,12 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
 
       // 16. Today's Sales with items for Today's COGS & Sales Margin
       request.db!.sale.findMany({
-        where: { businessId, status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.DRAFT] }, date: todayDateFilter },
+        where: {
+          businessId,
+          status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.DRAFT] },
+          NOT: [{ invoiceNumber: { startsWith: 'WEB-' }, status: InvoiceStatus.UNPAID }],
+          date: todayDateFilter,
+        },
         select: {
           items: {
             select: {

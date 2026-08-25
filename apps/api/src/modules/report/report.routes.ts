@@ -25,6 +25,7 @@ export async function reportRoutes(fastify: FastifyInstance) {
     const whereClause: Prisma.SaleWhereInput = {
       businessId: request.tenant!.businessId,
       status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.DRAFT] },
+      NOT: [{ invoiceNumber: { startsWith: 'WEB-' }, status: InvoiceStatus.UNPAID }],
     };
 
     if (startDate || endDate) {
