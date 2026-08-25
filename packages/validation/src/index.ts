@@ -74,7 +74,10 @@ export const categorySchema = z.object({
 
 // Party Schemas
 export const partySchema = z.object({
-  name: z.string().min(1, 'Party name is required'),
+  name: z
+    .string()
+    .min(1, 'Party name is required')
+    .refine((val) => !/[0-9]/.test(val), 'Name cannot contain numbers'),
   type: z.nativeEnum(PartyType).default(PartyType.CUSTOMER),
   categoryId: z.string().optional().nullable(),
   phone: z
@@ -83,8 +86,8 @@ export const partySchema = z.object({
     .nullable()
     .or(z.literal(''))
     .refine(
-      (val) => !val || /^[0-9]{10}$/.test(val),
-      'Phone number must contain numbers only and be exactly 10 digits (e.g. 9841234567)'
+      (val) => !val || /^9[0-9]{9}$/.test(val),
+      'Phone number must start with 9 and be exactly 10 digits (e.g. 9841234567)'
     ),
   email: z.string().email('Invalid email address').optional().nullable().or(z.literal('')),
   address: z.string().optional().nullable(),

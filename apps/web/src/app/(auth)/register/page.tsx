@@ -113,7 +113,11 @@ function RegisterForm() {
             <label className="block text-xs font-semibold text-slate-300 mb-1">Full Owner Name *</label>
             <input
               type="text"
-              {...register('name')}
+              {...register('name', {
+                onChange: (e) => {
+                  e.target.value = e.target.value.replace(/[0-9]/g, '');
+                },
+              })}
               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="e.g. Ramesh Shrestha"
             />

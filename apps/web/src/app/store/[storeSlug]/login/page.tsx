@@ -52,13 +52,13 @@ export default function StoreCustomerLoginPage() {
           router.push(`/store/${storeSlug}`);
         }
       } else {
-        if (!name || name.trim().length < 2) {
-          toast.error('Please enter your full name (at least 2 characters).');
+        if (!name || name.trim().length < 2 || /[0-9]/.test(name)) {
+          toast.error('Full name must contain letters only and cannot contain numbers.');
           setSubmitting(false);
           return;
         }
-        if (!phone || !/^[0-9]{10}$/.test(phone.trim().replace(/[^0-9]/g, ''))) {
-          toast.error('Phone number must contain numbers only and be exactly 10 digits (e.g. 9841234567).');
+        if (!phone || !/^9[0-9]{9}$/.test(phone.trim().replace(/[^0-9]/g, ''))) {
+          toast.error('Phone number must start with 9 and be exactly 10 digits (e.g. 9841234567).');
           setSubmitting(false);
           return;
         }
@@ -166,7 +166,7 @@ export default function StoreCustomerLoginPage() {
                       type="text"
                       required
                       value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      onChange={(e) => setName(e.target.value.replace(/[0-9]/g, ''))}
                       placeholder="e.g. Ramraj Adhikari"
                       className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-all"
                     />

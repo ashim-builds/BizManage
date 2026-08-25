@@ -439,20 +439,20 @@ export async function storefrontRoutes(app: FastifyInstance) {
       const cleanPhone = String(customerPhone).trim().replace(/[^0-9]/g, '');
       const cleanEmail = customerEmail ? String(customerEmail).trim() : '';
 
-      if (cleanName.length < 2) {
+      if (cleanName.length < 2 || /[0-9]/.test(cleanName)) {
         return reply.status(400).send({
           success: false,
           error: 'INVALID_NAME',
-          message: 'Customer name must be at least 2 characters long.',
+          message: 'Customer name must be at least 2 characters long and cannot contain numbers.',
         });
       }
 
-      // Validate phone format: must contain numbers only and be exactly 10 digits
-      if (!/^[0-9]{10}$/.test(cleanPhone)) {
+      // Validate phone format: must start with 9 and be exactly 10 digits
+      if (!/^9[0-9]{9}$/.test(cleanPhone)) {
         return reply.status(400).send({
           success: false,
           error: 'INVALID_PHONE',
-          message: 'Phone number must contain numbers only and be exactly 10 digits (e.g. 9841234567).',
+          message: 'Phone number must start with 9 and be exactly 10 digits (e.g. 9841234567).',
         });
       }
 

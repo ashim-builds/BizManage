@@ -168,12 +168,12 @@ export default function PublicStorefrontPage() {
     const cleanPhone = customerPhone.trim().replace(/[\s\-\(\)]/g, '');
     const cleanEmail = customerEmail.trim();
 
-    if (!cleanName || cleanName.length < 2) {
-      toast.error('Please enter your valid full name');
+    if (!cleanName || cleanName.length < 2 || /[0-9]/.test(cleanName)) {
+      toast.error('Customer name must contain letters only and cannot contain numbers.');
       return;
     }
-    if (!/^[0-9]{10}$/.test(cleanPhone)) {
-      toast.error('Phone number must contain numbers only and be exactly 10 digits (e.g. 9841234567)');
+    if (!/^9[0-9]{9}$/.test(cleanPhone)) {
+      toast.error('Phone number must start with 9 and be exactly 10 digits (e.g. 9841234567).');
       return;
     }
     if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
@@ -631,7 +631,7 @@ export default function PublicStorefrontPage() {
                       type="text"
                       placeholder="Your Full Name *"
                       value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value)}
+                      onChange={(e) => setCustomerName(e.target.value.replace(/[0-9]/g, ''))}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-blue-500"
                     />
                   </div>

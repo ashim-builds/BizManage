@@ -469,7 +469,11 @@ export default function PartiesPage() {
                 <label className="block text-xs font-semibold text-slate-300 mb-1">Party / Business Name *</label>
                 <input
                   type="text"
-                  {...createForm.register('name')}
+                  {...createForm.register('name', {
+                    onChange: (e) => {
+                      e.target.value = e.target.value.replace(/[0-9]/g, '');
+                    },
+                  })}
                   className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-blue-500"
                   placeholder="e.g. Kathmandu Traders"
                 />
@@ -649,7 +653,11 @@ export default function PartiesPage() {
                 <label className="block text-xs font-semibold text-slate-300 mb-1">Party / Business Name *</label>
                 <input
                   type="text"
-                  {...editForm.register('name')}
+                  {...editForm.register('name', {
+                    onChange: (e) => {
+                      e.target.value = e.target.value.replace(/[0-9]/g, '');
+                    },
+                  })}
                   className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
                 {editForm.formState.errors.name && (
