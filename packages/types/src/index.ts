@@ -41,6 +41,7 @@ export type StockMovementType = (typeof StockMovementType)[keyof typeof StockMov
 export const InvoiceStatus = {
   DRAFT: 'DRAFT',
   UNPAID: 'UNPAID',
+  ACCEPTED: 'ACCEPTED',
   PARTIAL: 'PARTIAL',
   PAID: 'PAID',
   CANCELLED: 'CANCELLED',

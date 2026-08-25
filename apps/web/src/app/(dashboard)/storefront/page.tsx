@@ -452,16 +452,20 @@ export default function StorefrontSettingsPage() {
                         </div>
 
                         {ord.status === 'PAID' ? (
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 whitespace-nowrap">
                             PAID
                           </span>
+                        ) : ord.status === 'ACCEPTED' ? (
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30 whitespace-nowrap">
+                            ACCEPTED
+                          </span>
                         ) : ord.status === 'CANCELLED' ? (
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30 whitespace-nowrap">
                             CANCELLED
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                            UNPAID / PENDING
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30 whitespace-nowrap">
+                            PENDING
                           </span>
                         )}
                       </div>
@@ -498,7 +502,7 @@ export default function StorefrontSettingsPage() {
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap justify-end">
                           {ord.customerPhone && (
                             <a
                               href={`https://wa.me/${ord.customerPhone.replace(/[^0-9]/g, '')}`}
@@ -511,13 +515,23 @@ export default function StorefrontSettingsPage() {
                             </a>
                           )}
 
+                          {ord.status === 'UNPAID' && (
+                            <button
+                              type="button"
+                              onClick={() => handleStatusChange(ord.id, 'ACCEPTED')}
+                              className="px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold transition-all flex items-center gap-1 shadow-sm whitespace-nowrap"
+                            >
+                              <Check className="w-3.5 h-3.5" /> Accept Order
+                            </button>
+                          )}
+
                           {ord.status !== 'PAID' && ord.status !== 'CANCELLED' && (
                             <button
                               type="button"
                               onClick={() => handleStatusChange(ord.id, 'PAID')}
-                              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold transition-all flex items-center gap-1 shadow-sm"
+                              className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold transition-all flex items-center gap-1 shadow-sm whitespace-nowrap"
                             >
-                              <Check className="w-3.5 h-3.5" /> Accept Order & Mark Paid
+                              <Check className="w-3.5 h-3.5" /> Mark Paid
                             </button>
                           )}
 
@@ -594,24 +608,28 @@ export default function StorefrontSettingsPage() {
                             Rs. {ord.totalAmount.toLocaleString()}
                           </td>
 
-                          <td className="px-4 py-4">
+                          <td className="px-4 py-4 whitespace-nowrap">
                             {ord.status === 'PAID' ? (
-                              <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                              <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 whitespace-nowrap">
                                 PAID
                               </span>
+                            ) : ord.status === 'ACCEPTED' ? (
+                              <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30 whitespace-nowrap">
+                                ACCEPTED
+                              </span>
                             ) : ord.status === 'CANCELLED' ? (
-                              <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                              <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30 whitespace-nowrap">
                                 CANCELLED
                               </span>
                             ) : (
-                              <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                                UNPAID / PENDING
+                              <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30 whitespace-nowrap">
+                                PENDING
                               </span>
                             )}
                           </td>
 
-                          <td className="px-4 py-4 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
+                          <td className="px-4 py-4 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
                               {ord.customerPhone && (
                                 <a
                                   href={`https://wa.me/${ord.customerPhone.replace(/[^0-9]/g, '')}`}
@@ -624,15 +642,25 @@ export default function StorefrontSettingsPage() {
                                 </a>
                               )}
 
-                          {ord.status !== 'PAID' && ord.status !== 'CANCELLED' && (
-                            <button
-                              type="button"
-                              onClick={() => handleStatusChange(ord.id, 'PAID')}
-                              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold transition-all flex items-center gap-1 shadow-sm"
-                            >
-                              <Check className="w-3.5 h-3.5" /> Accept Order & Mark Paid
-                            </button>
-                          )}
+                              {ord.status === 'UNPAID' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleStatusChange(ord.id, 'ACCEPTED')}
+                                  className="px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold transition-all flex items-center gap-1 shadow-sm whitespace-nowrap"
+                                >
+                                  <Check className="w-3.5 h-3.5" /> Accept Order
+                                </button>
+                              )}
+
+                              {ord.status !== 'PAID' && ord.status !== 'CANCELLED' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleStatusChange(ord.id, 'PAID')}
+                                  className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold transition-all flex items-center gap-1 shadow-sm whitespace-nowrap"
+                                >
+                                  <Check className="w-3.5 h-3.5" /> Mark Paid
+                                </button>
+                              )}
 
                               {ord.status !== 'CANCELLED' && ord.status !== 'PAID' && (
                                 <button

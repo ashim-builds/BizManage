@@ -57,6 +57,7 @@ enum StockMovementType {
 enum InvoiceStatus {
   DRAFT
   UNPAID
+  ACCEPTED
   PARTIAL
   PAID
   CANCELLED

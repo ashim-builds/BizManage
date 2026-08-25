@@ -175,10 +175,13 @@ export async function storefrontRoutes(app: FastifyInstance) {
     }
 
     const isCancelled = String(status).toUpperCase() === 'CANCELLED';
+    const isPaid = String(status).toUpperCase() === 'PAID';
+
     const updated = await globalPrisma.sale.update({
       where: { id },
       data: {
         status: status as any,
+        ...(isPaid ? { paidAmount: existing.totalAmount, dueAmount: 0 } : {}),
         ...(isCancelled ? { dueAmount: 0 } : {}),
       },
     });
