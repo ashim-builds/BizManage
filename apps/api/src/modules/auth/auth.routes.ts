@@ -114,7 +114,7 @@ export async function authRoutes(fastify: FastifyInstance) {
           email: body.email,
           name: body.name,
           passwordHash,
-          isVerified: false,
+          isVerified: true,
           publicKey: body.publicKey,
           encryptedPrivateKey: body.encryptedPrivateKey,
           kdfSalt: body.kdfSalt,
@@ -256,13 +256,10 @@ export async function authRoutes(fastify: FastifyInstance) {
       data: {
         failedLoginAttempts: 0,
         lockedUntil: null,
+        isVerified: true,
         lastLoginAt: new Date(),
       },
     });
-
-    if (!user.isVerified) {
-      throw new AppError('Email not verified', 403, 'EMAIL_NOT_VERIFIED');
-    }
 
     if (user.isSystemAdmin) {
       throw new AppError('Admin users must use the admin portal', 403, 'FORBIDDEN');
