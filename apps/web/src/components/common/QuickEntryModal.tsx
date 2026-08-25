@@ -372,8 +372,15 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
   if (!isOpen) return null;
 
   return (
-    <ModalPortal><div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden space-y-0 max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800">
+    <ModalPortal>
+      <div
+        className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-4"
+        onClick={onClose}
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden space-y-0 max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800"
+        >
         {/* MODAL HEADER WITH TYPE SWITCHER */}
         <div className="p-6 bg-slate-800/60 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2">

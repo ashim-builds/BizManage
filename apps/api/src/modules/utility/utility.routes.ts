@@ -322,10 +322,13 @@ export async function utilityRoutes(fastify: FastifyInstance) {
         type: 'SUCCESS',
         title: 'System Active',
         message: `Multi-tenant ERP active for "${business.name}".`,
-        createdAt: new Date().toISOString(),
+        createdAt: business.createdAt ? new Date(business.createdAt).toISOString() : new Date(0).toISOString(),
         link: '/settings',
       });
     }
+
+    // MANDATORY SORTING: Newest notifications at the top
+    notifications.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return reply.send({
       success: true,

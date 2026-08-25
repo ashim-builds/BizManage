@@ -126,8 +126,14 @@ export function CameraScannerModal({
 
   return (
     <ModalPortal>
-      <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[250] flex items-center justify-center p-4 overflow-y-auto font-sans">
-        <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-2xl space-y-4 my-8">
+      <div
+        className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[250] flex items-center justify-center p-4 overflow-y-auto font-sans"
+        onClick={onClose}
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-2xl space-y-4 my-8"
+        >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
             <div className="flex items-center gap-2.5">
