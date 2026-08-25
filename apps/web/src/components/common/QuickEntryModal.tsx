@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -60,6 +60,7 @@ interface QuickEntryModalProps {
 
 export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: QuickEntryModalProps) {
   const [activeType, setActiveType] = useState<QuickEntryType>(defaultType);
+  const modalRef = useRef<HTMLDivElement>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -81,6 +82,24 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
   }, [isOpen, defaultType]);
 
   // Global Keyboard ShortCut (Escape to close)
+  useEffect(() => {
+    // Click outside to close QuickEntryModal
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    }
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  // Existing useEffect for keyboard (Escape)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
@@ -379,6 +398,7 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
       >
         <div
           onClick={(e) => e.stopPropagation()}
+          ref={modalRef}
           className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden space-y-0 max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800"
         >
         {/* MODAL HEADER WITH TYPE SWITCHER */}
