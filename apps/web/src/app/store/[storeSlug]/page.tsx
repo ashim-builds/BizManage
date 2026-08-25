@@ -25,6 +25,8 @@ import {
   Mail,
   User,
   LogOut,
+  Home,
+  ArrowLeft,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -312,6 +314,24 @@ export default function PublicStorefrontPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            <Link
+              href="/"
+              className="px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all border border-slate-700/80 flex items-center gap-1.5 shadow-sm"
+              title="Go to Homepage"
+            >
+              <Home className="w-3.5 h-3.5 text-blue-400" />
+              <span className="hidden sm:inline">Home</span>
+            </Link>
+
+            <Link
+              href="/explore-stores"
+              className="px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all border border-slate-700/80 flex items-center gap-1.5 shadow-sm"
+              title="Explore All Online Stores"
+            >
+              <Store className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden sm:inline">Explore Stores</span>
+            </Link>
+
             {!user ? (
               <div className="flex items-center gap-2">
                 <Link

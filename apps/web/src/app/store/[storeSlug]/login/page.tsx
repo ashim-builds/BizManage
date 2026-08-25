@@ -18,6 +18,8 @@ import {
   Building2,
   CheckCircle2,
   AlertCircle,
+  Home,
+  ArrowLeft,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -120,12 +122,24 @@ export default function StoreCustomerLoginPage() {
             </div>
           </Link>
 
-          <Link
-            href={`/store/${storeSlug}`}
-            className="text-xs text-slate-300 hover:text-white font-semibold flex items-center gap-1 bg-slate-900 border border-slate-800 px-3.5 py-1.5 rounded-xl transition-all"
-          >
-            ← Back to Storefront
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/"
+              className="text-xs text-slate-300 hover:text-white font-semibold flex items-center gap-1.5 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl transition-all"
+              title="Go to Homepage"
+            >
+              <Home className="w-3.5 h-3.5 text-blue-400" />
+              <span>Home</span>
+            </Link>
+
+            <Link
+              href={`/store/${storeSlug}`}
+              className="text-xs text-slate-300 hover:text-white font-semibold flex items-center gap-1.5 bg-slate-900 border border-slate-800 px-3.5 py-1.5 rounded-xl transition-all"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Back to Store</span>
+            </Link>
+          </div>
         </div>
       </header>
 
