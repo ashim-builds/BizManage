@@ -100,11 +100,11 @@ export default function SaleInvoiceDetailsPage({ params }: { params: { id: strin
       </div>
 
       {/* PRINTABLE INVOICE DOCUMENT CONTAINER */}
-      <div className="p-8 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl space-y-8 print:bg-white print:text-slate-900 print:border-none print:shadow-none print:p-0">
+      <div className="p-4 sm:p-8 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl space-y-6 sm:space-y-8 print:bg-white print:text-slate-900 print:border-none print:shadow-none print:p-0">
         {/* Business & Invoice Header */}
-        <div className="flex flex-wrap justify-between items-start border-b border-slate-800 print:border-slate-300 pb-6 gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-start border-b border-slate-800 print:border-slate-300 pb-6 gap-4">
           <div>
-            <h2 className="text-2xl font-black tracking-tight text-white print:text-slate-900">
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white print:text-slate-900">
               {business?.name || 'My Business'}
             </h2>
             {business?.address && (
@@ -120,11 +120,11 @@ export default function SaleInvoiceDetailsPage({ params }: { params: { id: strin
             )}
           </div>
 
-          <div className="text-right">
-            <span className="text-sm font-bold uppercase tracking-widest px-3 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 print:border-slate-300 print:bg-slate-100 print:text-slate-800">
+          <div className="text-left sm:text-right w-full sm:w-auto">
+            <span className="text-xs sm:text-sm font-bold uppercase tracking-widest px-3 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 print:border-slate-300 print:bg-slate-100 print:text-slate-800 inline-block">
               {sale.isVatBill ? 'TAX INVOICE' : 'INVOICE'}
             </span>
-            <h3 className="text-xl font-bold font-mono text-white print:text-slate-900 mt-2">
+            <h3 className="text-lg sm:text-xl font-bold font-mono text-white print:text-slate-900 mt-2">
               {sale.invoiceNumber}
             </h3>
             <p className="text-xs text-slate-300 print:text-slate-800 font-medium mt-1 font-mono">
@@ -134,7 +134,7 @@ export default function SaleInvoiceDetailsPage({ params }: { params: { id: strin
         </div>
 
         {/* Customer Info */}
-        <div className="p-4 rounded-xl bg-slate-800/50 print:bg-slate-50 border border-slate-800 print:border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+        <div className="p-4 rounded-xl bg-slate-800/50 print:bg-slate-50 border border-slate-800 print:border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
           <div>
             <p className="text-[10px] font-bold uppercase text-slate-400 print:text-slate-500 tracking-wider mb-1">
               Billed To (Customer)
@@ -152,12 +152,12 @@ export default function SaleInvoiceDetailsPage({ params }: { params: { id: strin
             )}
           </div>
 
-          <div className="md:text-right">
+          <div className="sm:text-right">
             <p className="text-[10px] font-bold uppercase text-slate-400 print:text-slate-500 tracking-wider mb-1">
               Payment Status
             </p>
             <span
-              className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+              className={`px-3 py-1 rounded-full text-xs font-bold uppercase inline-block ${
                 sale.status === InvoiceStatus.PAID
                   ? 'bg-emerald-500/10 text-emerald-400 print:bg-emerald-100 print:text-emerald-800'
                   : sale.status === InvoiceStatus.PARTIAL
@@ -172,9 +172,52 @@ export default function SaleInvoiceDetailsPage({ params }: { params: { id: strin
           </div>
         </div>
 
-        {/* Line Items Table */}
-        <div className="border border-slate-800 print:border-slate-200 rounded-xl overflow-hidden">
-          <table className="w-full text-left text-xs min-w-[800px]">
+        {/* Line Items Mobile Cards (< 768px) */}
+        <div className="md:hidden print:hidden space-y-2.5">
+          {(sale.items || []).map((line: any) => {
+            const qty = Number(line.quantity || 0);
+            const price = Number(line.unitPrice || 0);
+            const disc = Number(line.discount || 0);
+            const itemLineTotal = line.total !== undefined && line.total !== null && Number(line.total) > 0
+              ? Number(line.total)
+              : Math.max(0, qty * price - disc);
+
+            return (
+              <div key={line.id} className="p-3.5 rounded-xl bg-slate-800/40 border border-slate-800 space-y-2 text-xs">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <strong className="text-white block font-semibold">{line.item?.name}</strong>
+                    {line.item?.code && (
+                      <span className="text-[10px] text-slate-400 font-mono">SKU: {line.item.code}</span>
+                    )}
+                  </div>
+                  <span className="font-mono font-bold text-white text-sm shrink-0">
+                    Rs. {itemLineTotal.toLocaleString()}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800/60 text-[11px] text-slate-400 font-mono">
+                  <div>
+                    <span className="block text-[10px] text-slate-500 uppercase">Qty</span>
+                    {qty} {line.item?.unit}
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-slate-500 uppercase">Price</span>
+                    Rs. {price.toLocaleString()}
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-slate-500 uppercase">Discount</span>
+                    {disc > 0 ? `-Rs. ${disc.toLocaleString()}` : '-'}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Line Items Desktop & Print Table (>= 768px) */}
+        <div className="hidden md:block print:block border border-slate-800 print:border-slate-200 rounded-xl overflow-x-auto">
+          <table className="w-full text-left text-xs min-w-[650px]">
             <thead className="bg-slate-800/80 print:bg-slate-100 text-slate-300 print:text-slate-700 font-semibold border-b border-slate-800 print:border-slate-200">
               <tr>
                 <th className="px-4 py-3">Item Description</th>
@@ -228,8 +271,8 @@ export default function SaleInvoiceDetailsPage({ params }: { params: { id: strin
         </div>
 
         {/* Totals Summary */}
-        <div className="flex flex-wrap justify-between items-start pt-4 border-t border-slate-800 print:border-slate-300 gap-4 text-xs">
-          <div className="max-w-md">
+        <div className="flex flex-col sm:flex-row justify-between items-start pt-4 border-t border-slate-800 print:border-slate-300 gap-4 text-xs">
+          <div className="max-w-md w-full">
             {sale.notes && (
               <div className="p-3 rounded-lg bg-slate-800/40 print:bg-slate-50 text-slate-400 print:text-slate-600">
                 <p className="font-semibold text-slate-300 print:text-slate-800 text-[11px] mb-1">
@@ -240,7 +283,7 @@ export default function SaleInvoiceDetailsPage({ params }: { params: { id: strin
             )}
           </div>
 
-          <div className="w-64 space-y-2 text-slate-400 print:text-slate-700">
+          <div className="w-full sm:w-72 space-y-2 text-slate-400 print:text-slate-700 border-t sm:border-t-0 border-slate-800/80 pt-3 sm:pt-0">
             <div className="flex justify-between">
               <span>Subtotal</span>
               <span className="font-mono text-white print:text-slate-900">Rs. {subTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>

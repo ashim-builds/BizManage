@@ -394,119 +394,226 @@ export default function StorefrontSettingsPage() {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-300">
-                  <thead className="bg-slate-950/60 text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider">
-                    <tr>
-                      <th className="px-4 py-3">Web Invoice #</th>
-                      <th className="px-4 py-3">Customer Info</th>
-                      <th className="px-4 py-3">Items Ordered</th>
-                      <th className="px-4 py-3">Total</th>
-                      <th className="px-4 py-3">Status</th>
-                      <th className="px-4 py-3 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800">
-                    {orders.map((ord: any) => (
-                      <tr key={ord.id} className="hover:bg-slate-800/40 transition-colors">
-                        <td className="px-4 py-4 font-mono font-bold text-white">
+              <>
+                {/* Mobile Card Layout (< 768px) */}
+                <div className="grid gap-3.5 md:hidden p-4">
+                  {orders.map((ord: any) => (
+                    <div key={ord.id} className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-md">
+                      <div className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+                        <div>
                           <Link
                             href={`/transactions/sales/${ord.id}`}
-                            className="text-blue-400 hover:underline flex items-center gap-1"
+                            className="text-blue-400 hover:underline font-mono font-bold text-xs flex items-center gap-1"
                           >
                             <FileText className="w-3.5 h-3.5" />
                             {ord.invoiceNumber}
                           </Link>
-                          <span className="text-[10px] text-slate-500 block font-normal">
+                          <span className="text-[10px] text-slate-500 font-mono block mt-0.5">
                             {new Date(ord.createdAt).toLocaleDateString()}
                           </span>
-                        </td>
+                        </div>
 
-                        <td className="px-4 py-4 space-y-1">
-                          <strong className="text-white block text-xs">{ord.customerName}</strong>
+                        {ord.status === 'PAID' ? (
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                            PAID
+                          </span>
+                        ) : ord.status === 'CANCELLED' ? (
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                            CANCELLED
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                            UNPAID / PENDING
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="space-y-1">
+                        <strong className="text-white block text-xs font-bold">{ord.customerName}</strong>
+                        {ord.customerPhone && (
+                          <p className="text-slate-400 text-[11px] flex items-center gap-1">
+                            <Phone className="w-3 h-3 text-slate-500 shrink-0" /> {ord.customerPhone}
+                          </p>
+                        )}
+                        {ord.deliveryAddress && (
+                          <p className="text-slate-400 text-[11px] flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-slate-500 shrink-0" /> {ord.deliveryAddress}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800/80 space-y-1">
+                        <p className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Items Ordered</p>
+                        {ord.items.map((it: any) => (
+                          <div key={it.id} className="text-xs text-slate-300 flex items-center justify-between">
+                            <span>• {it.name}</span>
+                            <span className="text-slate-400 font-mono text-[11px]">x {it.quantity} {it.unit}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                        <div>
+                          <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Total Amount</span>
+                          <span className="text-sm font-bold font-mono text-emerald-400">
+                            Rs. {ord.totalAmount.toLocaleString()}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
                           {ord.customerPhone && (
-                            <span className="text-slate-400 text-[11px] flex items-center gap-1">
-                              <Phone className="w-3 h-3 text-slate-500" /> {ord.customerPhone}
-                            </span>
+                            <a
+                              href={`https://wa.me/${ord.customerPhone.replace(/[^0-9]/g, '')}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="p-2 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 transition-all flex items-center gap-1 text-[11px] font-bold"
+                              title="WhatsApp"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5" />
+                            </a>
                           )}
-                          {ord.deliveryAddress && (
-                            <span className="text-slate-400 text-[11px] flex items-center gap-1">
-                              <MapPin className="w-3 h-3 text-slate-500" /> {ord.deliveryAddress}
-                            </span>
+
+                          {ord.status !== 'PAID' && ord.status !== 'CANCELLED' && (
+                            <button
+                              type="button"
+                              onClick={() => handleStatusChange(ord.id, 'PAID')}
+                              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold transition-all flex items-center gap-1 shadow-sm"
+                            >
+                              <Check className="w-3.5 h-3.5" /> Mark Paid
+                            </button>
                           )}
-                        </td>
 
-                        <td className="px-4 py-4">
-                          <div className="space-y-1 max-w-xs">
-                            {ord.items.map((it: any) => (
-                              <div key={it.id} className="text-xs text-slate-300">
-                                • {it.name} <span className="text-slate-400">x {it.quantity} {it.unit}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </td>
-
-                        <td className="px-4 py-4 font-mono font-bold text-emerald-400">
-                          Rs. {ord.totalAmount.toLocaleString()}
-                        </td>
-
-                        <td className="px-4 py-4">
-                          {ord.status === 'PAID' ? (
-                            <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                              PAID
-                            </span>
-                          ) : ord.status === 'CANCELLED' ? (
-                            <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">
-                              CANCELLED
-                            </span>
-                          ) : (
-                            <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                              UNPAID / PENDING
-                            </span>
+                          {ord.status !== 'CANCELLED' && ord.status !== 'PAID' && (
+                            <button
+                              type="button"
+                              onClick={() => handleStatusChange(ord.id, 'CANCELLED')}
+                              className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-all"
+                              title="Cancel Order"
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </button>
                           )}
-                        </td>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
-                        <td className="px-4 py-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {ord.customerPhone && (
-                              <a
-                                href={`https://wa.me/${ord.customerPhone.replace(/[^0-9]/g, '')}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="p-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 transition-all"
-                                title="Contact Customer via WhatsApp"
-                              >
-                                <MessageSquare className="w-4 h-4" />
-                              </a>
-                            )}
-
-                            {ord.status !== 'PAID' && ord.status !== 'CANCELLED' && (
-                              <button
-                                type="button"
-                                onClick={() => handleStatusChange(ord.id, 'PAID')}
-                                className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold transition-all flex items-center gap-1"
-                              >
-                                <Check className="w-3.5 h-3.5" /> Mark Paid
-                              </button>
-                            )}
-
-                            {ord.status !== 'CANCELLED' && ord.status !== 'PAID' && (
-                              <button
-                                type="button"
-                                onClick={() => handleStatusChange(ord.id, 'CANCELLED')}
-                                className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-all"
-                                title="Cancel Order"
-                              >
-                                <XCircle className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-                        </td>
+                {/* Desktop Table Layout (>= 768px) */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left text-xs text-slate-300">
+                    <thead className="bg-slate-950/60 text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider">
+                      <tr>
+                        <th className="px-4 py-3">Web Invoice #</th>
+                        <th className="px-4 py-3">Customer Info</th>
+                        <th className="px-4 py-3">Items Ordered</th>
+                        <th className="px-4 py-3">Total</th>
+                        <th className="px-4 py-3">Status</th>
+                        <th className="px-4 py-3 text-right">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800">
+                      {orders.map((ord: any) => (
+                        <tr key={ord.id} className="hover:bg-slate-800/40 transition-colors">
+                          <td className="px-4 py-4 font-mono font-bold text-white">
+                            <Link
+                              href={`/transactions/sales/${ord.id}`}
+                              className="text-blue-400 hover:underline flex items-center gap-1"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              {ord.invoiceNumber}
+                            </Link>
+                            <span className="text-[10px] text-slate-500 block font-normal">
+                              {new Date(ord.createdAt).toLocaleDateString()}
+                            </span>
+                          </td>
+
+                          <td className="px-4 py-4 space-y-1">
+                            <strong className="text-white block text-xs">{ord.customerName}</strong>
+                            {ord.customerPhone && (
+                              <span className="text-slate-400 text-[11px] flex items-center gap-1">
+                                <Phone className="w-3 h-3 text-slate-500" /> {ord.customerPhone}
+                              </span>
+                            )}
+                            {ord.deliveryAddress && (
+                              <span className="text-slate-400 text-[11px] flex items-center gap-1">
+                                <MapPin className="w-3 h-3 text-slate-500" /> {ord.deliveryAddress}
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="px-4 py-4">
+                            <div className="space-y-1 max-w-xs">
+                              {ord.items.map((it: any) => (
+                                <div key={it.id} className="text-xs text-slate-300">
+                                  • {it.name} <span className="text-slate-400">x {it.quantity} {it.unit}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+
+                          <td className="px-4 py-4 font-mono font-bold text-emerald-400">
+                            Rs. {ord.totalAmount.toLocaleString()}
+                          </td>
+
+                          <td className="px-4 py-4">
+                            {ord.status === 'PAID' ? (
+                              <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                                PAID
+                              </span>
+                            ) : ord.status === 'CANCELLED' ? (
+                              <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                                CANCELLED
+                              </span>
+                            ) : (
+                              <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                                UNPAID / PENDING
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="px-4 py-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {ord.customerPhone && (
+                                <a
+                                  href={`https://wa.me/${ord.customerPhone.replace(/[^0-9]/g, '')}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="p-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 transition-all"
+                                  title="Contact Customer via WhatsApp"
+                                >
+                                  <MessageSquare className="w-4 h-4" />
+                                </a>
+                              )}
+
+                              {ord.status !== 'PAID' && ord.status !== 'CANCELLED' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleStatusChange(ord.id, 'PAID')}
+                                  className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold transition-all flex items-center gap-1"
+                                >
+                                  <Check className="w-3.5 h-3.5" /> Mark Paid
+                                </button>
+                              )}
+
+                              {ord.status !== 'CANCELLED' && ord.status !== 'PAID' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleStatusChange(ord.id, 'CANCELLED')}
+                                  className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-all"
+                                  title="Cancel Order"
+                                >
+                                  <XCircle className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         </div>
