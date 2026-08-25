@@ -60,7 +60,7 @@ export function PublicHeader({ activePage }: PublicHeaderProps) {
             Pricing
           </Link>
           <Link
-            href="/#stores"
+            href="/explore-stores"
             className="px-3 py-1.5 rounded-lg text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 font-semibold transition-colors"
           >
             Explore Stores
@@ -156,6 +156,13 @@ export function PublicHeader({ activePage }: PublicHeaderProps) {
               className="px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-900 transition-colors text-sm font-medium"
             >
               Pricing
+            </Link>
+            <Link
+              href="/explore-stores"
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-3 py-2 rounded-lg text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 font-semibold transition-colors text-sm"
+            >
+              Explore Online Stores
             </Link>
             <Link
               href="/security"

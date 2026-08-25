@@ -204,6 +204,11 @@ export function PublicFooter() {
             </h4>
             <ul className="space-y-2.5 text-xs text-slate-400">
               <li>
+                <Link href="/explore-stores" className="hover:text-emerald-400 transition-colors text-emerald-400 font-semibold">
+                  Explore Online Stores
+                </Link>
+              </li>
+              <li>
                 <Link href="/login" className="hover:text-white transition-colors">
                   Sign In to Account
                 </Link>

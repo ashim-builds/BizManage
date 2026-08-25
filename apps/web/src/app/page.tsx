@@ -230,53 +230,67 @@ export default function Home() {
               ))}
             </div>
           ) : publicStores && publicStores.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {publicStores.map((store: any) => (
-                <div
-                  key={store.slug}
-                  className="group rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/50 transition-all p-6 flex flex-col justify-between space-y-4 hover:shadow-xl hover:shadow-emerald-500/5"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-lg shrink-0">
-                        {store.logoUrl ? (
-                          <img src={store.logoUrl} alt={store.title} className="w-full h-full object-contain p-1 rounded-xl" />
-                        ) : (
-                          store.title.substring(0, 2).toUpperCase()
-                        )}
+            <div className="space-y-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                {publicStores.slice(0, 3).map((store: any) => (
+                  <div
+                    key={store.slug}
+                    className="group rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/50 transition-all p-6 flex flex-col justify-between space-y-4 hover:shadow-xl hover:shadow-emerald-500/5"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-lg shrink-0">
+                          {store.logoUrl ? (
+                            <img src={store.logoUrl} alt={store.title} className="w-full h-full object-contain p-1 rounded-xl" />
+                          ) : (
+                            store.title ? store.title.substring(0, 2).toUpperCase() : 'ST'
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-base font-bold text-white group-hover:text-emerald-400 transition-colors truncate">
+                            {store.title}
+                          </h3>
+                          {store.address && (
+                            <p className="text-[11px] text-slate-400 flex items-center gap-1 truncate">
+                              <MapPin className="w-3 h-3 text-slate-500 shrink-0" /> {store.address}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-base font-bold text-white group-hover:text-emerald-400 transition-colors truncate">
-                          {store.title}
-                        </h3>
-                        {store.address && (
-                          <p className="text-[11px] text-slate-400 flex items-center gap-1 truncate">
-                            <MapPin className="w-3 h-3 text-slate-500 shrink-0" /> {store.address}
-                          </p>
-                        )}
-                      </div>
+
+                      {store.description && (
+                        <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                          {store.description}
+                        </p>
+                      )}
                     </div>
 
-                    {store.description && (
-                      <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                        {store.description}
-                      </p>
-                    )}
+                    <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                      <span className="text-[10px] text-slate-500 font-mono">
+                        /store/{store.slug}
+                      </span>
+                      <Link
+                        href={`/store/${store.slug}`}
+                        className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5"
+                      >
+                        Visit Store <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
                   </div>
+                ))}
+              </div>
 
-                  <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between gap-2">
-                    <span className="text-[10px] text-slate-500 font-mono">
-                      /store/{store.slug}
-                    </span>
-                    <Link
-                      href={`/store/${store.slug}`}
-                      className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5"
-                    >
-                      Visit Store <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                </div>
-              ))}
+              {/* Explore All Stores Button */}
+              <div className="text-center pt-2">
+                <Link
+                  href="/explore-stores"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-300 border border-emerald-500/40 font-bold text-xs sm:text-sm transition-all shadow-lg hover:scale-105"
+                >
+                  <Store className="w-4 h-4 text-emerald-400" />
+                  Explore All Online Stores ({publicStores.length})
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
             </div>
           ) : (
             <div className="p-10 rounded-3xl bg-slate-900/40 border border-slate-800 text-center space-y-4 max-w-xl mx-auto">
