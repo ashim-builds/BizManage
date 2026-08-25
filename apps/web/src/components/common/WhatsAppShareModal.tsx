@@ -65,13 +65,14 @@ export function WhatsAppShareModal({
               </label>
               <input
                 type="tel"
+                maxLength={10}
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="e.g. 9801234567 or +977 9801234567"
+                onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
+                placeholder="e.g. 9841234567"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs font-mono placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />
               <p className="text-[10px] text-slate-500 mt-1">
-                Enter 10-digit mobile number. Country code (+977) will be added automatically.
+                Enter 10-digit numeric mobile number.
               </p>
             </div>
 

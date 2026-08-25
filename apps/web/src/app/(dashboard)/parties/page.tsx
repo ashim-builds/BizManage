@@ -518,12 +518,17 @@ export default function PartiesPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Phone Number</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Phone Number (10 Digits)</label>
                   <input
-                    type="text"
-                    {...createForm.register('phone')}
-                    className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    placeholder="+977 9800000000"
+                    type="tel"
+                    maxLength={10}
+                    {...createForm.register('phone', {
+                      onChange: (e) => {
+                        e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10);
+                      },
+                    })}
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="e.g. 9841234567"
                   />
                   {createForm.formState.errors.phone && (
                     <p className="text-xs text-red-400 mt-1">{createForm.formState.errors.phone.message}</p>
@@ -692,11 +697,17 @@ export default function PartiesPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Phone Number</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Phone Number (10 Digits)</label>
                   <input
-                    type="text"
-                    {...editForm.register('phone')}
-                    className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    type="tel"
+                    maxLength={10}
+                    {...editForm.register('phone', {
+                      onChange: (e) => {
+                        e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10);
+                      },
+                    })}
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="e.g. 9841234567"
                   />
                   {editForm.formState.errors.phone && (
                     <p className="text-xs text-red-400 mt-1">{editForm.formState.errors.phone.message}</p>

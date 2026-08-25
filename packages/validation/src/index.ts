@@ -83,8 +83,8 @@ export const partySchema = z.object({
     .nullable()
     .or(z.literal(''))
     .refine(
-      (val) => !val || /^(97|98)\d{8}$/.test(val),
-      'Phone number must start with 97 or 98 and be exactly 10 digits (e.g. 9841234567)'
+      (val) => !val || /^[0-9]{10}$/.test(val),
+      'Phone number must contain numbers only and be exactly 10 digits (e.g. 9841234567)'
     ),
   email: z.string().email('Invalid email address').optional().nullable().or(z.literal('')),
   address: z.string().optional().nullable(),

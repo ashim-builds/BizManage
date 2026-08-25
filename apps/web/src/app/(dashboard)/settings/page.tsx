@@ -571,13 +571,14 @@ function SettingsPageContent() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Contact Number (Phone)</label>
+                <label className="block text-slate-300 font-semibold mb-1">Contact Number (Phone - 10 Digits)</label>
                 <input
-                  type="text"
+                  type="tel"
+                  maxLength={10}
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono"
-                  placeholder="e.g. +977 9800000000"
+                  placeholder="e.g. 9841234567"
                 />
               </div>
 

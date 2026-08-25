@@ -172,8 +172,8 @@ export default function PublicStorefrontPage() {
       toast.error('Please enter your valid full name');
       return;
     }
-    if (!/^\+?[0-9]{7,15}$/.test(cleanPhone)) {
-      toast.error('Please enter a valid phone number containing digits only (e.g. 9841234567)');
+    if (!/^[0-9]{10}$/.test(cleanPhone)) {
+      toast.error('Phone number must contain numbers only and be exactly 10 digits (e.g. 9841234567)');
       return;
     }
     if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
@@ -637,12 +637,13 @@ export default function PublicStorefrontPage() {
                   </div>
 
                   <div>
-                    <label className="text-[10px] text-slate-400 font-medium block mb-1">Mobile Phone Number *</label>
+                    <label className="text-[10px] text-slate-400 font-medium block mb-1">Mobile Phone Number (10 Digits) *</label>
                     <input
                       type="tel"
+                      maxLength={10}
                       placeholder="e.g. 9841234567 *"
                       value={customerPhone}
-                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      onChange={(e) => setCustomerPhone(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-mono focus:outline-none focus:border-blue-500"
                     />
                   </div>

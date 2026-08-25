@@ -436,7 +436,7 @@ export async function storefrontRoutes(app: FastifyInstance) {
       }
 
       const cleanName = String(customerName).trim();
-      const cleanPhone = String(customerPhone).trim().replace(/[\s\-\(\)]/g, '');
+      const cleanPhone = String(customerPhone).trim().replace(/[^0-9]/g, '');
       const cleanEmail = customerEmail ? String(customerEmail).trim() : '';
 
       if (cleanName.length < 2) {
@@ -447,12 +447,12 @@ export async function storefrontRoutes(app: FastifyInstance) {
         });
       }
 
-      // Validate phone format: must contain only numeric digits (optionally prefixed by +) and be 7-15 digits
-      if (!/^\+?[0-9]{7,15}$/.test(cleanPhone)) {
+      // Validate phone format: must contain numbers only and be exactly 10 digits
+      if (!/^[0-9]{10}$/.test(cleanPhone)) {
         return reply.status(400).send({
           success: false,
           error: 'INVALID_PHONE',
-          message: 'Please enter a valid phone number containing digits only (e.g. 9841234567).',
+          message: 'Phone number must contain numbers only and be exactly 10 digits (e.g. 9841234567).',
         });
       }
 

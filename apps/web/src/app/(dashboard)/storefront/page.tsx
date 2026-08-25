@@ -318,11 +318,12 @@ export default function StorefrontSettingsPage() {
                     WhatsApp Contact Number
                   </label>
                   <input
-                    type="text"
+                    type="tel"
+                    maxLength={10}
                     value={whatsappNumber}
-                    onChange={(e) => setWhatsappNumber(e.target.value)}
-                    placeholder="e.g. 9841000000"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder-slate-600 focus:outline-none focus:border-blue-500"
+                    onChange={(e) => setWhatsappNumber(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
+                    placeholder="e.g. 9841234567"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-mono placeholder-slate-600 focus:outline-none focus:border-blue-500"
                   />
                 </div>
 

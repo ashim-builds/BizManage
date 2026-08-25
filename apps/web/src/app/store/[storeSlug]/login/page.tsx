@@ -57,8 +57,8 @@ export default function StoreCustomerLoginPage() {
           setSubmitting(false);
           return;
         }
-        if (!phone || !/^\+?[0-9]{7,15}$/.test(phone.trim().replace(/[\s\-\(\)]/g, ''))) {
-          toast.error('Please enter a valid numeric phone number (7-15 digits).');
+        if (!phone || !/^[0-9]{10}$/.test(phone.trim().replace(/[^0-9]/g, ''))) {
+          toast.error('Phone number must contain numbers only and be exactly 10 digits (e.g. 9841234567).');
           setSubmitting(false);
           return;
         }
@@ -174,16 +174,17 @@ export default function StoreCustomerLoginPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Phone Number *</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Phone Number (10 Digits) *</label>
                   <div className="relative">
                     <Phone className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                     <input
                       type="tel"
                       required
+                      maxLength={10}
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
                       placeholder="e.g. 9841234567"
-                      className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-all"
+                      className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-mono placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-all"
                     />
                   </div>
                 </div>
