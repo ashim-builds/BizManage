@@ -13,6 +13,11 @@ export const metadata: Metadata = {
   title: 'BizManage - Business Management & Accounting SaaS',
   description: 'Manage sales, purchases, inventory, cashflow, and financial reports in one place.',
   manifest: '/manifest.json',
+  icons: {
+    icon: '/icon.ico',
+    shortcut: '/icon.ico',
+    apple: '/logo-transparent.png',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
