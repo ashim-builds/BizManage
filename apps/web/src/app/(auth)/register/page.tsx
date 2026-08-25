@@ -54,7 +54,11 @@ function RegisterForm() {
         router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
       }
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Registration failed. Please try again.');
+      if (err.response?.status === 409) {
+        setError('Email address is already registered. Please sign in to your workspace account.');
+      } else {
+        setError(err.response?.data?.error?.message || err.response?.data?.message || 'Registration failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

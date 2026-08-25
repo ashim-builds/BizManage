@@ -83,7 +83,12 @@ export default function StoreCustomerLoginPage() {
         }
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || err?.message || 'Authentication failed. Please try again.');
+      if (err?.response?.status === 409) {
+        toast.error('Account with this email already exists! Switched to Sign In mode.');
+        setMode('login');
+      } else {
+        toast.error(err?.response?.data?.message || err?.response?.data?.error?.message || err?.message || 'Authentication failed. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }
