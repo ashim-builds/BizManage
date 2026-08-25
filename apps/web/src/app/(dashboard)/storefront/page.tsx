@@ -517,7 +517,7 @@ export default function StorefrontSettingsPage() {
                               onClick={() => handleStatusChange(ord.id, 'PAID')}
                               className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold transition-all flex items-center gap-1 shadow-sm"
                             >
-                              <Check className="w-3.5 h-3.5" /> Mark Paid
+                              <Check className="w-3.5 h-3.5" /> Accept Order & Mark Paid
                             </button>
                           )}
 
@@ -624,15 +624,15 @@ export default function StorefrontSettingsPage() {
                                 </a>
                               )}
 
-                              {ord.status !== 'PAID' && ord.status !== 'CANCELLED' && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleStatusChange(ord.id, 'PAID')}
-                                  className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold transition-all flex items-center gap-1"
-                                >
-                                  <Check className="w-3.5 h-3.5" /> Mark Paid
-                                </button>
-                              )}
+                          {ord.status !== 'PAID' && ord.status !== 'CANCELLED' && (
+                            <button
+                              type="button"
+                              onClick={() => handleStatusChange(ord.id, 'PAID')}
+                              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold transition-all flex items-center gap-1 shadow-sm"
+                            >
+                              <Check className="w-3.5 h-3.5" /> Accept Order & Mark Paid
+                            </button>
+                          )}
 
                               {ord.status !== 'CANCELLED' && ord.status !== 'PAID' && (
                                 <button
