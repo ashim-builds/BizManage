@@ -261,10 +261,6 @@ export async function authRoutes(fastify: FastifyInstance) {
       },
     });
 
-    if (user.isSystemAdmin) {
-      throw new AppError('Admin users must use the admin portal', 403, 'FORBIDDEN');
-    }
-
     // Check if the user has any active businesses
     if (user.memberships.length > 0) {
       const hasActiveBusiness = user.memberships.some(m => m.business.isActive);
