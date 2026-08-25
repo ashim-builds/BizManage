@@ -70,29 +70,34 @@ function LoginForm() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl">
-        <div className="text-center mb-8">
-          <Link href="/" onClick={() => window.scrollTo(0, 0)} className="inline-block cursor-pointer">
-            <img
-              src="/logo-transparent.png"
-              alt="BizManage Logo"
-              className="w-14 h-14 object-contain mx-auto mb-3 drop-shadow-2xl hover:scale-105 transition-transform"
-            />
-          </Link>
-          <h2 className="text-2xl font-bold text-white">Sign in to BizManage</h2>
-          <p className="text-sm text-slate-400 mt-1">Enter your credentials to access your business accounts</p>
-        </div>
+  const handleGoogleAuth = () => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+    window.location.href = `${apiUrl}/auth/google`;
+  };
 
-        {/* Session Expired Banner */}
-        {isSessionExpired && (
-          <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-start gap-2.5 shadow-md animate-in fade-in duration-200">
-            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold text-white text-xs">Your session has expired (सेसन समाप्त भयो)</p>
-              <p className="text-[11px] text-amber-300/80 mt-0.5">Please sign in again to access your business workspace.</p>
-            </div>
+  return (
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+      {/* Background Glow */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Brand Header */}
+      <div className="text-center mb-8 z-10">
+        <Link href="/" onClick={() => window.scrollTo(0, 0)} className="inline-block cursor-pointer">
+          <img
+            src="/logo-transparent.png"
+            alt="BizManage Logo"
+            className="w-14 h-14 object-contain mx-auto mb-3 drop-shadow-2xl hover:scale-105 transition-transform"
+          />
+        </Link>
+        <h2 className="text-2xl font-bold text-white">Sign In to Your Workspace</h2>
+        <p className="text-xs text-slate-400 mt-1">Workspace Staff ERP Dashboard Login</p>
+      </div>
+
+      {/* Main Login Card */}
+      <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl z-10">
+        {isSessionExpired && !error && (
+          <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold flex items-center gap-2">
+            <span>Your session expired due to inactivity. Please sign in again.</span>
           </div>
         )}
 
@@ -103,8 +108,9 @@ function LoginForm() {
         )}
 
         <div className="mb-6 space-y-4">
-          <a
-            href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/auth/google`}
+          <button
+            type="button"
+            onClick={handleGoogleAuth}
             className="w-full py-3 px-4 flex items-center justify-center gap-3 rounded-lg bg-white hover:bg-slate-50 text-slate-900 font-semibold transition-all border border-slate-200"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -115,7 +121,7 @@ function LoginForm() {
               <path d="M1 1h22v22H1z" fill="none"/>
             </svg>
             Continue with Google
-          </a>
+          </button>
         </div>
 
         <div className="flex items-center gap-3 mb-6">

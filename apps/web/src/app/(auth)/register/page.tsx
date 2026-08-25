@@ -60,6 +60,11 @@ function RegisterForm() {
     }
   };
 
+  const handleGoogleAuth = () => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+    window.location.href = `${apiUrl}/auth/google`;
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
       {/* Background Glow */}
@@ -87,8 +92,9 @@ function RegisterForm() {
         )}
 
         <div className="mb-6 space-y-4">
-          <a
-            href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/auth/google`}
+          <button
+            type="button"
+            onClick={handleGoogleAuth}
             className="w-full py-3 px-4 flex items-center justify-center gap-3 rounded-lg bg-white hover:bg-slate-50 text-slate-900 font-semibold transition-all border border-slate-200 text-sm"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -99,7 +105,7 @@ function RegisterForm() {
               <path d="M1 1h22v22H1z" fill="none"/>
             </svg>
             Continue with Google
-          </a>
+          </button>
         </div>
 
         <div className="flex items-center gap-3 mb-6">
