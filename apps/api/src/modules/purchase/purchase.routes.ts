@@ -18,6 +18,10 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
   // ----------------------------------------------------
   fastify.get('/summary', async (request, reply) => {
     const purchases = await request.db!.purchase.findMany({
+      where: {
+        businessId: request.tenant!.businessId,
+        status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.DRAFT] },
+      },
       select: {
         totalAmount: true,
         paidAmount: true,

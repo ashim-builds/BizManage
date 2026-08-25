@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { usePublicStorefront, useSubmitOnlineOrder } from '@/hooks/useStorefront';
+import { useAuth } from '@/providers/AuthProvider';
 import {
   Store,
   Search,
@@ -19,6 +21,9 @@ import {
   Minus,
   Send,
   Sparkles,
+  Lock,
+  Mail,
+  User,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -28,12 +33,15 @@ interface CartItem {
   unit: string;
   price: number;
   quantity: number;
+  type: string;
+  currentStock: number;
 }
 
 export default function PublicStorefrontPage() {
   const params = useParams();
   const storeSlug = (params?.storeSlug as string) || '';
 
+  const { user } = useAuth();
   const { data: storeData, isLoading, isError } = usePublicStorefront(storeSlug);
   const submitOrder = useSubmitOnlineOrder(storeSlug);
 
@@ -45,6 +53,7 @@ export default function PublicStorefrontPage() {
   // Customer Order Form State
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [notes, setNotes] = useState('');
   const [orderSuccess, setOrderSuccess] = useState<any | null>(null);
@@ -52,6 +61,15 @@ export default function PublicStorefrontPage() {
   const store = storeData?.store;
   const categories = storeData?.categories || [];
   const products = storeData?.products || [];
+
+  // Pre-fill user profile details if logged in
+  useEffect(() => {
+    if (user) {
+      if (!customerName && user.name) setCustomerName(user.name);
+      if (!customerPhone && user.phone) setCustomerPhone(user.phone);
+      if (!customerEmail && user.email) setCustomerEmail(user.email);
+    }
+  }, [user]);
 
   // Filter products by category and tokenized search query
   const filteredProducts = useMemo(() => {
@@ -76,11 +94,26 @@ export default function PublicStorefrontPage() {
   }, [products, selectedCategory, searchQuery]);
 
   const addToCart = (product: any) => {
+    const stock = Number(product.currentStock || 0);
+
+    // Stock check
+    if (product.type === 'PRODUCT' && stock <= 0) {
+      toast.error(`"${product.name}" is currently out of stock`);
+      return;
+    }
+
+    const existingIndex = cart.findIndex((c) => c.id === product.id);
+    const existingQty = existingIndex >= 0 ? cart[existingIndex].quantity : 0;
+
+    if (product.type === 'PRODUCT' && existingQty + 1 > stock) {
+      toast.error(`Cannot add more. Only ${stock} ${product.unit || 'units'} available in stock.`);
+      return;
+    }
+
     setCart((prev) => {
-      const idx = prev.findIndex((c) => c.id === product.id);
-      if (idx >= 0) {
+      if (existingIndex >= 0) {
         const next = [...prev];
-        next[idx].quantity += 1;
+        next[existingIndex].quantity += 1;
         return next;
       }
       return [
@@ -88,9 +121,11 @@ export default function PublicStorefrontPage() {
         {
           id: product.id,
           name: product.name,
-          unit: product.unit,
+          unit: product.unit || 'Pcs',
           price: product.price || 0,
           quantity: 1,
+          type: product.type || 'PRODUCT',
+          currentStock: stock,
         },
       ];
     });
@@ -98,6 +133,14 @@ export default function PublicStorefrontPage() {
   };
 
   const updateCartQty = (id: string, delta: number) => {
+    const item = cart.find((c) => c.id === id);
+    if (item && delta > 0 && item.type === 'PRODUCT') {
+      if (item.quantity + delta > item.currentStock) {
+        toast.error(`Cannot add more. Only ${item.currentStock} ${item.unit} available in stock.`);
+        return;
+      }
+    }
+
     setCart((prev) =>
       prev
         .map((c) => {
@@ -115,16 +158,40 @@ export default function PublicStorefrontPage() {
   const cartTotalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   const handleWhatsAppCheckout = () => {
+    if (!user) {
+      toast.error('Please log in or create an account before placing an order.');
+      setIsCartOpen(true);
+      return;
+    }
+
+    const cleanName = customerName.trim();
+    const cleanPhone = customerPhone.trim().replace(/[\s\-\(\)]/g, '');
+    const cleanEmail = customerEmail.trim();
+
+    if (!cleanName || cleanName.length < 2) {
+      toast.error('Please enter your valid full name');
+      return;
+    }
+    if (!/^\+?[0-9]{7,15}$/.test(cleanPhone)) {
+      toast.error('Please enter a valid phone number containing digits only (e.g. 9841234567)');
+      return;
+    }
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
     if (cart.length === 0) return;
+
     const phone = store?.whatsappNumber || store?.phone || '';
     if (!phone) {
       toast.error('Store WhatsApp contact number is not set');
       return;
     }
-    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    const storePhone = phone.replace(/[^0-9]/g, '');
     let msg = `*New Order from Website*\n`;
-    if (customerName) msg += `*Customer:* ${customerName}\n`;
-    if (customerPhone) msg += `*Phone:* ${customerPhone}\n`;
+    msg += `*Customer:* ${cleanName}\n`;
+    msg += `*Phone:* ${cleanPhone}\n`;
+    msg += `*Email:* ${cleanEmail}\n`;
     if (deliveryAddress) msg += `*Address:* ${deliveryAddress}\n`;
     msg += `\n*Items Ordered:*\n`;
     cart.forEach((item, idx) => {
@@ -135,14 +202,33 @@ export default function PublicStorefrontPage() {
     }
     if (notes) msg += `\n*Notes:* ${notes}`;
 
-    const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
+    const url = `https://wa.me/${storePhone}?text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank');
   };
 
   const handleDirectOrderSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerName || !customerPhone) {
-      toast.error('Please enter your name and phone number');
+
+    if (!user) {
+      toast.error('Please log in or create an account before placing an order.');
+      setIsCartOpen(true);
+      return;
+    }
+
+    const cleanName = customerName.trim();
+    const cleanPhone = customerPhone.trim().replace(/[\s\-\(\)]/g, '');
+    const cleanEmail = customerEmail.trim();
+
+    if (!cleanName || cleanName.length < 2) {
+      toast.error('Please enter your valid full name (at least 2 characters)');
+      return;
+    }
+    if (!/^\+?[0-9]{7,15}$/.test(cleanPhone)) {
+      toast.error('Please enter a valid numeric phone number (e.g. 9841234567)');
+      return;
+    }
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      toast.error('Please enter a valid real email address (e.g. name@example.com)');
       return;
     }
     if (cart.length === 0) {
@@ -152,8 +238,9 @@ export default function PublicStorefrontPage() {
 
     try {
       const res = await submitOrder.mutateAsync({
-        customerName,
-        customerPhone,
+        customerName: cleanName,
+        customerPhone: cleanPhone,
+        customerEmail: cleanEmail,
         deliveryAddress,
         notes,
         items: cart.map((c) => ({ itemId: c.id, quantity: c.quantity })),
@@ -218,20 +305,44 @@ export default function PublicStorefrontPage() {
             </div>
           </div>
 
-          {/* Cart Button */}
-          <button
-            type="button"
-            onClick={() => setIsCartOpen(true)}
-            className="px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-500/25 transition-all flex items-center gap-2 relative"
-          >
-            <ShoppingBag className="w-4 h-4" />
-            <span>Cart</span>
-            {cartItemCount > 0 && (
-              <span className="w-5 h-5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black flex items-center justify-center shadow-md">
-                {cartItemCount}
-              </span>
+          <div className="flex items-center gap-2">
+            {!user ? (
+              <div className="hidden sm:flex items-center gap-2">
+                <Link
+                  href={`/login?redirect=/store/${storeSlug}`}
+                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition-all border border-slate-700"
+                >
+                  Log In
+                </Link>
+                <Link
+                  href={`/register?redirect=/store/${storeSlug}`}
+                  className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all shadow-md"
+                >
+                  Register
+                </Link>
+              </div>
+            ) : (
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700 text-xs">
+                <User className="w-3.5 h-3.5 text-blue-400" />
+                <span className="font-semibold text-slate-200">{user.name}</span>
+              </div>
             )}
-          </button>
+
+            {/* Cart Button */}
+            <button
+              type="button"
+              onClick={() => setIsCartOpen(true)}
+              className="px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-500/25 transition-all flex items-center gap-2 relative"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              <span>Cart</span>
+              {cartItemCount > 0 && (
+                <span className="w-5 h-5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black flex items-center justify-center shadow-md">
+                  {cartItemCount}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -325,7 +436,8 @@ export default function PublicStorefrontPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {filteredProducts.map((product: any) => {
-              const inStock = product.inStock;
+              const stock = Number(product.currentStock || 0);
+              const inStock = product.type === 'SERVICE' || stock > 0;
 
               return (
                 <div
@@ -357,7 +469,11 @@ export default function PublicStorefrontPage() {
                             : 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
                         }`}
                       >
-                        {inStock ? 'In Stock' : 'Out of Stock'}
+                        {product.type === 'SERVICE'
+                          ? 'In Stock'
+                          : inStock
+                          ? `In Stock (${stock} ${product.unit || 'Pcs'})`
+                          : 'Out of Stock (0 Pcs)'}
                       </span>
                       {product.unit && (
                         <span className="text-[10px] text-slate-400 font-mono">
@@ -425,6 +541,32 @@ export default function PublicStorefrontPage() {
                 </button>
               </div>
 
+              {/* Login Requirement Security Banner */}
+              {!user && (
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2 text-xs">
+                  <div className="flex items-center gap-2 font-bold text-amber-400">
+                    <Lock className="w-4 h-4" /> Account Login Required
+                  </div>
+                  <p className="text-slate-300 leading-relaxed">
+                    You must log in to your customer account before submitting online orders.
+                  </p>
+                  <div className="flex items-center gap-2 pt-1">
+                    <Link
+                      href={`/login?redirect=/store/${storeSlug}`}
+                      className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md transition-all"
+                    >
+                      Log In Now
+                    </Link>
+                    <Link
+                      href={`/register?redirect=/store/${storeSlug}`}
+                      className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 transition-all"
+                    >
+                      Create Account
+                    </Link>
+                  </div>
+                </div>
+              )}
+
               {cart.length === 0 ? (
                 <div className="text-center py-12 space-y-2 text-slate-400">
                   <ShoppingBag className="w-10 h-10 text-slate-600 mx-auto" />
@@ -439,6 +581,11 @@ export default function PublicStorefrontPage() {
                         <h4 className="text-xs font-bold text-white line-clamp-1">{item.name}</h4>
                         <p className="text-[10px] text-slate-400">
                           Rs. {item.price.toLocaleString()} / {item.unit}
+                          {item.type === 'PRODUCT' && (
+                            <span className="ml-2 text-slate-500 font-mono">
+                              (Max: {item.currentStock} {item.unit})
+                            </span>
+                          )}
                         </p>
                       </div>
 
@@ -480,10 +627,11 @@ export default function PublicStorefrontPage() {
               {cart.length > 0 && (
                 <div className="space-y-3 pt-4 border-t border-slate-800">
                   <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-                    Customer Details
+                    Customer Contact Details
                   </h4>
 
                   <div>
+                    <label className="text-[10px] text-slate-400 font-medium block mb-1">Full Name *</label>
                     <input
                       type="text"
                       placeholder="Your Full Name *"
@@ -494,9 +642,10 @@ export default function PublicStorefrontPage() {
                   </div>
 
                   <div>
+                    <label className="text-[10px] text-slate-400 font-medium block mb-1">Mobile Phone Number *</label>
                     <input
                       type="tel"
-                      placeholder="Phone / WhatsApp Number *"
+                      placeholder="e.g. 9841234567 *"
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-mono focus:outline-none focus:border-blue-500"
@@ -504,9 +653,21 @@ export default function PublicStorefrontPage() {
                   </div>
 
                   <div>
+                    <label className="text-[10px] text-slate-400 font-medium block mb-1">Email Address *</label>
+                    <input
+                      type="email"
+                      placeholder="e.g. customer@email.com *"
+                      value={customerEmail}
+                      onChange={(e) => setCustomerEmail(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] text-slate-400 font-medium block mb-1">Delivery Address (Optional)</label>
                     <input
                       type="text"
-                      placeholder="Delivery Address (Optional)"
+                      placeholder="Delivery Address"
                       value={deliveryAddress}
                       onChange={(e) => setDeliveryAddress(e.target.value)}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-blue-500"

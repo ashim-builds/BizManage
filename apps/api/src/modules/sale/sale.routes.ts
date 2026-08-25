@@ -33,7 +33,10 @@ export async function saleRoutes(fastify: FastifyInstance) {
 
     const [agg, unpaidCount, totalCount] = await Promise.all([
       request.db!.sale.aggregate({
-        where: { businessId },
+        where: {
+          businessId,
+          status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.DRAFT] },
+        },
         _sum: { totalAmount: true, paidAmount: true, dueAmount: true },
       }),
       request.db!.sale.count({
@@ -42,7 +45,12 @@ export async function saleRoutes(fastify: FastifyInstance) {
           status: { in: [InvoiceStatus.UNPAID, InvoiceStatus.PARTIAL] },
         },
       }),
-      request.db!.sale.count({ where: { businessId } }),
+      request.db!.sale.count({
+        where: {
+          businessId,
+          status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.DRAFT] },
+        },
+      }),
     ]);
 
     return reply.send({

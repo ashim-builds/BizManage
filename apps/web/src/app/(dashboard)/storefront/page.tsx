@@ -480,7 +480,7 @@ export default function StorefrontSettingsPage() {
                               </a>
                             )}
 
-                            {ord.status !== 'PAID' && (
+                            {ord.status !== 'PAID' && ord.status !== 'CANCELLED' && (
                               <button
                                 type="button"
                                 onClick={() => handleStatusChange(ord.id, 'PAID')}
@@ -490,7 +490,7 @@ export default function StorefrontSettingsPage() {
                               </button>
                             )}
 
-                            {ord.status !== 'CANCELLED' && (
+                            {ord.status !== 'CANCELLED' && ord.status !== 'PAID' && (
                               <button
                                 type="button"
                                 onClick={() => handleStatusChange(ord.id, 'CANCELLED')}

@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { requireBusinessTenant } from '../../middleware/auth.js';
-import { AccountType, Prisma } from '@bizmanage/database';
+import { AccountType, InvoiceStatus, Prisma } from '@bizmanage/database';
 
 export async function dashboardRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', requireBusinessTenant);
@@ -73,6 +73,7 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
       request.db!.sale.aggregate({
         where: {
           businessId,
+          status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.DRAFT] },
           ...(hasDateFilter ? { date: dateFilter } : {}),
         },
         _sum: { totalAmount: true },
@@ -83,6 +84,7 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
       request.db!.purchase.aggregate({
         where: {
           businessId,
+          status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.DRAFT] },
           ...(hasDateFilter ? { date: dateFilter } : {}),
         },
         _sum: { totalAmount: true },
@@ -146,6 +148,7 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
       request.db!.sale.findMany({
         where: {
           businessId,
+          status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.DRAFT] },
           ...(hasDateFilter ? { date: dateFilter } : {}),
         },
         select: {
@@ -165,7 +168,7 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
 
       // 12. Today's Sales aggregate
       request.db!.sale.aggregate({
-        where: { businessId, date: todayDateFilter },
+        where: { businessId, status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.DRAFT] }, date: todayDateFilter },
         _sum: { totalAmount: true },
         _count: { id: true },
       }),
@@ -178,7 +181,7 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
 
       // 14. Today's Purchases aggregate
       request.db!.purchase.aggregate({
-        where: { businessId, date: todayDateFilter },
+        where: { businessId, status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.DRAFT] }, date: todayDateFilter },
         _sum: { totalAmount: true },
       }),
 
@@ -190,7 +193,7 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
 
       // 16. Today's Sales with items for Today's COGS & Sales Margin
       request.db!.sale.findMany({
-        where: { businessId, date: todayDateFilter },
+        where: { businessId, status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.DRAFT] }, date: todayDateFilter },
         select: {
           items: {
             select: {

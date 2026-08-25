@@ -174,9 +174,13 @@ export async function storefrontRoutes(app: FastifyInstance) {
       return reply.status(404).send({ success: false, error: 'NOT_FOUND', message: 'Order not found' });
     }
 
+    const isCancelled = String(status).toUpperCase() === 'CANCELLED';
     const updated = await globalPrisma.sale.update({
       where: { id },
-      data: { status: status as any },
+      data: {
+        status: status as any,
+        ...(isCancelled ? { dueAmount: 0 } : {}),
+      },
     });
 
     return reply.send({
@@ -357,7 +361,7 @@ export async function storefrontRoutes(app: FastifyInstance) {
         });
       }
 
-      const { customerName, customerPhone, deliveryAddress, notes, items } = body;
+      const { customerName, customerPhone, customerEmail, deliveryAddress, notes, items } = body;
       if (!customerName || !customerPhone || !Array.isArray(items) || items.length === 0) {
         return reply.status(400).send({
           success: false,
@@ -366,22 +370,93 @@ export async function storefrontRoutes(app: FastifyInstance) {
         });
       }
 
+      const cleanName = String(customerName).trim();
+      const cleanPhone = String(customerPhone).trim().replace(/[\s\-\(\)]/g, '');
+      const cleanEmail = customerEmail ? String(customerEmail).trim() : '';
+
+      if (cleanName.length < 2) {
+        return reply.status(400).send({
+          success: false,
+          error: 'INVALID_NAME',
+          message: 'Customer name must be at least 2 characters long.',
+        });
+      }
+
+      // Validate phone format: must contain only numeric digits (optionally prefixed by +) and be 7-15 digits
+      if (!/^\+?[0-9]{7,15}$/.test(cleanPhone)) {
+        return reply.status(400).send({
+          success: false,
+          error: 'INVALID_PHONE',
+          message: 'Please enter a valid phone number containing digits only (e.g. 9841234567).',
+        });
+      }
+
+      // Validate email format if provided
+      if (cleanEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+        return reply.status(400).send({
+          success: false,
+          error: 'INVALID_EMAIL',
+          message: 'Please enter a valid email address (e.g. customer@example.com).',
+        });
+      }
+
       const businessId = setting.businessId;
+
+      // Validate item stock before processing
+      for (const line of items) {
+        if (!line.itemId) continue;
+        const dbItem = await globalPrisma.item.findFirst({
+          where: { id: line.itemId, businessId },
+        });
+
+        if (!dbItem) {
+          return reply.status(400).send({
+            success: false,
+            error: 'ITEM_NOT_FOUND',
+            message: 'One or more items in your cart were not found.',
+          });
+        }
+
+        if (dbItem.type === 'PRODUCT') {
+          const stock = Number(dbItem.currentStock || 0);
+          const qty = Math.max(1, Number(line.quantity || 1));
+          if (stock <= 0) {
+            return reply.status(400).send({
+              success: false,
+              error: 'OUT_OF_STOCK',
+              message: `Item "${dbItem.name}" is out of stock (Available: 0 ${dbItem.unit}). Cannot place order.`,
+            });
+          }
+          if (qty > stock) {
+            return reply.status(400).send({
+              success: false,
+              error: 'INSUFFICIENT_STOCK',
+              message: `Requested quantity for "${dbItem.name}" (${qty} ${dbItem.unit}) exceeds available stock (${stock} ${dbItem.unit}).`,
+            });
+          }
+        }
+      }
 
       // Create or find customer party
       let party = await globalPrisma.party.findFirst({
-        where: { businessId, phone: String(customerPhone).trim() },
+        where: { businessId, phone: cleanPhone },
       });
 
       if (!party) {
         party = await globalPrisma.party.create({
           data: {
             businessId,
-            name: String(customerName).trim(),
-            phone: String(customerPhone).trim(),
+            name: cleanName,
+            phone: cleanPhone,
+            email: cleanEmail || null,
             type: 'CUSTOMER',
             address: deliveryAddress ? String(deliveryAddress).trim() : null,
           },
+        });
+      } else if (cleanEmail && !party.email) {
+        await globalPrisma.party.update({
+          where: { id: party.id },
+          data: { email: cleanEmail },
         });
       }
 
@@ -413,6 +488,14 @@ export async function storefrontRoutes(app: FastifyInstance) {
       const count = await globalPrisma.sale.count({ where: { businessId } });
       const invoiceNumber = `WEB-${String(count + 1).padStart(5, '0')}`;
 
+      const noteText = [
+        '[Online Storefront Order]',
+        cleanEmail ? `Email: ${cleanEmail}` : null,
+        notes ? `Notes: ${notes}` : null,
+      ]
+        .filter(Boolean)
+        .join(' | ');
+
       // Create Sales record (Status: UNPAID for online order lead)
       const order = await globalPrisma.sale.create({
         data: {
@@ -428,7 +511,7 @@ export async function storefrontRoutes(app: FastifyInstance) {
           paidAmount: 0,
           dueAmount: totalAmt,
           status: 'UNPAID',
-          notes: `[Online Storefront Order] ${notes || ''}`.trim(),
+          notes: noteText,
           items: {
             create: saleItemsData,
           },

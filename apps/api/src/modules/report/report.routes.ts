@@ -1,12 +1,11 @@
 import { FastifyInstance } from 'fastify';
 import { requireBusinessTenant } from '../../middleware/auth.js';
-import { Prisma } from '@bizmanage/database';
+import { InvoiceStatus, Prisma } from '@bizmanage/database';
 
 export async function reportRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', requireBusinessTenant);
 
   // ----------------------------------------------------
-  // 1. SALES REPORT API
   // 1. SALES REPORT API
   // ----------------------------------------------------
   fastify.get('/sales', async (request, reply) => {
@@ -25,6 +24,7 @@ export async function reportRoutes(fastify: FastifyInstance) {
 
     const whereClause: Prisma.SaleWhereInput = {
       businessId: request.tenant!.businessId,
+      status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.DRAFT] },
     };
 
     if (startDate || endDate) {
@@ -94,6 +94,7 @@ export async function reportRoutes(fastify: FastifyInstance) {
 
     const whereClause: Prisma.PurchaseWhereInput = {
       businessId: request.tenant!.businessId,
+      status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.DRAFT] },
     };
 
     if (startDate || endDate) {

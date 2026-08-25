@@ -65,6 +65,7 @@ export function useSubmitOnlineOrder(storeSlug: string) {
     mutationFn: (orderData: {
       customerName: string;
       customerPhone: string;
+      customerEmail?: string;
       deliveryAddress?: string;
       notes?: string;
       items: Array<{ itemId: string; quantity: number }>;

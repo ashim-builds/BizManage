@@ -46,6 +46,7 @@ export async function getPublicStorefront(storeSlug: string) {
 export async function submitOnlineOrder(storeSlug: string, orderData: {
   customerName: string;
   customerPhone: string;
+  customerEmail?: string;
   deliveryAddress?: string;
   notes?: string;
   items: Array<{ itemId: string; quantity: number }>;
