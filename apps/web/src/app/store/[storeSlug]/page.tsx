@@ -307,18 +307,13 @@ export default function PublicStorefrontPage() {
 
           <div className="flex items-center gap-2">
             {!user ? (
-              <div className="hidden sm:flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <Link
-                  href={`/login?redirect=/store/${storeSlug}`}
-                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition-all border border-slate-700"
+                  href={`/store/${storeSlug}/login`}
+                  className="px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 font-bold text-xs transition-all border border-emerald-500/30 flex items-center gap-1.5 shadow-sm"
                 >
-                  Log In
-                </Link>
-                <Link
-                  href={`/register?redirect=/store/${storeSlug}`}
-                  className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all shadow-md"
-                >
-                  Register
+                  <User className="w-3.5 h-3.5" />
+                  <span>Customer Login / Register</span>
                 </Link>
               </div>
             ) : (

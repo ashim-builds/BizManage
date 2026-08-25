@@ -3,6 +3,7 @@ import {
   getStorefrontSettings,
   updateStorefrontSettings,
   getStorefrontOrders,
+  getStorefrontCustomers,
   updateOrderStatus,
   getPublicStores,
   getPublicStorefront,
@@ -32,6 +33,13 @@ export function useStorefrontOrders() {
     queryKey: ['storefrontOrders'],
     queryFn: getStorefrontOrders,
     refetchInterval: 15000, // Auto-refresh incoming online orders every 15 seconds
+  });
+}
+
+export function useStorefrontCustomers() {
+  return useQuery({
+    queryKey: ['storefrontCustomers'],
+    queryFn: getStorefrontCustomers,
   });
 }
 

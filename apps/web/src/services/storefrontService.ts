@@ -28,6 +28,11 @@ export async function getStorefrontOrders() {
   return res.data.data;
 }
 
+export async function getStorefrontCustomers() {
+  const res = await api.get('/storefront/customers');
+  return res.data.data;
+}
+
 export async function updateOrderStatus(id: string, status: string) {
   const res = await api.patch(`/storefront/orders/${id}/status`, { status });
   return res.data.data;

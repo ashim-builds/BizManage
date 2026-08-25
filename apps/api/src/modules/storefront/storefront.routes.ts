@@ -190,6 +190,71 @@ export async function storefrontRoutes(app: FastifyInstance) {
     });
   });
 
+  // GET /api/v1/storefront/customers (Store Customers Directory for Business Owners)
+  app.get('/customers', { preHandler: [authenticateUser, requireBusinessTenant] }, async (request, reply) => {
+    const businessId = request.tenant?.businessId || (request as any).businessId;
+    if (!businessId) {
+      return reply.status(400).send({ success: false, error: 'NO_BUSINESS', message: 'Active business tenant is required' });
+    }
+
+    const parties = await globalPrisma.party.findMany({
+      where: {
+        businessId,
+        type: 'CUSTOMER',
+        sales: {
+          some: {
+            OR: [
+              { invoiceNumber: { startsWith: 'WEB-' } },
+              { notes: { contains: '[Online Storefront Order]' } },
+            ],
+          },
+        },
+      },
+      include: {
+        sales: {
+          where: {
+            OR: [
+              { invoiceNumber: { startsWith: 'WEB-' } },
+              { notes: { contains: '[Online Storefront Order]' } },
+            ],
+          },
+          select: {
+            id: true,
+            totalAmount: true,
+            status: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const customers = parties.map((p) => {
+      const activeSales = p.sales.filter((s) => s.status !== 'CANCELLED');
+      const totalOrdersCount = p.sales.length;
+      const totalSpent = activeSales.reduce((acc, s) => acc + Number(s.totalAmount || 0), 0);
+      const lastOrderDate = p.sales[0]?.createdAt || p.createdAt;
+
+      return {
+        id: p.id,
+        name: p.name,
+        phone: p.phone || '',
+        email: p.email || '',
+        address: p.address || '',
+        totalOrdersCount,
+        totalSpent,
+        lastOrderDate,
+        createdAt: p.createdAt,
+      };
+    });
+
+    return reply.send({
+      success: true,
+      data: customers,
+    });
+  });
+
   // ── Public Routes (Customer Facing) ────────────────────────────────────────
 
   // GET /api/v1/storefront/public-stores (Directory of all published online stores)
