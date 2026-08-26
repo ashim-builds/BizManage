@@ -6,6 +6,7 @@ import { AuthProvider } from '@/providers/AuthProvider';
 import { Toaster } from 'react-hot-toast';
 import { GlobalNumberInputFix } from '@/components/layout/GlobalNumberInputFix';
 import { PWAInstaller } from '@/components/common/PWAInstaller';
+import { DeveloperModeBlocker } from '@/components/common/DeveloperModeBlocker';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className={inter.className}>
         <QueryProvider>
+          <DeveloperModeBlocker />
           <PWAInstaller />
           <GlobalNumberInputFix />
           <AuthProvider>{children}</AuthProvider>
