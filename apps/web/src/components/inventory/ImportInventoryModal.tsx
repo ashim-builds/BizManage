@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import * as XLSX from 'xlsx';
 import {
   X,
   Upload,
@@ -16,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useBulkCreateItems } from '@/services/itemService';
 import { ItemType } from '@bizmanage/types';
+import { ModalPortal } from '@/components/common/ModalPortal';
 
 interface ImportInventoryModalProps {
   isOpen: boolean;
@@ -101,8 +101,9 @@ export function ImportInventoryModal({ isOpen, onClose, existingItems }: ImportI
   const processFile = (selectedFile: File) => {
     setFile(selectedFile);
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
+        const XLSX = await import('xlsx');
         const data = e.target?.result;
         const workbook = XLSX.read(data, { type: 'binary' });
         const firstSheetName = workbook.SheetNames[0];
@@ -336,7 +337,8 @@ export function ImportInventoryModal({ isOpen, onClose, existingItems }: ImportI
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+    <ModalPortal>
+      <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
       <div className="w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-2xl flex flex-col shadow-2xl max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
@@ -817,6 +819,7 @@ export function ImportInventoryModal({ isOpen, onClose, existingItems }: ImportI
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </ModalPortal>
   );
 }

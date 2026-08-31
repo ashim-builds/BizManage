@@ -30,7 +30,6 @@ import { AddCategoryModal } from '@/components/common/AddCategoryModal';
 import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
 import { CustomDateRangePicker } from '@/components/common/CustomDateRangePicker';
 import { ImportInventoryModal } from '@/components/inventory/ImportInventoryModal';
-import * as XLSX from 'xlsx';
 import {
   Package,
   Plus,
@@ -371,7 +370,8 @@ function InventoryPageContent() {
   const hasActiveFilters =
     !!search || !!selectedCategory || !!selectedType || lowStockOnly || !!dateFrom || !!dateTo || sortBy !== 'name-asc';
 
-  const handleExport = () => {
+  const handleExport = async () => {
+    const XLSX = await import('xlsx');
     const exportData = items.map((item: any) => ({
       'Item Name': item.name,
       'SKU / Code': item.code || '',
