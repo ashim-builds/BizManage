@@ -109,3 +109,20 @@ export function useDeleteItem() {
     },
   });
 }
+
+export function useBulkCreateItems() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (items: (ItemInput & { categoryName?: string | null })[]) => {
+      const encryptedItems = await Promise.all(
+        items.map((item) => encryptPayload(item, ITEM_ENCRYPTED_FIELDS))
+      );
+      const res = await api.post('/items/bulk', { items: encryptedItems });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['items'] });
+      queryClient.invalidateQueries({ queryKey: ['items', 'summary'] });
+    },
+  });
+}

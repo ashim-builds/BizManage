@@ -29,6 +29,8 @@ import { ModalPortal } from '@/components/common/ModalPortal';
 import { AddCategoryModal } from '@/components/common/AddCategoryModal';
 import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
 import { CustomDateRangePicker } from '@/components/common/CustomDateRangePicker';
+import { ImportInventoryModal } from '@/components/inventory/ImportInventoryModal';
+import * as XLSX from 'xlsx';
 import {
   Package,
   Plus,
@@ -49,6 +51,8 @@ import {
   Calendar,
   RotateCcw,
   Globe,
+  Upload,
+  Download,
 } from 'lucide-react';
 
 const numberInputProps = {
@@ -96,6 +100,7 @@ function InventoryPageContent() {
 
   // Modal states
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [adjustingItem, setAdjustingItem] = useState<any | null>(null);
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
@@ -366,6 +371,26 @@ function InventoryPageContent() {
   const hasActiveFilters =
     !!search || !!selectedCategory || !!selectedType || lowStockOnly || !!dateFrom || !!dateTo || sortBy !== 'name-asc';
 
+  const handleExport = () => {
+    const exportData = items.map((item: any) => ({
+      'Item Name': item.name,
+      'SKU / Code': item.code || '',
+      'Type': item.type,
+      'Category': item.category ? item.category.name : 'Other',
+      'Unit': item.unit,
+      'Purchase Cost': Number(item.purchasePrice || 0),
+      'Sale Price': Number(item.salePrice || 0),
+      'Current Stock': item.type === 'PRODUCT' ? Number(item.currentStock || 0) : 'N/A',
+      'Min Stock Alert': item.type === 'PRODUCT' ? Number(item.minStockAlert || 0) : 'N/A',
+      'Description': item.storeDescription || '',
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Inventory');
+    XLSX.writeFile(workbook, 'bizmanage_inventory_export.xlsx');
+  };
+
   return (
     <div className="space-y-8">
       {/* Top Header */}
@@ -376,12 +401,28 @@ function InventoryPageContent() {
             Track product SKUs, stock levels, unit cost/selling prices, and transaction movement logs.
           </p>
         </div>
-        <button
-          onClick={() => setIsCreateOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-all shadow-lg shadow-blue-600/20"
-        >
-          <Plus className="w-4 h-4" /> Add Inventory Item
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={handleExport}
+            disabled={items.length === 0}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition-all border border-slate-700 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Export current inventory list to Excel"
+          >
+            <Download className="w-4 h-4" /> Export Excel
+          </button>
+          <button
+            onClick={() => setIsImportOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition-all border border-slate-700 hover:text-white"
+          >
+            <Upload className="w-4 h-4" /> Import Excel/CSV
+          </button>
+          <button
+            onClick={() => setIsCreateOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-all shadow-lg shadow-blue-600/20"
+          >
+            <Plus className="w-4 h-4" /> Add Inventory Item
+          </button>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -1181,6 +1222,12 @@ function InventoryPageContent() {
             setDeleteError(err.response?.data?.error?.message || 'Failed to delete item.');
           }
         }}
+      />
+
+      <ImportInventoryModal
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        existingItems={rawItems}
       />
     </div>
   );

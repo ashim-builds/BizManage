@@ -4,6 +4,7 @@ import { itemSchema, updateItemSchema, stockAdjustmentSchema } from '@bizmanage/
 import { ItemType, StockMovementType, Prisma } from '@bizmanage/database';
 import { AppError } from '../../plugins/error-handler.js';
 import crypto from 'crypto';
+import { z } from 'zod';
 
 export async function itemRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', requireBusinessTenant);
@@ -292,6 +293,100 @@ export async function itemRoutes(fastify: FastifyInstance) {
     return reply.status(201).send({
       success: true,
       data: item,
+    });
+  });
+
+  // ----------------------------------------------------
+  // BULK CREATE ITEMS (Transaction-Safe with Category Creation)
+  // ----------------------------------------------------
+  fastify.post('/bulk', async (request, reply) => {
+    if (!request.tenant!.features.includes('INVENTORY_TRACKING')) {
+      throw new AppError('Feature Locked: Upgrade your plan to manage inventory.', 403, 'FEATURE_LOCKED');
+    }
+
+    const bulkSchema = z.object({
+      items: z.array(
+        itemSchema.extend({
+          categoryName: z.string().optional().nullable(),
+        })
+      ),
+    });
+
+    const body = bulkSchema.parse(request.body);
+
+    const result = await request.db!.$transaction(async (tx) => {
+      let createdCount = 0;
+
+      for (const itemInput of body.items) {
+        let categoryId = itemInput.categoryId;
+
+        // Resolve categoryName if categoryId is not provided
+        if (!categoryId && itemInput.categoryName && itemInput.categoryName.trim()) {
+          const catName = itemInput.categoryName.trim();
+          let category = await tx.itemCategory.findFirst({
+            where: {
+              businessId: request.tenant!.businessId,
+              name: { equals: catName, mode: 'insensitive' },
+            },
+          });
+
+          if (!category) {
+            category = await tx.itemCategory.create({
+              data: {
+                businessId: request.tenant!.businessId,
+                name: catName,
+              },
+            });
+          }
+          categoryId = category.id;
+        }
+
+        const newItem = await tx.item.create({
+          data: {
+            businessId: request.tenant!.businessId,
+            name: itemInput.name,
+            code: itemInput.code || null,
+            type: itemInput.type,
+            categoryId: categoryId || null,
+            unit: itemInput.unit || 'Pcs',
+            salePrice: itemInput.salePrice ?? 0,
+            purchasePrice: itemInput.purchasePrice ?? 0,
+            minStockAlert: itemInput.minStockAlert ?? 0,
+            openingStock: itemInput.openingStock ?? 0,
+            currentStock: itemInput.openingStock ?? 0,
+            imageUrl: itemInput.imageUrl || null,
+            storeDescription: itemInput.storeDescription || null,
+            // E2EE Metadata
+            encryptedDeks: itemInput.encryptedDeks ? itemInput.encryptedDeks : Prisma.JsonNull,
+            iv: itemInput.iv || null,
+            encPurchasePrice: itemInput.encPurchasePrice || null,
+            encSalePrice: itemInput.encSalePrice || null,
+            hmacName: itemInput.hmacName || null,
+            hmacCode: itemInput.hmacCode || null,
+          },
+        });
+
+        if (itemInput.type === ItemType.PRODUCT && itemInput.openingStock !== 0) {
+          await tx.stockMovement.create({
+            data: {
+              businessId: request.tenant!.businessId,
+              itemId: newItem.id,
+              type: StockMovementType.INITIAL,
+              quantity: itemInput.openingStock,
+              reference: 'Initial opening stock entry (bulk import)',
+            },
+          });
+        }
+
+        createdCount++;
+      }
+
+      return { createdCount };
+    }, { maxWait: 15000, timeout: 30000 });
+
+    return reply.status(201).send({
+      success: true,
+      data: result,
     });
   });
 
