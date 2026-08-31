@@ -268,23 +268,35 @@ export async function partyRoutes(fastify: FastifyInstance) {
       throw new AppError('Party not found', 404, 'NOT_FOUND');
     }
 
-    const transactionCount =
-      party._count.sales + party._count.purchases + party._count.paymentsIn + party._count.paymentsOut;
-    if (transactionCount > 0) {
+    const paymentCount = party._count.paymentsIn + party._count.paymentsOut;
+    if (paymentCount > 0) {
       throw new AppError(
-        `Cannot delete party "${party.name}" because they have ${transactionCount} linked transaction records.`,
+        `Cannot delete party "${party.name}" because they have ${paymentCount} linked payment records. Please delete payments first.`,
         400,
         'HAS_DEPENDENTS'
       );
     }
 
-    await request.db!.party.delete({
-      where: { id },
+    // Safely delete party along with all unpaid transactions/returns/quotations in a single transaction
+    await request.db!.$transaction(async (tx) => {
+      // 1. Delete returns first (due to FK constraints)
+      await tx.saleReturn.deleteMany({ where: { partyId: id } });
+      await tx.purchaseReturn.deleteMany({ where: { partyId: id } });
+
+      // 2. Delete sales, purchases, and quotations (due to FK constraints)
+      await tx.sale.deleteMany({ where: { partyId: id } });
+      await tx.purchase.deleteMany({ where: { partyId: id } });
+      await tx.quotation.deleteMany({ where: { partyId: id } });
+
+      // 3. Delete the party itself
+      await tx.party.delete({
+        where: { id },
+      });
     });
 
     return reply.send({
       success: true,
-      data: { message: 'Party deleted successfully' },
+      data: { message: 'Party and its unpaid transactions deleted successfully' },
     });
   });
 }
