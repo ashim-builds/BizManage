@@ -19,7 +19,6 @@ export async function categoryRoutes(fastify: FastifyInstance) {
         ? {
             name: {
               contains: search,
-              mode: 'insensitive',
             },
           }
         : undefined,
@@ -104,7 +103,6 @@ export async function categoryRoutes(fastify: FastifyInstance) {
         ? {
             name: {
               contains: search,
-              mode: 'insensitive',
             },
           }
         : undefined,

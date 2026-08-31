@@ -73,8 +73,8 @@ export async function incomeRoutes(fastify: FastifyInstance) {
     if (search && search.trim()) {
       const q = search.trim();
       whereClause.OR = [
-        { category: { contains: q, mode: 'insensitive' } },
-        { description: { contains: q, mode: 'insensitive' } },
+        { category: { contains: q } },
+        { description: { contains: q } },
       ];
     }
 

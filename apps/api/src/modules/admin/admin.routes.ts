@@ -75,8 +75,8 @@ export async function adminRoutes(fastify: FastifyInstance) {
     const where: any = {};
     if (query.search) {
       where.OR = [
-        { name: { contains: query.search, mode: 'insensitive' } },
-        { email: { contains: query.search, mode: 'insensitive' } },
+        { name: { contains: query.search } },
+        { email: { contains: query.search } },
       ];
     }
 
@@ -169,8 +169,8 @@ export async function adminRoutes(fastify: FastifyInstance) {
     const where: any = { isSystemAdmin: false };
     if (query.search) {
       where.OR = [
-        { name: { contains: query.search, mode: 'insensitive' } },
-        { email: { contains: query.search, mode: 'insensitive' } },
+        { name: { contains: query.search } },
+        { email: { contains: query.search } },
       ];
     }
 

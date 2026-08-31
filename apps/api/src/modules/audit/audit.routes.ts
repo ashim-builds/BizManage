@@ -42,16 +42,16 @@ export async function auditRoutes(fastify: FastifyInstance) {
     const where: any = { businessId };
 
     if (moduleFilter && moduleFilter.trim() !== '' && moduleFilter !== 'ALL') {
-      where.module = { equals: moduleFilter.trim(), mode: 'insensitive' };
+      where.module = { equals: moduleFilter.trim() };
     }
 
     if (search && search.trim() !== '') {
       const q = search.trim();
       where.OR = [
-        { action: { contains: q, mode: 'insensitive' } },
-        { module: { contains: q, mode: 'insensitive' } },
-        { user: { name: { contains: q, mode: 'insensitive' } } },
-        { user: { email: { contains: q, mode: 'insensitive' } } },
+        { action: { contains: q } },
+        { module: { contains: q } },
+        { user: { name: { contains: q } } },
+        { user: { email: { contains: q } } },
       ];
     }
 

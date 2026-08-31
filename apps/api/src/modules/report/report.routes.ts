@@ -36,8 +36,8 @@ export async function reportRoutes(fastify: FastifyInstance) {
     if (partyId) whereClause.partyId = partyId;
     if (search?.trim()) {
       whereClause.OR = [
-        { invoiceNumber: { contains: search.trim(), mode: 'insensitive' } },
-        { party: { name: { contains: search.trim(), mode: 'insensitive' } } },
+        { invoiceNumber: { contains: search.trim() } },
+        { party: { name: { contains: search.trim() } } },
       ];
     }
 
@@ -110,8 +110,8 @@ export async function reportRoutes(fastify: FastifyInstance) {
 
     if (search && search.trim()) {
       whereClause.OR = [
-        { billNumber: { contains: search.trim(), mode: 'insensitive' } },
-        { party: { name: { contains: search.trim(), mode: 'insensitive' } } },
+        { billNumber: { contains: search.trim() } },
+        { party: { name: { contains: search.trim() } } },
       ];
     }
 
@@ -180,8 +180,8 @@ export async function reportRoutes(fastify: FastifyInstance) {
 
     if (search && search.trim()) {
       whereClause.OR = [
-        { category: { contains: search.trim(), mode: 'insensitive' } },
-        { description: { contains: search.trim(), mode: 'insensitive' } },
+        { category: { contains: search.trim() } },
+        { description: { contains: search.trim() } },
       ];
     }
 
@@ -313,8 +313,8 @@ export async function reportRoutes(fastify: FastifyInstance) {
     if (search && search.trim()) {
       const q = search.trim();
       whereClause.OR = [
-        { name: { contains: q, mode: 'insensitive' } },
-        { phone: { contains: q, mode: 'insensitive' } },
+        { name: { contains: q } },
+        { phone: { contains: q } },
       ];
     }
 
@@ -373,8 +373,8 @@ export async function reportRoutes(fastify: FastifyInstance) {
     if (search && search.trim()) {
       const q = search.trim();
       whereClause.OR = [
-        { name: { contains: q, mode: 'insensitive' } },
-        { code: { contains: q, mode: 'insensitive' } },
+        { name: { contains: q } },
+        { code: { contains: q } },
       ];
     }
 

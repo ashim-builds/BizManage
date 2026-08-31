@@ -44,7 +44,7 @@ export async function accountRoutes(fastify: FastifyInstance) {
     const existing = await request.db!.account.findFirst({
       where: {
         businessId: request.tenant!.businessId,
-        accountName: { equals: body.accountName, mode: 'insensitive' },
+        accountName: { equals: body.accountName },
       },
     });
 

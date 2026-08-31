@@ -121,21 +121,18 @@ export async function paymentRoutes(fastify: FastifyInstance) {
         {
           referenceNumber: {
             contains: q,
-            mode: 'insensitive',
           },
         },
         {
           party: {
             name: {
               contains: q,
-              mode: 'insensitive',
             },
           },
         },
         {
           notes: {
             contains: q,
-            mode: 'insensitive',
           },
         },
       ];
@@ -692,21 +689,18 @@ export async function paymentRoutes(fastify: FastifyInstance) {
         {
           referenceNumber: {
             contains: q,
-            mode: 'insensitive',
           },
         },
         {
           party: {
             name: {
               contains: q,
-              mode: 'insensitive',
             },
           },
         },
         {
           notes: {
             contains: q,
-            mode: 'insensitive',
           },
         },
       ];

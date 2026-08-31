@@ -88,8 +88,8 @@ export async function purchaseRoutes(fastify: FastifyInstance) {
     if (search && search.trim()) {
       const q = search.trim();
       whereClause.OR = [
-        { billNumber: { contains: q, mode: 'insensitive' } },
-        { party: { name: { contains: q, mode: 'insensitive' } } },
+        { billNumber: { contains: q } },
+        { party: { name: { contains: q } } },
       ];
     }
 

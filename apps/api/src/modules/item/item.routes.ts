@@ -130,13 +130,13 @@ export async function itemRoutes(fastify: FastifyInstance) {
         whereClause.AND = tokens.map((token) => {
           const tokenAlpha = token.replace(/[^a-zA-Z0-9]/g, '');
           const orList: any[] = [
-            { name: { contains: token, mode: 'insensitive' } },
-            { code: { contains: token, mode: 'insensitive' } },
-            { category: { name: { contains: token, mode: 'insensitive' } } },
+            { name: { contains: token } },
+            { code: { contains: token } },
+            { category: { name: { contains: token } } },
           ];
           if (tokenAlpha && tokenAlpha !== token) {
-            orList.push({ name: { contains: tokenAlpha, mode: 'insensitive' } });
-            orList.push({ code: { contains: tokenAlpha, mode: 'insensitive' } });
+            orList.push({ name: { contains: tokenAlpha } });
+            orList.push({ code: { contains: tokenAlpha } });
           }
           return { OR: orList };
         });
@@ -148,18 +148,18 @@ export async function itemRoutes(fastify: FastifyInstance) {
           { hmacCode: cleanSkuHmac },
           { hmacCode: cleanAlphaHmac },
           // Plaintext path — partial / case-insensitive match on name, code, clean SKU, category
-          { name: { contains: rawSearch, mode: 'insensitive' } },
-          { code: { contains: rawSearch, mode: 'insensitive' } },
+          { name: { contains: rawSearch } },
+          { code: { contains: rawSearch } },
           // Category name always plaintext
-          { category: { name: { contains: rawSearch, mode: 'insensitive' } } },
+          { category: { name: { contains: rawSearch } } },
         ];
 
         if (cleanSku && cleanSku !== rawSearch) {
-          orConditions.push({ code: { contains: cleanSku, mode: 'insensitive' } });
+          orConditions.push({ code: { contains: cleanSku } });
         }
         if (cleanAlpha && cleanAlpha !== rawSearch && cleanAlpha !== cleanSku) {
-          orConditions.push({ code: { contains: cleanAlpha, mode: 'insensitive' } });
-          orConditions.push({ name: { contains: cleanAlpha, mode: 'insensitive' } });
+          orConditions.push({ code: { contains: cleanAlpha } });
+          orConditions.push({ name: { contains: cleanAlpha } });
         }
 
         whereClause.OR = orConditions;
@@ -326,7 +326,7 @@ export async function itemRoutes(fastify: FastifyInstance) {
           let category = await tx.itemCategory.findFirst({
             where: {
               businessId: request.tenant!.businessId,
-              name: { equals: catName, mode: 'insensitive' },
+              name: { equals: catName },
             },
           });
 

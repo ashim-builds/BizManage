@@ -82,10 +82,10 @@ export async function partyRoutes(fastify: FastifyInstance) {
     if (search && search.trim()) {
       const q = search.trim();
       whereClause.OR = [
-        { name: { contains: q, mode: 'insensitive' } },
-        { phone: { contains: q, mode: 'insensitive' } },
-        { email: { contains: q, mode: 'insensitive' } },
-        { taxNumber: { contains: q, mode: 'insensitive' } },
+        { name: { contains: q } },
+        { phone: { contains: q } },
+        { email: { contains: q } },
+        { taxNumber: { contains: q } },
       ];
     }
 
