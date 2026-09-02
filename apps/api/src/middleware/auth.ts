@@ -56,41 +56,59 @@ export async function requireBusinessTenant(request: FastifyRequest, _reply: Fas
   await authenticateUser(request, _reply);
 
   let businessId = request.headers['x-business-id'] as string;
-  if (!businessId) {
-    const dbUser = await globalPrisma.user.findUnique({
-      where: { id: request.user.id },
-      select: { activeBusinessId: true, memberships: { select: { businessId: true }, take: 1 } },
-    });
-    businessId = dbUser?.activeBusinessId || dbUser?.memberships?.[0]?.businessId || '';
-  }
-
-  if (!businessId) {
-    throw new AppError('No active business tenant found for this account', 400, 'VALIDATION_ERROR');
-  }
-
-  const membership = await globalPrisma.userBusinessRole.findUnique({
-    where: {
-      userId_businessId: {
-        userId: request.user.id,
-        businessId,
-      },
-    },
-    include: {
-      business: {
-        select: { 
-          isActive: true,
-          subscriptionStatus: true,
-          currentPeriodEnd: true,
-          subscriptionPackage: {
-            select: { features: true }
-          }
+  let membership = businessId
+    ? await globalPrisma.userBusinessRole.findUnique({
+        where: {
+          userId_businessId: {
+            userId: request.user.id,
+            businessId,
+          },
         },
-      },
-    },
-  });
+        include: {
+          business: {
+            select: { 
+              isActive: true,
+              subscriptionStatus: true,
+              currentPeriodEnd: true,
+              subscriptionPackage: {
+                select: { features: true }
+              }
+            },
+          },
+        },
+      })
+    : null;
 
   if (!membership) {
-    throw new AppError('Access denied for this business tenant', 403, 'FORBIDDEN');
+    // Fallback to user's active or primary business membership
+    const userRole = await globalPrisma.userBusinessRole.findFirst({
+      where: { userId: request.user.id },
+      include: {
+        business: {
+          select: { 
+            isActive: true,
+            subscriptionStatus: true,
+            currentPeriodEnd: true,
+            subscriptionPackage: {
+              select: { features: true }
+            }
+          },
+        },
+      },
+    });
+
+    if (userRole) {
+      membership = userRole;
+      businessId = userRole.businessId;
+      globalPrisma.user.update({
+        where: { id: request.user.id },
+        data: { activeBusinessId: businessId },
+      }).catch(() => {});
+    }
+  }
+
+  if (!membership || !businessId) {
+    throw new AppError('No active business tenant found for this account', 400, 'VALIDATION_ERROR');
   }
 
   if (!membership.business.isActive) {

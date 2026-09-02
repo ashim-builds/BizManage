@@ -340,8 +340,9 @@ export default function ExecutiveDashboardPage() {
           {/* Quick Actions (Mobile Mockup Style) */}
           <div className="grid grid-cols-2 gap-3 sm:gap-5 mb-5 lg:hidden">
             <button
-              onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'q', ctrlKey: true }))}
-              className="p-3 sm:p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-sm flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors"
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('open-quick-entry'))}
+              className="p-3 sm:p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-sm flex items-center justify-center gap-2 hover:bg-slate-800 active:scale-95 transition-all"
             >
               <div className="text-emerald-400">
                 <Plus className="w-4 h-4 sm:w-5 sm:h-5" />

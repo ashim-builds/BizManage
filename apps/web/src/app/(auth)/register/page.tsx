@@ -7,9 +7,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema, RegisterInput } from '@bizmanage/validation';
 import { useAuth } from '@/providers/AuthProvider';
-import { api } from '@/lib/api';
+import { api, setAccessToken, setApiBusinessId } from '@/lib/api';
 import { E2EECrypto } from '@/lib/crypto';
 import { Building2, Eye, EyeOff, ShieldCheck, ArrowRight } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 function RegisterForm() {
   const router = useRouter();
@@ -51,7 +52,23 @@ function RegisterForm() {
 
       const res = await api.post('/auth/register', payload);
       if (res.data.success) {
-        router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
+        // Store access token for immediate API requests & mobile browsers
+        if (res.data.data?.accessToken) {
+          setAccessToken(res.data.data.accessToken);
+        }
+        if (res.data.data?.business?.id) {
+          setApiBusinessId(res.data.data.business.id);
+        }
+
+        // Store the decrypted private & public keys so E2EE vault is immediately functional
+        sessionStorage.setItem('e2ee_private_key', privateKeyBase64);
+        if (publicKey) {
+          sessionStorage.setItem('e2ee_public_key', publicKey);
+        }
+
+        await refreshUser();
+        toast.success('Account created! Welcome to your workspace dashboard.');
+        router.push('/dashboard');
       }
     } catch (err: any) {
       if (err.response?.status === 409) {

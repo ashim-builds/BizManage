@@ -109,6 +109,19 @@ export async function authRoutes(fastify: FastifyInstance) {
     const passwordHash = await argon2.hash(body.password);
 
     const result = await globalPrisma.$transaction(async (tx) => {
+      // Find default Free Starter subscription package if it exists
+      const freePkg = await tx.subscriptionPackage.findFirst({
+        where: {
+          OR: [
+            { isDefault: true },
+            { name: { contains: 'Free' } },
+            { name: { contains: 'Starter' } },
+          ],
+          isActive: true,
+        },
+        orderBy: { displayOrder: 'asc' },
+      });
+
       const user = await tx.user.create({
         data: {
           email: body.email,
@@ -126,8 +139,15 @@ export async function authRoutes(fastify: FastifyInstance) {
           name: body.businessName || `${body.name}'s Workspace`,
           email: body.email,
           phone: body.phone || null,
+          subscriptionPackageId: freePkg?.id || null,
+          subscriptionStatus: 'ACTIVE',
           settings: { create: {} },
         },
+      });
+
+      await tx.user.update({
+        where: { id: user.id },
+        data: { activeBusinessId: business.id },
       });
 
       await tx.userBusinessRole.create({
@@ -146,28 +166,43 @@ export async function authRoutes(fastify: FastifyInstance) {
         },
       });
 
-      return { user, business };
+      return { user: { ...user, activeBusinessId: business.id }, business };
     }, { maxWait: 10000, timeout: 20000 });
 
-    const rawOtp = generateOtp();
-    const otpHash = await argon2.hash(rawOtp);
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    // Refresh Token Session
+    const refreshToken = crypto.randomBytes(40).toString('hex');
+    const sessionExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const sessionMeta = getSessionMetadata(request);
 
-    await globalPrisma.otpVerification.create({
+    await globalPrisma.session.create({
       data: {
         userId: result.user.id,
-        otpHash,
-        expiresAt,
+        token: refreshToken,
+        expiresAt: sessionExpiresAt,
+        ...sessionMeta,
       },
     });
 
-    try {
-      await sendVerificationEmail(result.user.email, rawOtp);
-    } catch (error) {
-      console.error('Registration email failed to send, but user was created:', error);
-      // We don't throw here because the user is already created in the database.
-      // They can still request a new OTP later from the verify-email page.
-    }
+    reply.setCookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: cookieSameSite,
+      path: '/api/v1/auth',
+      expires: sessionExpiresAt,
+    });
+
+    const accessToken = fastify.jwt.sign(
+      { userId: result.user.id, email: result.user.email },
+      { expiresIn: '1d' }
+    );
+
+    reply.setCookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: cookieSameSite,
+      path: '/',
+      maxAge: 24 * 60 * 60, // 24 hours (1 day)
+    });
 
     AuditService.logEvent({
       action: 'REGISTER_USER',
@@ -178,15 +213,25 @@ export async function authRoutes(fastify: FastifyInstance) {
 
     return reply.status(201).send({
       success: true,
-      message: 'Registration successful. Please verify your email.',
+      message: 'Registration successful. Welcome to your workspace!',
       data: {
+        accessToken,
         user: {
           id: result.user.id,
           email: result.user.email,
           name: result.user.name,
-          isVerified: false,
+          isVerified: true,
+          activeBusinessId: result.business.id,
+          kdfSalt: result.user.kdfSalt,
+          encryptedPrivateKey: result.user.encryptedPrivateKey,
         },
         business: { id: result.business.id, name: result.business.name },
+        memberships: [
+          {
+            business: { id: result.business.id, name: result.business.name },
+            role: 'OWNER',
+          },
+        ],
       },
     });
   });
@@ -342,7 +387,46 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
 
     if (user.isVerified) {
-      return reply.send({ success: true, message: 'Email already verified' });
+      // Refresh Token Session
+      const refreshToken = crypto.randomBytes(40).toString('hex');
+      const sessionExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      const sessionMeta = getSessionMetadata(request);
+
+      await globalPrisma.session.create({
+        data: {
+          userId: user.id,
+          token: refreshToken,
+          expiresAt: sessionExpiresAt,
+          ...sessionMeta,
+        },
+      });
+
+      reply.setCookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: cookieSameSite,
+        path: '/api/v1/auth',
+        expires: sessionExpiresAt,
+      });
+
+      const accessToken = fastify.jwt.sign(
+        { userId: user.id, email: user.email },
+        { expiresIn: '1d' }
+      );
+
+      reply.setCookie('accessToken', accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: cookieSameSite,
+        path: '/',
+        maxAge: 24 * 60 * 60,
+      });
+
+      return reply.send({
+        success: true,
+        message: 'Email already verified',
+        data: { accessToken, user: { id: user.id, email: user.email, name: user.name, isVerified: true } },
+      });
     }
 
     if (!user.otpVerification) {

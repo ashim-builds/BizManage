@@ -86,7 +86,8 @@ export default function AdminLogsPage() {
       </div>
 
       <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="overflow-x-auto hidden md:block">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-800 bg-slate-950/50">
@@ -170,7 +171,59 @@ export default function AdminLogsPage() {
             </tbody>
           </table>
         </div>
-        
+
+        {/* Mobile Card View */}
+        <div className="md:hidden divide-y divide-slate-800/70">
+          {loading && logs.length === 0 ? (
+            <div className="p-8 text-center text-slate-500">
+              <div className="w-5 h-5 border-2 border-slate-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+              Loading logs...
+            </div>
+          ) : logs.length === 0 ? (
+            <div className="p-8 text-center text-slate-500 text-xs">
+              <AlertCircle className="w-8 h-8 text-slate-700 mx-auto mb-2" />
+              No system logs recorded yet.
+            </div>
+          ) : (
+            logs.map((log) => (
+              <div key={log.id} className="p-4 space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    {getActionIcon(log.action)}
+                    <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${getActionColor(log.action)}`}>
+                      {log.action}
+                    </span>
+                  </div>
+                  {log.details && (
+                    <button
+                      onClick={() => setSelectedLog(log)}
+                      className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium flex items-center gap-1"
+                    >
+                      <Eye className="w-3.5 h-3.5" /> Payload
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-300 font-medium">{log.admin.name}</span>
+                  <span className="text-slate-500 text-[10px] font-mono">
+                    {new Date(log.createdAt).toLocaleString()}
+                  </span>
+                </div>
+
+                {log.targetType && (
+                  <div className="text-[11px] font-mono text-slate-400 bg-slate-950/60 p-2 rounded-lg border border-slate-800/80 flex items-center justify-between">
+                    <span className="text-slate-500">{log.targetType}:</span>
+                    <span className="truncate max-w-[180px]" title={log.targetId}>
+                      {log.targetId}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="px-6 py-4 border-t border-slate-800 flex items-center justify-between">

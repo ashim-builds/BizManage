@@ -184,17 +184,17 @@ export default function AdminPackagesPage() {
           <h1 className="text-2xl font-bold text-white tracking-tight">Subscription Packages</h1>
           <p className="text-slate-400 text-sm">Manage subscription tiers and pricing plans</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto">
           <button
             type="button"
             onClick={handleResetDefaults}
-            className="flex items-center gap-2 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold rounded-lg transition-colors shadow-sm"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold rounded-lg transition-colors shadow-sm"
           >
             <RotateCcw className="w-3.5 h-3.5 text-blue-400" /> Clean & Sync Defaults
           </button>
           <button
             onClick={() => openModal()}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition-colors text-xs"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition-colors text-xs"
           >
             <Plus className="w-4 h-4" /> New Package
           </button>

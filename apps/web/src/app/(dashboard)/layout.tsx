@@ -49,6 +49,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [readNotifIds, setReadNotifIds] = useState<string[]>([]);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
   useEffect(() => {
     if (user?.readNotifications) {
       setReadNotifIds(user.readNotifications);
@@ -59,6 +64,25 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [quickEntryOpen, setQuickEntryOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Global Quick Entry trigger listener & keyboard shortcut (Ctrl+Q)
+  useEffect(() => {
+    const handleOpenQuickEntry = () => setQuickEntryOpen(true);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'q') {
+        e.preventDefault();
+        setQuickEntryOpen((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('open-quick-entry', handleOpenQuickEntry);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('open-quick-entry', handleOpenQuickEntry);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   // Click outside to close user menu dropdown
   useEffect(() => {
@@ -185,8 +209,20 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Quick Entry Modal Component */}
       <QuickEntryModal isOpen={quickEntryOpen} onClose={() => setQuickEntryOpen(false)} />
 
-      {/* Sidebar Navigation */}
-      <aside className="fixed top-0 left-0 bottom-0 w-64 bg-slate-900 border-r border-slate-800 z-50 hidden lg:flex flex-col transition-transform duration-300 print:hidden">
+      {/* Mobile Drawer Backdrop Overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 lg:hidden animate-in fade-in duration-200"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar Navigation (Desktop Fixed + Mobile Slide-over) */}
+      <aside
+        className={`fixed top-0 left-0 bottom-0 w-64 bg-slate-900 border-r border-slate-800 z-50 flex flex-col transition-transform duration-300 print:hidden ${
+          mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'
+        }`}
+      >
         {/* Brand & Business Switcher Header */}
         <div className="p-4 border-b border-slate-800 flex items-center justify-center relative min-h-[80px]">
           <Link href="/" onClick={() => window.scrollTo(0, 0)} className="flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity">
@@ -366,7 +402,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         {/* Header Bar */}
         <header className="h-16 border-b border-slate-800 px-3 sm:px-6 flex items-center justify-between sticky top-0 bg-slate-950/80 backdrop-blur-md z-30 print:hidden gap-2">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            <div className="min-w-0 truncate pl-2 lg:pl-0">
+            <button
+              type="button"
+              onClick={() => setMobileOpen(true)}
+              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white lg:hidden shrink-0 transition-colors"
+              title="Open Navigation"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <div className="min-w-0 truncate pl-1 lg:pl-0">
               <Breadcrumbs />
             </div>
           </div>
