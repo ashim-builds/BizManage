@@ -71,13 +71,21 @@ function OAuthCallbackInner() {
           await api.post('/auth/oauth-session', { accessToken, refreshToken }).catch(() => {});
         }
 
-        // 3. Refresh user state in AuthProvider
+        // 3. Fetch user state & refresh in AuthProvider
+        const meRes = await api.get('/auth/me').catch(() => null);
+        const userData = meRes?.data?.data;
         await refreshUser();
 
-        // 4. Navigate based on user role
-        router.replace('/explore-stores');
+        // 4. Navigate based on user role and memberships
+        if (userData?.isSystemAdmin) {
+          router.replace('/admin/dashboard');
+        } else if (userData?.memberships && userData.memberships.length > 0) {
+          router.replace('/dashboard');
+        } else {
+          router.replace('/setup-business');
+        }
       } catch (err) {
-        router.replace('/explore-stores');
+        router.replace('/dashboard');
       }
     };
 

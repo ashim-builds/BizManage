@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { api, setApiBusinessId } from '@/lib/api';
 import { useAuth } from '@/providers/AuthProvider';
 import { Building2, ArrowRight, Loader2 } from 'lucide-react';
-
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 
 const CURRENCIES = ['NPR', 'USD', 'EUR', 'GBP', 'INR', 'AUD', 'CAD'];
 
@@ -47,6 +47,7 @@ export default function SetupBusinessPage() {
         setApiBusinessId(businessId);
         // Refresh user so memberships update
         await refreshUser();
+        toast.success('Store & Workspace created successfully!');
         router.replace('/dashboard');
       }
     } catch (err: any) {

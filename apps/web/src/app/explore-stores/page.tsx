@@ -18,8 +18,10 @@ import {
 import { usePublicStores } from '@/hooks/useStorefront';
 import { PublicHeader } from '@/components/layout/PublicHeader';
 import { PublicFooter } from '@/components/layout/PublicFooter';
+import { useAuth } from '@/providers/AuthProvider';
 
 export default function ExploreStoresPage() {
+  const { user } = useAuth();
   const { data: publicStores, isLoading } = usePublicStores();
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -56,6 +58,18 @@ export default function ExploreStoresPage() {
           <p className="mt-4 text-slate-400 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
             Browse verified online storefronts powered by BizManage ERP. View product catalogs, compare transparent pricing, and place direct online orders.
           </p>
+
+          {/* Quick Create Store / Go to Dashboard CTA */}
+          <div className="mt-6 flex items-center justify-center gap-3 flex-wrap">
+            <Link
+              href={user ? (user.memberships?.length > 0 ? "/dashboard" : "/setup-business") : "/register"}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all hover:scale-105"
+            >
+              <Store className="w-4 h-4" />
+              <span>{user?.memberships?.length ? "Open Workspace Dashboard" : "Create Your Business & Online Store"}</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
 
           {/* Search Filter Bar */}
           <div className="mt-8 max-w-xl mx-auto relative">

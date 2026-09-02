@@ -28,6 +28,18 @@ export async function businessRoutes(fastify: FastifyInstance) {
     const body = createBusinessSchema.parse(request.body);
 
     const business = await globalPrisma.$transaction(async (tx) => {
+      const freePkg = await tx.subscriptionPackage.findFirst({
+        where: {
+          OR: [
+            { isDefault: true },
+            { name: { contains: 'Free' } },
+            { name: { contains: 'Starter' } },
+          ],
+          isActive: true,
+        },
+        orderBy: { displayOrder: 'asc' },
+      });
+
       const biz = await tx.business.create({
         data: {
           name: body.name,
@@ -35,8 +47,15 @@ export async function businessRoutes(fastify: FastifyInstance) {
           address: body.address,
           taxNumber: body.taxNumber,
           currency: body.currency,
+          subscriptionPackageId: freePkg?.id || null,
+          subscriptionStatus: 'ACTIVE',
           settings: { create: {} },
         },
+      });
+
+      await tx.user.update({
+        where: { id: request.user!.id },
+        data: { activeBusinessId: biz.id },
       });
 
       await tx.userBusinessRole.create({
