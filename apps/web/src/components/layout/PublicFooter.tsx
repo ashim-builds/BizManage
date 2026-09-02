@@ -74,7 +74,7 @@ export function PublicFooter() {
             </div>
             <button
               type="submit"
-              className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 shrink-0 active:scale-95"
+              className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-600/25 shrink-0 active:scale-95"
             >
               {subscribed ? (
                 <>
@@ -185,7 +185,7 @@ export function PublicFooter() {
                 <span className="text-slate-500">256-Bit SSL/TLS Encryption</span>
               </li>
               <li>
-                <span className="text-slate-500">Multi-Tenant PostgreSQL Isolation</span>
+                <span className="text-slate-500">Multi-Tenant MySQL Database Isolation</span>
               </li>
               <li>
                 <span className="text-slate-500">Automated Daily Backups</span>

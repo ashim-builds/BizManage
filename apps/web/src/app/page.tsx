@@ -1,419 +1,174 @@
-"use client";
+'use client';
 
-import Link from "next/link";
+import { useState } from 'react';
+import Link from 'next/link';
 import {
-  ArrowRight,
-  BarChart3,
-  Building2,
-  LayoutDashboard,
-  Receipt,
-  ShieldCheck,
-  Check,
-  Crown,
+  Wrench,
   Sparkles,
+  ArrowRight,
+  ShieldCheck,
+  Send,
+  CheckCircle2,
+  Clock,
   Zap,
-  Plus,
-  Download,
-  Store,
-  MapPin,
-  ShoppingBag,
-  Globe,
-} from "lucide-react";
-import { useAuth } from "@/providers/AuthProvider";
-import { usePublicStores } from "@/hooks/useStorefront";
-import { useState, useEffect } from "react";
-import { api } from "@/lib/api";
-import { AVAILABLE_FEATURES } from "@/lib/constants";
-import { PublicFooter } from "@/components/layout/PublicFooter";
-import { PublicHeader } from "@/components/layout/PublicHeader";
+  Lock,
+  MessageSquare,
+  Package,
+  Receipt,
+  Smartphone,
+  PhoneCall,
+} from 'lucide-react';
+import toast from 'react-hot-toast';
 
-interface SubscriptionPackage {
-  id: string;
-  name: string;
-  price: string;
-  currency: string;
-  billingPeriod: 'MONTHLY' | 'YEARLY';
-  trialDays: number;
-  features: string[];
-  isActive: boolean;
-  isDefault: boolean;
-  displayOrder: number;
-}
+export default function UnderConstructionPage() {
+  const [email, setEmail] = useState('');
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
-export default function Home() {
-  const { user, loading: authLoading } = useAuth();
-  const { data: publicStores, isLoading: storesLoading } = usePublicStores();
-  const [packages, setPackages] = useState<SubscriptionPackage[]>([]);
-  const [packagesLoading, setPackagesLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchPackages = async () => {
-      try {
-        const res = await api.get('/packages');
-        if (res.data.success) {
-          const parsedPackages = res.data.data.map((pkg: any) => ({
-            ...pkg,
-            features: typeof pkg.features === 'string' ? JSON.parse(pkg.features) : (pkg.features || []),
-          }));
-          setPackages(parsedPackages);
-        }
-      } catch (err) {
-        console.error('Failed to fetch packages:', err);
-      } finally {
-        setPackagesLoading(false);
-      }
-    };
-    fetchPackages();
-  }, []);
-  // Check whether the logged-in user is an admin
-  const isAdmin = user?.isSystemAdmin === true;
-
-  // Role-based dashboard
-  const dashboardHref = isAdmin ? "/admin/dashboard" : "/dashboard";
-
-  // Role-based dashboard label
-  const dashboardLabel = isAdmin
-    ? "Admin Dashboard"
-    : "Workspace Dashboard";
+  const handleNotify = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !email.includes('@')) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    setIsSubscribed(true);
+    toast.success('Thank you! We will notify you the moment BizManage v2 goes live.');
+    setEmail('');
+  };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white selection:bg-blue-500 selection:text-white flex flex-col justify-between">
-      <div>
-        <PublicHeader activePage="home" />
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between selection:bg-red-500 selection:text-white font-sans relative overflow-hidden">
+      {/* Background Ambient Lights */}
+      <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[42rem] h-[28rem] bg-red-600/15 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute -bottom-40 right-10 w-[30rem] h-[30rem] bg-amber-600/10 rounded-full blur-[120px] pointer-events-none" />
 
-        {/* =========================================================
-            HERO SECTION
-        ========================================================= */}
-        <section className="relative pt-24 pb-20 px-6 max-w-7xl mx-auto text-center">
-          {/* Badge */}
-          <div className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-6 sm:mb-8 text-center max-w-full leading-tight">
-            <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-
-            <span className="truncate whitespace-normal">
-              Multi-Tenant Production Architecture
-            </span>
+      {/* Top Header */}
+      <header className="max-w-6xl mx-auto w-full px-6 py-6 flex items-center justify-between relative z-10">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-red-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-red-600/30">
+            V
           </div>
+          <div>
+            <span className="text-lg font-black tracking-tight text-white block">BizManage</span>
+            <span className="text-[10px] text-red-400 font-bold uppercase tracking-wider block">Vyapar Edition v2</span>
+          </div>
+        </div>
 
-          {/* Heading */}
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight max-w-4xl mx-auto leading-tight">
-            Next-Gen Business Accounting &{" "}
-            <span className="text-blue-500">
-              Inventory ERP
+        {/* Backdoor portal access for the owner/admin */}
+        <Link
+          href="/login"
+          className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-bold text-slate-300 hover:text-white transition-all flex items-center gap-1.5"
+        >
+          <Lock className="w-3.5 h-3.5 text-slate-400" />
+          <span>Client Sign In</span>
+        </Link>
+      </header>
+
+      {/* Main Hero Content */}
+      <main className="max-w-4xl mx-auto px-6 py-12 text-center relative z-10 space-y-8 my-auto">
+        {/* Under Construction Pill Badge */}
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold uppercase tracking-wider animate-pulse">
+          <Wrench className="w-4 h-4 text-amber-400" />
+          <span>Under Scheduled Upgrade & Construction</span>
+        </div>
+
+        {/* Big Headline */}
+        <div className="space-y-4">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight leading-[1.15] text-white">
+            We're Upgrading to{' '}
+            <span className="bg-gradient-to-r from-red-500 via-rose-400 to-red-600 bg-clip-text text-transparent">
+              BizManage v2
             </span>
           </h1>
-
-          {/* Description */}
-          <p className="mt-4 sm:mt-6 text-base sm:text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
-            Manage sales, purchases, customers, suppliers,
-            inventory stock, expenses, and real-time P&L
-            reports with strict data isolation.
+          <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
+            Our engineers are currently rolling out the brand new <strong>Vyapar-style business accounting, POS billing, godown stock transfers</strong>, and mobile applications. We will be fully live shortly!
           </p>
+        </div>
 
-          {/* Hero Actions */}
-          <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4 w-full sm:w-auto">
-
-            {!authLoading && user ? (
-              <Link
-                href={dashboardHref}
-                className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-xl shadow-blue-500/25 transition-all text-sm sm:text-base flex items-center justify-center gap-2"
-              >
-                <LayoutDashboard className="w-4 h-4 sm:w-5 sm:h-5" />
-
-                {isAdmin
-                  ? "Open Admin Dashboard"
-                  : "Open Workspace Dashboard"}
-
-                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
-              </Link>
-            ) : (
-              <>
-                {/* Start Trial */}
-                <Link
-                  href="/register"
-                  className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-xl shadow-blue-500/25 transition-all text-sm sm:text-base flex items-center justify-center gap-2"
-                >
-                  Start Free Trial
-                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
-                </Link>
-
-                {/* Login */}
-                <Link
-                  href="/login"
-                  className="w-full sm:w-auto px-8 py-3.5 rounded-xl border border-slate-700 bg-slate-900/60 hover:bg-slate-800 text-slate-200 font-semibold transition-all text-sm sm:text-base flex items-center justify-center"
-                >
-                  Access Dashboard
-                </Link>
-              </>
-            )}
-          </div>
-        </section>
-
-        {/* =========================================================
-            FEATURE GRID
-        ========================================================= */}
-        <section id="features" className="scroll-mt-20 py-16 px-6 max-w-7xl mx-auto border-t border-slate-800/80">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Sales */}
-            <div className="p-6 rounded-2xl border border-slate-800 bg-slate-900/40 hover:border-slate-700 transition-all">
-              <div className="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center mb-4">
-                <Receipt className="w-6 h-6" />
-              </div>
-
-              <h3 className="text-xl font-bold mb-2">
-                Sales & Billing
-              </h3>
-
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Create digital sales invoices, estimates,
-                credit notes, track payments received, and
-                manage customer balances.
-              </p>
-            </div>
-
-            {/* Inventory */}
-            <div className="p-6 rounded-2xl border border-slate-800 bg-slate-900/40 hover:border-slate-700 transition-all">
-              <div className="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center mb-4">
-                <Building2 className="w-6 h-6" />
-              </div>
-
-              <h3 className="text-xl font-bold mb-2">
-                Inventory Management
-              </h3>
-
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Real-time stock level tracking, low stock
-                alerts, product SKU coding, unit conversions,
-                and automated ledger movements.
-              </p>
-            </div>
-
-            {/* Reports */}
-            <div className="p-6 rounded-2xl border border-slate-800 bg-slate-900/40 hover:border-slate-700 transition-all">
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4">
-                <BarChart3 className="w-6 h-6" />
-              </div>
-
-              <h3 className="text-xl font-bold mb-2">
-                Reports & Analytics
-              </h3>
-
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Automated Profit & Loss statements,
-                Daybook, Stock Summary, Party Statements,
-                and Tax (GST/VAT) reporting.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* =========================================================
-            FEATURED ONLINE STORES DIRECTORY SECTION
-        ========================================================= */}
-        <section id="stores" className="scroll-mt-20 py-20 px-6 max-w-7xl mx-auto border-t border-slate-800/80">
-          <div className="text-center mb-12">
-            <span className="px-3.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold uppercase tracking-wider border border-emerald-500/20 inline-flex items-center gap-1.5">
-              <Store className="w-3.5 h-3.5" />
-              Public E-Commerce Catalog
+        {/* Deployment Progress Bar */}
+        <div className="max-w-md mx-auto p-4 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl space-y-2.5">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-bold text-slate-300 flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-red-400" /> System Upgrade Status
             </span>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-white mt-4">
-              Explore Active Online Stores
-            </h2>
-            <p className="text-slate-400 text-sm md:text-base mt-2 max-w-2xl mx-auto">
-              Browse products, request prices, and submit direct orders or WhatsApp inquiries to verified businesses powered by BizManage.
-            </p>
+            <span className="font-mono font-bold text-emerald-400">92% Complete</span>
           </div>
-
-          {storesLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-48 rounded-2xl bg-slate-900/60 border border-slate-800 animate-pulse" />
-              ))}
-            </div>
-          ) : publicStores && publicStores.length > 0 ? (
-            <div className="space-y-8">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {publicStores.slice(0, 3).map((store: any) => (
-                  <div
-                    key={store.slug}
-                    className="group rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/50 transition-all p-6 flex flex-col justify-between space-y-4 hover:shadow-xl hover:shadow-emerald-500/5"
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-lg shrink-0">
-                          {store.logoUrl ? (
-                            <img src={store.logoUrl} alt={store.title} className="w-full h-full object-contain p-1 rounded-xl" />
-                          ) : (
-                            store.title ? store.title.substring(0, 2).toUpperCase() : 'ST'
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="text-base font-bold text-white group-hover:text-emerald-400 transition-colors truncate">
-                            {store.title}
-                          </h3>
-                          {store.address && (
-                            <p className="text-[11px] text-slate-400 flex items-center gap-1 truncate">
-                              <MapPin className="w-3 h-3 text-slate-500 shrink-0" /> {store.address}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      {store.description && (
-                        <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                          {store.description}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between gap-2">
-                      <span className="text-[10px] text-slate-500 font-mono">
-                        /store/{store.slug}
-                      </span>
-                      <Link
-                        href={`/store/${store.slug}`}
-                        className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5"
-                      >
-                        Visit Store <ArrowRight className="w-3.5 h-3.5" />
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Explore All Stores Button */}
-              <div className="text-center pt-2">
-                <Link
-                  href="/explore-stores"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-300 border border-emerald-500/40 font-bold text-xs sm:text-sm transition-all shadow-lg hover:scale-105"
-                >
-                  <Store className="w-4 h-4 text-emerald-400" />
-                  Explore All Online Stores ({publicStores.length})
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <div className="p-10 rounded-3xl bg-slate-900/40 border border-slate-800 text-center space-y-4 max-w-xl mx-auto">
-              <Store className="w-12 h-12 text-slate-600 mx-auto" />
-              <h3 className="text-lg font-bold text-white">Create & Publish Your Store</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Build your online catalog, toggle price visibility, receive WhatsApp inquiries, and manage inventory automatically from your BizManage dashboard.
-              </p>
-              <Link
-                href="/register"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-600/25 transition-all"
-              >
-                Create Storefront Now <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          )}
-        </section>
-
-        {/* =========================================================
-            PRICING & PLANS
-        ========================================================= */}
-        <section id="pricing" className="scroll-mt-20 py-20 px-6 max-w-7xl mx-auto border-t border-slate-800/80">
-          {/* Pricing Header */}
-          <div className="text-center mb-16">
-            <span className="px-3.5 py-1.5 rounded-full bg-blue-500/10 text-blue-400 text-xs font-bold uppercase tracking-wider border border-blue-500/20 inline-flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" />
-              Transparent Pricing
-            </span>
-
-            <h2 className="text-3xl md:text-4xl font-extrabold text-white mt-4">
-              Flexible Plans for Growing Businesses
-            </h2>
-
-            <p className="text-slate-400 text-sm md:text-base mt-2 max-w-2xl mx-auto">
-              Start with our free starter tier or upgrade
-              to unlock advanced financial reports,
-              multi-branch setup, and custom branding.
-            </p>
+          <div className="w-full h-3 rounded-full bg-slate-950 overflow-hidden p-0.5 border border-slate-800">
+            <div className="h-full rounded-full bg-gradient-to-r from-red-600 to-emerald-500 transition-all duration-1000" style={{ width: '92%' }} />
           </div>
+          <p className="text-[11px] text-slate-400">
+            Database migrated to MySQL • POS Engine updated • Android PWA ready
+          </p>
+        </div>
 
-          {/* Plans */}
-          {packagesLoading ? (
-            <div className="flex justify-center items-center h-32">
-              <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch max-w-md md:max-w-4xl lg:max-w-none mx-auto">
-              {packages.map((pkg, idx) => {
-                const isPopular = idx === 1; // Highlighting the second one
-                return (
-                  <div key={pkg.id} className={`relative p-8 rounded-3xl border flex flex-col justify-between transition-all ${isPopular ? 'border-blue-600 bg-slate-900/90 shadow-2xl shadow-blue-600/10 border-2' : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'}`}>
-                    {isPopular && (
-                      <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[11px] font-bold uppercase tracking-wider shadow-lg">
-                        Most Popular
-                      </div>
-                    )}
-                    
-                    <div>
-                      <div className="flex items-center justify-between mb-4 mt-2">
-                        <div className="flex items-center gap-2">
-                          {isPopular ? <Crown className="w-5 h-5 text-amber-400" /> : pkg.isDefault ? null : <Zap className="w-5 h-5 text-amber-300" />}
-                          <h3 className="text-xl font-bold text-white">
-                            {pkg.name}
-                          </h3>
-                        </div>
+        {/* Feature Highlights Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto pt-4 text-left">
+          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-1">
+            <Receipt className="w-5 h-5 text-red-400" />
+            <h4 className="text-xs font-bold text-white">GST/VAT Billing</h4>
+            <p className="text-[10px] text-slate-400">Thermal & A4 invoices</p>
+          </div>
+          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-1">
+            <Package className="w-5 h-5 text-blue-400" />
+            <h4 className="text-xs font-bold text-white">Godown Transfers</h4>
+            <p className="text-[10px] text-slate-400">Multi-warehouse stock</p>
+          </div>
+          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-1">
+            <MessageSquare className="w-5 h-5 text-emerald-400" />
+            <h4 className="text-xs font-bold text-white">WhatsApp Bills</h4>
+            <p className="text-[10px] text-slate-400">1-click payment alerts</p>
+          </div>
+          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-1">
+            <Smartphone className="w-5 h-5 text-amber-400" />
+            <h4 className="text-xs font-bold text-white">Mobile App</h4>
+            <p className="text-[10px] text-slate-400">Full offline billing</p>
+          </div>
+        </div>
 
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${isPopular ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-800 text-slate-300'}`}>
-                          {pkg.isDefault ? 'Starter' : isPopular ? 'Pro' : 'Scale'}
-                        </span>
-                      </div>
+        {/* Email Notification & WhatsApp Action */}
+        <div className="pt-4 flex flex-col items-center justify-center gap-4">
+          <form onSubmit={handleNotify} className="w-full max-w-md flex flex-col sm:flex-row items-center gap-2">
+            <input
+              type="email"
+              placeholder="Enter your email to get launch alert..."
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500"
+              required
+            />
+            <button
+              type="submit"
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-lg shadow-red-600/25 transition-all flex items-center justify-center gap-1.5 shrink-0 active:scale-95"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>Notify Me</span>
+            </button>
+          </form>
 
-                      <p className="text-xs text-slate-400 mb-6">
-                        {pkg.isDefault ? 'Essential ERP features for single shop owners.' : 'Complete suite of features for growing businesses.'}
-                      </p>
+          {/* Urgent WhatsApp Contact */}
+          <div className="flex items-center gap-3 pt-2">
+            <span className="text-xs text-slate-400">Need urgent help?</span>
+            <a
+              href="https://wa.me/9779800000000?text=Hello%20BizManage%20Team%2C%20I%20need%20assistance."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 border border-emerald-500/30 text-xs font-bold transition-all"
+            >
+              <PhoneCall className="w-3 h-3" />
+              <span>Contact WhatsApp Support</span>
+            </a>
+          </div>
+        </div>
+      </main>
 
-                      <div className="mb-6">
-                        <span className="text-4xl font-extrabold text-white font-mono">
-                          {pkg.currency} {pkg.price}
-                        </span>
-                        <span className="text-xs text-slate-400">
-                          {" "}
-                          / {pkg.billingPeriod.toLowerCase()}
-                        </span>
-                      </div>
-
-                      <ul className="space-y-3 text-xs text-slate-300 mb-8 border-t border-slate-800/80 pt-6">
-                        {pkg.features.slice(0, 5).map(featId => {
-                          const featObj = AVAILABLE_FEATURES.find(f => f.id === featId);
-                          return (
-                            <li key={featId} className="flex items-center gap-2.5">
-                              <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                              <span>{featObj ? featObj.label : featId}</span>
-                            </li>
-                          );
-                        })}
-                        {pkg.features.length > 5 && (
-                          <li className="flex items-center gap-2.5 text-slate-400 pt-2 font-medium">
-                            <Plus className="w-4 h-4 shrink-0" />
-                            <span>{pkg.features.length - 5} more features</span>
-                          </li>
-                        )}
-                      </ul>
-                    </div>
-
-                    <Link
-                      href="/register"
-                      className={`w-full py-3 px-4 rounded-xl text-xs font-bold text-center transition-all flex items-center justify-center gap-2 ${isPopular ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/25' : 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700'}`}
-                    >
-                      {pkg.isDefault ? 'Get Started Free' : 'Choose Plan'}
-                      {isPopular && <ArrowRight className="w-4 h-4" />}
-                    </Link>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-      </div>
-
-      {/* =========================================================
-          FOOTER
-      ========================================================= */}
-      <PublicFooter />
+      {/* Footer */}
+      <footer className="max-w-6xl mx-auto w-full px-6 py-6 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 relative z-10">
+        <p>© {new Date().getFullYear()} BizManage Technologies. All rights reserved.</p>
+        <div className="flex items-center gap-4">
+          <Link href="/privacy" className="hover:text-slate-400 transition-colors">Privacy Policy</Link>
+          <Link href="/terms" className="hover:text-slate-400 transition-colors">Terms of Service</Link>
+          <Link href="/security" className="hover:text-slate-400 transition-colors">Security Architecture</Link>
+        </div>
+      </footer>
     </div>
   );
 }

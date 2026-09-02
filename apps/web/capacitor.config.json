@@ -1,0 +1,16 @@
+{
+  "appId": "com.bizmanage.app",
+  "appName": "BizManage ERP & POS",
+  "webDir": "public",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "https://bizmanage.app",
+    "cleartext": true,
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": true
+  }
+}

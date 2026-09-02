@@ -89,7 +89,7 @@ model User {
   passwordHash      String?
   name              String
   phone             String?
-  avatarUrl         String?
+  avatarUrl         String?              @db.Text
   googleId          String?              @unique
   isVerified        Boolean              @default(false)
   readNotifications NotificationRead[]
@@ -171,7 +171,7 @@ model Business {
   address               String?
   taxNumber             String?
   currency              String               @default("NPR")
-  logoUrl               String?
+  logoUrl               String?              @db.LongText
   subscriptionPackageId String?
   subscriptionStatus    String               @default("ACTIVE") // ACTIVE, TRIAL, EXPIRED, CANCELLED
   trialEndsAt           DateTime?
@@ -241,8 +241,8 @@ model BusinessSetting {
   storeSlug            String?  @unique
   showStorePrices      Boolean  @default(true)
   storeTitle           String?
-  storeDescription     String?
-  storeBannerUrl       String?
+  storeDescription     String?  @db.Text
+  storeBannerUrl       String?  @db.LongText
   whatsappNumber       String?
   enableOnlineOrders   Boolean  @default(true)
   
@@ -321,8 +321,8 @@ model Item {
   // Storefront fields
   isPublishedToStore  Boolean              @default(true)
   showPriceOnStore    Boolean?
-  storeDescription    String?
-  imageUrl            String?
+  storeDescription    String?              @db.Text
+  imageUrl            String?              @db.LongText
   
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt

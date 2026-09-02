@@ -19,6 +19,7 @@ import { CustomDateRangePicker } from '@/components/common/CustomDateRangePicker
 import { VatSalesBookAnnex5 } from '@/components/reports/VatSalesBookAnnex5';
 import { VatPurchaseBookAnnex6 } from '@/components/reports/VatPurchaseBookAnnex6';
 import { CustomerAgingReport } from '@/components/reports/CustomerAgingReport';
+import { VyaparPremiumReports } from '@/components/reports/VyaparPremiumReports';
 import {
   FileText,
   Search,
@@ -34,11 +35,19 @@ import {
   Scale,
   FileSpreadsheet,
   Clock,
+  Boxes,
+  Tag,
 } from 'lucide-react';
 
 type ReportTab =
   | 'sales'
   | 'purchases'
+  | 'balance-sheet'
+  | 'billwise-pnl'
+  | 'partywise-pnl'
+  | 'stock-transfer'
+  | 'item-batch'
+  | 'tally-export'
   | 'annex5-sales'
   | 'annex6-purchases'
   | 'customer-aging'
@@ -93,7 +102,7 @@ export default function ReportsPage() {
   };
 
   const activeQuery =
-    activeTab === 'sales' || activeTab === 'annex5-sales'
+    activeTab === 'sales' || activeTab === 'annex5-sales' || activeTab === 'billwise-pnl' || activeTab === 'tally-export'
       ? salesQuery
       : activeTab === 'purchases' || activeTab === 'annex6-purchases'
       ? purchaseQuery
@@ -101,9 +110,9 @@ export default function ReportsPage() {
       ? expenseQuery
       : activeTab === 'payments'
       ? paymentQuery
-      : activeTab === 'party-balance' || activeTab === 'customer-aging'
+      : activeTab === 'party-balance' || activeTab === 'customer-aging' || activeTab === 'partywise-pnl'
       ? partyBalQuery
-      : activeTab === 'inventory-valuation'
+      : activeTab === 'inventory-valuation' || activeTab === 'item-batch' || activeTab === 'stock-transfer' || activeTab === 'balance-sheet'
       ? inventoryQuery
       : cashflowQuery;
 
@@ -149,6 +158,72 @@ export default function ReportsPage() {
           }`}
         >
           <ShoppingCart className="w-3.5 h-3.5" /> Sales Report
+        </button>
+
+        <button
+          onClick={() => setActiveTab('balance-sheet')}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
+            activeTab === 'balance-sheet'
+              ? 'bg-red-600 text-white shadow-lg shadow-red-600/20 font-bold'
+              : 'text-red-400 hover:text-red-300 hover:bg-red-500/10 font-bold'
+          }`}
+        >
+          <Scale className="w-3.5 h-3.5" /> Balance Sheet (वासलात)
+        </button>
+
+        <button
+          onClick={() => setActiveTab('billwise-pnl')}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
+            activeTab === 'billwise-pnl'
+              ? 'bg-red-600 text-white shadow-lg shadow-red-600/20 font-bold'
+              : 'text-zinc-400 hover:text-white'
+          }`}
+        >
+          <TrendingUp className="w-3.5 h-3.5" /> Bill-wise P&L
+        </button>
+
+        <button
+          onClick={() => setActiveTab('partywise-pnl')}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
+            activeTab === 'partywise-pnl'
+              ? 'bg-red-600 text-white shadow-lg shadow-red-600/20 font-bold'
+              : 'text-zinc-400 hover:text-white'
+          }`}
+        >
+          <Users className="w-3.5 h-3.5" /> Party-wise P&L
+        </button>
+
+        <button
+          onClick={() => setActiveTab('stock-transfer')}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
+            activeTab === 'stock-transfer'
+              ? 'bg-red-600 text-white shadow-lg shadow-red-600/20 font-bold'
+              : 'text-zinc-400 hover:text-white'
+          }`}
+        >
+          <Boxes className="w-3.5 h-3.5" /> Stock Transfer
+        </button>
+
+        <button
+          onClick={() => setActiveTab('item-batch')}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
+            activeTab === 'item-batch'
+              ? 'bg-red-600 text-white shadow-lg shadow-red-600/20 font-bold'
+              : 'text-zinc-400 hover:text-white'
+          }`}
+        >
+          <Tag className="w-3.5 h-3.5" /> Batch & Serial
+        </button>
+
+        <button
+          onClick={() => setActiveTab('tally-export')}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
+            activeTab === 'tally-export'
+              ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/20 font-bold'
+              : 'text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 font-bold'
+          }`}
+        >
+          <Download className="w-3.5 h-3.5" /> Tally Export
         </button>
 
         <button
@@ -706,6 +781,21 @@ export default function ReportsPage() {
           partyBalances={reportData?.rows || []}
           businessName={business?.name}
           businessPhone={business?.phone}
+        />
+      )}
+
+      {/* ---------------------------------------------------- */}
+      {/* 10. VYAPAR PREMIUM REPORTS VIEW */}
+      {/* ---------------------------------------------------- */}
+      {['balance-sheet', 'billwise-pnl', 'partywise-pnl', 'stock-transfer', 'item-batch', 'tally-export'].includes(activeTab) && (
+        <VyaparPremiumReports
+          tab={activeTab as any}
+          salesRows={salesQuery.data?.rows || []}
+          purchaseRows={purchaseQuery.data?.rows || []}
+          partyRows={partyBalQuery.data?.rows || []}
+          itemRows={inventoryQuery.data?.rows || []}
+          businessName={business?.name}
+          businessPan={business?.taxNumber || '-'}
         />
       )}
     </div>

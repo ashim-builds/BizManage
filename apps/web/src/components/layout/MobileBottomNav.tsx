@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Receipt, Plus, ShoppingBag, Menu, X, ChevronRight, Crown } from 'lucide-react';
+import { Home, Receipt, Plus, ShoppingBag, Menu, X, ChevronRight, Crown, Users, Package } from 'lucide-react';
 import { sidebarSections } from '@/components/layout/navConfig';
 import { useAuth } from '@/providers/AuthProvider';
 
@@ -17,19 +17,19 @@ export function MobileBottomNav({ onQuickEntry }: MobileBottomNavProps) {
   const currentBusiness = user?.memberships?.[0]?.business;
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
-  const isMoreActive = !['/dashboard', '/transactions/sales', '/transactions/purchases'].includes(pathname || '');
+  const isMoreActive = !['/dashboard', '/parties', '/inventory'].includes(pathname || '');
 
   const navItems = [
     { name: 'Home', href: '/dashboard', icon: Home, active: pathname === '/dashboard' },
-    { name: 'Sales', href: '/transactions/sales', icon: Receipt, active: pathname === '/transactions/sales' },
-    { name: 'Quick Entry', action: onQuickEntry, icon: Plus, isAction: true },
-    { name: 'Purchases', href: '/transactions/purchases', icon: ShoppingBag, active: pathname === '/transactions/purchases' },
+    { name: 'Parties', href: '/parties', icon: Users, active: pathname?.startsWith('/parties') },
+    { name: '+ Add', action: onQuickEntry, icon: Plus, isAction: true },
+    { name: 'Items', href: '/inventory', icon: Package, active: pathname?.startsWith('/inventory') },
     { name: 'More', action: () => setMoreMenuOpen(true), icon: Menu, active: isMoreActive || moreMenuOpen },
   ];
 
   return (
     <>
-      <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden print:hidden bg-slate-900 border-t border-slate-800 pb-safe pb-safe-bottom" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden print:hidden bg-black/95 border-t border-zinc-800/80 backdrop-blur-lg pb-safe pb-safe-bottom" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="flex items-center justify-around px-2 py-2">
           {navItems.map((item, idx) => {
             const Icon = item.icon;
@@ -40,8 +40,8 @@ export function MobileBottomNav({ onQuickEntry }: MobileBottomNavProps) {
                   onClick={item.action}
                   className="flex flex-col items-center justify-center gap-1 min-w-[64px]"
                 >
-                  <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20 active:scale-95 transition-transform">
-                    <Icon className="w-6 h-6" />
+                  <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center text-white shadow-xl shadow-red-600/30 hover:bg-red-500 active:scale-95 transition-transform">
+                    <Icon className="w-6 h-6 text-white stroke-[2.5]" />
                   </div>
                 </button>
               );
@@ -52,11 +52,11 @@ export function MobileBottomNav({ onQuickEntry }: MobileBottomNavProps) {
                   key={idx}
                   onClick={item.action}
                   className={`flex flex-col items-center justify-center gap-1 min-w-[64px] active:scale-95 transition-all ${
-                    item.active ? 'text-blue-500' : 'text-slate-400 hover:text-slate-300'
+                    item.active ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'
                   }`}
                 >
-                  <Icon className={`w-5 h-5 ${item.active ? 'text-blue-500' : 'text-slate-400'}`} />
-                  <span className={`text-[10px] font-medium ${item.active ? 'text-blue-500' : 'text-slate-400'}`}>
+                  <Icon className={`w-5 h-5 ${item.active ? 'text-white' : 'text-zinc-500'}`} />
+                  <span className={`text-[10px] font-medium ${item.active ? 'text-white font-bold' : 'text-zinc-500'}`}>
                     {item.name}
                   </span>
                 </button>
@@ -67,11 +67,11 @@ export function MobileBottomNav({ onQuickEntry }: MobileBottomNavProps) {
                 key={idx}
                 href={item.href!}
                 className={`flex flex-col items-center justify-center gap-1 min-w-[64px] active:scale-95 transition-all ${
-                  item.active ? 'text-blue-500' : 'text-slate-400 hover:text-slate-300'
+                  item.active ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'
                 }`}
               >
-                <Icon className={`w-5 h-5 ${item.active ? 'text-blue-500' : 'text-slate-400'}`} />
-                <span className={`text-[10px] font-medium ${item.active ? 'text-blue-500' : 'text-slate-400'}`}>
+                <Icon className={`w-5 h-5 ${item.active ? 'text-white' : 'text-zinc-500'}`} />
+                <span className={`text-[10px] font-medium ${item.active ? 'text-white font-bold' : 'text-zinc-500'}`}>
                   {item.name}
                 </span>
               </Link>

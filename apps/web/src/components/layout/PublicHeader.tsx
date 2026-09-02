@@ -12,6 +12,7 @@ import {
   FileText,
   Shield,
   Sparkles,
+  Smartphone,
 } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 
@@ -49,13 +50,13 @@ export function PublicHeader({ activePage }: PublicHeaderProps) {
         <nav className="hidden md:flex items-center space-x-1 lg:space-x-2 text-sm font-medium text-slate-300">
           <Link
             href="/#features"
-            className="px-3 py-1.5 rounded-lg hover:text-white hover:bg-slate-800/50 transition-colors"
+            className="px-3 py-1.5 rounded-lg hover:text-white hover:bg-zinc-850 transition-colors"
           >
             Features
           </Link>
           <Link
             href="/#pricing"
-            className="px-3 py-1.5 rounded-lg hover:text-white hover:bg-slate-800/50 transition-colors"
+            className="px-3 py-1.5 rounded-lg hover:text-white hover:bg-zinc-850 transition-colors"
           >
             Pricing
           </Link>
@@ -64,6 +65,13 @@ export function PublicHeader({ activePage }: PublicHeaderProps) {
             className="px-3 py-1.5 rounded-lg text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 font-semibold transition-colors"
           >
             Explore Stores
+          </Link>
+          <Link
+            href="/#download-app"
+            className="px-3 py-1.5 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/10 font-semibold transition-colors flex items-center gap-1.5"
+          >
+            <Smartphone className="w-4 h-4 text-red-500" />
+            <span>Mobile App</span>
           </Link>
         </nav>
 
@@ -77,27 +85,27 @@ export function PublicHeader({ activePage }: PublicHeaderProps) {
 
               <Link
                 href={dashboardHref}
-                className="text-xs sm:text-sm font-medium bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-3.5 py-2 sm:px-4 sm:py-2 rounded-lg shadow-md shadow-blue-600/20 hover:shadow-blue-600/30 transition-all flex items-center gap-1.5 sm:gap-2"
+                className="text-xs sm:text-sm font-bold bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-xl shadow-lg shadow-red-600/25 transition-all flex items-center gap-2"
               >
-                <LayoutDashboard className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <LayoutDashboard className="w-4 h-4" />
                 <span>Go to {dashboardLabel}</span>
-                <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           ) : !authLoading ? (
             <>
               <Link
                 href="/login"
-                className="text-xs sm:text-sm font-medium text-slate-300 hover:text-white transition-colors px-3 py-2 rounded-lg hover:bg-slate-800/50"
+                className="text-xs sm:text-sm font-medium text-slate-300 hover:text-white transition-colors px-3 py-2 rounded-xl hover:bg-zinc-850"
               >
                 Sign In
               </Link>
 
               <Link
                 href="/register"
-                className="text-xs sm:text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-2 rounded-lg shadow-md shadow-blue-600/20 hover:shadow-blue-600/30 transition-all flex items-center gap-1.5"
+                className="text-xs sm:text-sm font-bold bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-xl shadow-lg shadow-red-600/25 transition-all flex items-center gap-1.5"
               >
-                Get Started
+                Start Free Trial
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </>
