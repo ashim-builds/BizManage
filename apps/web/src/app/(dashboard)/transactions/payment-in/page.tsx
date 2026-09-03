@@ -2,6 +2,9 @@
 import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericInput';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useLongPress } from '@/hooks/useLongPress';
+import { LongPressActionSheet } from '@/components/ui/LongPressActionSheet';
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -33,9 +36,11 @@ import {
   Building2,
   UserCheck,
   Eye,
+  Ban,
 } from 'lucide-react';
 
 export default function PaymentInPage() {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [selectedMode, setSelectedMode] = useState<PaymentMode | ''>('');
   const [startDate, setStartDate] = useState('');
@@ -45,6 +50,7 @@ export default function PaymentInPage() {
   const [pendingPaymentData, setPendingPaymentData] = useState<CreatePaymentInInput | null>(null);
   const [voidingPaymentId, setVoidingPaymentId] = useState<string | null>(null);
   const [voidError, setVoidError] = useState('');
+  const [longPressPayment, setLongPressPayment] = useState<any | null>(null);
 
   // Queries
   const { data: summary, isLoading: summaryLoading } = usePaymentsInSummary();
@@ -265,56 +271,13 @@ export default function PaymentInPage() {
           {/* Mobile Card Layout */}
           <div className="grid gap-4 md:hidden">
             {payments.map((p: any) => (
-              <div key={p.id} className={`p-4 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col gap-3 shadow-sm ${p.status === 'VOIDED' ? 'opacity-50' : ''}`}>
-                {/* Header */}
-                <div className="flex items-start justify-between border-b border-slate-800/60 pb-3">
-                  <div className="font-semibold text-white font-mono text-sm">
-                    {new Date(p.date).toLocaleDateString()}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {p.status === 'VOIDED' && (
-                      <span className="px-1.5 py-0.5 rounded-md bg-slate-700 text-slate-300 text-[10px] uppercase font-bold tracking-wider">
-                        Voided
-                      </span>
-                    )}
-                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-bold uppercase text-[10px] border border-emerald-500/20">
-                      {p.mode}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Body */}
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-200">{p.party?.name}</p>
-                    <p className="text-[11px] text-slate-500 mt-0.5 font-mono">
-                      Acct: {p.account?.accountName || 'Cash'}
-                      {p.referenceNumber ? ` • Ref: ${p.referenceNumber}` : ''}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <span className={`font-mono font-bold text-base ${p.status === 'VOIDED' ? 'line-through text-slate-500' : 'text-emerald-400'}`}>
-                      + Rs. {Number(p.amount || 0).toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Footer Actions */}
-                <div className="flex justify-end items-center gap-1.5 pt-1">
-                  <Link href={`/transactions/payment-in/${p.id}`} className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 text-[11px] font-bold flex items-center gap-1.5">
-                    <Eye className="w-3.5 h-3.5" /> View
-                  </Link>
-                  {p.status !== 'VOIDED' && (
-                    <button
-                      onClick={() => handleVoid(p.id)}
-                      disabled={voidPaymentIn.isPending}
-                      className="px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 text-[11px] font-bold uppercase disabled:opacity-50 transition-all"
-                    >
-                      Void
-                    </button>
-                  )}
-                </div>
-              </div>
+              <MobilePaymentInCard
+                key={p.id}
+                payment={p}
+                onLongPress={() => setLongPressPayment(p)}
+                onVoid={() => handleVoid(p.id)}
+                isVoidPending={voidPaymentIn.isPending}
+              />
             ))}
           </div>
 
@@ -567,6 +530,135 @@ export default function PaymentInPage() {
         message={`Are you sure you want to record payment of Rs. ${Number(pendingPaymentData?.amount || 0).toLocaleString()}?`}
         confirmText="Confirm & Save"
       />
+
+      {/* Long-Press Action Sheet (Mobile) */}
+      <LongPressActionSheet
+        open={!!longPressPayment}
+        onClose={() => setLongPressPayment(null)}
+        title={longPressPayment?.party?.name || 'Payment In'}
+        subtitle={longPressPayment ? `+ Rs. ${Number(longPressPayment.amount || 0).toLocaleString()} · ${longPressPayment.mode}` : ''}
+        actions={[
+          {
+            label: 'View Voucher Details',
+            icon: <Eye className="w-5 h-5" />,
+            onClick: () => {
+              if (longPressPayment) {
+                router.push(`/transactions/payment-in/${longPressPayment.id}`);
+              }
+              setLongPressPayment(null);
+            },
+          },
+          ...(longPressPayment?.partyId
+            ? [
+                {
+                  label: 'View Customer Ledger',
+                  icon: <Wallet className="w-5 h-5" />,
+                  onClick: () => {
+                    if (longPressPayment?.partyId) {
+                      router.push(`/parties/${longPressPayment.partyId}`);
+                    }
+                    setLongPressPayment(null);
+                  },
+                },
+              ]
+            : []),
+          ...(longPressPayment && longPressPayment.status !== 'VOIDED'
+            ? [
+                {
+                  label: 'Void Voucher',
+                  icon: <Ban className="w-5 h-5" />,
+                  onClick: () => {
+                    const id = longPressPayment.id;
+                    setLongPressPayment(null);
+                    handleVoid(id);
+                  },
+                  variant: 'danger' as const,
+                },
+              ]
+            : []),
+        ]}
+      />
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Sub-component: Mobile Payment In Card with Long-Press
+// ---------------------------------------------------------------------------
+
+interface MobilePaymentInCardProps {
+  payment: any;
+  onLongPress: () => void;
+  onVoid: () => void;
+  isVoidPending: boolean;
+}
+
+function MobilePaymentInCard({ payment: p, onLongPress, onVoid, isVoidPending }: MobilePaymentInCardProps) {
+  const longPressHandlers = useLongPress(onLongPress, { delay: 600 });
+
+  return (
+    <div
+      {...longPressHandlers}
+      className={`p-4 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col gap-3 shadow-sm select-none active:scale-[0.99] transition-transform ${
+        p.status === 'VOIDED' ? 'opacity-50' : ''
+      }`}
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between border-b border-slate-800/60 pb-3">
+        <div className="font-semibold text-white font-mono text-sm">
+          {new Date(p.date).toLocaleDateString()}
+        </div>
+        <div className="flex items-center gap-2">
+          {p.status === 'VOIDED' && (
+            <span className="px-1.5 py-0.5 rounded-md bg-slate-700 text-slate-300 text-[10px] uppercase font-bold tracking-wider">
+              Voided
+            </span>
+          )}
+          <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-bold uppercase text-[10px] border border-emerald-500/20">
+            {p.mode}
+          </span>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="flex justify-between items-center">
+        <div>
+          <p className="text-sm font-semibold text-slate-200">{p.party?.name}</p>
+          <p className="text-[11px] text-slate-500 mt-0.5 font-mono">
+            Acct: {p.account?.accountName || 'Cash'}
+            {p.referenceNumber ? ` • Ref: ${p.referenceNumber}` : ''}
+          </p>
+        </div>
+        <div className="text-right">
+          <span className={`font-mono font-bold text-base ${p.status === 'VOIDED' ? 'line-through text-slate-500' : 'text-emerald-400'}`}>
+            + Rs. {Number(p.amount || 0).toLocaleString()}
+          </span>
+        </div>
+      </div>
+
+      {/* Footer Actions */}
+      <div className="flex justify-between items-center pt-1">
+        <span className="text-[10px] text-slate-500">Hold card for actions</span>
+        <div className="flex items-center gap-1.5">
+          <Link
+            href={`/transactions/payment-in/${p.id}`}
+            onClick={(ev) => ev.stopPropagation()}
+            className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 text-[11px] font-bold flex items-center gap-1.5"
+          >
+            <Eye className="w-3.5 h-3.5" /> View
+          </Link>
+          {p.status !== 'VOIDED' && (
+            <button
+              onClick={(ev) => { ev.stopPropagation(); onVoid(); }}
+              disabled={isVoidPending}
+              className="px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 text-[11px] font-bold uppercase disabled:opacity-50 transition-all"
+            >
+              Void
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+

@@ -1,5 +1,7 @@
 'use client';
 import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericInput';
+import { useLongPress } from '@/hooks/useLongPress';
+import { LongPressActionSheet } from '@/components/ui/LongPressActionSheet';
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -12,7 +14,7 @@ import {
   useCreateIncome,
   useDeleteIncome,
 } from '@/services/incomeService';
-import { useIncomeCategories, useCreateIncomeCategory } from '@/services/categoryService';
+import { useIncomeCategories } from '@/services/categoryService';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -30,7 +32,6 @@ import {
   Trash2,
   Wallet,
   Tag,
-  DollarSign,
 } from 'lucide-react';
 
 export default function IncomePage() {
@@ -43,6 +44,7 @@ export default function IncomePage() {
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [deletingIncomeInfo, setDeletingIncomeInfo] = useState<{ id: string; name: string } | null>(null);
   const [deleteError, setDeleteError] = useState<string>('');
+  const [longPressIncome, setLongPressIncome] = useState<any | null>(null);
 
   // Queries
   const { data: summary, isLoading: summaryLoading } = useIncomeSummary();
@@ -190,7 +192,7 @@ export default function IncomePage() {
               startDate={startDate}
               endDate={endDate}
               preset={startDate || endDate ? 'custom' : 'all'}
-              onApply={(s, e, p) => {
+              onApply={(s, e) => {
                 setStartDate(s);
                 setEndDate(e);
               }}
@@ -252,52 +254,14 @@ export default function IncomePage() {
         <>
           {/* Mobile Card Layout */}
           <div className="grid gap-4 md:hidden">
-            {incomes.map((inc: any) => {
-              const amt = Number(inc.amount || 0);
-              return (
-                <div key={inc.id} className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col gap-3 shadow-sm">
-                  {/* Header */}
-                  <div className="flex items-start justify-between border-b border-slate-800/60 pb-3">
-                    <div className="font-semibold text-white font-mono text-sm">
-                      {new Date(inc.date).toLocaleDateString()}
-                    </div>
-                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-bold uppercase text-[10px] border border-emerald-500/20">
-                      {inc.paymentMode}
-                    </span>
-                  </div>
-
-                  {/* Body */}
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-200 flex items-center gap-1.5">
-                        <Tag className="w-3.5 h-3.5 text-emerald-400" />
-                        {inc.category}
-                      </p>
-                      {inc.description && (
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          {inc.description}
-                        </p>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <span className="font-mono font-bold text-base text-emerald-400">
-                        + Rs. {amt.toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Footer Actions */}
-                  <div className="flex justify-end pt-1">
-                    <button
-                      onClick={() => handleDelete(inc.id, inc.category, amt)}
-                      className="px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 text-[11px] font-bold uppercase transition-all flex items-center gap-1.5"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" /> Delete
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+            {incomes.map((inc: any) => (
+              <MobileIncomeCard
+                key={inc.id}
+                income={inc}
+                onLongPress={() => setLongPressIncome(inc)}
+                onDelete={() => handleDelete(inc.id, inc.category, Number(inc.amount || 0))}
+              />
+            ))}
           </div>
 
           {/* Desktop Table Layout */}
@@ -313,48 +277,48 @@ export default function IncomePage() {
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
-            <tbody className="divide-y divide-slate-800/60">
-              {incomes.map((inc: any) => {
-                const amt = Number(inc.amount || 0);
+              <tbody className="divide-y divide-slate-800/60">
+                {incomes.map((inc: any) => {
+                  const amt = Number(inc.amount || 0);
 
-                return (
-                  <tr key={inc.id} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="px-6 py-4 font-semibold text-white font-mono">
-                      {new Date(inc.date).toLocaleDateString()}
-                    </td>
+                  return (
+                    <tr key={inc.id} className="hover:bg-slate-800/40 transition-colors">
+                      <td className="px-6 py-4 font-semibold text-white font-mono">
+                        {new Date(inc.date).toLocaleDateString()}
+                      </td>
 
-                    <td className="px-6 py-4 text-slate-200 font-semibold flex items-center gap-1.5">
-                      <Tag className="w-3.5 h-3.5 text-emerald-400" />
-                      {inc.category}
-                    </td>
+                      <td className="px-6 py-4 text-slate-200 font-semibold flex items-center gap-1.5">
+                        <Tag className="w-3.5 h-3.5 text-emerald-400" />
+                        {inc.category}
+                      </td>
 
-                    <td className="px-6 py-4">
-                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-bold uppercase text-[10px] border border-emerald-500/20">
-                        {inc.paymentMode}
-                      </span>
-                    </td>
+                      <td className="px-6 py-4">
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-bold uppercase text-[10px] border border-emerald-500/20">
+                          {inc.paymentMode}
+                        </span>
+                      </td>
 
-                    <td className="px-6 py-4 text-slate-400">{inc.description || '-'}</td>
+                      <td className="px-6 py-4 text-slate-400">{inc.description || '-'}</td>
 
-                    <td className="px-6 py-4 text-right font-mono font-bold text-emerald-400 text-sm">
-                      + Rs. {amt.toLocaleString()}
-                    </td>
+                      <td className="px-6 py-4 text-right font-mono font-bold text-emerald-400 text-sm">
+                        + Rs. {amt.toLocaleString()}
+                      </td>
 
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => handleDelete(inc.id, inc.category, amt)}
-                        className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 inline-block"
-                        title="Delete Income Record"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => handleDelete(inc.id, inc.category, amt)}
+                          className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 inline-block"
+                          title="Delete Income Record"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
 
@@ -362,125 +326,125 @@ export default function IncomePage() {
       {isCreateOpen && (
         <ModalPortal>
           <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800">
-            <div className="border-b border-slate-800 pb-4">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-emerald-400" /> Record Other Income
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Adds revenue amount to cash/bank account and logs a transaction entry.
-              </p>
-            </div>
-
-            <form onSubmit={form.handleSubmit(handleCreateSubmit)} className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-semibold text-slate-300">Income Category *</label>
-                  <button
-                    type="button"
-                    onClick={() => setIsAddCategoryOpen(true)}
-                    className="text-[10px] text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1"
-                  >
-                    <Plus className="w-3 h-3" /> Add New
-                  </button>
-                </div>
-                {categories && categories.length > 0 ? (
-                  <select
-                    {...form.register('category')}
-                    className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  >
-                    <option value="">Select Category</option>
-                    {categories.map((c: any, i: number) => (
-                      <option key={c.name || i} value={c.name}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    {...form.register('category')}
-                    className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                    placeholder="e.g. Scrap Sale, Commission, Rental Income..."
-                  />
-                )}
-                {form.formState.errors.category && (
-                  <p className="text-xs text-red-400 mt-1">{form.formState.errors.category.message}</p>
-                )}
+            <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800">
+              <div className="border-b border-slate-800 pb-4">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-emerald-400" /> Record Other Income
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Adds revenue amount to cash/bank account and logs a transaction entry.
+                </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <form onSubmit={form.handleSubmit(handleCreateSubmit)} className="space-y-4">
                 <div>
-                  <DatePicker
-                    label="Income Date"
-                    required
-                    value={form.watch('date')}
-                    onChange={(d) => form.setValue('date', d as any)}
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-300">Income Category *</label>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddCategoryOpen(true)}
+                      className="text-[10px] text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" /> Add New
+                    </button>
+                  </div>
+                  {categories && categories.length > 0 ? (
+                    <select
+                      {...form.register('category')}
+                      className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    >
+                      <option value="">Select Category</option>
+                      {categories.map((c: any, i: number) => (
+                        <option key={c.name || i} value={c.name}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      {...form.register('category')}
+                      className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      placeholder="e.g. Scrap Sale, Commission, Rental Income..."
+                    />
+                  )}
+                  {form.formState.errors.category && (
+                    <p className="text-xs text-red-400 mt-1">{form.formState.errors.category.message}</p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <DatePicker
+                      label="Income Date"
+                      required
+                      value={form.watch('date')}
+                      onChange={(d) => form.setValue('date', d as any)}
+                    />
+                    {form.formState.errors.date && (
+                      <p className="text-xs text-red-400 mt-1">{form.formState.errors.date.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Payment Method</label>
+                    <select
+                      {...form.register('paymentMode')}
+                      className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    >
+                      <option value={PaymentMode.CASH}>Cash</option>
+                      <option value={PaymentMode.BANK}>Bank Transfer</option>
+                      <option value={PaymentMode.ONLINE}>Mobile Wallet / Online</option>
+                      <option value={PaymentMode.CHEQUE}>Cheque</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Amount Received (Rs.) *</label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    onKeyDown={onNumericKeyDown}
+                    onFocus={onNumericFocus}
+                    {...form.register('amount', { valueAsNumber: true, onBlur: onNumericBlur })}
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-mono text-emerald-400 font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    placeholder="e.g. 15000"
                   />
-                  {form.formState.errors.date && (
-                    <p className="text-xs text-red-400 mt-1">{form.formState.errors.date.message}</p>
+                  {form.formState.errors.amount && (
+                    <p className="text-xs text-red-400 mt-1">{form.formState.errors.amount.message}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Payment Method</label>
-                  <select
-                    {...form.register('paymentMode')}
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Description / Notes</label>
+                  <textarea
+                    rows={2}
+                    {...form.register('description')}
                     className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  >
-                    <option value={PaymentMode.CASH}>Cash</option>
-                    <option value={PaymentMode.BANK}>Bank Transfer</option>
-                    <option value={PaymentMode.ONLINE}>Mobile Wallet / Online</option>
-                    <option value={PaymentMode.CHEQUE}>Cheque</option>
-                  </select>
+                    placeholder="e.g. Sold unused packaging boxes..."
+                  />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Amount Received (Rs.) *</label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  onKeyDown={onNumericKeyDown}
-                  onFocus={onNumericFocus}
-                  {...form.register('amount', { valueAsNumber: true, onBlur: onNumericBlur })}
-                  className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-mono text-emerald-400 font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  placeholder="e.g. 15000"
-                />
-                {form.formState.errors.amount && (
-                  <p className="text-xs text-red-400 mt-1">{form.formState.errors.amount.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Description / Notes</label>
-                <textarea
-                  rows={2}
-                  {...form.register('description')}
-                  className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  placeholder="e.g. Sold unused packaging boxes..."
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={createIncome.isPending}
-                  className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-all shadow-lg shadow-emerald-600/20 disabled:opacity-50"
-                >
-                  {createIncome.isPending ? 'Saving...' : 'Record Other Income'}
-                </button>
-              </div>
-            </form>
+                <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateOpen(false)}
+                    className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={createIncome.isPending}
+                    className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-all shadow-lg shadow-emerald-600/20 disabled:opacity-50"
+                  >
+                    {createIncome.isPending ? 'Saving...' : 'Record Other Income'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
         </ModalPortal>
       )}
 
@@ -513,6 +477,88 @@ export default function IncomePage() {
           }
         }}
       />
+
+      {/* Long-Press Action Sheet (Mobile) */}
+      <LongPressActionSheet
+        open={!!longPressIncome}
+        onClose={() => setLongPressIncome(null)}
+        title={longPressIncome?.category || 'Income'}
+        subtitle={longPressIncome ? `Rs. ${Number(longPressIncome.amount || 0).toLocaleString()} · ${longPressIncome.paymentMode}` : ''}
+        actions={[
+          {
+            label: 'Delete Income Record',
+            icon: <Trash2 className="w-5 h-5" />,
+            onClick: () => {
+              if (longPressIncome) {
+                handleDelete(longPressIncome.id, longPressIncome.category, Number(longPressIncome.amount || 0));
+              }
+              setLongPressIncome(null);
+            },
+            variant: 'danger',
+          },
+        ]}
+      />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sub-component: Mobile Income Card with Long-Press
+// ---------------------------------------------------------------------------
+
+interface MobileIncomeCardProps {
+  income: any;
+  onLongPress: () => void;
+  onDelete: () => void;
+}
+
+function MobileIncomeCard({ income: inc, onLongPress, onDelete }: MobileIncomeCardProps) {
+  const longPressHandlers = useLongPress(onLongPress, { delay: 600 });
+  const amt = Number(inc.amount || 0);
+
+  return (
+    <div
+      {...longPressHandlers}
+      className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col gap-3 shadow-sm select-none active:scale-[0.99] transition-transform"
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between border-b border-slate-800/60 pb-3">
+        <div className="font-semibold text-white font-mono text-sm">
+          {new Date(inc.date).toLocaleDateString()}
+        </div>
+        <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-bold uppercase text-[10px] border border-emerald-500/20">
+          {inc.paymentMode}
+        </span>
+      </div>
+
+      {/* Body */}
+      <div className="flex justify-between items-center">
+        <div>
+          <p className="text-sm font-semibold text-slate-200 flex items-center gap-1.5">
+            <Tag className="w-3.5 h-3.5 text-emerald-400" />
+            {inc.category}
+          </p>
+          {inc.description && (
+            <p className="text-[11px] text-slate-500 mt-0.5">{inc.description}</p>
+          )}
+        </div>
+        <div className="text-right">
+          <span className="font-mono font-bold text-base text-emerald-400">
+            + Rs. {amt.toLocaleString()}
+          </span>
+        </div>
+      </div>
+
+      {/* Footer: hold hint */}
+      <div className="flex justify-between items-center pt-1">
+        <span className="text-[10px] text-slate-500">Hold card for actions</span>
+        <button
+          onClick={(ev) => { ev.stopPropagation(); onDelete(); }}
+          className="px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 text-[11px] font-bold uppercase transition-all flex items-center gap-1.5"
+        >
+          <Trash2 className="w-3.5 h-3.5" /> Delete
+        </button>
+      </div>
     </div>
   );
 }

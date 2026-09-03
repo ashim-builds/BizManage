@@ -3,8 +3,9 @@ import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericIn
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';;
+import { zodResolver } from '@hookform/resolvers/zod';
 import { createPurchaseSchema, CreatePurchaseInput } from '@bizmanage/validation';
 import { InvoiceStatus, PaymentMode, ItemType } from '@bizmanage/types';
 import {
@@ -13,6 +14,8 @@ import {
   useCreatePurchase,
   usePayPurchase,
 } from '@/services/purchaseService';
+import { useLongPress } from '@/hooks/useLongPress';
+import { LongPressActionSheet } from '@/components/ui/LongPressActionSheet';
 
 import { useParties } from '@/services/partyService';
 import { getPartyBalanceDisplay } from '@/lib/balance';
@@ -47,12 +50,14 @@ import {
 const VAT_RATE = 0.13;
 
 export default function PurchasesPage() {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<InvoiceStatus | ''>('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSaveConfirmOpen, setIsSaveConfirmOpen] = useState(false);
   const [pendingPurchaseData, setPendingPurchaseData] = useState<CreatePurchaseInput | null>(null);
   const [payDueCustomAmount, setPayDueCustomAmount] = useState('');
+  const [longPressPurchase, setLongPressPurchase] = useState<any | null>(null);
 
   // Quick Create Item modal state
   const [isQuickItemOpen, setIsQuickItemOpen] = useState(false);
@@ -327,73 +332,19 @@ export default function PurchasesPage() {
         <>
           {/* Mobile Card Layout */}
           <div className="grid gap-4 md:hidden">
-            {purchases.map((p: any) => {
-              const total = Number(p.totalAmount || 0);
-              const due = Number(p.dueAmount || 0);
-              const totalQty = (p.items || []).reduce((acc: number, it: any) => acc + Number(it.quantity || 0), 0);
-              const lineCount = p.items?.length || 0;
-
-              return (
-                <div key={p.id} className="p-4 bg-white border border-slate-200/90 rounded-2xl flex flex-col gap-3 shadow-xs">
-                  {/* Header */}
-                  <div className="flex items-start justify-between border-b border-slate-100 pb-2.5">
-                    <div>
-                      <Link href={`/transactions/purchases/${p.id}`} className="font-bold text-purple-600 hover:text-purple-700 font-mono text-sm">
-                        {p.billNumber}
-                      </Link>
-                      <p className="text-[11px] text-slate-400 mt-0.5">{new Date(p.date).toLocaleDateString()}</p>
-                    </div>
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                      p.status === InvoiceStatus.PAID ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : p.status === InvoiceStatus.PARTIAL ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                      : p.status === InvoiceStatus.RETURNED ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                      : 'bg-rose-50 text-rose-700 border border-rose-200'
-                    }`}>
-                      {p.status}
-                    </span>
-                  </div>
-
-                  {/* Body */}
-                  <div className="flex justify-between items-center text-xs">
-                    <div>
-                      <p className="text-sm font-bold text-slate-800">{p.party?.name || 'Cash / Walk-in Supplier'}</p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">{totalQty} {totalQty === 1 ? 'Pc' : 'Pcs'} ({lineCount} {lineCount === 1 ? 'item' : 'items'})</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-mono font-bold text-slate-900 text-base">Rs. {total.toLocaleString()}</p>
-                      {due > 0 ? (
-                        <p className="font-mono text-[10px] text-rose-600 font-bold mt-0.5">Payable Due: Rs. {due.toLocaleString()}</p>
-                      ) : (
-                        <p className="font-mono text-[10px] text-emerald-600 font-bold mt-0.5">Paid In Full</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
-                    {due > 0 && (
-                      <button
-                        onClick={() => {
-                          setPayDueId(p.id);
-                          setPayDueAmount(Number(p.dueAmount || 0));
-                          setPayDueCustomAmount('');
-                          setPayDueMode(PaymentMode.CASH);
-                        }}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-bold flex items-center gap-1.5 hover:bg-emerald-100"
-                      >
-                        <BanknoteIcon className="w-3.5 h-3.5" /> Pay Supplier
-                      </button>
-                    )}
-                    <Link
-                      href={`/transactions/purchases/${p.id}`}
-                      className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-[11px] font-bold flex items-center gap-1.5"
-                    >
-                      <Eye className="w-3.5 h-3.5" /> View Bill
-                    </Link>
-                  </div>
-                </div>
-              );
-            })}
+            {purchases.map((p: any) => (
+              <MobilePurchaseCard
+                key={p.id}
+                purchase={p}
+                onLongPress={() => setLongPressPurchase(p)}
+                onPaySupplier={() => {
+                  setPayDueId(p.id);
+                  setPayDueAmount(Number(p.dueAmount || 0));
+                  setPayDueCustomAmount('');
+                  setPayDueMode(PaymentMode.CASH);
+                }}
+              />
+            ))}
           </div>
 
           {/* Desktop Table Layout */}
@@ -1056,6 +1007,138 @@ export default function PurchasesPage() {
         message="Are you sure you want to record this purchase bill? Stock will be added and supplier balance will be updated."
         confirmText="Confirm & Record"
       />
+
+      {/* Long-Press Action Sheet (Mobile) */}
+      <LongPressActionSheet
+        open={!!longPressPurchase}
+        onClose={() => setLongPressPurchase(null)}
+        title={longPressPurchase?.billNumber || 'Purchase Bill'}
+        subtitle={longPressPurchase ? `${longPressPurchase.party?.name || 'Walk-in'} · Rs. ${Number(longPressPurchase.totalAmount || 0).toLocaleString()}` : ''}
+        actions={[
+          {
+            label: 'View Bill Details',
+            icon: <Eye className="w-5 h-5" />,
+            onClick: () => {
+              if (longPressPurchase) {
+                router.push(`/transactions/purchases/${longPressPurchase.id}`);
+              }
+              setLongPressPurchase(null);
+            },
+          },
+          ...(longPressPurchase && Number(longPressPurchase.dueAmount || 0) > 0
+            ? [
+                {
+                  label: `Pay Supplier (Rs. ${Number(longPressPurchase.dueAmount).toLocaleString()} due)`,
+                  icon: <BanknoteIcon className="w-5 h-5 text-emerald-500" />,
+                  onClick: () => {
+                    const p = longPressPurchase;
+                    setLongPressPurchase(null);
+                    setPayDueId(p.id);
+                    setPayDueAmount(Number(p.dueAmount || 0));
+                    setPayDueCustomAmount('');
+                    setPayDueMode(PaymentMode.CASH);
+                  },
+                },
+              ]
+            : []),
+          ...(longPressPurchase?.partyId
+            ? [
+                {
+                  label: 'View Supplier Ledger',
+                  icon: <Wallet className="w-5 h-5" />,
+                  onClick: () => {
+                    if (longPressPurchase?.partyId) {
+                      router.push(`/parties/${longPressPurchase.partyId}`);
+                    }
+                    setLongPressPurchase(null);
+                  },
+                },
+              ]
+            : []),
+        ]}
+      />
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Sub-component: Mobile Purchase Card with Long-Press
+// ---------------------------------------------------------------------------
+
+interface MobilePurchaseCardProps {
+  purchase: any;
+  onLongPress: () => void;
+  onPaySupplier: () => void;
+}
+
+function MobilePurchaseCard({ purchase: p, onLongPress, onPaySupplier }: MobilePurchaseCardProps) {
+  const longPressHandlers = useLongPress(onLongPress, { delay: 600 });
+  const total = Number(p.totalAmount || 0);
+  const due = Number(p.dueAmount || 0);
+  const totalQty = (p.items || []).reduce((acc: number, it: any) => acc + Number(it.quantity || 0), 0);
+  const lineCount = p.items?.length || 0;
+
+  return (
+    <div
+      {...longPressHandlers}
+      className="p-4 bg-white border border-slate-200/90 rounded-2xl flex flex-col gap-3 shadow-xs select-none active:scale-[0.99] transition-transform"
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between border-b border-slate-100 pb-2.5">
+        <div>
+          <Link href={`/transactions/purchases/${p.id}`} className="font-bold text-purple-600 hover:text-purple-700 font-mono text-sm">
+            {p.billNumber}
+          </Link>
+          <p className="text-[11px] text-slate-400 mt-0.5">{new Date(p.date).toLocaleDateString()}</p>
+        </div>
+        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+          p.status === InvoiceStatus.PAID ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+          : p.status === InvoiceStatus.PARTIAL ? 'bg-amber-50 text-amber-700 border border-amber-200'
+          : p.status === InvoiceStatus.RETURNED ? 'bg-purple-50 text-purple-700 border border-purple-200'
+          : 'bg-rose-50 text-rose-700 border border-rose-200'
+        }`}>
+          {p.status}
+        </span>
+      </div>
+
+      {/* Body */}
+      <div className="flex justify-between items-center text-xs">
+        <div>
+          <p className="text-sm font-bold text-slate-800">{p.party?.name || 'Cash / Walk-in Supplier'}</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">{totalQty} {totalQty === 1 ? 'Pc' : 'Pcs'} ({lineCount} {lineCount === 1 ? 'item' : 'items'})</p>
+        </div>
+        <div className="text-right">
+          <p className="font-mono font-bold text-slate-900 text-base">Rs. {total.toLocaleString()}</p>
+          {due > 0 ? (
+            <p className="font-mono text-[10px] text-rose-600 font-bold mt-0.5">Payable Due: Rs. {due.toLocaleString()}</p>
+          ) : (
+            <p className="font-mono text-[10px] text-emerald-600 font-bold mt-0.5">Paid In Full</p>
+          )}
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+        <span className="text-[10px] text-slate-400">Hold card for actions</span>
+        <div className="flex items-center gap-1.5">
+          {due > 0 && (
+            <button
+              onClick={(ev) => { ev.stopPropagation(); onPaySupplier(); }}
+              className="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-bold flex items-center gap-1.5 hover:bg-emerald-100"
+            >
+              <BanknoteIcon className="w-3.5 h-3.5" /> Pay Supplier
+            </button>
+          )}
+          <Link
+            href={`/transactions/purchases/${p.id}`}
+            onClick={(ev) => ev.stopPropagation()}
+            className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-[11px] font-bold flex items-center gap-1.5"
+          >
+            <Eye className="w-3.5 h-3.5" /> View
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+

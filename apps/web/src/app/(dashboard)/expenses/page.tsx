@@ -14,34 +14,7 @@ import {
   useCreateExpense,
   useDeleteExpense,
 } from '@/services/expenseService';
-import { useExpenseCategories, useCreateExpenseCategory } from '@/services/categoryService';
-import { LoadingState } from '@/components/common/LoadingState';
-import { ErrorState } from '@/components/common/ErrorState';
-import { EmptyState } from '@/components/common/EmptyState';
-import { ModalPortal } from '@/components/common/ModalPortal';
-import { AddCategoryModal } from '@/components/common/AddCategoryModal';
-import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
-import { CustomDateRangePicker } from '@/components/common/CustomDateRangePicker';
-import { DatePicker } from '@/components/ui/DatePicker';
-import { toast } from 'react-hot-toast';
-import {
-  Receipt,
-  Plus,
-  Search,
-  CheckCircle2,
-
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { createExpenseSchema, CreateExpenseInput } from '@bizmanage/validation';
-import { PaymentMode } from '@bizmanage/types';
-import {
-  useExpenses,
-  useExpensesSummary,
-  useCreateExpense,
-  useDeleteExpense,
-} from '@/services/expenseService';
-import { useExpenseCategories, useCreateExpenseCategory } from '@/services/categoryService';
+import { useExpenseCategories } from '@/services/categoryService';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -59,7 +32,6 @@ import {
   Trash2,
   Wallet,
   Tag,
-  DollarSign,
 } from 'lucide-react';
 
 export default function ExpensesPage() {
@@ -222,7 +194,7 @@ export default function ExpensesPage() {
               startDate={startDate}
               endDate={endDate}
               preset={startDate || endDate ? 'custom' : 'all'}
-              onApply={(s, e, p) => {
+              onApply={(s, e) => {
                 setStartDate(s);
                 setEndDate(e);
               }}
@@ -307,48 +279,48 @@ export default function ExpensesPage() {
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
-            <tbody className="divide-y divide-slate-800/60">
-              {expenses.map((e: any) => {
-                const amt = Number(e.amount || 0);
+              <tbody className="divide-y divide-slate-800/60">
+                {expenses.map((e: any) => {
+                  const amt = Number(e.amount || 0);
 
-                return (
-                  <tr key={e.id} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="px-6 py-4 font-semibold text-white font-mono">
-                      {new Date(e.date).toLocaleDateString()}
-                    </td>
+                  return (
+                    <tr key={e.id} className="hover:bg-slate-800/40 transition-colors">
+                      <td className="px-6 py-4 font-semibold text-white font-mono">
+                        {new Date(e.date).toLocaleDateString()}
+                      </td>
 
-                    <td className="px-6 py-4 text-slate-200 font-semibold flex items-center gap-1.5">
-                      <Tag className="w-3.5 h-3.5 text-rose-400" />
-                      {e.category}
-                    </td>
+                      <td className="px-6 py-4 text-slate-200 font-semibold flex items-center gap-1.5">
+                        <Tag className="w-3.5 h-3.5 text-rose-400" />
+                        {e.category}
+                      </td>
 
-                    <td className="px-6 py-4">
-                      <span className="px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 font-bold uppercase text-[10px] border border-slate-700">
-                        {e.paymentMode}
-                      </span>
-                    </td>
+                      <td className="px-6 py-4">
+                        <span className="px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 font-bold uppercase text-[10px] border border-slate-700">
+                          {e.paymentMode}
+                        </span>
+                      </td>
 
-                    <td className="px-6 py-4 text-slate-400">{e.description || '-'}</td>
+                      <td className="px-6 py-4 text-slate-400">{e.description || '-'}</td>
 
-                    <td className="px-6 py-4 text-right font-mono font-bold text-rose-400 text-sm">
-                      - Rs. {amt.toLocaleString()}
-                    </td>
+                      <td className="px-6 py-4 text-right font-mono font-bold text-rose-400 text-sm">
+                        - Rs. {amt.toLocaleString()}
+                      </td>
 
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => handleDelete(e.id, e.category, amt)}
-                        className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 inline-block"
-                        title="Delete Expense"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => handleDelete(e.id, e.category, amt)}
+                          className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 inline-block"
+                          title="Delete Expense"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
 
@@ -356,87 +328,145 @@ export default function ExpensesPage() {
       {isCreateOpen && (
         <ModalPortal>
           <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800">
-            <div className="border-b border-slate-800 pb-4">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Receipt className="w-5 h-5 text-rose-400" /> Record Business Expense
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Deducts spending amount from cash/bank account and logs a transaction entry.
-              </p>
-            </div>
-
-            <form onSubmit={form.handleSubmit(handleCreateSubmit)} className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-semibold text-slate-300">Expense Category *</label>
-                  <button
-                    type="button"
-                    onClick={() => setIsAddCategoryOpen(true)}
-                    className="text-[10px] text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1"
-                  >
-                    <Plus className="w-3 h-3" /> Add New
-                  </button>
-                </div>
-                {categories && categories.length > 0 ? (
-                  <select
-                    {...form.register('category')}
-                    className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  >
-                    <option value="">Select Category</option>
-                    {categories.map((c: any, i: number) => (
-                      <option key={c.name || i} value={c.name}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    {...form.register('category')}
-                    className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    placeholder="e.g. Office Rent, Utilities, Tea & Refreshment..."
-                  />
-                )}
-                {form.formState.errors.category && (
-                  <p className="text-xs text-red-400 mt-1">{form.formState.errors.category.message}</p>
-                )}
+            <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800">
+              <div className="border-b border-slate-800 pb-4">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Receipt className="w-5 h-5 text-rose-400" /> Record Business Expense
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Deducts spending amount from cash/bank account and logs a transaction entry.
+                </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <form onSubmit={form.handleSubmit(handleCreateSubmit)} className="space-y-4">
                 <div>
-                  <DatePicker
-                    label="Expense Date"
-                    required
-                    value={form.watch('date')}
-                    onChange={(d) => form.setValue('date', d as any)}
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-300">Expense Category *</label>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddCategoryOpen(true)}
+                      className="text-[10px] text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" /> Add New
+                    </button>
+                  </div>
+                  {categories && categories.length > 0 ? (
+                    <select
+                      {...form.register('category')}
+                      className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      <option value="">Select Category</option>
+                      {categories.map((c: any, i: number) => (
+                        <option key={c.name || i} value={c.name}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      {...form.register('category')}
+                      className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      placeholder="e.g. Office Rent, Utilities, Tea & Refreshment..."
+                    />
+                  )}
+                  {form.formState.errors.category && (
+                    <p className="text-xs text-red-400 mt-1">{form.formState.errors.category.message}</p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <DatePicker
+                      label="Expense Date"
+                      required
+                      value={form.watch('date')}
+                      onChange={(d) => form.setValue('date', d as any)}
+                    />
+                    {form.formState.errors.date && (
+                      <p className="text-xs text-red-400 mt-1">{form.formState.errors.date.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Payment Method</label>
+                    <select
+                      {...form.register('paymentMode')}
+                      className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      <option value={PaymentMode.CASH}>Cash</option>
+                      <option value={PaymentMode.BANK}>Bank Transfer</option>
+                      <option value={PaymentMode.ONLINE}>Mobile Wallet / Online</option>
+                      <option value={PaymentMode.CHEQUE}>Cheque</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Amount Spent (Rs.) *</label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    onKeyDown={onNumericKeyDown}
+                    onFocus={onNumericFocus}
+                    {...form.register('amount', { valueAsNumber: true, onBlur: onNumericBlur })}
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-mono text-rose-400 font-bold focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="e.g. 2500"
                   />
-                  {form.formState.errors.date && (
-                    <p className="text-xs text-red-400 mt-1">{form.formState.errors.date.message}</p>
+                  {form.formState.errors.amount && (
+                    <p className="text-xs text-red-400 mt-1">{form.formState.errors.amount.message}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Payment Method</label>
-                  <select
-                    {...form.register('paymentMode')}
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Description / Notes</label>
+                  <textarea
+                    rows={2}
+                    {...form.register('description')}
                     className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  >
-                    <option value={PaymentMode.CASH}>Cash</option>
-                    <option value={PaymentMode.BANK}>Bank Transfer</option>
-                    <option value={PaymentMode.ONLINE}>Mobile Wallet / Online</option>
-                    <option value={PaymentMode.CHEQUE}>Cheque</option>
-                  </select>
+                    placeholder="e.g. Monthly internet bill payment..."
+                  />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Amount Spent (Rs.) *</label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  onKeyDown={onNumericKeyDown}
-                  onFocus={onNumericFocus}
+                <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateOpen(false)}
+                    className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={createExpense.isPending}
+                    className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50"
+                  >
+                    {createExpense.isPending ? 'Saving...' : 'Record Expense'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+
+      <AddCategoryModal
+        isOpen={isAddCategoryOpen}
+        onClose={() => setIsAddCategoryOpen(false)}
+        type="expense"
+        onCategoryCreated={(cat) => {
+          form.setValue('category', cat.name);
+        }}
+      />
+
+      <ConfirmActionModal
+        isOpen={!!deletingExpenseInfo}
+        onClose={() => { setDeletingExpenseInfo(null); setDeleteError(''); }}
+        title="Delete Expense Record"
+        itemName={deletingExpenseInfo?.name}
+        actionText="Delete Record"
+        error={deleteError}
+        isProcessing={deleteExpense.isPending}
         onConfirm={async () => {
           if (!deletingExpenseInfo) return;
           setDeleteError('');
@@ -449,6 +479,88 @@ export default function ExpensesPage() {
           }
         }}
       />
+
+      {/* Long-Press Action Sheet (Mobile) */}
+      <LongPressActionSheet
+        open={!!longPressExpense}
+        onClose={() => setLongPressExpense(null)}
+        title={longPressExpense?.category || 'Expense'}
+        subtitle={longPressExpense ? `Rs. ${Number(longPressExpense.amount || 0).toLocaleString()} · ${longPressExpense.paymentMode}` : ''}
+        actions={[
+          {
+            label: 'Delete Expense',
+            icon: <Trash2 className="w-5 h-5" />,
+            onClick: () => {
+              if (longPressExpense) {
+                handleDelete(longPressExpense.id, longPressExpense.category, Number(longPressExpense.amount || 0));
+              }
+              setLongPressExpense(null);
+            },
+            variant: 'danger',
+          },
+        ]}
+      />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sub-component: Mobile Expense Card with Long-Press
+// ---------------------------------------------------------------------------
+
+interface MobileExpenseCardProps {
+  expense: any;
+  onLongPress: () => void;
+  onDelete: () => void;
+}
+
+function MobileExpenseCard({ expense: e, onLongPress, onDelete }: MobileExpenseCardProps) {
+  const longPressHandlers = useLongPress(onLongPress, { delay: 600 });
+  const amt = Number(e.amount || 0);
+
+  return (
+    <div
+      {...longPressHandlers}
+      className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col gap-3 shadow-sm select-none active:scale-[0.99] transition-transform"
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between border-b border-slate-800/60 pb-3">
+        <div className="font-semibold text-white font-mono text-sm">
+          {new Date(e.date).toLocaleDateString()}
+        </div>
+        <span className="px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 font-bold uppercase text-[10px] border border-slate-700">
+          {e.paymentMode}
+        </span>
+      </div>
+
+      {/* Body */}
+      <div className="flex justify-between items-center">
+        <div>
+          <p className="text-sm font-semibold text-slate-200 flex items-center gap-1.5">
+            <Tag className="w-3.5 h-3.5 text-rose-400" />
+            {e.category}
+          </p>
+          {e.description && (
+            <p className="text-[11px] text-slate-500 mt-0.5">{e.description}</p>
+          )}
+        </div>
+        <div className="text-right">
+          <span className="font-mono font-bold text-base text-rose-400">
+            - Rs. {amt.toLocaleString()}
+          </span>
+        </div>
+      </div>
+
+      {/* Footer: hold hint */}
+      <div className="flex justify-between items-center pt-1">
+        <span className="text-[10px] text-slate-500">Hold card for actions</span>
+        <button
+          onClick={(ev) => { ev.stopPropagation(); onDelete(); }}
+          className="px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 text-[11px] font-bold uppercase transition-all flex items-center gap-1.5"
+        >
+          <Trash2 className="w-3.5 h-3.5" /> Delete
+        </button>
+      </div>
     </div>
   );
 }

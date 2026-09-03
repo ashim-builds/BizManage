@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useLongPress } from '@/hooks/useLongPress';
+import { LongPressActionSheet } from '@/components/ui/LongPressActionSheet';
 import { partySchema, UpdatePartyInput } from '@bizmanage/validation';
 import { PartyType } from '@bizmanage/types';
 import {
@@ -78,6 +80,7 @@ export default function PartiesPage() {
     recordCount: number;
     onConfirm: (format: 'csv' | 'json') => void;
   } | null>(null);
+  const [longPressParty, setLongPressParty] = useState<any | null>(null);
 
   // Discard changes confirmation modal state
   const [discardModalConfig, setDiscardModalConfig] = useState<{
@@ -514,61 +517,15 @@ export default function PartiesPage() {
                   </Link>
                 </div>
               ) : (
-                parties.map((party) => {
-                  const isSelected = activePartyInList?.id === party.id;
-                  const rawBalance = Number(party.currentBalance || 0);
-
-                  return (
-                    <div
-                      key={party.id}
-                      onClick={() => setSelectedPartyId(party.id)}
-                      className={`px-4 py-3 flex items-center justify-between cursor-pointer transition-colors ${
-                        isSelected
-                          ? 'bg-sky-50/90 text-blue-900 font-bold border-l-4 border-blue-600'
-                          : 'hover:bg-slate-50/80 text-slate-800'
-                      }`}
-                    >
-                      <div className="min-w-0 pr-2">
-                        <span className="text-xs truncate block font-medium">
-                          {party.name}
-                        </span>
-                        {party.phone && (
-                          <span className="text-[10px] text-slate-400 font-mono block">
-                            {party.phone}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="text-right shrink-0 flex items-center gap-1.5">
-                        <span
-                          className={`text-xs font-mono font-bold ${
-                            rawBalance > 0
-                              ? 'text-emerald-600'
-                              : rawBalance < 0
-                              ? 'text-rose-600'
-                              : 'text-slate-500'
-                          }`}
-                        >
-                          {Math.abs(rawBalance).toFixed(2)}
-                        </span>
-
-                        {rawBalance > 0 ? (
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-100 text-emerald-700 border border-emerald-300/80 uppercase">
-                            In
-                          </span>
-                        ) : rawBalance < 0 ? (
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-rose-100 text-rose-700 border border-rose-300/80 uppercase">
-                            Out
-                          </span>
-                        ) : (
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-slate-100 text-slate-500">
-                            -
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
+                parties.map((party) => (
+                  <PartyRowItem
+                    key={party.id}
+                    party={party}
+                    isSelected={activePartyInList?.id === party.id}
+                    onSelect={() => setSelectedPartyId(party.id)}
+                    onLongPress={() => setLongPressParty(party)}
+                  />
+                ))
               )}
             </div>
           </div>
@@ -1129,6 +1086,129 @@ export default function PartiesPage() {
           </div>
         </div>
       )}
+      {/* Long-Press Action Sheet (Mobile) */}
+      <LongPressActionSheet
+        open={!!longPressParty}
+        onClose={() => setLongPressParty(null)}
+        title={longPressParty?.name || 'Party'}
+        subtitle={longPressParty ? `${longPressParty.type} · ${longPressParty.phone || 'No phone'}` : ''}
+        actions={[
+          {
+            label: 'View Statement & Details',
+            icon: <Receipt className="w-5 h-5" />,
+            onClick: () => {
+              if (longPressParty) {
+                setSelectedPartyId(longPressParty.id);
+              }
+              setLongPressParty(null);
+            },
+          },
+          {
+            label: 'Edit Party',
+            icon: <Edit2 className="w-5 h-5" />,
+            onClick: () => {
+              if (longPressParty) {
+                setEditingParty(longPressParty);
+              }
+              setLongPressParty(null);
+            },
+          },
+          ...(longPressParty?.phone
+            ? [
+                {
+                  label: 'Send WhatsApp Reminder',
+                  icon: <MessageSquare className="w-5 h-5 text-emerald-500" />,
+                  onClick: () => {
+                    if (longPressParty) {
+                      setSelectedPartyId(longPressParty.id);
+                      setIsWhatsAppOpen(true);
+                    }
+                    setLongPressParty(null);
+                  },
+                },
+              ]
+            : []),
+          {
+            label: 'Delete Party',
+            icon: <Trash2 className="w-5 h-5" />,
+            onClick: () => {
+              if (longPressParty) {
+                setDeletingPartyInfo({ id: longPressParty.id, name: longPressParty.name });
+              }
+              setLongPressParty(null);
+            },
+            variant: 'danger' as const,
+          },
+        ]}
+      />
     </>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Sub-component: Party Row Item with Long-Press
+// ---------------------------------------------------------------------------
+
+interface PartyRowItemProps {
+  party: any;
+  isSelected: boolean;
+  onSelect: () => void;
+  onLongPress: () => void;
+}
+
+function PartyRowItem({ party, isSelected, onSelect, onLongPress }: PartyRowItemProps) {
+  const longPressHandlers = useLongPress(onLongPress, { delay: 600 });
+  const rawBalance = Number(party.currentBalance || 0);
+
+  return (
+    <div
+      {...longPressHandlers}
+      onClick={onSelect}
+      className={`px-4 py-3 flex items-center justify-between cursor-pointer transition-colors select-none active:scale-[0.99] ${
+        isSelected
+          ? 'bg-sky-50/90 text-blue-900 font-bold border-l-4 border-blue-600'
+          : 'hover:bg-slate-50/80 text-slate-800'
+      }`}
+    >
+      <div className="min-w-0 pr-2">
+        <span className="text-xs truncate block font-medium">
+          {party.name}
+        </span>
+        {party.phone && (
+          <span className="text-[10px] text-slate-400 font-mono block">
+            {party.phone}
+          </span>
+        )}
+      </div>
+
+      <div className="text-right shrink-0 flex items-center gap-1.5">
+        <span
+          className={`text-xs font-mono font-bold ${
+            rawBalance > 0
+              ? 'text-emerald-600'
+              : rawBalance < 0
+              ? 'text-rose-600'
+              : 'text-slate-500'
+          }`}
+        >
+          {Math.abs(rawBalance).toFixed(2)}
+        </span>
+
+        {rawBalance > 0 ? (
+          <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-100 text-emerald-700 border border-emerald-300/80 uppercase">
+            In
+          </span>
+        ) : rawBalance < 0 ? (
+          <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-rose-100 text-rose-700 border border-rose-300/80 uppercase">
+            Out
+          </span>
+        ) : (
+          <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-slate-100 text-slate-500">
+            -
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+

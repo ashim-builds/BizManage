@@ -1,9 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState, useMemo } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useLongPress } from '@/hooks/useLongPress';
+import { LongPressActionSheet } from '@/components/ui/LongPressActionSheet';
 import { createSaleReturnSchema, CreateSaleReturnInput } from '@bizmanage/validation';
 import { useSaleReturns, useCreateSaleReturn, useSales } from '@/services/saleService';
 import { useParties } from '@/services/partyService';
@@ -40,10 +43,12 @@ import {
 import { PaymentMode } from '@bizmanage/types';
 
 export default function SalesReturnPage() {
+  const router = useRouter();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedSaleId, setSelectedSaleId] = useState<string>('');
   const [errorBanner, setErrorBanner] = useState<string>('');
   const [selectedAddItem, setSelectedAddItem] = useState<string>('');
+  const [longPressReturn, setLongPressReturn] = useState<any | null>(null);
 
   // Queries
   const { data: returnsData, isLoading, isError, refetch } = useSaleReturns();
@@ -299,36 +304,11 @@ export default function SalesReturnPage() {
           {/* Mobile Card Layout */}
           <div className="grid gap-4 md:hidden">
             {returnsList.map((r: any) => (
-              <div key={r.id} className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col gap-3 shadow-sm">
-                <div className="flex items-start justify-between border-b border-slate-800/60 pb-3">
-                  <div>
-                    <span className="font-bold text-white font-mono text-sm">{r.returnNumber}</span>
-                    <p className="text-[11px] text-slate-500 mt-0.5">{new Date(r.date).toLocaleDateString()}</p>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                    Credit Note
-                  </span>
-                </div>
-
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-200">{r.party?.name || 'Walk-in Customer'}</p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      {r.sale?.invoiceNumber ? `Ref: ${r.sale.invoiceNumber} • ` : ''}
-                      {r.items?.length || 0} items
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-mono font-bold text-white text-base">Rs. {Number(r.totalAmount || 0).toLocaleString()}</p>
-                  </div>
-                </div>
-
-                <div className="flex justify-end pt-1">
-                  <Link href={`/transactions/sales-return/${r.id}`} className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 text-[11px] font-bold flex items-center gap-1.5">
-                    <Eye className="w-3.5 h-3.5" /> View
-                  </Link>
-                </div>
-              </div>
+              <MobileSaleReturnCard
+                key={r.id}
+                item={r}
+                onLongPress={() => setLongPressReturn(r)}
+              />
             ))}
           </div>
 
@@ -844,6 +824,108 @@ export default function SalesReturnPage() {
           </div>
         </ModalPortal>
       )}
+      {/* Long-Press Action Sheet (Mobile) */}
+      <LongPressActionSheet
+        open={!!longPressReturn}
+        onClose={() => setLongPressReturn(null)}
+        title={longPressReturn?.returnNumber || 'Sales Return'}
+        subtitle={longPressReturn ? `${longPressReturn.party?.name || 'Walk-in'} · Rs. ${Number(longPressReturn.totalAmount || 0).toLocaleString()}` : ''}
+        actions={[
+          {
+            label: 'View Credit Note Details',
+            icon: <Eye className="w-5 h-5" />,
+            onClick: () => {
+              if (longPressReturn) {
+                router.push(`/transactions/sales-return/${longPressReturn.id}`);
+              }
+              setLongPressReturn(null);
+            },
+          },
+          ...(longPressReturn?.saleId
+            ? [
+                {
+                  label: `View Original Invoice (${longPressReturn.sale?.invoiceNumber || 'Invoice'})`,
+                  icon: <Receipt className="w-5 h-5" />,
+                  onClick: () => {
+                    if (longPressReturn?.saleId) {
+                      router.push(`/transactions/sales/${longPressReturn.saleId}`);
+                    }
+                    setLongPressReturn(null);
+                  },
+                },
+              ]
+            : []),
+          ...(longPressReturn?.partyId
+            ? [
+                {
+                  label: 'View Customer Ledger',
+                  icon: <Wallet className="w-5 h-5" />,
+                  onClick: () => {
+                    if (longPressReturn?.partyId) {
+                      router.push(`/parties/${longPressReturn.partyId}`);
+                    }
+                    setLongPressReturn(null);
+                  },
+                },
+              ]
+            : []),
+        ]}
+      />
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Sub-component: Mobile Sale Return Card with Long-Press
+// ---------------------------------------------------------------------------
+
+interface MobileSaleReturnCardProps {
+  item: any;
+  onLongPress: () => void;
+}
+
+function MobileSaleReturnCard({ item: r, onLongPress }: MobileSaleReturnCardProps) {
+  const longPressHandlers = useLongPress(onLongPress, { delay: 600 });
+
+  return (
+    <div
+      {...longPressHandlers}
+      className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col gap-3 shadow-sm select-none active:scale-[0.99] transition-transform"
+    >
+      <div className="flex items-start justify-between border-b border-slate-800/60 pb-3">
+        <div>
+          <span className="font-bold text-white font-mono text-sm">{r.returnNumber}</span>
+          <p className="text-[11px] text-slate-500 mt-0.5">{new Date(r.date).toLocaleDateString()}</p>
+        </div>
+        <span className="px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+          Credit Note
+        </span>
+      </div>
+
+      <div className="flex justify-between items-center">
+        <div>
+          <p className="text-sm font-semibold text-slate-200">{r.party?.name || 'Walk-in Customer'}</p>
+          <p className="text-[11px] text-slate-500 mt-0.5">
+            {r.sale?.invoiceNumber ? `Ref: ${r.sale.invoiceNumber} • ` : ''}
+            {r.items?.length || 0} items
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="font-mono font-bold text-white text-base">Rs. {Number(r.totalAmount || 0).toLocaleString()}</p>
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center pt-1">
+        <span className="text-[10px] text-slate-500">Hold card for actions</span>
+        <Link
+          href={`/transactions/sales-return/${r.id}`}
+          onClick={(ev) => ev.stopPropagation()}
+          className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 text-[11px] font-bold flex items-center gap-1.5"
+        >
+          <Eye className="w-3.5 h-3.5" /> View
+        </Link>
+      </div>
+    </div>
+  );
+}
+
