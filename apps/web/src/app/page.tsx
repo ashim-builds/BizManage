@@ -400,7 +400,7 @@ export default function Home() {
                 <p className="text-sm text-slate-300">Complete POS billing & inventory for retail.</p>
                 <div className="pt-2">
                   <span className="text-xs text-slate-400 line-through mr-2 font-mono">Rs. 4,999</span>
-                  <span className="text-4xl font-black text-white font-mono">Rs. 2,499</span>
+                  <h1 className="text-4xl font-black text-white font-mono">Rs. 2,499</h1>
                   <span className="text-xs text-slate-400 ml-2">/ year</span>
                   <p className="text-xs text-slate-300 font-bold mt-2">Only Rs. 208 / month</p>
                 </div>
@@ -437,7 +437,7 @@ export default function Home() {
                 <p className="text-sm text-slate-700">Multi-godown & manufacturing operations.</p>
                 <div className="pt-2">
                   <span className="text-xs text-slate-600 line-through mr-2 font-mono">Rs. 7,999</span>
-                  <span className="text-4xl font-black text-black font-mono">Rs. 3,999</span>
+                  <h1 className="text-4xl font-black text-black font-mono">Rs. 3,999</h1>
                   <span className="text-xs text-slate-600 ml-2">/ year</span>
                   <p className="text-xs text-slate-700 font-bold mt-2">Only Rs. 333 / month</p>
                 </div>

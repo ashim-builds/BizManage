@@ -186,32 +186,34 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-200 relative overflow-hidden">
-        {/* Animated background glows */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30rem] h-[30rem] bg-blue-600/10 rounded-full blur-[100px] animate-pulse"></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[20rem] h-[20rem] bg-emerald-600/10 rounded-full blur-[80px] animate-pulse" style={{ animationDelay: '0.7s' }}></div>
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center text-slate-900 relative overflow-hidden font-sans">
+        {/* Subtle decorative background gradients */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30rem] h-[30rem] bg-blue-50/80 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[20rem] h-[20rem] bg-indigo-50/60 rounded-full blur-[80px] pointer-events-none" />
 
         {/* Loading content */}
-        <div className="relative z-10 flex flex-col items-center gap-6">
+        <div className="relative z-10 flex flex-col items-center gap-5">
           <div className="relative flex items-center justify-center w-20 h-20">
             {/* Outer spinning ring */}
-            <div className="absolute inset-0 border-4 border-slate-800 rounded-full"></div>
-            <div className="absolute inset-0 border-4 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
-            {/* Inner pulsing logo icon */}
-            <Building2 className="w-8 h-8 text-blue-400 animate-pulse" />
+            <div className="absolute inset-0 border-4 border-slate-100 rounded-full shadow-inner"></div>
+            <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+            {/* Inner pulsing logo icon container */}
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100/80 flex items-center justify-center shadow-xs">
+              <Building2 className="w-6 h-6 text-blue-600 animate-pulse" />
+            </div>
           </div>
 
           <div className="text-center space-y-2">
-            <h2 className="text-xl font-bold text-white tracking-wide">
+            <h2 className="text-xl font-black text-slate-900 tracking-tight">
               Initializing BizManage
             </h2>
-            <div className="flex items-center justify-center gap-2 text-sm text-slate-400 font-medium">
+            <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-slate-500 font-medium">
               <span className="flex gap-1 items-center">
-                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
-                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
-                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
+                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
               </span>
-              Loading your workspace
+              <span>Loading your workspace</span>
             </div>
           </div>
         </div>
@@ -224,21 +226,23 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
   // If user has no businesses, show a redirect screen with fallback button
   if (!user.memberships || user.memberships.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-200 relative overflow-hidden font-sans">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30rem] h-[30rem] bg-blue-600/10 rounded-full blur-[100px] animate-pulse" />
-        <div className="relative z-10 flex flex-col items-center gap-6">
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center text-slate-900 relative overflow-hidden font-sans">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30rem] h-[30rem] bg-blue-50/80 rounded-full blur-[100px] pointer-events-none" />
+        <div className="relative z-10 flex flex-col items-center gap-5">
           <div className="relative flex items-center justify-center w-20 h-20">
-            <div className="absolute inset-0 border-4 border-slate-800 rounded-full" />
-            <div className="absolute inset-0 border-4 border-blue-500 rounded-full border-t-transparent animate-spin" />
-            <Building2 className="w-8 h-8 text-blue-400 animate-pulse" />
+            <div className="absolute inset-0 border-4 border-slate-100 rounded-full shadow-inner" />
+            <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin" />
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100/80 flex items-center justify-center shadow-xs">
+              <Building2 className="w-6 h-6 text-blue-600 animate-pulse" />
+            </div>
           </div>
           <div className="text-center space-y-2">
-            <h2 className="text-xl font-bold text-white tracking-wide">Setting up your workspace</h2>
-            <p className="text-sm text-slate-400">Redirecting to business setup...</p>
+            <h2 className="text-xl font-black text-slate-900 tracking-tight">Setting up your workspace</h2>
+            <p className="text-xs sm:text-sm text-slate-500">Redirecting to business setup...</p>
             <div className="pt-3">
               <Link
                 href="/setup-business"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-md shadow-blue-600/20 active:scale-95"
               >
                 Continue to Business Setup &rarr;
               </Link>
