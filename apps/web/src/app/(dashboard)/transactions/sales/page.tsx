@@ -276,12 +276,12 @@ export default function SalesPage() {
             Issue sales tax invoices to customers, decrease product stock, and manage customer receivables.
           </p>
         </div>
-        <button
-          onClick={() => setIsCreateOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-all shadow-lg shadow-blue-600/20"
+        <Link
+          href="/transactions/sales/new"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-all shadow-lg shadow-blue-600/20 active:scale-95"
         >
           <Plus className="w-4 h-4" /> + Create Sale Invoice
-        </button>
+        </Link>
       </div>
 
       {/* Summary Cards */}
@@ -475,16 +475,16 @@ export default function SalesPage() {
 
           {/* Desktop Table Layout */}
           <div className="hidden md:block border border-slate-800 rounded-2xl overflow-x-auto overflow-y-hidden bg-slate-900 shadow-xl">
-            <table className="w-full text-left text-xs min-w-[800px]">
+            <table className="w-full text-left text-xs min-w-[800px] border-collapse">
               <thead className="bg-slate-800/70 text-slate-400 font-semibold border-b border-slate-800">
                 <tr>
-                  <th className="px-6 py-4">Invoice No / Date</th>
-                  <th className="px-6 py-4">Customer Party</th>
-                  <th className="px-6 py-4">Items Count</th>
-                  <th className="px-6 py-4 text-right">Total Amount</th>
-                  <th className="px-6 py-4 text-right">Collected / Due</th>
-                  <th className="px-6 py-4 text-center">Status</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
+                  <th className="px-5 py-4 border-r border-slate-800">Invoice No / Date</th>
+                  <th className="px-5 py-4 border-r border-slate-800">Customer Party</th>
+                  <th className="px-4 py-4 text-center border-r border-slate-800">Items Count</th>
+                  <th className="px-5 py-4 text-right border-r border-slate-800">Total Amount</th>
+                  <th className="px-5 py-4 text-right border-r border-slate-800">Collected / Due</th>
+                  <th className="px-4 py-4 text-center border-r border-slate-800">Status</th>
+                  <th className="px-5 py-4 text-right">Actions</th>
                 </tr>
               </thead>
             <tbody className="divide-y divide-slate-800/60">
@@ -495,7 +495,7 @@ export default function SalesPage() {
 
                 return (
                   <tr key={s.id} className="hover:bg-slate-800/40 transition-colors group">
-                    <td className="px-6 py-4 font-semibold text-white">
+                    <td className="px-5 py-4 font-semibold text-white border-r border-slate-800/70">
                       <Link
                         href={`/transactions/sales/${s.id}`}
                         className="hover:text-blue-400 transition-colors flex items-center gap-2 font-mono"
@@ -507,26 +507,26 @@ export default function SalesPage() {
                       </p>
                     </td>
 
-                    <td className="px-6 py-4 text-slate-300 font-semibold">
+                    <td className="px-5 py-4 text-slate-300 font-semibold border-r border-slate-800/70">
                       {s.party?.name || 'Walk-in Customer'}
                     </td>
 
-                    <td className="px-6 py-4 text-slate-400">
+                    <td className="px-4 py-4 text-center text-slate-400 border-r border-slate-800/70">
                       <span className="px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono text-[11px]">
                         {s.items?.length || 0} items
                       </span>
                     </td>
 
-                    <td className="px-6 py-4 text-right font-mono font-bold text-white">
+                    <td className="px-5 py-4 text-right font-mono font-bold text-white border-r border-slate-800/70">
                       Rs. {total.toLocaleString()}
                     </td>
 
-                    <td className="px-6 py-4 text-right font-mono space-y-0.5">
-                      <p className="text-emerald-400 text-[11px]">Paid: Rs. {paid.toLocaleString()}</p>
-                      {due > 0 && <p className="text-amber-400 text-[11px]">Due: Rs. {due.toLocaleString()}</p>}
+                    <td className="px-5 py-4 text-right font-mono space-y-0.5 border-r border-slate-800/70">
+                      <p className="text-emerald-400 text-[11px] font-bold">Paid: Rs. {paid.toLocaleString()}</p>
+                      {due > 0 && <p className="text-amber-400 text-[11px] font-bold">Due: Rs. {due.toLocaleString()}</p>}
                     </td>
 
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-4 py-4 text-center border-r border-slate-800/70">
                       <span
                         className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                           s.status === InvoiceStatus.PAID
