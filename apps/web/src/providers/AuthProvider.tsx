@@ -88,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await api.get('/auth/me');
       if (res.data.success && res.data.data) {
         let userData: UserProfile = res.data.data;
-        userData.memberships = userData.memberships.map((m: any) => {
+        userData.memberships = (userData.memberships || []).map((m: any) => {
           if (m.business?.subscriptionPackage) {
             const pkg = m.business.subscriptionPackage;
             pkg.features = typeof pkg.features === 'string' ? JSON.parse(pkg.features) : (pkg.features || []);
