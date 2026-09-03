@@ -966,7 +966,7 @@ function InventoryPageContent() {
             {/* Floating Red Add New Item Pill Button */}
             <Link
               href="/inventory/new"
-              className="fixed bottom-20 left-1/2 -translate-x-1/2 md:hidden z-40 inline-flex items-center gap-2 px-7 py-3 rounded-full bg-[#FF0033] hover:bg-[#E6002E] text-white font-bold text-xs sm:text-sm shadow-xl shadow-red-600/30 active:scale-95 transition-all whitespace-nowrap"
+              className="fixed bottom-28 left-1/2 -translate-x-1/2 md:hidden z-40 inline-flex items-center gap-2 px-7 py-3 rounded-full bg-[#FF0033] hover:bg-[#E6002E] text-white font-bold text-xs sm:text-sm shadow-xl shadow-red-600/30 active:scale-95 transition-all whitespace-nowrap"
             >
               <Package className="w-4 h-4 stroke-[2.5]" />
               <span>Add New Item</span>
@@ -1520,7 +1520,7 @@ function InventoryPageContent() {
             {/* Floating Red Add Service Button */}
             <Link
               href="/inventory/new"
-              className="fixed bottom-20 left-1/2 -translate-x-1/2 md:hidden z-40 inline-flex items-center gap-2 px-7 py-3 rounded-full bg-[#FF0033] hover:bg-[#E6002E] text-white font-bold text-xs sm:text-sm shadow-xl shadow-red-600/30 active:scale-95 transition-all whitespace-nowrap"
+              className="fixed bottom-28 left-1/2 -translate-x-1/2 md:hidden z-40 inline-flex items-center gap-2 px-7 py-3 rounded-full bg-[#FF0033] hover:bg-[#E6002E] text-white font-bold text-xs sm:text-sm shadow-xl shadow-red-600/30 active:scale-95 transition-all whitespace-nowrap"
             >
               <Wrench className="w-4 h-4 stroke-[2.5]" />
               <span>Add New Service</span>

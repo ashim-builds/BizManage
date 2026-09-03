@@ -134,12 +134,12 @@ export function MobileBottomNav({ onQuickEntry }: MobileBottomNavProps) {
 
   return (
     <>
-      {/* 1. Mobile Bottom Bar (White Theme) */}
+      {/* 1. Mobile Bottom Bar (White Theme - Elevated for System Navigation Bar & Back Button Clearance) */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-40 lg:hidden print:hidden bg-white/95 border-t border-slate-200 backdrop-blur-md pb-safe shadow-md"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className="fixed bottom-0 left-0 right-0 z-40 lg:hidden print:hidden bg-white/95 border-t border-slate-200 backdrop-blur-md shadow-lg"
+        style={{ paddingBottom: 'max(22px, calc(env(safe-area-inset-bottom) + 14px))' }}
       >
-        <div className="flex items-center justify-around px-2 py-1.5">
+        <div className="flex items-center justify-around px-2 pt-2 pb-0.5">
           {navItems.map((item, idx) => {
             const Icon = item.icon;
             if (item.isAction) {
