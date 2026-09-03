@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createSaleSchema, CreateSaleInput } from '@bizmanage/validation';
 import { PaymentMode, PartyType } from '@bizmanage/types';
@@ -18,13 +18,11 @@ import { DatePicker } from '@/components/ui/DatePicker';
 import { SaveConfirmModal } from '@/components/common/SaveConfirmModal';
 import { DiscardConfirmModal } from '@/components/common/DiscardConfirmModal';
 import { ModalPortal } from '@/components/ui/ModalPortal';
-import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericInput';
 import { toast } from 'react-hot-toast';
 import {
   Receipt,
   Plus,
   Trash2,
-  Wallet,
   ArrowLeft,
   Building2,
   Phone,
@@ -39,6 +37,10 @@ import {
   UserPlus,
   Save,
   RotateCcw,
+  Search,
+  Package,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 export default function NewSalesInvoicePage() {
@@ -57,8 +59,13 @@ export default function NewSalesInvoicePage() {
   const [quickPartyName, setQuickPartyName] = useState('');
   const [quickPartyPhone, setQuickPartyPhone] = useState('');
 
+  // Mobile Add Item Modal
+  const [isMobileAddItemOpen, setIsMobileAddItemOpen] = useState(false);
+  const [mobileItemSearch, setMobileItemSearch] = useState('');
+
   // Optional Section Accordions
-  const [showNotes, setShowNotes] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [termsText, setTermsText] = useState('1. Goods once sold will not be taken back.\n2. Payment is due within agreed credit period.');
   const [notesText, setNotesText] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
 
@@ -96,12 +103,12 @@ export default function NewSalesInvoicePage() {
     name: 'items',
   });
 
-  // Watch Form Fields for Live Calculations
-  const watchItems = form.watch('items');
-  const isVatBill = form.watch('isVatBill');
-  const selectedPartyId = form.watch('partyId');
-  const selectedPaymentMode = form.watch('paymentMode');
-  const paidAmount = form.watch('paidAmount') || 0;
+  // Watch Form Fields Reactively using useWatch
+  const watchItems = useWatch({ control: form.control, name: 'items' });
+  const isVatBill = useWatch({ control: form.control, name: 'isVatBill' });
+  const selectedPartyId = useWatch({ control: form.control, name: 'partyId' });
+  const selectedPaymentMode = useWatch({ control: form.control, name: 'paymentMode' });
+  const paidAmount = useWatch({ control: form.control, name: 'paidAmount' }) ?? 0;
 
   // Selected customer object
   const selectedCustomer = useMemo(() => {
@@ -119,25 +126,22 @@ export default function NewSalesInvoicePage() {
 
   // Live Totals Computation
   const totals = useMemo(() => {
-    return calculateInvoiceTotals(
-      (watchItems || []).map((item) => {
-        return {
-          quantity: item.quantity || 0,
-          unitPrice: item.unitPrice || 0,
-          discountPercent: item.discountPercent || item.discount || 0,
-        };
-      }),
-      Boolean(isVatBill)
-    );
+    const rawItems = (watchItems || []).map((item) => ({
+      quantity: Number(item?.quantity) || 0,
+      unitPrice: Number(item?.unitPrice) || 0,
+      discountPercent: Number(item?.discountPercent) || Number(item?.discount) || 0,
+    }));
+
+    return calculateInvoiceTotals(rawItems, Boolean(isVatBill));
   }, [watchItems, isVatBill]);
 
-  // Automatically update paidAmount when switching between Cash and Credit mode
+  // Sync paidAmount when switching between Cash and Credit mode or when totals change in Cash mode
   useEffect(() => {
     if (saleMode === 'CASH') {
-      form.setValue('paidAmount', totals.totalAmount);
+      form.setValue('paidAmount', totals.totalAmount, { shouldValidate: true, shouldDirty: true });
     } else {
       if (paidAmount === totals.totalAmount && totals.totalAmount > 0) {
-        form.setValue('paidAmount', 0);
+        form.setValue('paidAmount', 0, { shouldValidate: true, shouldDirty: true });
       }
     }
   }, [saleMode, totals.totalAmount]);
@@ -153,14 +157,38 @@ export default function NewSalesInvoicePage() {
     return accounts.filter((a: any) => a.type === 'CASH');
   }, [accounts, selectedPaymentMode]);
 
-  // Item select handler
-  const handleItemSelect = (index: number, itemId: string) => {
+  // Item select handler for desktop & mobile
+  const handleItemSelect = useCallback((index: number, itemId: string) => {
     const selected = availableItems.find((i: any) => i.id === itemId);
     if (!selected) return;
-    form.setValue(`items.${index}.unitPrice`, Number(selected.salePrice || 0));
-    form.setValue(`items.${index}.quantity`, 1);
-    form.setValue(`items.${index}.discount`, 0);
-    form.setValue(`items.${index}.discountPercent`, 0);
+    form.setValue(`items.${index}.itemId`, itemId, { shouldValidate: true, shouldDirty: true });
+    form.setValue(`items.${index}.unitPrice`, Number(selected.salePrice || 0), { shouldValidate: true, shouldDirty: true });
+    form.setValue(`items.${index}.quantity`, 1, { shouldValidate: true, shouldDirty: true });
+    form.setValue(`items.${index}.discount`, 0, { shouldValidate: true, shouldDirty: true });
+    form.setValue(`items.${index}.discountPercent`, 0, { shouldValidate: true, shouldDirty: true });
+  }, [availableItems, form]);
+
+  // Add Item From Mobile Modal
+  const handleAddMobileItem = (item: any) => {
+    // If the first item is empty, replace it; otherwise append
+    const firstItem = form.getValues('items.0');
+    if (fields.length === 1 && (!firstItem || !firstItem.itemId)) {
+      form.setValue('items.0.itemId', item.id, { shouldValidate: true, shouldDirty: true });
+      form.setValue('items.0.unitPrice', Number(item.salePrice || 0), { shouldValidate: true, shouldDirty: true });
+      form.setValue('items.0.quantity', 1, { shouldValidate: true, shouldDirty: true });
+      form.setValue('items.0.discountPercent', 0, { shouldValidate: true, shouldDirty: true });
+    } else {
+      append({
+        itemId: item.id,
+        quantity: 1,
+        unitPrice: Number(item.salePrice || 0),
+        discountPercent: 0,
+        discount: 0,
+        taxAmount: 0,
+      });
+    }
+    setIsMobileAddItemOpen(false);
+    toast.success(`Added ${item.name}`);
   };
 
   // Form Submit Interceptor for Save Confirmation
@@ -170,7 +198,14 @@ export default function NewSalesInvoicePage() {
       return;
     }
 
-    setPendingFormData(data);
+    // Filter valid items
+    const validItems = (data.items || []).filter((it) => it.itemId);
+    if (validItems.length === 0) {
+      toast.error('Please add at least one product item to the invoice.');
+      return;
+    }
+
+    setPendingFormData({ ...data, items: validItems });
     setIsSaveConfirmOpen(true);
   };
 
@@ -199,7 +234,7 @@ export default function NewSalesInvoicePage() {
         openingBalanceType: 'RECEIVABLE',
       });
       if (created && created.id) {
-        form.setValue('partyId', created.id);
+        form.setValue('partyId', created.id, { shouldValidate: true, shouldDirty: true });
         setCustomerPhone(created.phone || '');
       }
       setIsQuickAddPartyOpen(false);
@@ -214,148 +249,260 @@ export default function NewSalesInvoicePage() {
   // Compute Balance Due
   const balanceDue = Math.max(0, totals.totalAmount - (Number(paidAmount) || 0));
 
+  // Filter items for mobile item modal
+  const filteredMobileItems = useMemo(() => {
+    if (!mobileItemSearch.trim()) return availableItems;
+    const q = mobileItemSearch.toLowerCase();
+    return availableItems.filter(
+      (it: any) =>
+        it.name.toLowerCase().includes(q) ||
+        (it.code && it.code.toLowerCase().includes(q))
+    );
+  }, [availableItems, mobileItemSearch]);
+
   return (
-    <div className="bg-[#F8FAFC] text-slate-900 font-sans -m-4 sm:-m-6 lg:-m-8 p-3 sm:p-4 space-y-3">
-      {/* TOP HEADER & TOGGLE BAR */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow-xs">
-        <div className="flex items-center gap-2.5">
+    <div className="bg-[#F8FAFC] text-slate-900 font-sans -m-4 sm:-m-6 lg:-m-8 p-3 sm:p-4 pb-28 md:pb-4 space-y-3">
+      
+      {/* 1. TOP HEADER & CREDIT / CASH PILL */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl px-3.5 py-2.5 flex items-center justify-between shadow-xs">
+        <div className="flex items-center gap-2">
           <Link
             href="/transactions/sales"
-            className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-all"
-            title="Back to Sales"
+            className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all"
+            title="Back"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600 border border-blue-100">
-              <Receipt className="w-4 h-4" />
-            </div>
-            <h1 className="text-sm sm:text-base font-black text-slate-900 tracking-tight">
-              New Sales Invoice
-            </h1>
-            <span className="hidden sm:inline-block px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200 font-mono">
+          <div className="flex items-center gap-1.5">
+            <h1 className="text-base font-black text-slate-900 tracking-tight">Sale</h1>
+            <span className="hidden sm:inline-block px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 font-mono">
               Auto #
             </span>
           </div>
         </div>
 
-        {/* CASH VS CREDIT TOGGLE */}
+        {/* CREDIT / CASH TOGGLE */}
         <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
           <button
             type="button"
             onClick={() => {
               setSaleMode('CREDIT');
-              form.setValue('paidAmount', 0);
+              form.setValue('paidAmount', 0, { shouldValidate: true, shouldDirty: true });
             }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1 ${
               saleMode === 'CREDIT'
-                ? 'bg-amber-500 text-white shadow-xs'
+                ? 'bg-emerald-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 font-bold'
             }`}
           >
-            <CreditCard className="w-3.5 h-3.5" />
-            Credit (उधारो)
+            <CreditCard className="w-3 h-3" /> Credit
           </button>
           <button
             type="button"
             onClick={() => {
               setSaleMode('CASH');
-              form.setValue('paidAmount', totals.totalAmount);
+              form.setValue('paidAmount', totals.totalAmount, { shouldValidate: true, shouldDirty: true });
             }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1 ${
               saleMode === 'CASH'
-                ? 'bg-emerald-600 text-white shadow-xs'
+                ? 'bg-slate-800 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 font-bold'
             }`}
           >
-            <Banknote className="w-3.5 h-3.5" />
-            Cash (नगद)
+            <Banknote className="w-3 h-3" /> Cash
           </button>
         </div>
       </div>
 
       <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-3">
-        {/* COMPACT ROW 1: CUSTOMER & METADATA */}
-        <div className="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 items-end">
-            
-            {/* Customer Party */}
-            <div className="md:col-span-4 space-y-1">
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
-                  <Building2 className="w-3 h-3 text-blue-600" />
-                  {saleMode === 'CREDIT' ? 'Customer Party *' : 'Customer Party'}
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setIsQuickAddPartyOpen(true)}
-                  className="text-[10px] text-blue-600 hover:text-blue-700 font-bold flex items-center gap-0.5 hover:underline"
-                >
-                  <Plus className="w-2.5 h-2.5" /> Quick Add
-                </button>
-              </div>
-
-              <select
-                {...form.register('partyId')}
-                className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-xs"
-              >
-                <option value="">
-                  {saleMode === 'CREDIT' ? '-- Select Customer (Required) --' : 'Cash / Walk-in Customer'}
-                </option>
-                {customers.map((c: any) => {
-                  const balLabel = getPartyBalanceDisplay(c.currentBalance, 'CUSTOMER');
-                  return (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({balLabel})
-                    </option>
-                  );
-                })}
-              </select>
+        
+        {/* 2. INVOICE META & CUSTOMER */}
+        <div className="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-3">
+          
+          {/* Top Meta Row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pb-2 border-b border-slate-100 text-xs">
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase">Invoice No.</span>
+              <p className="font-bold text-slate-800 font-mono mt-0.5">Auto #</p>
             </div>
-
-            {/* Phone */}
-            <div className="md:col-span-3 space-y-1">
-              <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
-                <Phone className="w-3 h-3 text-slate-400" /> Phone Number
-              </label>
-              <input
-                type="text"
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                placeholder="e.g. 98XXXXXXXX"
-                className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-xs"
-              />
-            </div>
-
-            {/* Date */}
-            <div className="md:col-span-3 space-y-1">
+            <div>
               <DatePicker
-                label="Invoice Date"
+                label="Date"
                 required
                 value={form.watch('date')}
-                onChange={(dateStr) => form.setValue('date', dateStr)}
+                onChange={(dateStr) => form.setValue('date', dateStr, { shouldValidate: true, shouldDirty: true })}
               />
             </div>
-
-            {/* Bill Type */}
-            <div className="md:col-span-2 space-y-1">
-              <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
-                <Percent className="w-3 h-3 text-emerald-600" /> Tax Type
-              </label>
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Tax Type</label>
               <select
                 value={isVatBill ? 'VAT' : 'NORMAL'}
-                onChange={(e) => form.setValue('isVatBill', e.target.value === 'VAT')}
-                className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-xs"
+                onChange={(e) => form.setValue('isVatBill', e.target.value === 'VAT', { shouldValidate: true, shouldDirty: true })}
+                className="w-full px-2.5 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 <option value="NORMAL">Normal Bill</option>
                 <option value="VAT">VAT 13%</option>
               </select>
             </div>
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Customer Phone</label>
+              <input
+                type="text"
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+                placeholder="e.g. 98XXXXXXXX"
+                className="w-full px-2.5 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Customer Selector Card */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                <Building2 className="w-3.5 h-3.5 text-blue-600" />
+                {saleMode === 'CREDIT' ? 'Customer *' : 'Customer (Optional for Cash)'}
+              </label>
+              <button
+                type="button"
+                onClick={() => setIsQuickAddPartyOpen(true)}
+                className="text-[11px] text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1 hover:underline"
+              >
+                <Plus className="w-3 h-3" /> Add Customer
+              </button>
+            </div>
+
+            <select
+              {...form.register('partyId')}
+              className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
+            >
+              <option value="">
+                {saleMode === 'CREDIT' ? '-- Select Customer (Required for Credit) --' : 'Cash / Walk-in Customer'}
+              </option>
+              {customers.map((c: any) => {
+                const balLabel = getPartyBalanceDisplay(c.currentBalance, 'CUSTOMER');
+                return (
+                  <option key={c.id} value={c.id}>
+                    {c.name} ({balLabel})
+                  </option>
+                );
+              })}
+            </select>
           </div>
         </div>
 
-        {/* COMPACT ROW 2: LINE ITEMS TABLE */}
-        <div className="rounded-2xl bg-white border border-slate-200/90 shadow-xs overflow-hidden">
+        {/* 3. ITEMS SECTION (RESPONSIVE: MOBILE CARDS + DESKTOP SPREADSHEET TABLE) */}
+        
+        {/* MOBILE VIEW (< md) */}
+        <div className="md:hidden space-y-2.5">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+              Items ({fields.length})
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsMobileAddItemOpen(true)}
+              className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs flex items-center gap-1"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add Items
+            </button>
+          </div>
+
+          {fields.map((field, idx) => {
+            const selectedItemId = form.watch(`items.${idx}.itemId`);
+            const selectedItem = availableItems.find((i: any) => i.id === selectedItemId);
+            const lineQty = Number(form.watch(`items.${idx}.quantity`)) || 0;
+            const linePrice = Number(form.watch(`items.${idx}.unitPrice`)) || 0;
+            const lineDisc = Number(form.watch(`items.${idx}.discountPercent`)) || 0;
+            const itemLineTotal = totals.items[idx]?.total ?? (lineQty * linePrice * (1 - lineDisc / 100));
+
+            return (
+              <div key={field.id} className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1">
+                    <p className="font-bold text-slate-900 text-xs">
+                      {selectedItem?.name || `Item #${idx + 1} (Tap to select)`}
+                    </p>
+                    {selectedItem?.code && (
+                      <span className="text-[10px] font-mono text-slate-400">SKU: {selectedItem.code}</span>
+                    )}
+                  </div>
+                  {fields.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => remove(idx)}
+                      className="p-1 text-slate-400 hover:text-rose-600"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                {!selectedItemId && (
+                  <ItemSearchSelect
+                    items={availableItems}
+                    value={selectedItemId || ''}
+                    onChange={(id) => handleItemSelect(idx, id)}
+                    placeholder="Search or select product…"
+                  />
+                )}
+
+                <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-100 text-xs items-center">
+                  {/* Qty */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 mb-0.5">Quantity</label>
+                    <div className="flex items-center border border-slate-300 rounded-lg p-0.5 bg-slate-50">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (lineQty > 1) form.setValue(`items.${idx}.quantity`, lineQty - 1, { shouldValidate: true, shouldDirty: true });
+                        }}
+                        className="p-1 text-slate-600 hover:bg-slate-200 rounded"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <input
+                        type="number"
+                        min="1"
+                        {...form.register(`items.${idx}.quantity`, { valueAsNumber: true })}
+                        className="w-full text-center bg-transparent font-bold text-xs focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => form.setValue(`items.${idx}.quantity`, lineQty + 1, { shouldValidate: true, shouldDirty: true })}
+                        className="p-1 text-slate-600 hover:bg-slate-200 rounded"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Rate */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 mb-0.5">Rate (Rs.)</label>
+                    <input
+                      type="number"
+                      step="any"
+                      {...form.register(`items.${idx}.unitPrice`, { valueAsNumber: true })}
+                      className="w-full px-2 py-1.5 rounded-lg border border-slate-300 text-right font-mono font-bold text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {/* Line Total */}
+                  <div className="text-right">
+                    <label className="block text-[10px] font-bold text-slate-400 mb-0.5">Amount</label>
+                    <p className="font-mono font-black text-slate-900 text-xs">
+                      Rs. {formatCurrency(itemLineTotal)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* DESKTOP VIEW (>= md) */}
+        <div className="hidden md:block rounded-2xl bg-white border border-slate-200/90 shadow-xs overflow-visible">
           <div className="p-2.5 px-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
             <div className="flex items-center gap-2">
               <span className="text-xs font-black text-slate-800 tracking-wide uppercase">
@@ -363,7 +510,7 @@ export default function NewSalesInvoicePage() {
               </span>
               {isVatBill && (
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                  VAT 13%
+                  VAT 13% Applied
                 </span>
               )}
             </div>
@@ -373,330 +520,319 @@ export default function NewSalesInvoicePage() {
               onClick={() => append({ itemId: '', quantity: 1, unitPrice: 0, discountPercent: 0, discount: 0, taxAmount: 0 })}
               className="flex items-center gap-1 px-3 py-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs active:scale-95"
             >
-              <Plus className="w-3 h-3" /> Add Item
+              <Plus className="w-3 h-3" /> Add Row
             </button>
           </div>
 
-          <div className="overflow-x-auto max-h-[300px]">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead className="sticky top-0 z-10 bg-slate-100 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider text-[10px]">
-                <tr>
-                  <th className="py-2 px-2.5 text-center w-10 border-r border-slate-200">#</th>
-                  <th className="py-2 px-3 min-w-[240px] border-r border-slate-200">Product / Item</th>
-                  <th className="py-2 px-2.5 text-center w-28 border-r border-slate-200">Quantity</th>
-                  <th className="py-2 px-2.5 text-center w-16 border-r border-slate-200">Unit</th>
-                  <th className="py-2 px-2.5 text-right w-36 border-r border-slate-200">Rate (Rs.)</th>
-                  <th className="py-2 px-2 text-center w-24 border-r border-slate-200">Disc (%)</th>
-                  {isVatBill && <th className="py-2 px-2.5 text-right w-24 border-r border-slate-200">VAT (13%)</th>}
-                  <th className="py-2 px-3 text-right w-32 border-r border-slate-200">Amount (Rs.)</th>
-                  <th className="py-2 px-2 text-center w-10"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {fields.map((field, idx) => {
-                  const selectedItemId = form.watch(`items.${idx}.itemId`);
-                  const selectedItem = availableItems.find((i: any) => i.id === selectedItemId);
+          <table className="w-full text-left border-collapse text-xs">
+            <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider text-[10px]">
+              <tr>
+                <th className="py-2.5 px-2.5 text-center w-10 border-r border-slate-200">#</th>
+                <th className="py-2.5 px-3 min-w-[260px] border-r border-slate-200">Product / Item</th>
+                <th className="py-2.5 px-2.5 text-center w-28 border-r border-slate-200">Quantity</th>
+                <th className="py-2.5 px-2.5 text-center w-16 border-r border-slate-200">Unit</th>
+                <th className="py-2.5 px-2.5 text-right w-36 border-r border-slate-200">Rate (Rs.)</th>
+                <th className="py-2.5 px-2 text-center w-24 border-r border-slate-200">Disc (%)</th>
+                {isVatBill && <th className="py-2.5 px-2.5 text-right w-24 border-r border-slate-200">VAT (13%)</th>}
+                <th className="py-2.5 px-3 text-right w-32 border-r border-slate-200">Amount (Rs.)</th>
+                <th className="py-2.5 px-2 text-center w-10"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {fields.map((field, idx) => {
+                const selectedItemId = form.watch(`items.${idx}.itemId`);
+                const selectedItem = availableItems.find((i: any) => i.id === selectedItemId);
 
-                  const lineQty = form.watch(`items.${idx}.quantity`) || 0;
-                  const linePrice = form.watch(`items.${idx}.unitPrice`) || 0;
-                  const lineDiscount = form.watch(`items.${idx}.discountPercent`) || form.watch(`items.${idx}.discount`) || 0;
-                  const computedItemTotal = totals.items[idx]?.total ?? (lineQty * linePrice * (1 - lineDiscount / 100));
+                const lineQty = Number(form.watch(`items.${idx}.quantity`)) || 0;
+                const linePrice = Number(form.watch(`items.${idx}.unitPrice`)) || 0;
+                const lineDiscount = Number(form.watch(`items.${idx}.discountPercent`)) || 0;
+                const computedItemTotal = totals.items[idx]?.total ?? (lineQty * linePrice * (1 - lineDiscount / 100));
 
-                  const curStock = Number(selectedItem?.currentStock || 0);
-                  const isProduct = selectedItem?.type === 'PRODUCT';
-                  const isOutOfStock = isProduct && curStock <= 0;
+                return (
+                  <tr key={field.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-2 px-2 text-center font-mono text-slate-400 font-bold border-r border-slate-200">
+                      {idx + 1}
+                    </td>
 
-                  return (
-                    <tr
-                      key={field.id}
-                      className={`hover:bg-slate-50/80 transition-colors ${
-                        isOutOfStock ? 'bg-rose-50/50' : ''
-                      }`}
-                    >
-                      <td className="py-2 px-2 text-center font-mono text-slate-400 font-bold border-r border-slate-200">
-                        {idx + 1}
-                      </td>
+                    {/* Item Selector */}
+                    <td className="py-1.5 px-2.5 border-r border-slate-200">
+                      <ItemSearchSelect
+                        items={availableItems}
+                        value={selectedItemId || ''}
+                        onChange={(id) => handleItemSelect(idx, id)}
+                        placeholder="Select product…"
+                        priceField="salePrice"
+                      />
+                    </td>
 
-                      {/* Item Selector */}
-                      <td className="py-1.5 px-2.5 border-r border-slate-200">
-                        <ItemSearchSelect
-                          items={availableItems}
-                          value={selectedItemId || ''}
-                          onChange={(id) => {
-                            form.setValue(`items.${idx}.itemId`, id);
-                            handleItemSelect(idx, id);
+                    {/* Quantity */}
+                    <td className="py-1.5 px-2 text-center border-r border-slate-200">
+                      <div className="inline-flex items-center gap-0.5 bg-slate-50 border border-slate-300 rounded-lg p-0.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (lineQty > 1) form.setValue(`items.${idx}.quantity`, lineQty - 1, { shouldValidate: true, shouldDirty: true });
                           }}
-                          placeholder="Select product…"
-                          priceField="salePrice"
-                        />
-                      </td>
-
-                      {/* Quantity */}
-                      <td className="py-1.5 px-2 text-center border-r border-slate-200">
-                        <div className="inline-flex items-center gap-0.5 bg-slate-50 border border-slate-300 rounded-lg p-0.5">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (lineQty > 1) form.setValue(`items.${idx}.quantity`, lineQty - 1);
-                            }}
-                            className="p-1 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-200"
-                          >
-                            <Minus className="w-2.5 h-2.5" />
-                          </button>
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            onKeyDown={onNumericKeyDown}
-                            onFocus={onNumericFocus}
-                            {...form.register(`items.${idx}.quantity`, { valueAsNumber: true, onBlur: onNumericBlur })}
-                            className="w-10 text-center bg-transparent text-slate-900 font-mono text-xs font-bold focus:outline-none"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => form.setValue(`items.${idx}.quantity`, lineQty + 1)}
-                            className="p-1 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-200"
-                          >
-                            <Plus className="w-2.5 h-2.5" />
-                          </button>
-                        </div>
-                      </td>
-
-                      {/* Unit */}
-                      <td className="py-1.5 px-2 text-center font-semibold text-slate-600 border-r border-slate-200">
-                        {selectedItem?.unit || 'Pcs'}
-                      </td>
-
-                      {/* Price / Unit */}
-                      <td className="py-1.5 px-2 border-r border-slate-200">
+                          className="p-1 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-200"
+                        >
+                          <Minus className="w-2.5 h-2.5" />
+                        </button>
                         <input
-                          type="text"
-                          inputMode="decimal"
-                          onKeyDown={onNumericKeyDown}
-                          onFocus={onNumericFocus}
-                          {...form.register(`items.${idx}.unitPrice`, { valueAsNumber: true, onBlur: onNumericBlur })}
-                          className="w-full px-2.5 py-1 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono text-xs text-right font-bold focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-xs"
+                          type="number"
+                          min="1"
+                          {...form.register(`items.${idx}.quantity`, { valueAsNumber: true })}
+                          className="w-10 text-center bg-transparent text-slate-900 font-mono text-xs font-bold focus:outline-none"
                         />
-                      </td>
+                        <button
+                          type="button"
+                          onClick={() => form.setValue(`items.${idx}.quantity`, lineQty + 1, { shouldValidate: true, shouldDirty: true })}
+                          className="p-1 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-200"
+                        >
+                          <Plus className="w-2.5 h-2.5" />
+                        </button>
+                      </div>
+                    </td>
 
-                      {/* Discount % */}
-                      <td className="py-1.5 px-2 border-r border-slate-200">
-                        <div className="relative">
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            onKeyDown={onNumericKeyDown}
-                            onFocus={onNumericFocus}
-                            {...form.register(`items.${idx}.discountPercent`, { valueAsNumber: true, onBlur: onNumericBlur })}
-                            className="w-full pr-4 pl-1.5 py-1 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono text-xs text-center font-bold focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-xs"
-                          />
-                          <span className="absolute right-1.5 top-1 text-slate-400 text-[9px]">%</span>
-                        </div>
-                      </td>
+                    {/* Unit */}
+                    <td className="py-1.5 px-2 text-center font-semibold text-slate-600 border-r border-slate-200">
+                      {selectedItem?.unit || 'Pcs'}
+                    </td>
 
-                      {/* Tax Amount */}
-                      {isVatBill && (
-                        <td className="py-1.5 px-2.5 text-right font-mono font-bold text-slate-700 border-r border-slate-200">
-                          Rs. {formatCurrency(totals.items[idx]?.taxAmount || 0)}
-                        </td>
+                    {/* Price / Unit */}
+                    <td className="py-1.5 px-2 border-r border-slate-200">
+                      <input
+                        type="number"
+                        step="any"
+                        {...form.register(`items.${idx}.unitPrice`, { valueAsNumber: true })}
+                        className="w-full px-2.5 py-1 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono text-xs text-right font-bold focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-xs"
+                      />
+                    </td>
+
+                    {/* Discount % */}
+                    <td className="py-1.5 px-2 border-r border-slate-200">
+                      <div className="relative">
+                        <input
+                          type="number"
+                          step="any"
+                          {...form.register(`items.${idx}.discountPercent`, { valueAsNumber: true })}
+                          className="w-full pr-4 pl-1.5 py-1 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono text-xs text-center font-bold focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-xs"
+                        />
+                        <span className="absolute right-1.5 top-1 text-slate-400 text-[9px]">%</span>
+                      </div>
+                    </td>
+
+                    {/* Tax Amount */}
+                    {isVatBill && (
+                      <td className="py-1.5 px-2.5 text-right font-mono font-bold text-slate-700 border-r border-slate-200">
+                        Rs. {formatCurrency(totals.items[idx]?.taxAmount || 0)}
+                      </td>
+                    )}
+
+                    {/* Line Total */}
+                    <td className="py-1.5 px-3 text-right font-mono font-black text-slate-900 text-xs border-r border-slate-200">
+                      Rs. {formatCurrency(computedItemTotal)}
+                    </td>
+
+                    {/* Actions */}
+                    <td className="py-1.5 px-1.5 text-center">
+                      {fields.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => remove(idx)}
+                          className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                          title="Remove item"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
 
-                      {/* Line Total */}
-                      <td className="py-1.5 px-3 text-right font-mono font-black text-slate-900 text-xs border-r border-slate-200">
-                        Rs. {formatCurrency(computedItemTotal)}
-                      </td>
+        {/* 4. TOTALS, PAYMENT & DETAILS (MATCHING VYAPAR WORKFLOW) */}
+        <div className="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-3">
+          
+          {/* Totals Summary Row */}
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between items-center text-slate-600 font-semibold border-b border-dashed border-slate-200 pb-1.5">
+              <span>Total Amount</span>
+              <span className="font-mono font-bold text-slate-900 text-sm">
+                Rs. {formatCurrency(totals.totalAmount)}
+              </span>
+            </div>
 
-                      {/* Actions */}
-                      <td className="py-1.5 px-1.5 text-center">
-                        {fields.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => remove(idx)}
-                            className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50"
-                            title="Remove item"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="flex justify-between items-center text-slate-600 font-semibold border-b border-dashed border-slate-200 pb-1.5">
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Received
+              </span>
+              <div className="flex items-center gap-1">
+                <span className="text-slate-400 font-mono">Rs.</span>
+                <input
+                  type="number"
+                  step="any"
+                  {...form.register('paidAmount', { valueAsNumber: true })}
+                  className="w-28 px-2 py-0.5 text-right font-mono font-black text-xs rounded border border-slate-300 text-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center font-bold">
+              <span className={balanceDue > 0 ? 'text-amber-700' : 'text-emerald-700'}>
+                Balance Due
+              </span>
+              <span className={`font-mono font-black text-sm ${balanceDue > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>
+                Rs. {formatCurrency(balanceDue)}
+              </span>
+            </div>
+          </div>
+
+          {/* Payment Mode Selector */}
+          <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-slate-500">Payment Type:</span>
+              <select
+                {...form.register('paymentMode')}
+                className="px-2.5 py-1 rounded-lg border border-slate-300 text-slate-900 font-bold bg-white text-xs focus:outline-none"
+              >
+                <option value={PaymentMode.CASH}>Cash (नगद)</option>
+                <option value={PaymentMode.BANK}>Bank</option>
+                <option value={PaymentMode.ONLINE}>eSewa / Wallet</option>
+                <option value={PaymentMode.CHEQUE}>Cheque</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-slate-500">Account:</span>
+              <select
+                {...form.register('accountId')}
+                className="px-2.5 py-1 rounded-lg border border-slate-300 text-slate-900 font-semibold bg-white text-xs focus:outline-none"
+              >
+                <option value="">Default Account</option>
+                {filteredAccounts.map((a: any) => (
+                  <option key={a.id} value={a.id}>
+                    {a.bankName || a.accountName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Description & Remarks */}
+          <div className="pt-2 border-t border-slate-100">
+            <input
+              type="text"
+              value={notesText}
+              onChange={(e) => setNotesText(e.target.value)}
+              placeholder="Description / Remarks (Optional)..."
+              className="w-full px-3 py-1.5 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Collapsible Terms & Conditions */}
+          <div className="pt-2 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => setShowTerms(!showTerms)}
+              className="w-full flex items-center justify-between text-xs font-bold text-slate-700"
+            >
+              <span className="flex items-center gap-1">
+                <FileText className="w-3.5 h-3.5 text-slate-400" /> Terms & Conditions
+              </span>
+              {showTerms ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+            {showTerms && (
+              <textarea
+                rows={2}
+                value={termsText}
+                onChange={(e) => setTermsText(e.target.value)}
+                className="w-full mt-2 px-3 py-1.5 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none font-sans"
+              />
+            )}
           </div>
         </div>
 
-        {/* COMPACT ROW 3: UNIFIED PAYMENT, SUMMARY & ACTIONS */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-stretch">
-          
-          {/* LEFT: PAYMENT DETAILS */}
-          <div className="md:col-span-7 p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between space-y-3">
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                  <Wallet className="w-3.5 h-3.5 text-emerald-600" /> Payment & Settlement
-                </span>
-                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
-                  saleMode === 'CREDIT'
-                    ? 'bg-amber-50 text-amber-700 border-amber-200'
-                    : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                }`}>
-                  {saleMode === 'CREDIT' ? 'Credit Sale' : 'Cash Sale'}
-                </span>
-              </div>
+        {/* 5. ACTION BUTTONS (MOBILE STICKY & DESKTOP EMBEDDED) */}
+        <div className="fixed md:static bottom-0 left-0 right-0 z-40 bg-white md:bg-transparent border-t md:border-t-0 border-slate-200 p-3 px-4 shadow-lg md:shadow-none flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => setIsDiscardConfirmOpen(true)}
+            className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 text-xs font-bold transition-all flex items-center gap-1"
+          >
+            <RotateCcw className="w-3.5 h-3.5" /> Discard
+          </button>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-0.5">
-                    Received (Rs.)
-                  </label>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    onKeyDown={onNumericKeyDown}
-                    onFocus={onNumericFocus}
-                    {...form.register('paidAmount', { valueAsNumber: true, onBlur: onNumericBlur })}
-                    className="w-full px-2.5 py-1.5 rounded-xl bg-white border border-slate-300 text-emerald-600 font-mono font-black text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Mode</label>
-                  <select
-                    {...form.register('paymentMode')}
-                    className="w-full px-2.5 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-xs"
-                  >
-                    <option value={PaymentMode.CASH}>Cash (नगद)</option>
-                    <option value={PaymentMode.BANK}>Bank Transfer</option>
-                    <option value={PaymentMode.ONLINE}>Mobile Wallet / eSewa</option>
-                    <option value={PaymentMode.CHEQUE}>Cheque</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Deposit Account</label>
-                  <select
-                    {...form.register('accountId')}
-                    className="w-full px-2.5 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-xs"
-                  >
-                    <option value="">Default Account</option>
-                    {filteredAccounts.map((a: any) => (
-                      <option key={a.id} value={a.id}>
-                        {a.bankName || a.accountName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {saleMode === 'CREDIT' ? (
-                <div className="p-2 px-3 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between text-xs">
-                  <span className="text-amber-800 font-bold text-[11px] flex items-center gap-1.5">
-                    <AlertCircle className="w-3.5 h-3.5 text-amber-600" /> Customer Receivable:
-                  </span>
-                  <span className="font-mono font-black text-amber-700">
-                    Rs. {formatCurrency(balanceDue)}
-                  </span>
-                </div>
-              ) : (
-                <div className="p-2 px-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between text-xs">
-                  <span className="text-emerald-800 font-bold text-[11px] flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Settled in Cash:
-                  </span>
-                  <span className="font-mono font-black text-emerald-700">
-                    Paid Rs. {formatCurrency(paidAmount || 0)}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Optional Notes Toggle */}
-            <div>
-              {showNotes ? (
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Private Notes</label>
-                    <button
-                      type="button"
-                      onClick={() => setShowNotes(false)}
-                      className="text-[10px] text-slate-400 hover:text-slate-600"
-                    >
-                      Hide
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    value={notesText}
-                    onChange={(e) => setNotesText(e.target.value)}
-                    placeholder="Enter transport/remarks..."
-                    className="w-full px-2.5 py-1 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-900 focus:outline-none"
-                  />
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setShowNotes(true)}
-                  className="text-[11px] text-slate-500 hover:text-slate-800 font-semibold flex items-center gap-1"
-                >
-                  <FileText className="w-3 h-3" /> + Add Remarks / Notes
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* RIGHT: GRAND TOTAL & ACTION BUTTONS */}
-          <div className="md:col-span-5 p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between space-y-3">
-            <div className="space-y-1.5 text-xs">
-              <div className="flex justify-between text-slate-600 font-medium text-[11px]">
-                <span>Subtotal ({fields.length} items)</span>
-                <span className="font-mono text-slate-900 font-bold">Rs. {formatCurrency(totals.subTotal)}</span>
-              </div>
-
-              {totals.discount > 0 && (
-                <div className="flex justify-between text-emerald-600 font-semibold text-[11px]">
-                  <span>Discounts</span>
-                  <span className="font-mono font-bold">- Rs. {formatCurrency(totals.discount)}</span>
-                </div>
-              )}
-
-              {isVatBill && (
-                <div className="flex justify-between text-blue-600 font-semibold text-[11px]">
-                  <span>VAT (13%)</span>
-                  <span className="font-mono font-bold">+ Rs. {formatCurrency(totals.taxAmount)}</span>
-                </div>
-              )}
-
-              {/* Grand Total Box */}
-              <div className="p-3 rounded-xl bg-slate-900 text-white flex items-baseline justify-between shadow-sm">
-                <span className="text-xs font-bold text-slate-200">Grand Total</span>
-                <span className="text-xl font-black font-mono text-emerald-400 tracking-tight">
-                  Rs. {formatCurrency(totals.totalAmount)}
-                </span>
-              </div>
-            </div>
-
-            {/* INTEGRATED ACTION BUTTONS */}
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
-              <button
-                type="button"
-                onClick={() => setIsDiscardConfirmOpen(true)}
-                className="px-3.5 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 text-xs font-bold transition-all flex items-center gap-1"
-              >
-                <RotateCcw className="w-3.5 h-3.5 text-slate-500" /> Discard
-              </button>
-
-              <button
-                type="submit"
-                disabled={createSale.isPending}
-                className="flex-1 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black shadow-md shadow-blue-600/20 active:scale-95 transition-all flex items-center justify-center gap-1.5"
-              >
-                <Save className="w-3.5 h-3.5" />
-                {createSale.isPending ? 'Saving...' : 'Save & Generate Invoice'}
-              </button>
-            </div>
-          </div>
+          <button
+            type="submit"
+            disabled={createSale.isPending}
+            className="flex-1 max-w-xs md:max-w-none px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black shadow-md shadow-blue-600/25 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+          >
+            <Save className="w-3.5 h-3.5" />
+            {createSale.isPending ? 'Saving...' : 'Save'}
+          </button>
         </div>
       </form>
+
+      {/* MOBILE ADD ITEM MODAL */}
+      {isMobileAddItemOpen && (
+        <ModalPortal>
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex flex-col justify-end md:justify-center p-0 md:p-4">
+            <div className="w-full max-w-lg bg-white rounded-t-3xl md:rounded-3xl p-4 shadow-2xl space-y-3 max-h-[85vh] flex flex-col">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                <h3 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <Package className="w-4 h-4 text-blue-600" /> Select Item to Add
+                </h3>
+                <button
+                  onClick={() => setIsMobileAddItemOpen(false)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search item name or SKU..."
+                  value={mobileItemSearch}
+                  onChange={(e) => setMobileItemSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Item List */}
+              <div className="overflow-y-auto flex-1 divide-y divide-slate-100 space-y-1">
+                {filteredMobileItems.map((item: any) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleAddMobileItem(item)}
+                    className="w-full text-left p-2.5 rounded-xl hover:bg-slate-50 flex items-center justify-between gap-2"
+                  >
+                    <div>
+                      <p className="font-bold text-slate-900 text-xs">{item.name}</p>
+                      <p className="text-[10px] text-slate-400 font-mono">
+                        Stock: {item.currentStock || 0} {item.unit}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold font-mono text-slate-900 text-xs">
+                        Rs. {formatCurrency(item.salePrice || 0)}
+                      </p>
+                      <span className="text-[10px] font-bold text-blue-600">+ Add</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
 
       {/* QUICK ADD CUSTOMER MODAL */}
       {isQuickAddPartyOpen && (
@@ -724,7 +860,7 @@ export default function NewSalesInvoicePage() {
                     value={quickPartyName}
                     onChange={(e) => setQuickPartyName(e.target.value)}
                     placeholder="e.g. Ramesh Hardware"
-                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-xs"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
                   />
                 </div>
 
@@ -735,7 +871,7 @@ export default function NewSalesInvoicePage() {
                     value={quickPartyPhone}
                     onChange={(e) => setQuickPartyPhone(e.target.value)}
                     placeholder="e.g. 9841234567"
-                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-xs"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
                   />
                 </div>
 
@@ -767,7 +903,7 @@ export default function NewSalesInvoicePage() {
         onClose={() => setIsSaveConfirmOpen(false)}
         onConfirm={handleConfirmedSave}
         title="Confirm Create Sales Invoice"
-        message={`Are you sure you want to create this Sales Invoice for Rs. ${formatCurrency(totals.totalAmount)}? Inventory stock will be decreased and ${balanceDue > 0 ? `Rs. ${formatCurrency(balanceDue)} will be added to customer ledger` : 'payment will be recorded'}.`}
+        message={`Are you sure you want to create this Sales Invoice for Rs. ${formatCurrency(totals.totalAmount)}?`}
         isLoading={createSale.isPending}
       />
 
