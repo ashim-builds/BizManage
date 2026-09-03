@@ -102,8 +102,22 @@ function LoginForm() {
         )}
 
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
-            {error.replace(/_/g, ' ')}
+          <div className="mb-6 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-medium space-y-1">
+            <div className="font-bold flex items-center gap-1.5 text-rose-400">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              {error === 'OAuth_Failed'
+                ? 'Google Sign-In Failed'
+                : error === 'Invalid_OAuth_State'
+                ? 'Authentication Session Expired'
+                : 'Authentication Error'}
+            </div>
+            <p className="text-slate-300 text-[11px] leading-relaxed">
+              {error === 'OAuth_Failed'
+                ? 'Could not complete Google authentication. Please sign in with your email & password, or ensure your Google OAuth callback URL is configured.'
+                : error === 'Invalid_OAuth_State'
+                ? 'The OAuth session timed out or was interrupted. Please try clicking Continue with Google again.'
+                : error.replace(/_/g, ' ')}
+            </p>
           </div>
         )}
 
