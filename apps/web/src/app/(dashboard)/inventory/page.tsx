@@ -882,126 +882,213 @@ function InventoryPageContent() {
       {/* 2. TAB CONTENT 1: PRODUCTS (Master-Detail Split View) */}
       {/* ========================================================================= */}
       {activeTab === 'products' && (
-        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs flex flex-col md:flex-row overflow-hidden h-[calc(100vh-130px)] max-h-[calc(100vh-130px)]">
-          {/* Left Directory Pane: Products */}
-          <div className="w-full md:w-80 lg:w-88 shrink-0 border-r border-slate-200 flex flex-col bg-white h-full overflow-hidden">
-            {/* Action Bar: Search & Orange Add Item Button */}
-            <div className="p-3 border-b border-slate-100 flex items-center gap-2">
-              <div className="relative flex-1">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="Search Products..."
-                  value={productSearch}
-                  onChange={(e) => setProductSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
-                />
-              </div>
-
-              {/* Vyapar Orange Add Item Button (Full Screen) */}
-              <Link
-                href="/inventory/new"
-                className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-xs shadow-xs flex items-center gap-1 transition-all shrink-0 cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5 stroke-[3]" />
-                <span>Add Item</span>
-              </Link>
+        <>
+          {/* MOBILE VIEW (< md) - Clean Cards matching screenshot with single click navigation */}
+          <div className="block md:hidden space-y-3 pb-24">
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search Items & SKU..."
+                value={productSearch}
+                onChange={(e) => setProductSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs transition-all"
+              />
             </div>
 
-            {/* Table Header: Item & Quantity */}
-            <div className="px-4 py-2 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between text-[11px] font-bold text-slate-600 select-none">
-              <div className="flex items-center gap-1.5">
-                <span>ITEM</span>
-                <Filter className="w-3 h-3 text-red-500 fill-red-500" />
+            {/* Products List Cards */}
+            {filteredProducts.length === 0 ? (
+              <div className="p-8 text-center bg-white rounded-3xl border border-slate-200/80 shadow-xs space-y-3">
+                <Package className="w-10 h-10 text-slate-300 mx-auto" />
+                <p className="text-xs text-slate-500 font-medium">No items found.</p>
+                <Link
+                  href="/inventory/new"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs shadow-md shadow-blue-600/20 active:scale-95 transition-all"
+                >
+                  <Plus className="w-4 h-4" /> Add New Item
+                </Link>
               </div>
-              <span>QUANTITY</span>
-            </div>
-
-            {/* Product Items List */}
-            <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
-              {filteredProducts.length === 0 ? (
-                <div className="p-8 text-center space-y-3">
-                  <p className="text-xs text-slate-400">No products found.</p>
-                  <Link
-                    href="/inventory/new"
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 font-bold text-xs hover:bg-blue-100 transition-colors cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Create Product
-                  </Link>
-                </div>
-              ) : (
-                filteredProducts.map((p) => {
-                  const isSelected = activeItem?.id === p.id;
+            ) : (
+              <div className="space-y-3">
+                {filteredProducts.map((p) => {
                   const stock = Number(p.currentStock || 0);
 
                   return (
                     <div
                       key={p.id}
-                      onClick={() => {
-                        if (typeof window !== 'undefined' && window.innerWidth < 768) {
-                          router.push(`/inventory/${p.id}`);
-                        } else {
-                          setSelectedProductId(p.id);
-                        }
-                      }}
-                      className={`px-4 py-3 flex items-center justify-between cursor-pointer transition-colors group ${
-                        isSelected
-                          ? 'bg-sky-50 text-blue-900 font-bold border-l-4 border-blue-600'
-                          : 'hover:bg-slate-50/80 text-slate-800'
-                      }`}
+                      onClick={() => router.push(`/inventory/${p.id}`)}
+                      className="p-4 bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md active:scale-[0.99] transition-all cursor-pointer space-y-2.5 select-none"
                     >
-                      <div className="min-w-0 pr-2">
-                        <span className="text-xs truncate block font-bold text-slate-900 group-hover:text-blue-600">
-                          {p.name}
-                        </span>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          {p.code && (
-                            <span className="text-[10px] text-slate-400 font-mono block">
-                              SKU: {p.code}
-                            </span>
-                          )}
-                          <span className="text-[10px] text-slate-500 font-bold md:hidden">
-                            Rs. {Number(p.salePrice || 0).toFixed(0)}
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="text-sm font-bold text-slate-900 leading-snug">{p.name}</h3>
+                        {p.code && (
+                          <span className="text-[10px] text-slate-400 font-mono shrink-0">
+                            SKU: {p.code}
                           </span>
-                        </div>
+                        )}
                       </div>
 
-                      <div className="text-right shrink-0 flex items-center gap-2">
-                        <div className="flex flex-col items-end">
-                          <span
-                            className={`text-xs font-mono font-black ${
-                              stock < 0
-                                ? 'text-rose-600'
-                                : stock > 0
-                                ? 'text-emerald-600'
-                                : 'text-slate-500'
-                            }`}
-                          >
-                            {stock}
-                          </span>
-                          <span className="text-[9px] text-slate-400 uppercase font-bold md:hidden">
-                            {p.unit || 'PCS'}
+                      <div className="grid grid-cols-3 gap-2 text-left pt-1">
+                        <div>
+                          <span className="text-[11px] text-slate-400 block font-medium">Sale Price</span>
+                          <span className="text-xs sm:text-sm font-bold text-slate-900 font-mono">
+                            Rs {Number(p.salePrice || 0).toFixed(2)}
                           </span>
                         </div>
-
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEditModal(p);
-                          }}
-                          className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-opacity cursor-pointer"
-                          title="Edit Product"
-                        >
-                          <Edit2 className="w-3 h-3" />
-                        </button>
+                        <div>
+                          <span className="text-[11px] text-slate-400 block font-medium">Purchase Price</span>
+                          <span className="text-xs sm:text-sm font-bold text-slate-900 font-mono">
+                            Rs {Number(p.purchasePrice || 0).toFixed(2)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[11px] text-slate-400 block font-medium">Stock</span>
+                          <span
+                            className={`text-xs sm:text-sm font-bold font-mono ${
+                              stock < 0
+                                ? 'text-rose-500'
+                                : stock === 0
+                                ? 'text-slate-600'
+                                : 'text-emerald-600'
+                            }`}
+                          >
+                            {stock < 0 ? stock.toFixed(1) : stock.toFixed(1)}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   );
-                })
-              )}
-            </div>
+                })}
+              </div>
+            )}
+
+            {/* Floating Red Add New Item Pill Button */}
+            <Link
+              href="/inventory/new"
+              className="fixed bottom-20 left-1/2 -translate-x-1/2 md:hidden z-40 inline-flex items-center gap-2 px-7 py-3 rounded-full bg-[#FF0033] hover:bg-[#E6002E] text-white font-bold text-xs sm:text-sm shadow-xl shadow-red-600/30 active:scale-95 transition-all whitespace-nowrap"
+            >
+              <Package className="w-4 h-4 stroke-[2.5]" />
+              <span>Add New Item</span>
+            </Link>
           </div>
+
+          {/* DESKTOP SPLIT VIEW (>= md) */}
+          <div className="hidden md:flex bg-white rounded-2xl border border-slate-200/90 shadow-xs flex-col md:flex-row overflow-hidden h-[calc(100vh-130px)] max-h-[calc(100vh-130px)]">
+            {/* Left Directory Pane: Products */}
+            <div className="w-full md:w-80 lg:w-88 shrink-0 border-r border-slate-200 flex flex-col bg-white h-full overflow-hidden">
+              {/* Action Bar: Search & Orange Add Item Button */}
+              <div className="p-3 border-b border-slate-100 flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Search Products..."
+                    value={productSearch}
+                    onChange={(e) => setProductSearch(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
+                  />
+                </div>
+
+                {/* Vyapar Orange Add Item Button (Full Screen) */}
+                <Link
+                  href="/inventory/new"
+                  className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-xs shadow-xs flex items-center gap-1 transition-all shrink-0 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                  <span>Add Item</span>
+                </Link>
+              </div>
+
+              {/* Table Header: Item & Quantity */}
+              <div className="px-4 py-2 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between text-[11px] font-bold text-slate-600 select-none">
+                <div className="flex items-center gap-1.5">
+                  <span>ITEM</span>
+                  <Filter className="w-3 h-3 text-red-500 fill-red-500" />
+                </div>
+                <span>QUANTITY</span>
+              </div>
+
+              {/* Product Items List */}
+              <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
+                {filteredProducts.length === 0 ? (
+                  <div className="p-8 text-center space-y-3">
+                    <p className="text-xs text-slate-400">No products found.</p>
+                    <Link
+                      href="/inventory/new"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 font-bold text-xs hover:bg-blue-100 transition-colors cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Create Product
+                    </Link>
+                  </div>
+                ) : (
+                  filteredProducts.map((p) => {
+                    const isSelected = activeItem?.id === p.id;
+                    const stock = Number(p.currentStock || 0);
+
+                    return (
+                      <div
+                        key={p.id}
+                        onClick={() => setSelectedProductId(p.id)}
+                        onDoubleClick={() => router.push(`/inventory/${p.id}`)}
+                        className={`px-4 py-3 flex items-center justify-between cursor-pointer transition-colors group ${
+                          isSelected
+                            ? 'bg-sky-50 text-blue-900 font-bold border-l-4 border-blue-600'
+                            : 'hover:bg-slate-50/80 text-slate-800'
+                        }`}
+                      >
+                        <div className="min-w-0 pr-2">
+                          <span className="text-xs truncate block font-bold text-slate-900 group-hover:text-blue-600">
+                            {p.name}
+                          </span>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {p.code && (
+                              <span className="text-[10px] text-slate-400 font-mono block">
+                                SKU: {p.code}
+                              </span>
+                            )}
+                            <span className="text-[10px] text-slate-500 font-bold md:hidden">
+                              Rs. {Number(p.salePrice || 0).toFixed(0)}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0 flex items-center gap-2">
+                          <div className="flex flex-col items-end">
+                            <span
+                              className={`text-xs font-mono font-black ${
+                                stock < 0
+                                  ? 'text-rose-600'
+                                  : stock > 0
+                                  ? 'text-emerald-600'
+                                  : 'text-slate-500'
+                              }`}
+                            >
+                              {stock}
+                            </span>
+                            <span className="text-[9px] text-slate-400 uppercase font-bold md:hidden">
+                              {p.unit || 'PCS'}
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditModal(p);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-opacity cursor-pointer"
+                            title="Edit Product"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
 
           {/* Right Main Pane: Product Details & Transactions */}
           <div className="flex-1 flex flex-col bg-white overflow-hidden h-full">
@@ -1361,94 +1448,169 @@ function InventoryPageContent() {
             )}
           </div>
         </div>
+        </>
       )}
 
       {/* ========================================================================= */}
       {/* 3. TAB CONTENT 2: SERVICES (Screenshot 2) */}
       {/* ========================================================================= */}
       {activeTab === 'services' && (
-        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs h-[calc(100vh-130px)] max-h-[calc(100vh-130px)] flex flex-col overflow-hidden">
-          {services.length === 0 ? (
-            /* Screenshot 2 Exact Empty State */
-            <div className="flex-1 flex flex-col items-center justify-center p-12 text-center my-auto">
-              <div className="w-24 h-24 rounded-3xl bg-blue-50/70 border border-blue-100 flex items-center justify-center mb-4 text-blue-500 shadow-xs">
-                <Wrench className="w-12 h-12 stroke-[1.5]" />
-              </div>
-              <h3 className="text-base font-bold text-slate-900 max-w-md">
-                Add services you provide to your customers and create Sale invoices for them faster.
-              </h3>
-              <button
-                type="button"
-                onClick={() => {
-                  setCreateType(ItemType.SERVICE);
-                  createForm.setValue('type', ItemType.SERVICE);
-                  setIsCreateOpen(true);
-                }}
-                className="mt-5 px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-xs font-bold shadow-md shadow-amber-500/20 transition-all cursor-pointer"
-              >
-                Add Your First Service
-              </button>
+        <>
+          {/* MOBILE VIEW (< md) for Services */}
+          <div className="block md:hidden space-y-3 pb-24">
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search Services & SAC..."
+                value={serviceSearch}
+                onChange={(e) => setServiceSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs transition-all"
+              />
             </div>
-          ) : (
-            /* Services Split View */
-            <div className="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
-              <div className="w-full md:w-80 lg:w-88 shrink-0 border-r border-slate-200 flex flex-col h-full overflow-hidden">
-                <div className="p-3 border-b border-slate-100 flex items-center gap-2">
-                  <input
-                    type="text"
-                    placeholder="Search Services..."
-                    value={serviceSearch}
-                    onChange={(e) => setServiceSearch(e.target.value)}
-                    className="flex-1 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs"
-                  />
-                  <Link
-                    href="/inventory/new"
-                    className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-xs shrink-0 cursor-pointer transition-all shadow-xs"
+
+            {filteredServices.length === 0 ? (
+              <div className="p-8 text-center bg-white rounded-3xl border border-slate-200/80 shadow-xs space-y-3">
+                <Wrench className="w-10 h-10 text-slate-300 mx-auto" />
+                <p className="text-xs text-slate-500 font-medium">No services found.</p>
+                <Link
+                  href="/inventory/new"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs shadow-md shadow-blue-600/20 active:scale-95 transition-all"
+                >
+                  <Plus className="w-4 h-4" /> Add New Service
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredServices.map((s) => (
+                  <div
+                    key={s.id}
+                    onClick={() => router.push(`/inventory/${s.id}`)}
+                    className="p-4 bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md active:scale-[0.99] transition-all cursor-pointer space-y-2.5 select-none"
                   >
-                    + Add Service
-                  </Link>
-                </div>
-                <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
-                  {filteredServices.map((s) => (
-                    <div
-                      key={s.id}
-                      onClick={() => setSelectedServiceId(s.id)}
-                      className={`px-4 py-3 flex items-center justify-between cursor-pointer group transition-colors ${
-                        selectedServiceId === s.id
-                          ? 'bg-sky-50 text-blue-900 font-bold border-l-4 border-blue-600'
-                          : 'hover:bg-slate-50/80 text-slate-800'
-                      }`}
-                    >
-                      <div className="min-w-0 pr-2">
-                        <span className="text-xs truncate block font-medium group-hover:text-blue-600">
-                          {s.name}
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="text-sm font-bold text-slate-900 leading-snug">{s.name}</h3>
+                      {s.code && (
+                        <span className="text-[10px] text-slate-400 font-mono shrink-0">
+                          SAC: {s.code}
                         </span>
-                        {s.code && (
-                          <span className="text-[10px] text-slate-400 font-mono block">
-                            SAC: {s.code}
-                          </span>
-                        )}
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-left pt-1">
+                      <div>
+                        <span className="text-[11px] text-slate-400 block font-medium">Charge / Rate</span>
+                        <span className="text-xs sm:text-sm font-bold text-slate-900 font-mono">
+                          Rs {Number(s.salePrice || 0).toFixed(2)}
+                        </span>
                       </div>
-                      <div className="text-right shrink-0 flex items-center gap-2">
-                        <span className="text-xs font-mono font-bold text-emerald-600">
-                          Rs. {Number(s.salePrice || 0).toFixed(2)}
+                      <div>
+                        <span className="text-[11px] text-slate-400 block font-medium">Unit</span>
+                        <span className="text-xs sm:text-sm font-bold text-slate-700 font-mono">
+                          {s.unit || 'Hrs'}
                         </span>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEditModal(s);
-                          }}
-                          className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-opacity cursor-pointer"
-                          title="Edit Service"
-                        >
-                          <Edit2 className="w-3 h-3" />
-                        </button>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
+            )}
+
+            {/* Floating Red Add Service Button */}
+            <Link
+              href="/inventory/new"
+              className="fixed bottom-20 left-1/2 -translate-x-1/2 md:hidden z-40 inline-flex items-center gap-2 px-7 py-3 rounded-full bg-[#FF0033] hover:bg-[#E6002E] text-white font-bold text-xs sm:text-sm shadow-xl shadow-red-600/30 active:scale-95 transition-all whitespace-nowrap"
+            >
+              <Wrench className="w-4 h-4 stroke-[2.5]" />
+              <span>Add New Service</span>
+            </Link>
+          </div>
+
+          {/* DESKTOP SPLIT VIEW (>= md) */}
+          <div className="hidden md:flex bg-white rounded-2xl border border-slate-200/90 shadow-xs h-[calc(100vh-130px)] max-h-[calc(100vh-130px)] flex-col overflow-hidden">
+            {services.length === 0 ? (
+              /* Screenshot 2 Exact Empty State */
+              <div className="flex-1 flex flex-col items-center justify-center p-12 text-center my-auto">
+                <div className="w-24 h-24 rounded-3xl bg-blue-50/70 border border-blue-100 flex items-center justify-center mb-4 text-blue-500 shadow-xs">
+                  <Wrench className="w-12 h-12 stroke-[1.5]" />
+                </div>
+                <h3 className="text-base font-bold text-slate-900 max-w-md">
+                  Add services you provide to your customers and create Sale invoices for them faster.
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCreateType(ItemType.SERVICE);
+                    createForm.setValue('type', ItemType.SERVICE);
+                    setIsCreateOpen(true);
+                  }}
+                  className="mt-5 px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-xs font-bold shadow-md shadow-amber-500/20 transition-all cursor-pointer"
+                >
+                  Add Your First Service
+                </button>
+              </div>
+            ) : (
+              /* Services Split View */
+              <div className="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
+                <div className="w-full md:w-80 lg:w-88 shrink-0 border-r border-slate-200 flex flex-col h-full overflow-hidden">
+                  <div className="p-3 border-b border-slate-100 flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="Search Services..."
+                      value={serviceSearch}
+                      onChange={(e) => setServiceSearch(e.target.value)}
+                      className="flex-1 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs"
+                    />
+                    <Link
+                      href="/inventory/new"
+                      className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-xs shrink-0 cursor-pointer transition-all shadow-xs"
+                    >
+                      + Add Service
+                    </Link>
+                  </div>
+                  <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
+                    {filteredServices.map((s) => (
+                      <div
+                        key={s.id}
+                        onClick={() => setSelectedServiceId(s.id)}
+                        onDoubleClick={() => router.push(`/inventory/${s.id}`)}
+                        className={`px-4 py-3 flex items-center justify-between cursor-pointer group transition-colors ${
+                          selectedServiceId === s.id
+                            ? 'bg-sky-50 text-blue-900 font-bold border-l-4 border-blue-600'
+                            : 'hover:bg-slate-50/80 text-slate-800'
+                        }`}
+                      >
+                        <div className="min-w-0 pr-2">
+                          <span className="text-xs truncate block font-medium group-hover:text-blue-600">
+                            {s.name}
+                          </span>
+                          {s.code && (
+                            <span className="text-[10px] text-slate-400 font-mono block">
+                              SAC: {s.code}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-right shrink-0 flex items-center gap-2">
+                          <span className="text-xs font-mono font-bold text-emerald-600">
+                            Rs. {Number(s.salePrice || 0).toFixed(2)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditModal(s);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-opacity cursor-pointer"
+                            title="Edit Service"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
               <div className="flex-1 p-6 overflow-y-auto">
                 {activeItem ? (
@@ -1572,6 +1734,7 @@ function InventoryPageContent() {
             </div>
           )}
         </div>
+        </>
       )}
 
       {/* ========================================================================= */}
