@@ -1,5 +1,7 @@
 'use client';
 import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericInput';
+import { useLongPress } from '@/hooks/useLongPress';
+import { LongPressActionSheet } from '@/components/ui/LongPressActionSheet';
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
@@ -45,6 +47,9 @@ export default function SalesPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSaveConfirmOpen, setIsSaveConfirmOpen] = useState(false);
   const [pendingSaleData, setPendingSaleData] = useState<CreateSaleInput | null>(null);
+
+  // Long-press action sheet (mobile)
+  const [longPressSale, setLongPressSale] = useState<any | null>(null);
 
   // Pay Due modal state
   const [payDueId, setPayDueId] = useState<string | null>(null);
@@ -405,72 +410,19 @@ export default function SalesPage() {
         <>
           {/* Mobile Card Layout */}
           <div className="grid gap-4 md:hidden">
-            {sales.map((s: any) => {
-              const total = Number(s.totalAmount || 0);
-              const due = Number(s.dueAmount || 0);
-              const totalQty = (s.items || []).reduce((acc: number, it: any) => acc + Number(it.quantity || 0), 0);
-              const lineCount = s.items?.length || 0;
-
-              return (
-                <div key={s.id} className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-3">
-                  {/* Top Row */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Link href={`/transactions/sales/${s.id}`} className="font-bold text-slate-900 font-mono text-sm hover:text-blue-600">
-                        {s.invoiceNumber}
-                      </Link>
-                      <p className="text-[10px] text-slate-400">{new Date(s.date).toLocaleDateString()}</p>
-                    </div>
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                        s.status === InvoiceStatus.PAID
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : s.status === InvoiceStatus.PARTIAL
-                          ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                          : s.status === InvoiceStatus.RETURNED
-                          ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                          : 'bg-rose-50 text-rose-700 border border-rose-200'
-                      }`}
-                    >
-                      {s.status}
-                    </span>
-                  </div>
-
-                  {/* Body */}
-                  <div className="flex justify-between items-center">
-                     <div>
-                       <p className="text-sm font-bold text-slate-800">{s.party?.name || 'Walk-in Customer'}</p>
-                       <p className="text-xs text-slate-400 mt-0.5">{totalQty} {totalQty === 1 ? 'Pc' : 'Pcs'} ({lineCount} {lineCount === 1 ? 'item' : 'items'})</p>
-                     </div>
-                     <div className="text-right">
-                       <p className="font-mono font-bold text-slate-900 text-base">Rs. {total.toLocaleString()}</p>
-                       {due > 0 ? (
-                         <p className="font-mono text-[10px] text-amber-600 font-bold mt-0.5">Due: Rs. {due.toLocaleString()}</p>
-                       ) : (
-                         <p className="font-mono text-[10px] text-emerald-600 font-bold mt-0.5">Paid In Full</p>
-                       )}
-                     </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
-                     {due > 0 && (
-                        <button onClick={() => {
-                           setPayDueId(s.id);
-                           setPayDueAmount(Number(s.dueAmount || 0));
-                           setPayDueCustomAmount('');
-                           setPayDueMode(PaymentMode.CASH);
-                        }} className="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-bold flex items-center gap-1.5 hover:bg-emerald-100">
-                          <BanknoteIcon className="w-3.5 h-3.5" /> Pay
-                        </button>
-                     )}
-                     <Link href={`/transactions/sales/${s.id}`} className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-[11px] font-bold flex items-center gap-1.5">
-                        <Eye className="w-3.5 h-3.5" /> View
-                     </Link>
-                  </div>
-                </div>
-              );
-            })}
+            {sales.map((s: any) => (
+              <MobileSaleCard
+                key={s.id}
+                sale={s}
+                onLongPress={() => setLongPressSale(s)}
+                onPay={(id, amount) => {
+                  setPayDueId(id);
+                  setPayDueAmount(amount);
+                  setPayDueCustomAmount('');
+                  setPayDueMode(PaymentMode.CASH);
+                }}
+              />
+            ))}
           </div>
 
           {/* Desktop Table Layout */}
@@ -1129,6 +1081,117 @@ export default function SalesPage() {
         message="Are you sure you want to issue this sales invoice? Stock will be updated and customer balance will be adjusted accordingly."
         confirmText="Confirm & Issue"
       />
+
+      {/* Long-Press Action Sheet (Mobile) */}
+      <LongPressActionSheet
+        open={!!longPressSale}
+        onClose={() => setLongPressSale(null)}
+        title={longPressSale?.invoiceNumber}
+        subtitle={longPressSale?.party?.name || 'Walk-in Customer'}
+        onView={() => {
+          if (longPressSale) window.location.href = `/transactions/sales/${longPressSale.id}`;
+          setLongPressSale(null);
+        }}
+        actions={[
+          {
+            label: 'View Invoice',
+            icon: <Eye className="w-5 h-5" />,
+            onClick: () => { if (longPressSale) window.location.href = `/transactions/sales/${longPressSale.id}`; },
+            variant: 'default',
+          },
+          ...(longPressSale && Number(longPressSale.dueAmount || 0) > 0 ? [{
+            label: 'Collect Payment',
+            icon: <BanknoteIcon className="w-5 h-5" />,
+            onClick: () => {
+              setPayDueId(longPressSale.id);
+              setPayDueAmount(Number(longPressSale.dueAmount || 0));
+              setPayDueCustomAmount('');
+              setPayDueMode(PaymentMode.CASH);
+              setLongPressSale(null);
+            },
+            variant: 'default' as const,
+          }] : []),
+        ]}
+      />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sub-component: Mobile Sale Card with Long-Press
+// ---------------------------------------------------------------------------
+
+interface MobileSaleCardProps {
+  sale: any;
+  onLongPress: () => void;
+  onPay: (id: string, amount: number) => void;
+}
+
+function MobileSaleCard({ sale: s, onLongPress, onPay }: MobileSaleCardProps) {
+  const longPressHandlers = useLongPress(onLongPress, { delay: 600 });
+  const total = Number(s.totalAmount || 0);
+  const due = Number(s.dueAmount || 0);
+  const totalQty = (s.items || []).reduce((acc: number, it: any) => acc + Number(it.quantity || 0), 0);
+  const lineCount = s.items?.length || 0;
+
+  return (
+    <div
+      {...longPressHandlers}
+      className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-3 select-none"
+    >
+      {/* Top Row */}
+      <div className="flex items-center justify-between">
+        <div>
+          <a href={`/transactions/sales/${s.id}`} className="font-bold text-slate-900 font-mono text-sm hover:text-blue-600">
+            {s.invoiceNumber}
+          </a>
+          <p className="text-[10px] text-slate-400">{new Date(s.date).toLocaleDateString()}</p>
+        </div>
+        <span
+          className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+            s.status === 'PAID'
+              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+              : s.status === 'PARTIAL'
+              ? 'bg-amber-50 text-amber-700 border border-amber-200'
+              : s.status === 'RETURNED'
+              ? 'bg-purple-50 text-purple-700 border border-purple-200'
+              : 'bg-rose-50 text-rose-700 border border-rose-200'
+          }`}
+        >
+          {s.status}
+        </span>
+      </div>
+
+      {/* Body */}
+      <div className="flex justify-between items-center">
+        <div>
+          <p className="text-sm font-bold text-slate-800">{s.party?.name || 'Walk-in Customer'}</p>
+          <p className="text-xs text-slate-400 mt-0.5">{totalQty} {totalQty === 1 ? 'Pc' : 'Pcs'} ({lineCount} {lineCount === 1 ? 'item' : 'items'})</p>
+        </div>
+        <div className="text-right">
+          <p className="font-mono font-bold text-slate-900 text-base">Rs. {total.toLocaleString()}</p>
+          {due > 0 ? (
+            <p className="font-mono text-[10px] text-amber-600 font-bold mt-0.5">Due: Rs. {due.toLocaleString()}</p>
+          ) : (
+            <p className="font-mono text-[10px] text-emerald-600 font-bold mt-0.5">Paid In Full</p>
+          )}
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
+        {due > 0 && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onPay(s.id, due); }}
+            className="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-bold flex items-center gap-1.5 hover:bg-emerald-100"
+          >
+            <BanknoteIcon className="w-3.5 h-3.5" /> Pay
+          </button>
+        )}
+        <a href={`/transactions/sales/${s.id}`} className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-[11px] font-bold flex items-center gap-1.5">
+          <Eye className="w-3.5 h-3.5" /> View
+        </a>
+      </div>
     </div>
   );
 }

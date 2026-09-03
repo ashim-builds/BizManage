@@ -1,5 +1,7 @@
 'use client';
 import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericInput';
+import { useLongPress } from '@/hooks/useLongPress';
+import { LongPressActionSheet } from '@/components/ui/LongPressActionSheet';
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
@@ -149,6 +151,9 @@ function InventoryPageContent() {
   const [isAddUnitOpen, setIsAddUnitOpen] = useState(false);
   const [isAddConversionOpen, setIsAddConversionOpen] = useState(false);
   const [deletingItemInfo, setDeletingItemInfo] = useState<{ id: string; name: string } | null>(null);
+
+  // Long-press action-sheet state (mobile)
+  const [longPressItem, setLongPressItem] = useState<any | null>(null);
 
   // Move To Category modal state
   const [isMoveCategoryOpen, setIsMoveCategoryOpen] = useState(false);
@@ -913,51 +918,14 @@ function InventoryPageContent() {
               <div className="space-y-3">
                 {filteredProducts.map((p) => {
                   const stock = Number(p.currentStock || 0);
-
                   return (
-                    <div
+                    <MobileItemCard
                       key={p.id}
+                      item={p}
+                      stock={stock}
                       onClick={() => router.push(`/inventory/${p.id}`)}
-                      className="p-4 bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md active:scale-[0.99] transition-all cursor-pointer space-y-2.5 select-none"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="text-sm font-bold text-slate-900 leading-snug">{p.name}</h3>
-                        {p.code && (
-                          <span className="text-[10px] text-slate-400 font-mono shrink-0">
-                            SKU: {p.code}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-2 text-left pt-1">
-                        <div>
-                          <span className="text-[11px] text-slate-400 block font-medium">Sale Price</span>
-                          <span className="text-xs sm:text-sm font-bold text-slate-900 font-mono">
-                            Rs {Number(p.salePrice || 0).toFixed(2)}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-[11px] text-slate-400 block font-medium">Purchase Price</span>
-                          <span className="text-xs sm:text-sm font-bold text-slate-900 font-mono">
-                            Rs {Number(p.purchasePrice || 0).toFixed(2)}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-[11px] text-slate-400 block font-medium">Stock</span>
-                          <span
-                            className={`text-xs sm:text-sm font-bold font-mono ${
-                              stock < 0
-                                ? 'text-rose-500'
-                                : stock === 0
-                                ? 'text-slate-600'
-                                : 'text-emerald-600'
-                            }`}
-                          >
-                            {stock < 0 ? stock.toFixed(1) : stock.toFixed(1)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                      onLongPress={() => setLongPressItem(p)}
+                    />
                   );
                 })}
               </div>
@@ -1484,35 +1452,12 @@ function InventoryPageContent() {
             ) : (
               <div className="space-y-3">
                 {filteredServices.map((s) => (
-                  <div
+                  <MobileServiceCard
                     key={s.id}
+                    item={s}
                     onClick={() => router.push(`/inventory/${s.id}`)}
-                    className="p-4 bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md active:scale-[0.99] transition-all cursor-pointer space-y-2.5 select-none"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="text-sm font-bold text-slate-900 leading-snug">{s.name}</h3>
-                      {s.code && (
-                        <span className="text-[10px] text-slate-400 font-mono shrink-0">
-                          SAC: {s.code}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 text-left pt-1">
-                      <div>
-                        <span className="text-[11px] text-slate-400 block font-medium">Charge / Rate</span>
-                        <span className="text-xs sm:text-sm font-bold text-slate-900 font-mono">
-                          Rs {Number(s.salePrice || 0).toFixed(2)}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[11px] text-slate-400 block font-medium">Unit</span>
-                        <span className="text-xs sm:text-sm font-bold text-slate-700 font-mono">
-                          {s.unit || 'Hrs'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                    onLongPress={() => setLongPressItem(s)}
+                  />
                 ))}
               </div>
             )}
@@ -3230,6 +3175,121 @@ function InventoryPageContent() {
         message={`Are you sure you want to update "${pendingEditData?.name || editingItem?.name || 'this item'}"?`}
         confirmText="Yes, Save Changes"
       />
+
+      {/* Long-Press Action Sheet (Mobile) */}
+      <LongPressActionSheet
+        open={!!longPressItem}
+        onClose={() => setLongPressItem(null)}
+        title={longPressItem?.name}
+        subtitle={longPressItem?.code ? `SKU/SAC: ${longPressItem.code}` : longPressItem?.type === 'SERVICE' ? 'Service' : 'Product'}
+        onView={() => {
+          if (longPressItem) router.push(`/inventory/${longPressItem.id}`);
+          setLongPressItem(null);
+        }}
+        onEdit={() => {
+          if (longPressItem) openEditModal(longPressItem);
+          setLongPressItem(null);
+        }}
+        onDelete={() => {
+          if (longPressItem) setDeletingItemInfo({ id: longPressItem.id, name: longPressItem.name });
+          setLongPressItem(null);
+        }}
+      />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sub-components: Mobile Cards with Long-Press Support
+// ---------------------------------------------------------------------------
+
+interface MobileItemCardProps {
+  item: any;
+  stock: number;
+  onClick: () => void;
+  onLongPress: () => void;
+}
+
+function MobileItemCard({ item, stock, onClick, onLongPress }: MobileItemCardProps) {
+  const longPressHandlers = useLongPress(onLongPress, { delay: 600 });
+
+  return (
+    <div
+      {...longPressHandlers}
+      onClick={onClick}
+      className="p-4 bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md active:scale-[0.99] transition-all cursor-pointer space-y-2.5 select-none"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <h3 className="text-sm font-bold text-slate-900 leading-snug">{item.name}</h3>
+        {item.code && (
+          <span className="text-[10px] text-slate-400 font-mono shrink-0">SKU: {item.code}</span>
+        )}
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 text-left pt-1">
+        <div>
+          <span className="text-[11px] text-slate-400 block font-medium">Sale Price</span>
+          <span className="text-xs sm:text-sm font-bold text-slate-900 font-mono">
+            Rs {Number(item.salePrice || 0).toFixed(2)}
+          </span>
+        </div>
+        <div>
+          <span className="text-[11px] text-slate-400 block font-medium">Purchase Price</span>
+          <span className="text-xs sm:text-sm font-bold text-slate-900 font-mono">
+            Rs {Number(item.purchasePrice || 0).toFixed(2)}
+          </span>
+        </div>
+        <div>
+          <span className="text-[11px] text-slate-400 block font-medium">Stock</span>
+          <span
+            className={`text-xs sm:text-sm font-bold font-mono ${
+              stock < 0 ? 'text-rose-500' : stock === 0 ? 'text-slate-600' : 'text-emerald-600'
+            }`}
+          >
+            {stock.toFixed(1)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface MobileServiceCardProps {
+  item: any;
+  onClick: () => void;
+  onLongPress: () => void;
+}
+
+function MobileServiceCard({ item, onClick, onLongPress }: MobileServiceCardProps) {
+  const longPressHandlers = useLongPress(onLongPress, { delay: 600 });
+
+  return (
+    <div
+      {...longPressHandlers}
+      onClick={onClick}
+      className="p-4 bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md active:scale-[0.99] transition-all cursor-pointer space-y-2.5 select-none"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <h3 className="text-sm font-bold text-slate-900 leading-snug">{item.name}</h3>
+        {item.code && (
+          <span className="text-[10px] text-slate-400 font-mono shrink-0">SAC: {item.code}</span>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 text-left pt-1">
+        <div>
+          <span className="text-[11px] text-slate-400 block font-medium">Charge / Rate</span>
+          <span className="text-xs sm:text-sm font-bold text-slate-900 font-mono">
+            Rs {Number(item.salePrice || 0).toFixed(2)}
+          </span>
+        </div>
+        <div>
+          <span className="text-[11px] text-slate-400 block font-medium">Unit</span>
+          <span className="text-xs sm:text-sm font-bold text-slate-700 font-mono">
+            {item.unit || 'Hrs'}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
