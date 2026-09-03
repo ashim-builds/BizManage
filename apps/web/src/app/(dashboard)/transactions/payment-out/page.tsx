@@ -1,4 +1,5 @@
 'use client';
+import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericInput';
 
 import Link from 'next/link';
 
@@ -9,6 +10,7 @@ import { createPaymentOutSchema, CreatePaymentOutInput } from '@bizmanage/valida
 import { PaymentMode } from '@bizmanage/types';
 import { usePaymentsOut, usePaymentsOutSummary, useCreatePaymentOut, useVoidPaymentOut } from '@/services/paymentService';
 import { useParties } from '@/services/partyService';
+
 import { useAccounts } from '@/services/accountService';
 import { getPartyBalanceDisplay } from '@/lib/balance';
 import { formatCurrency } from '@/lib/accounting';
@@ -17,6 +19,7 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ModalPortal } from '@/components/common/ModalPortal';
 import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
+import { SaveConfirmModal } from '@/components/common/SaveConfirmModal';
 import { CustomDateRangePicker } from '@/components/common/CustomDateRangePicker';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { toast } from 'react-hot-toast';
@@ -37,6 +40,8 @@ export default function PaymentOutPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isSaveConfirmOpen, setIsSaveConfirmOpen] = useState(false);
+  const [pendingPaymentData, setPendingPaymentData] = useState<CreatePaymentOutInput | null>(null);
   const [voidingPaymentId, setVoidingPaymentId] = useState<string | null>(null);
   const [voidError, setVoidError] = useState('');
 
@@ -85,6 +90,18 @@ export default function PaymentOutPage() {
       : 'CASH';
 
   const filteredAccounts = accounts.filter((a: any) => a.accountType === desiredAccountType);
+
+  const handlePaymentSaveRequest = (data: CreatePaymentOutInput) => {
+    setPendingPaymentData(data);
+    setIsSaveConfirmOpen(true);
+  };
+
+  const handleConfirmPaymentSave = () => {
+    setIsSaveConfirmOpen(false);
+    if (pendingPaymentData) {
+      handleCreateSubmit(pendingPaymentData);
+    }
+  };
 
   const handleCreateSubmit = async (data: CreatePaymentOutInput) => {
     try {
@@ -392,7 +409,7 @@ export default function PaymentOutPage() {
               </p>
             </div>
 
-            <form onSubmit={form.handleSubmit(handleCreateSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(handlePaymentSaveRequest)} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">Supplier Party *</label>
                 <select
@@ -459,9 +476,10 @@ export default function PaymentOutPage() {
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">Amount Paid (Rs.) *</label>
                 <input
-                  type="number"
-                  step="any"
-                  {...form.register('amount', { valueAsNumber: true })}
+                  type="text"
+                  inputMode="decimal"
+                  onKeyDown={onNumericKeyDown}
+                                    {...form.register('amount', { valueAsNumber: true })}
                   className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-mono text-rose-400 font-bold focus:outline-none focus:ring-1 focus:ring-rose-500"
                   placeholder="e.g. 10000"
                 />
@@ -535,6 +553,17 @@ export default function PaymentOutPage() {
             setVoidError(err.response?.data?.error?.message || 'Failed to void payment.');
           }
         }}
+      />
+
+      {/* Save Confirmation Alert */}
+      <SaveConfirmModal
+        isOpen={isSaveConfirmOpen}
+        onClose={() => setIsSaveConfirmOpen(false)}
+        onConfirm={handleConfirmPaymentSave}
+        isLoading={createPaymentOut.isPending}
+        title="Record Supplier Payment Out?"
+        message={`Are you sure you want to record payout of Rs. ${Number(pendingPaymentData?.amount || 0).toLocaleString()} to supplier?`}
+        confirmText="Confirm & Payout"
       />
     </div>
   );

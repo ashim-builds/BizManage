@@ -1,4 +1,5 @@
 'use client';
+import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericInput';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -12,6 +13,7 @@ import {
   useCreatePurchase,
   usePayPurchase,
 } from '@/services/purchaseService';
+
 import { useParties } from '@/services/partyService';
 import { getPartyBalanceDisplay } from '@/lib/balance';
 import { useItems, useCreateItem } from '@/services/itemService';
@@ -25,6 +27,7 @@ import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ModalPortal } from '@/components/ui/ModalPortal';
+import { SaveConfirmModal } from '@/components/common/SaveConfirmModal';
 import {
   ShoppingBag,
   Plus,
@@ -47,6 +50,8 @@ export default function PurchasesPage() {
   const [search, setSearch] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<InvoiceStatus | ''>('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isSaveConfirmOpen, setIsSaveConfirmOpen] = useState(false);
+  const [pendingPurchaseData, setPendingPurchaseData] = useState<CreatePurchaseInput | null>(null);
   const [payDueCustomAmount, setPayDueCustomAmount] = useState('');
 
   // Quick Create Item modal state
@@ -73,6 +78,7 @@ export default function PurchasesPage() {
         unit: quickItemData.unit || 'Pcs',
         purchasePrice: Number(quickItemData.purchasePrice || 0),
         salePrice: Number(quickItemData.salePrice || 0),
+        wholesalePrice: 0,
         openingStock: 0,
         minStockAlert: 0,
       });
@@ -168,6 +174,18 @@ export default function PurchasesPage() {
   useEffect(() => {
     if (isCreateOpen) form.setValue('paidAmount', totalAmount);
   }, [totalAmount, isCreateOpen]);
+
+  const handlePurchaseSaveRequest = (data: CreatePurchaseInput) => {
+    setPendingPurchaseData(data);
+    setIsSaveConfirmOpen(true);
+  };
+
+  const handleConfirmPurchaseSave = () => {
+    setIsSaveConfirmOpen(false);
+    if (pendingPurchaseData) {
+      handleCreateSubmit(pendingPurchaseData);
+    }
+  };
 
   const handleCreateSubmit = async (data: CreatePurchaseInput) => {
     try {
@@ -501,7 +519,7 @@ export default function PurchasesPage() {
               </div>
             </div>
 
-            <form onSubmit={form.handleSubmit(handleCreateSubmit)} className="p-6 space-y-6">
+            <form onSubmit={form.handleSubmit(handlePurchaseSaveRequest)} className="p-6 space-y-6">
               {/* Header Fields */}
               <div className="grid grid-cols-1 md:grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
@@ -644,11 +662,13 @@ export default function PurchasesPage() {
                             Quantity
                           </label>
                           <input
-                            type="number"
-                            step="any"
+                            type="text"
+                            inputMode="decimal"
+                            onKeyDown={onNumericKeyDown}
+                            onFocus={onNumericFocus}
                             min="0"
                             placeholder="Qty"
-                            {...form.register(`items.${idx}.quantity`, { valueAsNumber: true })}
+                            {...form.register(`items.${idx}.quantity`, { valueAsNumber: true, onBlur: onNumericBlur })}
                             className="w-full px-2.5 py-2 rounded-lg bg-slate-900 border border-slate-600 text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all"
                           />
                         </div>
@@ -659,11 +679,13 @@ export default function PurchasesPage() {
                             Cost Rate (Rs.)
                           </label>
                           <input
-                            type="number"
-                            step="any"
+                            type="text"
+                            inputMode="decimal"
+                            onKeyDown={onNumericKeyDown}
+                            onFocus={onNumericFocus}
                             min="0"
                             placeholder="Cost Price"
-                            {...form.register(`items.${idx}.unitPrice`, { valueAsNumber: true })}
+                            {...form.register(`items.${idx}.unitPrice`, { valueAsNumber: true, onBlur: onNumericBlur })}
                             className="w-full px-2.5 py-2 rounded-lg bg-slate-900 border border-slate-600 text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all"
                           />
                         </div>
@@ -675,12 +697,14 @@ export default function PurchasesPage() {
                           </label>
                           <div className="relative">
                             <input
-                              type="number"
-                              step="any"
+                              type="text"
+                              inputMode="decimal"
+                              onKeyDown={onNumericKeyDown}
+                              onFocus={onNumericFocus}
                               min="0"
                               max="100"
                               placeholder="0"
-                              {...form.register(`items.${idx}.discount`, { valueAsNumber: true })}
+                              {...form.register(`items.${idx}.discount`, { valueAsNumber: true, onBlur: onNumericBlur })}
                               className="w-full pl-2.5 pr-5 py-2 rounded-lg bg-slate-900 border border-slate-600 text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all"
                             />
                             <span className="absolute right-2 top-2 text-slate-500 text-[10px]">%</span>
@@ -752,10 +776,12 @@ export default function PurchasesPage() {
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">Paid Amount (Rs.)</label>
                     <input
-                      type="number"
-                      step="any"
+                      type="text"
+                      inputMode="decimal"
+                      onKeyDown={onNumericKeyDown}
+                      onFocus={onNumericFocus}
                       min="0"
-                      {...form.register('paidAmount', { valueAsNumber: true })}
+                      {...form.register('paidAmount', { valueAsNumber: true, onBlur: onNumericBlur })}
                       className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all"
                     />
                     <p className="text-[10px] text-slate-500 mt-1">
@@ -842,9 +868,12 @@ export default function PurchasesPage() {
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">Amount to Pay (Rs.)</label>
                 <input
-                  type="number"
-                  step="any"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
+                  onKeyDown={onNumericKeyDown}
+                                    onFocus={onNumericFocus}
+                                    onBlur={onNumericBlur}
+                                    min="0"
                   placeholder={`Full due: Rs. ${payDueAmount.toLocaleString()}`}
                   value={payDueCustomAmount}
                   onChange={(e) => setPayDueCustomAmount(e.target.value)}
@@ -950,9 +979,12 @@ export default function PurchasesPage() {
                   <div>
                     <label className="block text-slate-300 font-semibold mb-1">Purchase Cost Rate (Rs.)</label>
                     <input
-                      type="number"
-                      step="any"
-                      min="0"
+                      type="text"
+                      inputMode="decimal"
+                      onKeyDown={onNumericKeyDown}
+                                            onFocus={onNumericFocus}
+                                            onBlur={onNumericBlur}
+                                            min="0"
                       value={quickItemData.purchasePrice}
                       onChange={(e) => setQuickItemData({ ...quickItemData, purchasePrice: Number(e.target.value) })}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-emerald-400 font-mono focus:outline-none focus:border-blue-500"
@@ -961,9 +993,12 @@ export default function PurchasesPage() {
                   <div>
                     <label className="block text-slate-300 font-semibold mb-1">Selling Rate (Rs.)</label>
                     <input
-                      type="number"
-                      step="any"
-                      min="0"
+                      type="text"
+                      inputMode="decimal"
+                      onKeyDown={onNumericKeyDown}
+                                            onFocus={onNumericFocus}
+                                            onBlur={onNumericBlur}
+                                            min="0"
                       value={quickItemData.salePrice}
                       onChange={(e) => setQuickItemData({ ...quickItemData, salePrice: Number(e.target.value) })}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-blue-400 font-mono focus:outline-none focus:border-blue-500"
@@ -992,6 +1027,17 @@ export default function PurchasesPage() {
           </div>
         </ModalPortal>
       )}
+
+      {/* Save Confirmation Alert */}
+      <SaveConfirmModal
+        isOpen={isSaveConfirmOpen}
+        onClose={() => setIsSaveConfirmOpen(false)}
+        onConfirm={handleConfirmPurchaseSave}
+        isLoading={createPurchase.isPending}
+        title="Record Purchase Bill?"
+        message="Are you sure you want to record this purchase bill? Stock will be added and supplier balance will be updated."
+        confirmText="Confirm & Record"
+      />
     </div>
   );
 }

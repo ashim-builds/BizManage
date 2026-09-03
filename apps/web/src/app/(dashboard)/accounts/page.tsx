@@ -1,4 +1,5 @@
 'use client';
+import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericInput';
 
 import { useState } from 'react';
 import { useAccounts, useCreateAccount, useDeleteAccount } from '@/services/accountService';
@@ -7,6 +8,7 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ModalPortal } from '@/components/common/ModalPortal';
 import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
+import { SaveConfirmModal } from '@/components/common/SaveConfirmModal';
 import {
   Wallet,
   Building2,
@@ -46,6 +48,7 @@ const ACCOUNT_TYPE_CONFIG: Record<AccountTypeKey, { label: string; icon: any; co
 
 export default function AccountsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSaveConfirmOpen, setIsSaveConfirmOpen] = useState(false);
   const [deletingAccountInfo, setDeletingAccountInfo] = useState<{ id: string; name: string } | null>(null);
   const [deleteError, setDeleteError] = useState<string>('');
   const [form, setForm] = useState({
@@ -68,10 +71,19 @@ export default function AccountsPage() {
   const bankTotal = accounts.filter(a => a.accountType === 'BANK').reduce((s, a) => s + Number(a.balance), 0);
   const walletTotal = accounts.filter(a => a.accountType === 'MOBILE_WALLET').reduce((s, a) => s + Number(a.balance), 0);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleAccountSaveRequest = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     if (!form.accountName.trim()) { setError('Account name is required'); return; }
+    setIsSaveConfirmOpen(true);
+  };
+
+  const handleConfirmAccountSave = () => {
+    setIsSaveConfirmOpen(false);
+    executeAccountCreate();
+  };
+
+  const executeAccountCreate = async () => {
     try {
       await createAccount.mutateAsync({
         accountName: form.accountName.trim(),
@@ -242,7 +254,7 @@ export default function AccountsPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleAccountSaveRequest} className="space-y-4">
               {/* Account Type */}
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-2">Account Type *</label>
@@ -320,7 +332,9 @@ export default function AccountsPage() {
                   Opening Balance (Rs.)
                 </label>
                 <input
-                  type="number"
+                  type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                  onFocus={onNumericFocus}
+                  onBlur={onNumericBlur}
                   min="0"
                   step="0.01"
                   value={form.openingBalance}
@@ -377,6 +391,17 @@ export default function AccountsPage() {
             setDeleteError(err.response?.data?.error?.message || 'Failed to delete account.');
           }
         }}
+      />
+
+      {/* Save Confirmation Modal */}
+      <SaveConfirmModal
+        isOpen={isSaveConfirmOpen}
+        onClose={() => setIsSaveConfirmOpen(false)}
+        onConfirm={handleConfirmAccountSave}
+        isLoading={createAccount.isPending}
+        title="Create Account?"
+        message={`Are you sure you want to create "${form.accountName}" (${form.accountType.replace('_', ' ')})?`}
+        confirmText="Yes, Create Account"
       />
     </div>
   );

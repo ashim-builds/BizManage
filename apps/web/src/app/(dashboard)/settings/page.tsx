@@ -1,16 +1,17 @@
 'use client';
-
+import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericInput';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/providers/AuthProvider';
 import { useCurrentBusiness, useUpdateBusiness, useUpdateBusinessSettings } from '@/services/businessService';
-import { useImportParties, useImportItems, useDownloadBackup, useChangePassword } from '@/services/utilityService';
+import { useImportParties, useImportItems, useDownloadBackup, useChangePassword, useRestoreBackup } from '@/services/utilityService';
 import { useDashboardMetrics } from '@/services/dashboardService';
 import { useSessions, useDeleteSession, useDeleteOtherSessions } from '@/services/sessionService';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { UserGuide } from '@/components/guide/UserGuide';
+import { SaveConfirmModal } from '@/components/common/SaveConfirmModal';
 import { toast } from 'react-hot-toast';
 import {
   Settings,
@@ -38,6 +39,9 @@ import {
   MapPin,
   Clock,
   Trash2,
+  Database,
+  FileCheck,
+  Layers,
 } from 'lucide-react';
 
 type SettingsTab =
@@ -63,6 +67,7 @@ function SettingsPageContent() {
   const { user, logout } = useAuth();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+  const [isSaveProfileConfirmOpen, setIsSaveProfileConfirmOpen] = useState(false);
 
   useEffect(() => {
     const tabParam = searchParams?.get('tab') as SettingsTab;
@@ -172,11 +177,22 @@ function SettingsPageContent() {
   const deleteSession = useDeleteSession();
   const deleteOtherSessions = useDeleteOtherSessions();
 
-  // Import States
+  // Import & Restore States
+  const restoreBackup = useRestoreBackup();
   const [importJsonText, setImportJsonText] = useState('');
   const [importFileName, setImportFileName] = useState('');
   const [importErrors, setImportErrors] = useState<any[]>([]);
   const [importSuccessMsg, setImportSuccessMsg] = useState('');
+  const [importingFull, setImportingFull] = useState(false);
+  const [parsedBackupMeta, setParsedBackupMeta] = useState<{
+    isFullBackup?: boolean;
+    businessName?: string;
+    exportedAt?: string;
+    totalParties?: number;
+    totalItems?: number;
+    totalAccounts?: number;
+    totalInvoices?: number;
+  } | null>(null);
 
   // Calculator States
   const [loanAmount, setLoanAmount] = useState(500000);
@@ -280,32 +296,83 @@ function SettingsPageContent() {
   };
 
   const handleImportParties = async () => {
+    if (!importJsonText) {
+      toast.error('Please choose a JSON file first');
+      return;
+    }
+    setImportErrors([]);
+    setImportSuccessMsg('');
     try {
-      const rows = JSON.parse(importJsonText);
+      const json = JSON.parse(importJsonText);
+      const rows = Array.isArray(json) ? json : json.data?.parties || json.parties || json.rows || [];
+      if (!Array.isArray(rows) || rows.length === 0) {
+        setImportErrors([{ row: 0, name: 'Data Missing', error: 'No parties found in the selected JSON file.' }]);
+        return;
+      }
       const res = await importParties.mutateAsync(rows);
       if (res.data?.errors?.length > 0) {
         setImportErrors(res.data.errors);
       } else {
         setImportErrors([]);
       }
-      setImportSuccessMsg(`Successfully imported ${res.data.importedCount} parties!`);
+      const count = res.data?.importedCount || rows.length;
+      setImportSuccessMsg(`Successfully imported ${count} parties!`);
+      toast.success(`Imported ${count} parties successfully!`);
     } catch (err: any) {
-      setImportErrors([{ row: 0, name: 'Parse Error', error: 'Invalid JSON format. Please check your file.' }]);
+      setImportErrors([{ row: 0, name: 'Parse Error', error: err.response?.data?.error?.message || 'Invalid JSON format. Please check your file.' }]);
     }
   };
 
   const handleImportItems = async () => {
+    if (!importJsonText) {
+      toast.error('Please choose a JSON file first');
+      return;
+    }
+    setImportErrors([]);
+    setImportSuccessMsg('');
     try {
-      const rows = JSON.parse(importJsonText);
+      const json = JSON.parse(importJsonText);
+      const rows = Array.isArray(json) ? json : json.data?.items || json.items || json.rows || [];
+      if (!Array.isArray(rows) || rows.length === 0) {
+        setImportErrors([{ row: 0, name: 'Data Missing', error: 'No items/products found in the selected JSON file.' }]);
+        return;
+      }
       const res = await importItems.mutateAsync(rows);
       if (res.data?.errors?.length > 0) {
         setImportErrors(res.data.errors);
       } else {
         setImportErrors([]);
       }
-      setImportSuccessMsg(`Successfully imported ${res.data.importedCount} items!`);
+      const count = res.data?.importedCount || rows.length;
+      setImportSuccessMsg(`Successfully imported ${count} items!`);
+      toast.success(`Imported ${count} items successfully!`);
     } catch (err: any) {
-      setImportErrors([{ row: 0, name: 'Parse Error', error: 'Invalid JSON format. Please check your file.' }]);
+      setImportErrors([{ row: 0, name: 'Parse Error', error: err.response?.data?.error?.message || 'Invalid JSON format. Please check your file.' }]);
+    }
+  };
+
+  const handleImportFullBackup = async () => {
+    if (!importJsonText) {
+      toast.error('Please choose a JSON backup file first');
+      return;
+    }
+    setImportingFull(true);
+    setImportErrors([]);
+    setImportSuccessMsg('');
+    try {
+      const json = JSON.parse(importJsonText);
+      const res = await restoreBackup.mutateAsync(json);
+      if (res.success) {
+        setImportSuccessMsg(res.message || 'Full database backup restored successfully!');
+        toast.success(res.message || 'Full database restored successfully!');
+      } else {
+        toast.error(res.error?.message || 'Restore failed');
+      }
+    } catch (err: any) {
+      setImportErrors([{ row: 0, name: 'Restore Error', error: err.response?.data?.error?.message || 'Invalid backup JSON file or corrupted structure.' }]);
+      toast.error('Failed to restore backup');
+    } finally {
+      setImportingFull(false);
     }
   };
 
@@ -340,10 +407,34 @@ function SettingsPageContent() {
     const file = e.target.files?.[0];
     if (!file) return;
     setImportFileName(file.name);
+    setImportErrors([]);
+    setImportSuccessMsg('');
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      setImportJsonText(event.target?.result as string);
+      const content = event.target?.result as string;
+      setImportJsonText(content);
+      try {
+        const json = JSON.parse(content);
+        const data = json.data || json;
+        const metadata = data.metadata || json.metadata;
+        const partiesCount = Array.isArray(data.parties) ? data.parties.length : Array.isArray(json) ? json.length : 0;
+        const itemsCount = Array.isArray(data.items) ? data.items.length : 0;
+        const accountsCount = Array.isArray(data.accounts) ? data.accounts.length : 0;
+        const invoicesCount = (Array.isArray(data.sales) ? data.sales.length : 0) + (Array.isArray(data.purchases) ? data.purchases.length : 0);
+
+        setParsedBackupMeta({
+          isFullBackup: Boolean(data.parties || data.items || metadata),
+          businessName: metadata?.businessName,
+          exportedAt: metadata?.exportedAt ? new Date(metadata.exportedAt).toLocaleString() : undefined,
+          totalParties: partiesCount,
+          totalItems: itemsCount,
+          totalAccounts: accountsCount,
+          totalInvoices: invoicesCount,
+        });
+      } catch (err) {
+        setParsedBackupMeta(null);
+      }
     };
     reader.readAsText(file);
   };
@@ -632,9 +723,10 @@ function SettingsPageContent() {
             </div>
 
             <button
-              onClick={handleSaveProfile}
+              type="button"
+              onClick={() => setIsSaveProfileConfirmOpen(true)}
               disabled={updateBusiness.isPending || updateSettings.isPending}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 cursor-pointer active:scale-95"
             >
               <Save className="w-4 h-4" /> {updateBusiness.isPending ? 'Saving...' : 'Save Profile & Logo'}
             </button>
@@ -935,30 +1027,31 @@ function SettingsPageContent() {
         </div>
       )}
 
-      {/* TAB 4: IMPORT DATA */}
+      {/* TAB 4: IMPORT DATA & FULL BACKUP RESTORATION */}
       {activeTab === 'import' && (
         <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6 max-w-3xl">
           <div className="border-b border-slate-800 pb-3">
             <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Upload className="w-5 h-5 text-blue-400" /> Data Importer (Parties & Products)
+              <Upload className="w-5 h-5 text-blue-400" /> Data Importer & Full Database Restore
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Paste JSON formatted row arrays for bulk party or product import. All records are validated before database transaction commit.
+              Import parties and products, or restore an entire business database backup JSON file exported from BizManage.
             </p>
           </div>
 
           {importSuccessMsg && (
-            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4" /> {importSuccessMsg}
+            <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-2.5">
+              <CheckCircle2 className="w-5 h-5 shrink-0" />
+              <span>{importSuccessMsg}</span>
             </div>
           )}
 
           {importErrors.length > 0 && (
             <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-xs space-y-2">
-              <p className="font-bold flex items-center gap-1">
+              <p className="font-bold flex items-center gap-1.5 text-sm">
                 <AlertTriangle className="w-4 h-4 text-red-400" /> Import Validation Errors:
               </p>
-              <ul className="list-disc pl-5 space-y-1 font-mono text-[11px]">
+              <ul className="list-disc pl-5 space-y-1 font-mono text-[11px] max-h-48 overflow-y-auto">
                 {importErrors.map((err, idx) => (
                   <li key={idx}>
                     Row {err.row} ({err.name}): {err.error}
@@ -970,30 +1063,101 @@ function SettingsPageContent() {
 
           <div className="space-y-4 text-xs">
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">Select JSON File *</label>
-              <input
-                type="file"
-                accept=".json"
-                onChange={handleFileUpload}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono text-xs focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer"
-              />
-              {importFileName && (
-                <p className="mt-2 text-xs text-blue-400 font-semibold">Ready to import: {importFileName}</p>
-              )}
+              <label className="block text-slate-300 font-semibold mb-2">Select JSON File *</label>
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition-colors space-y-3">
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={handleFileUpload}
+                  className="w-full text-slate-300 text-xs font-mono file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer"
+                />
+
+                {importFileName && (
+                  <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2 text-slate-200">
+                      <FileCheck className="w-4 h-4 text-blue-400" />
+                      <span className="font-mono font-medium">{importFileName}</span>
+                    </div>
+                    {parsedBackupMeta?.isFullBackup && (
+                      <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold uppercase">
+                        Full Backup Detected
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            {/* Smart Detection Card */}
+            {parsedBackupMeta && (
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] uppercase font-bold text-slate-400 flex items-center gap-1.5">
+                    <Database className="w-3.5 h-3.5 text-emerald-400" /> Detected Data in File
+                  </span>
+                  {parsedBackupMeta.businessName && (
+                    <span className="text-xs text-white font-semibold">
+                      Business: <strong className="text-blue-400">{parsedBackupMeta.businessName}</strong>
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                  <div className="p-2 rounded-xl bg-slate-900 border border-slate-800">
+                    <span className="block text-[10px] text-slate-400">Parties</span>
+                    <strong className="text-sm font-mono text-white">{parsedBackupMeta.totalParties || 0}</strong>
+                  </div>
+                  <div className="p-2 rounded-xl bg-slate-900 border border-slate-800">
+                    <span className="block text-[10px] text-slate-400">Items / Products</span>
+                    <strong className="text-sm font-mono text-white">{parsedBackupMeta.totalItems || 0}</strong>
+                  </div>
+                  <div className="p-2 rounded-xl bg-slate-900 border border-slate-800">
+                    <span className="block text-[10px] text-slate-400">Accounts</span>
+                    <strong className="text-sm font-mono text-white">{parsedBackupMeta.totalAccounts || 0}</strong>
+                  </div>
+                  <div className="p-2 rounded-xl bg-slate-900 border border-slate-800">
+                    <span className="block text-[10px] text-slate-400">Invoices</span>
+                    <strong className="text-sm font-mono text-white">{parsedBackupMeta.totalInvoices || 0}</strong>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              <button
+                onClick={handleImportFullBackup}
+                disabled={!importJsonText || importingFull}
+                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold transition-all shadow-lg shadow-emerald-600/20 flex items-center gap-2 cursor-pointer active:scale-95"
+              >
+                <Database className="w-4 h-4" />
+                <span>{importingFull ? 'Restoring Full Database...' : 'Restore Full Database Backup'}</span>
+              </button>
+
               <button
                 onClick={handleImportParties}
-                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all shadow-lg shadow-blue-600/20"
+                disabled={!importJsonText}
+                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold transition-all shadow-lg shadow-blue-600/20 flex items-center gap-1.5 cursor-pointer active:scale-95"
               >
-                Import Parties
+                <span>Import Parties Only</span>
+                {parsedBackupMeta?.totalParties ? (
+                  <span className="px-1.5 py-0.5 rounded bg-blue-700 text-[10px] font-mono">
+                    {parsedBackupMeta.totalParties}
+                  </span>
+                ) : null}
               </button>
+
               <button
                 onClick={handleImportItems}
-                className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold transition-all shadow-lg shadow-purple-600/20"
+                disabled={!importJsonText}
+                className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-semibold transition-all shadow-lg shadow-purple-600/20 flex items-center gap-1.5 cursor-pointer active:scale-95"
               >
-                Import Items
+                <span>Import Items Only</span>
+                {parsedBackupMeta?.totalItems ? (
+                  <span className="px-1.5 py-0.5 rounded bg-purple-700 text-[10px] font-mono">
+                    {parsedBackupMeta.totalItems}
+                  </span>
+                ) : null}
               </button>
             </div>
           </div>
@@ -1040,7 +1204,9 @@ function SettingsPageContent() {
               <div>
                 <label className="block text-slate-300 mb-1">Loan Principal (Rs.)</label>
                 <input
-                  type="number"
+                  type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                  onFocus={onNumericFocus}
+                  onBlur={onNumericBlur}
                   value={loanAmount}
                   onChange={(e) => setLoanAmount(Number(e.target.value))}
                   className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono"
@@ -1050,7 +1216,9 @@ function SettingsPageContent() {
                 <div>
                   <label className="block text-slate-300 mb-1">Annual Interest Rate (%)</label>
                   <input
-                    type="number"
+                    type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                    onFocus={onNumericFocus}
+                    onBlur={onNumericBlur}
                     value={interestRate}
                     onChange={(e) => setInterestRate(Number(e.target.value))}
                     className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono"
@@ -1059,7 +1227,9 @@ function SettingsPageContent() {
                 <div>
                   <label className="block text-slate-300 mb-1">Tenure (Months)</label>
                   <input
-                    type="number"
+                    type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                    onFocus={onNumericFocus}
+                    onBlur={onNumericBlur}
                     value={loanMonths}
                     onChange={(e) => setLoanMonths(Number(e.target.value))}
                     className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono"
@@ -1113,6 +1283,20 @@ function SettingsPageContent() {
           </div>
         </div>
       )}
+
+      {/* Save Settings Confirmation Modal */}
+      <SaveConfirmModal
+        isOpen={isSaveProfileConfirmOpen}
+        onClose={() => setIsSaveProfileConfirmOpen(false)}
+        onConfirm={() => {
+          setIsSaveProfileConfirmOpen(false);
+          handleSaveProfile();
+        }}
+        isLoading={updateBusiness.isPending || updateSettings.isPending}
+        title="Save Settings & Business Profile?"
+        message="Are you sure you want to save these changes to your business profile and invoice settings?"
+        confirmText="Yes, Save Settings"
+      />
     </div>
   );
 }

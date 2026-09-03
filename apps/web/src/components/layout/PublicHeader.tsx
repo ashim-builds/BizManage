@@ -29,7 +29,7 @@ export function PublicHeader({ activePage }: PublicHeaderProps) {
   const dashboardLabel = isAdmin ? "Admin Dashboard" : "Workspace Dashboard";
 
   return (
-    <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl sticky top-0 z-50 transition-all">
+    <header className="border-b border-slate-200 bg-white/95 backdrop-blur-xl sticky top-0 z-50 transition-all shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link
@@ -41,36 +41,36 @@ export function PublicHeader({ activePage }: PublicHeaderProps) {
             alt="BizManage Logo"
             className="w-8 h-8 sm:w-9 sm:h-9 object-contain drop-shadow-md group-hover:scale-105 transition-transform"
           />
-          <span className="text-lg sm:text-xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent group-hover:opacity-90 transition-opacity">
+          <span className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 group-hover:opacity-90 transition-opacity">
             BizManage
           </span>
         </Link>
 
         {/* Desktop Nav Links */}
-        <nav className="hidden md:flex items-center space-x-1 lg:space-x-2 text-sm font-medium text-slate-300">
+        <nav className="hidden md:flex items-center space-x-1 lg:space-x-2 text-sm font-medium text-slate-600">
           <Link
             href="/#features"
-            className="px-3 py-1.5 rounded-lg hover:text-white hover:bg-zinc-850 transition-colors"
+            className="px-3 py-1.5 rounded-lg hover:text-slate-900 hover:bg-slate-100 transition-colors"
           >
             Features
           </Link>
           <Link
             href="/#pricing"
-            className="px-3 py-1.5 rounded-lg hover:text-white hover:bg-zinc-850 transition-colors"
+            className="px-3 py-1.5 rounded-lg hover:text-slate-900 hover:bg-slate-100 transition-colors"
           >
             Pricing
           </Link>
           <Link
             href="/explore-stores"
-            className="px-3 py-1.5 rounded-lg text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 font-semibold transition-colors"
+            className="px-3 py-1.5 rounded-lg text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 font-semibold transition-colors"
           >
             Explore Stores
           </Link>
           <Link
             href="/#download-app"
-            className="px-3 py-1.5 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/10 font-semibold transition-colors flex items-center gap-1.5"
+            className="px-3 py-1.5 rounded-lg text-red-600 hover:text-red-700 hover:bg-red-50 font-semibold transition-colors flex items-center gap-1.5"
           >
-            <Smartphone className="w-4 h-4 text-red-500" />
+            <Smartphone className="w-4 h-4 text-red-600" />
             <span>Mobile App</span>
           </Link>
         </nav>
@@ -79,13 +79,13 @@ export function PublicHeader({ activePage }: PublicHeaderProps) {
         <div className="hidden sm:flex items-center space-x-2 sm:space-x-4 shrink-0">
           {!authLoading && user ? (
             <div className="flex items-center space-x-3 sm:space-x-4">
-              <span className="text-xs sm:text-sm text-slate-300 hidden lg:inline">
-                Welcome, <strong className="text-white">{user.name}</strong>
+              <span className="text-xs sm:text-sm text-slate-600 hidden lg:inline">
+                Welcome, <strong className="text-slate-900">{user.name}</strong>
               </span>
 
               <Link
                 href={dashboardHref}
-                className="text-xs sm:text-sm font-bold bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-xl shadow-lg shadow-red-600/25 transition-all flex items-center gap-2"
+                className="text-xs sm:text-sm font-bold bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-xl shadow-md shadow-red-600/25 transition-all flex items-center gap-2"
               >
                 <LayoutDashboard className="w-4 h-4" />
                 <span>Go to {dashboardLabel}</span>
@@ -96,21 +96,21 @@ export function PublicHeader({ activePage }: PublicHeaderProps) {
             <>
               <Link
                 href="/login"
-                className="text-xs sm:text-sm font-medium text-slate-300 hover:text-white transition-colors px-3 py-2 rounded-xl hover:bg-zinc-850"
+                className="text-xs sm:text-sm font-medium text-slate-700 hover:text-slate-900 transition-colors px-3 py-2 rounded-xl hover:bg-slate-100"
               >
                 Sign In
               </Link>
 
               <Link
                 href="/register"
-                className="text-xs sm:text-sm font-bold bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-xl shadow-lg shadow-red-600/25 transition-all flex items-center gap-1.5"
+                className="text-xs sm:text-sm font-bold bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-xl shadow-md shadow-red-600/25 transition-all flex items-center gap-1.5"
               >
                 Start Free Trial
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </>
           ) : (
-            <div className="h-9 w-24 bg-slate-800/50 rounded-lg animate-pulse" />
+            <div className="h-9 w-24 bg-slate-200 rounded-lg animate-pulse" />
           )}
         </div>
 
@@ -119,7 +119,7 @@ export function PublicHeader({ activePage }: PublicHeaderProps) {
           {!authLoading && user && (
             <Link
               href={dashboardHref}
-              className="text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white p-2 rounded-lg"
+              className="text-xs font-medium bg-red-600 hover:bg-red-500 text-white p-2 rounded-lg"
               title="Dashboard"
             >
               <LayoutDashboard className="w-4 h-4" />
@@ -128,11 +128,11 @@ export function PublicHeader({ activePage }: PublicHeaderProps) {
 
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors"
+            className="p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
             aria-label="Toggle navigation menu"
           >
             {mobileMenuOpen ? (
-              <X className="w-5 h-5 text-white" />
+              <X className="w-5 h-5 text-slate-900" />
             ) : (
               <Menu className="w-5 h-5" />
             )}

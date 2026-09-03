@@ -101,6 +101,7 @@ export const itemSchema = z.object({
   categoryId: z.string().optional().nullable(),
   unit: z.string().min(1, 'Unit is required').default('Pcs'),
   salePrice: z.number().min(0, 'Sale price cannot be negative').default(0),
+  wholesalePrice: z.number().min(0, 'Wholesale price cannot be negative').default(0),
   purchasePrice: z.number().min(0, 'Purchase price cannot be negative').default(0),
   minStockAlert: z.number().min(0).default(0),
   openingStock: z.number().default(0),
@@ -111,6 +112,7 @@ export const itemSchema = z.object({
   iv: z.string().optional(),
   encPurchasePrice: z.string().optional(),
   encSalePrice: z.string().optional(),
+  encWholesalePrice: z.string().optional(),
   hmacName: z.string().optional(),
   hmacCode: z.string().optional(),
 });

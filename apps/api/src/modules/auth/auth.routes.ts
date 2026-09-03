@@ -851,18 +851,16 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
     }
 
-    if (readNotifications !== undefined) {
-      await globalPrisma.$transaction([
-        globalPrisma.notificationRead.deleteMany({
-          where: { userId: request.user.id }
-        }),
-        globalPrisma.notificationRead.createMany({
-          data: readNotifications.map(id => ({
+    if (readNotifications !== undefined && Array.isArray(readNotifications)) {
+      if (readNotifications.length > 0) {
+        await globalPrisma.notificationRead.createMany({
+          data: readNotifications.map((id) => ({
             userId: request.user.id,
-            notificationId: id
-          }))
-        })
-      ]);
+            notificationId: id,
+          })),
+          skipDuplicates: true,
+        });
+      }
     }
 
     const updatedUser = await globalPrisma.user.findUnique({

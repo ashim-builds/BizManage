@@ -8,6 +8,7 @@ import {
   useStorefrontCustomers,
   useUpdateOrderStatus,
 } from '@/hooks/useStorefront';
+import { SaveConfirmModal } from '@/components/common/SaveConfirmModal';
 import {
   Globe,
   Eye,
@@ -53,6 +54,7 @@ export default function StorefrontSettingsPage() {
   const [storeDescription, setStoreDescription] = useState('');
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [storeBannerUrl, setStoreBannerUrl] = useState('');
+  const [isSaveConfirmOpen, setIsSaveConfirmOpen] = useState(false);
   const [enableOnlineOrders, setEnableOnlineOrders] = useState(true);
   const [copied, setCopied] = useState(false);
   const [customerSearch, setCustomerSearch] = useState('');
@@ -100,12 +102,21 @@ export default function StorefrontSettingsPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSaveRequest = (e: React.FormEvent) => {
     e.preventDefault();
     if (enableStorefront && !cleanSlug) {
       toast.error('Store URL handle is required to enable website');
       return;
     }
+    setIsSaveConfirmOpen(true);
+  };
+
+  const handleConfirmSave = async () => {
+    setIsSaveConfirmOpen(false);
+    executeSettingsSave();
+  };
+
+  const executeSettingsSave = async () => {
 
     try {
       await updateSettings.mutateAsync({
@@ -245,7 +256,7 @@ export default function StorefrontSettingsPage() {
 
       {/* TAB 1: WEBSITE SETTINGS */}
       {activeTab === 'settings' ? (
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <form onSubmit={handleSaveRequest} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column: Form Settings */}
           <div className="md:col-span-2 space-y-6">
             {/* Main Website Switch */}
@@ -835,6 +846,17 @@ export default function StorefrontSettingsPage() {
           )}
         </div>
       )}
+
+      {/* Save Confirmation Modal */}
+      <SaveConfirmModal
+        isOpen={isSaveConfirmOpen}
+        onClose={() => setIsSaveConfirmOpen(false)}
+        onConfirm={handleConfirmSave}
+        isLoading={updateSettings.isPending}
+        title="Save Storefront Settings?"
+        message="Are you sure you want to save changes to your Online Storefront website?"
+        confirmText="Yes, Save Settings"
+      />
     </div>
   );
 }

@@ -70,7 +70,7 @@ export function VyaparPremiumReports({
         </STATICVARIABLES>
       </REQUESTDESC>
       <REQUESTDATA>
-        <!-- BizManage Vyapar v2 Tally Integration Export -->
+        <!-- BizManage Tally Integration Export -->
         <TALLYMESSAGE xmlns:UDF="TallyUDF">
           <COMPANY>
             <REMOTECMPINFO.LIST MERGE="Yes">

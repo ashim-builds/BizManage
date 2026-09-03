@@ -1,34 +1,36 @@
 import {
-  LayoutDashboard,
-  Receipt,
+  Home,
   Users,
-  Package,
-  TrendingDown,
+  ShoppingBag,
+  Receipt,
+  ShoppingCart,
   TrendingUp,
-  Wallet,
+  Landmark,
   FileBarChart,
+  RotateCcw,
+  Wrench,
   Settings,
   Crown,
-  ArrowDownLeft,
-  ArrowUpRight,
-  ShoppingBag,
-  RotateCcw,
-  Scale,
-  BookOpen,
-  ShieldCheck,
-  Zap,
-  Globe,
-  Store,
   Building2,
   Printer,
+  Zap,
+  ArrowDownLeft,
+  ArrowUpRight,
   Boxes,
+  Store,
+  Wallet,
   Megaphone,
+  ArrowLeftRight,
+  History,
+  RefreshCw,
+  Clock,
+  Upload,
 } from 'lucide-react';
 
 export interface NavGroupItem {
   name: string;
   href: string;
-  icon: any;
+  icon?: any;
   requiredFeature?: string;
 }
 
@@ -36,49 +38,82 @@ export interface NavSection {
   name: string;
   icon: any;
   href?: string;
+  hasPlusButton?: boolean;
+  plusHref?: string;
   children?: NavGroupItem[];
   requiredFeature?: string;
 }
 
 export const sidebarSections: NavSection[] = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Parties', href: '/parties', icon: Users, requiredFeature: 'AUTO_LEDGER' },
+  { name: 'Home', href: '/dashboard', icon: Home },
+  { name: 'Parties', href: '/parties', icon: Users, hasPlusButton: true, plusHref: '/parties/new' },
+  { name: 'Items', href: '/inventory', icon: ShoppingBag, hasPlusButton: true, plusHref: '/inventory?action=new' },
   {
-    name: 'Items & Inventory',
-    icon: Package,
-    children: [
-      { name: 'Stock & Items', href: '/inventory', icon: Package },
-      { name: 'Godowns & Transfer', href: '/inventory/godowns', icon: Building2, requiredFeature: 'GODOWN_MANAGEMENT' },
-      { name: 'Print Barcode Labels', href: '/inventory/labels', icon: Printer, requiredFeature: 'BARCODE_PRINTING' },
-    ],
-  },
-  {
-    name: 'Sales',
+    name: 'Sale',
+    href: '/transactions/sales',
     icon: Receipt,
     children: [
       { name: 'Sale Invoices', href: '/transactions/sales', icon: Receipt },
-      { name: 'POS Quick Billing', href: '/transactions/pos', icon: Zap, requiredFeature: 'POS_BILLING' },
+      { name: 'POS Quick Billing', href: '/transactions/pos', icon: Zap },
       { name: 'Payment In', href: '/transactions/payment-in', icon: ArrowDownLeft },
       { name: 'Sale Return', href: '/transactions/sales-return', icon: RotateCcw },
     ],
   },
   {
-    name: 'Purchases',
-    icon: ShoppingBag,
+    name: 'Purchase & Expense',
+    href: '/transactions/purchases',
+    icon: ShoppingCart,
     children: [
       { name: 'Purchase Bills', href: '/transactions/purchases', icon: ShoppingBag },
       { name: 'Payment Out', href: '/transactions/payment-out', icon: ArrowUpRight },
+      { name: 'Expenses', href: '/expenses', icon: Receipt },
       { name: 'Purchase Return', href: '/transactions/purchase-return', icon: RotateCcw },
     ],
   },
-  { name: 'Manufacturing', href: '/manufacturing', icon: Boxes, requiredFeature: 'MANUFACTURING' },
-  { name: 'Cash & Bank', href: '/accounts', icon: Wallet, requiredFeature: 'WALLET_SYNC' },
-  { name: 'Expenses', href: '/expenses', icon: TrendingDown, requiredFeature: 'WALLET_SYNC' },
-  { name: 'Marketing & WhatsApp', href: '/marketing', icon: Megaphone, requiredFeature: 'WHATSAPP_MARKETING' },
-  { name: 'Online Store', href: '/storefront', icon: Store },
-  { name: 'Reports', href: '/reports', icon: FileBarChart, requiredFeature: 'ADVANCED_REPORTS' },
-  { name: 'Profit & Loss', href: '/profit-loss', icon: Scale, requiredFeature: 'ADVANCED_REPORTS' },
-  { name: 'Staff & Payroll', href: '/staff', icon: ShieldCheck, requiredFeature: 'STAFF_PAYROLL' },
-  { name: 'Subscription', href: '/subscription', icon: Crown },
+  {
+    name: 'Transactions',
+    href: '/transactions',
+    icon: ArrowLeftRight,
+    children: [
+      { name: 'All Transactions', href: '/transactions', icon: ArrowLeftRight },
+      { name: 'Cashflow Ledger', href: '/cashflow', icon: TrendingUp },
+      { name: 'Profit & Loss', href: '/profit-loss', icon: FileBarChart },
+    ],
+  },
+  { name: 'Cash & Bank', href: '/accounts', icon: Landmark },
+  {
+    name: 'Grow Your Business',
+    href: '/marketing',
+    icon: TrendingUp,
+    children: [
+      { name: 'Marketing & WhatsApp', href: '/marketing', icon: Megaphone },
+      { name: 'Online Store', href: '/storefront', icon: Store },
+      { name: 'Explore Stores', href: '/explore-stores', icon: Store },
+    ],
+  },
+  { name: 'Reports', href: '/reports', icon: FileBarChart },
+  {
+    name: 'Sync, Share & Backup',
+    href: '/sync-backup',
+    icon: RotateCcw,
+    children: [
+      { name: 'Cloud Sync & Share', href: '/sync-backup?tab=sync-share', icon: RefreshCw },
+      { name: 'Auto Backup', href: '/sync-backup?tab=auto-backup', icon: Clock },
+      { name: 'Restore Backup', href: '/sync-backup?tab=restore-backup', icon: Upload },
+    ],
+  },
+  {
+    name: 'Utilities',
+    href: '/inventory/godowns',
+    icon: Wrench,
+    children: [
+      { name: 'Godowns & Transfer', href: '/inventory/godowns', icon: Building2 },
+      { name: 'Print Barcode Labels', href: '/inventory/labels', icon: Printer },
+      { name: 'Manufacturing (BOM)', href: '/manufacturing', icon: Boxes },
+      { name: 'Staff & Attendance', href: '/staff', icon: Users },
+      { name: 'Activity & Audit Log', href: '/activity-log', icon: History },
+    ],
+  },
   { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Plans & Pricing', href: '/subscription', icon: Crown },
 ];

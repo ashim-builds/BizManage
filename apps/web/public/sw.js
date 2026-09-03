@@ -1,8 +1,17 @@
-const CACHE_NAME = 'bizmanage-offline-v1';
+const CACHE_NAME = 'bizmanage-offline-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/manifest.json',
   '/logo-transparent.png',
+  '/icon-192x192.png',
+  '/icon-512x512.png',
+  '/favicon-32x32.png',
+  '/favicon-16x16.png',
+  '/apple-touch-icon.png',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
+  '/icons/icon-maskable-192x192.png',
+  '/icons/icon-maskable-512x512.png',
   '/transactions/pos',
   '/inventory',
   '/staff',

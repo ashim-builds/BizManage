@@ -1,4 +1,5 @@
 'use client';
+import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericInput';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -432,9 +433,12 @@ export default function GodownsPage() {
                   Transfer Quantity <span className="text-red-400">*</span>
                 </label>
                 <input
-                  type="number"
-                  step="any"
-                  min="0.1"
+                  type="text"
+                  inputMode="decimal"
+                  onKeyDown={onNumericKeyDown}
+                                    onFocus={onNumericFocus}
+                                    onBlur={onNumericBlur}
+                                    min="0.1"
                   value={transferQty}
                   onChange={(e) => setTransferQty(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-white focus:outline-none focus:border-red-500 font-mono font-bold"

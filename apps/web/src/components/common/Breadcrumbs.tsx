@@ -11,8 +11,8 @@ export function Breadcrumbs() {
   if (segments.length === 0) return null;
 
   return (
-    <nav className="flex items-center space-x-1 sm:space-x-2 text-xs font-medium text-slate-400">
-      <Link href="/dashboard" className="hover:text-white transition-colors flex items-center gap-1 shrink-0">
+    <nav className="flex items-center space-x-1 sm:space-x-2 text-xs font-medium text-slate-500">
+      <Link href="/dashboard" className="hover:text-slate-900 transition-colors flex items-center gap-1 shrink-0">
         <Home className="w-3.5 h-3.5" />
       </Link>
       {segments.map((segment, index) => {
@@ -24,11 +24,11 @@ export function Breadcrumbs() {
 
         return (
           <div key={href} className="flex items-center space-x-1 sm:space-x-2 min-w-0">
-            <ChevronRight className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             {isLast ? (
-              <span className="text-blue-400 font-semibold truncate">{formatted}</span>
+              <span className="text-slate-900 font-bold truncate">{formatted}</span>
             ) : (
-              <Link href={href} className="hover:text-white transition-colors truncate hidden sm:block">
+              <Link href={href} className="hover:text-slate-900 transition-colors truncate hidden sm:block">
                 {formatted}
               </Link>
             )}

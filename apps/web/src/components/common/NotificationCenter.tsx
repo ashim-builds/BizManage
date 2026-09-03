@@ -16,12 +16,17 @@ import {
   Filter,
   ArrowRight,
 } from 'lucide-react';
-import { NotificationItem, useNotifications } from '@/services/utilityService';
+import {
+  NotificationItem,
+  useNotifications,
+  useMarkNotificationsRead,
+  useMarkNotificationsUnread,
+} from '@/services/utilityService';
 
 interface NotificationCenterProps {
   activeBusinessId?: string | null;
-  readNotifIds: string[];
-  setReadNotifIds: (ids: string[]) => void;
+  readNotifIds?: string[];
+  setReadNotifIds?: (ids: string[]) => void;
   userReadNotifications?: string[];
 }
 
@@ -31,10 +36,20 @@ export function NotificationCenter({
   setReadNotifIds,
 }: NotificationCenterProps) {
   const { data: notifData, isLoading } = useNotifications(activeBusinessId);
+  const markReadMutation = useMarkNotificationsRead(activeBusinessId);
+  const markUnreadMutation = useMarkNotificationsUnread(activeBusinessId);
+
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Sync server-persisted readNotifIds with parent state if provided
+  useEffect(() => {
+    if (notifData?.readNotifIds && setReadNotifIds) {
+      setReadNotifIds(notifData.readNotifIds);
+    }
+  }, [notifData?.readNotifIds, setReadNotifIds]);
 
   // Guarantee newest notifications appear AT THE TOP
   const notifications = useMemo(() => {
@@ -46,9 +61,13 @@ export function NotificationCenter({
     });
   }, [notifData?.notifications]);
 
+  // Unread count is directly synchronized with MySQL database
   const unreadCount = useMemo(() => {
-    return notifications.filter((n) => !readNotifIds.includes(n.id)).length;
-  }, [notifications, readNotifIds]);
+    if (typeof notifData?.unreadCount === 'number') {
+      return notifData.unreadCount;
+    }
+    return notifications.filter((n) => !n.isRead).length;
+  }, [notifData?.unreadCount, notifications]);
 
   // Click outside to close handler
   useEffect(() => {
@@ -79,38 +98,35 @@ export function NotificationCenter({
 
   const markAllAsRead = () => {
     const allIds = notifications.map((n) => n.id);
-    const updated = Array.from(new Set([...readNotifIds, ...allIds]));
-    setReadNotifIds(updated);
-
-    import('@/lib/api').then(({ api }) => {
-      api.patch('/auth/me/preferences', { readNotifications: updated }).catch(() => {});
-    });
+    if (setReadNotifIds) {
+      setReadNotifIds(allIds);
+    }
+    markReadMutation.mutate({ markAll: true, notificationIds: allIds });
   };
 
-  const toggleSingleRead = (e: React.MouseEvent, id: string) => {
+  const toggleSingleRead = (e: React.MouseEvent, item: NotificationItem) => {
     e.preventDefault();
     e.stopPropagation();
 
-    let updated: string[];
-    if (readNotifIds.includes(id)) {
-      updated = readNotifIds.filter((item) => item !== id);
+    if (item.isRead) {
+      if (setReadNotifIds && readNotifIds) {
+        setReadNotifIds(readNotifIds.filter((id) => id !== item.id));
+      }
+      markUnreadMutation.mutate({ notificationId: item.id });
     } else {
-      updated = Array.from(new Set([...readNotifIds, id]));
+      if (setReadNotifIds && readNotifIds) {
+        setReadNotifIds(Array.from(new Set([...readNotifIds, item.id])));
+      }
+      markReadMutation.mutate({ notificationId: item.id });
     }
-    setReadNotifIds(updated);
-
-    import('@/lib/api').then(({ api }) => {
-      api.patch('/auth/me/preferences', { readNotifications: updated }).catch(() => {});
-    });
   };
 
   const handleNotificationClick = (item: NotificationItem) => {
-    if (!readNotifIds.includes(item.id)) {
-      const updated = Array.from(new Set([...readNotifIds, item.id]));
-      setReadNotifIds(updated);
-      import('@/lib/api').then(({ api }) => {
-        api.patch('/auth/me/preferences', { readNotifications: updated }).catch(() => {});
-      });
+    if (!item.isRead) {
+      if (setReadNotifIds && readNotifIds) {
+        setReadNotifIds(Array.from(new Set([...readNotifIds, item.id])));
+      }
+      markReadMutation.mutate({ notificationId: item.id });
     }
     setIsOpen(false);
   };
@@ -118,7 +134,7 @@ export function NotificationCenter({
   // Filter items by Tab & Search query
   const filteredNotifications = useMemo(() => {
     return notifications.filter((item) => {
-      const isRead = readNotifIds.includes(item.id);
+      const isRead = item.isRead;
       if (activeTab === 'unread' && isRead) return false;
 
       if (searchQuery.trim()) {
@@ -129,7 +145,7 @@ export function NotificationCenter({
       }
       return true;
     });
-  }, [notifications, readNotifIds, activeTab, searchQuery]);
+  }, [notifications, activeTab, searchQuery]);
 
   return (
     <div className="relative" ref={containerRef}>
@@ -162,17 +178,17 @@ export function NotificationCenter({
           />
 
           {/* Panel */}
-          <div className="fixed sm:absolute inset-x-3 top-16 sm:top-auto sm:inset-x-auto sm:right-0 sm:mt-2.5 sm:w-[420px] max-h-[calc(100vh-5.5rem)] sm:max-h-[540px] flex flex-col rounded-2xl bg-slate-900/95 border border-slate-800 shadow-2xl backdrop-blur-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-3 duration-200">
+          <div className="fixed sm:absolute inset-x-3 top-16 sm:top-auto sm:inset-x-auto sm:right-0 sm:mt-2.5 sm:w-[420px] max-h-[calc(100vh-5.5rem)] sm:max-h-[540px] flex flex-col rounded-2xl bg-white border border-slate-200 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-3 duration-200">
             {/* Header */}
-            <div className="px-4 py-3.5 border-b border-slate-800/80 bg-slate-900/90 shrink-0">
+            <div className="px-4 py-3.5 border-b border-slate-200 bg-white shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-                    <Bell className="w-3.5 h-3.5 text-blue-400" />
+                  <div className="w-7 h-7 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center">
+                    <Bell className="w-3.5 h-3.5 text-blue-600" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-white tracking-wide">Notifications</h4>
-                    <p className="text-[10px] text-slate-400">
+                    <h4 className="text-xs font-bold text-slate-900 tracking-wide">Notifications</h4>
+                    <p className="text-[10px] text-slate-500">
                       {unreadCount > 0 ? `${unreadCount} unread alert${unreadCount > 1 ? 's' : ''}` : 'All caught up'}
                     </p>
                   </div>
@@ -182,7 +198,7 @@ export function NotificationCenter({
                   {unreadCount > 0 && (
                     <button
                       onClick={markAllAsRead}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 transition-colors"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors"
                       title="Mark all notifications as read"
                     >
                       <CheckCheck className="w-3.5 h-3.5" />
@@ -191,7 +207,7 @@ export function NotificationCenter({
                   )}
                   <button
                     onClick={() => setIsOpen(false)}
-                    className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                    className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
                     title="Close"
                   >
                     <X className="w-4 h-4" />
@@ -201,13 +217,13 @@ export function NotificationCenter({
 
               {/* Navigation Tabs & Search */}
               <div className="mt-3 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1 p-0.5 bg-slate-950/60 rounded-xl border border-slate-800/80">
+                <div className="flex items-center gap-1 p-0.5 bg-slate-100 rounded-xl border border-slate-200">
                   <button
                     onClick={() => setActiveTab('all')}
                     className={`px-3 py-1 rounded-lg text-[11px] font-semibold transition-all ${
                       activeTab === 'all'
-                        ? 'bg-blue-600 text-white shadow-md'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                     }`}
                   >
                     All ({notifications.length})
@@ -216,8 +232,8 @@ export function NotificationCenter({
                     onClick={() => setActiveTab('unread')}
                     className={`px-3 py-1 rounded-lg text-[11px] font-semibold transition-all flex items-center gap-1.5 ${
                       activeTab === 'unread'
-                        ? 'bg-blue-600 text-white shadow-md'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                     }`}
                   >
                     <span>Unread</span>
@@ -236,18 +252,18 @@ export function NotificationCenter({
                 {/* Quick Search */}
                 {notifications.length > 3 && (
                   <div className="relative flex-1 max-w-[150px]">
-                    <Search className="w-3 h-3 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <Search className="w-3 h-3 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       type="text"
                       placeholder="Search..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-7 pr-2 py-1 bg-slate-950/60 border border-slate-800/80 rounded-lg text-[11px] text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/50"
+                      className="w-full pl-7 pr-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[11px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500"
                     />
                     {searchQuery && (
                       <button
                         onClick={() => setSearchQuery('')}
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -258,7 +274,7 @@ export function NotificationCenter({
             </div>
 
             {/* Scrollable Notification List */}
-            <div className="overflow-y-auto flex-1 divide-y divide-slate-800/40 custom-scrollbar">
+            <div className="overflow-y-auto flex-1 divide-y divide-slate-100 custom-scrollbar bg-white">
               {isLoading ? (
                 <div className="py-12 flex flex-col items-center justify-center text-center">
                   <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-2" />
@@ -266,10 +282,10 @@ export function NotificationCenter({
                 </div>
               ) : filteredNotifications.length === 0 ? (
                 <div className="py-14 px-6 flex flex-col items-center justify-center text-center">
-                  <div className="w-12 h-12 rounded-2xl bg-slate-800/50 border border-slate-700/50 flex items-center justify-center mb-3">
-                    <BellOff className="w-6 h-6 text-slate-500" />
+                  <div className="w-12 h-12 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center mb-3">
+                    <BellOff className="w-6 h-6 text-slate-400" />
                   </div>
-                  <p className="text-xs font-bold text-slate-300">
+                  <p className="text-xs font-bold text-slate-800">
                     {searchQuery
                       ? 'No matching notifications found'
                       : activeTab === 'unread'
@@ -286,47 +302,47 @@ export function NotificationCenter({
                 </div>
               ) : (
                 filteredNotifications.map((item) => {
-                  const isRead = readNotifIds.includes(item.id);
+                  const isRead = item.isRead;
                   const cfg =
                     {
                       WARNING: {
                         icon: AlertTriangle,
-                        color: 'text-amber-400',
-                        bg: 'bg-amber-500/10',
-                        border: 'border-amber-500/20',
-                        glow: 'shadow-amber-500/5',
+                        color: 'text-amber-600',
+                        bg: 'bg-amber-50',
+                        border: 'border-amber-200',
+                        glow: '',
                         accent: 'border-l-amber-500',
                       },
                       ERROR: {
                         icon: XCircle,
-                        color: 'text-red-400',
-                        bg: 'bg-red-500/10',
-                        border: 'border-red-500/20',
-                        glow: 'shadow-red-500/5',
-                        accent: 'border-l-red-500',
+                        color: 'text-rose-600',
+                        bg: 'bg-rose-50',
+                        border: 'border-rose-200',
+                        glow: '',
+                        accent: 'border-l-rose-500',
                       },
                       SUCCESS: {
                         icon: CheckCircle2,
-                        color: 'text-emerald-400',
-                        bg: 'bg-emerald-500/10',
-                        border: 'border-emerald-500/20',
-                        glow: 'shadow-emerald-500/5',
+                        color: 'text-emerald-600',
+                        bg: 'bg-emerald-50',
+                        border: 'border-emerald-200',
+                        glow: '',
                         accent: 'border-l-emerald-500',
                       },
                       INFO: {
                         icon: Info,
-                        color: 'text-blue-400',
-                        bg: 'bg-blue-500/10',
-                        border: 'border-blue-500/20',
-                        glow: 'shadow-blue-500/5',
+                        color: 'text-blue-600',
+                        bg: 'bg-blue-50',
+                        border: 'border-blue-200',
+                        glow: '',
                         accent: 'border-l-blue-500',
                       },
                     }[item.type] || {
                       icon: Info,
-                      color: 'text-blue-400',
-                      bg: 'bg-blue-500/10',
-                      border: 'border-blue-500/20',
-                      glow: 'shadow-blue-500/5',
+                      color: 'text-blue-600',
+                      bg: 'bg-blue-50',
+                      border: 'border-blue-200',
+                      glow: '',
                       accent: 'border-l-blue-500',
                     };
                   const Icon = cfg.icon;
@@ -354,13 +370,13 @@ export function NotificationCenter({
                       key={item.id}
                       className={`group relative flex items-start gap-3 px-4 py-3.5 transition-all border-l-4 ${
                         isRead
-                          ? 'border-l-transparent bg-transparent opacity-75 hover:opacity-100 hover:bg-slate-800/40'
-                          : `${cfg.accent} bg-slate-800/30 hover:bg-slate-800/60`
+                          ? 'border-l-transparent bg-white hover:bg-slate-50'
+                          : `${cfg.accent} bg-slate-50/70 hover:bg-slate-100/80`
                       }`}
                     >
                       {/* Icon */}
                       <div
-                        className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center mt-0.5 ${cfg.bg} border ${cfg.border} ${cfg.glow}`}
+                        className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center mt-0.5 ${cfg.bg} border ${cfg.border}`}
                       >
                         <Icon className={`w-4 h-4 ${cfg.color}`} />
                       </div>
@@ -374,16 +390,16 @@ export function NotificationCenter({
                         <div className="flex items-center justify-between gap-2">
                           <p
                             className={`text-xs font-bold truncate transition-colors ${
-                              isRead ? 'text-slate-300 group-hover:text-white' : cfg.color
+                              isRead ? 'text-slate-700' : 'text-slate-900 font-extrabold'
                             }`}
                           >
                             {item.title}
                           </p>
-                          <span className="text-[10px] font-medium text-slate-500 shrink-0">
+                          <span className="text-[10px] font-medium text-slate-400 shrink-0">
                             {relativeTime}
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-400 mt-1 leading-relaxed line-clamp-2">
+                        <p className="text-[11px] text-slate-600 mt-1 leading-relaxed line-clamp-2">
                           {item.message}
                         </p>
                       </Link>
@@ -391,11 +407,11 @@ export function NotificationCenter({
                       {/* Right actions: Toggle Read/Unread */}
                       <div className="absolute right-3 top-3.5 flex items-center gap-1">
                         <button
-                          onClick={(e) => toggleSingleRead(e, item.id)}
+                          onClick={(e) => toggleSingleRead(e, item)}
                           className={`p-1 rounded-lg transition-all ${
                             isRead
-                              ? 'text-slate-600 hover:text-slate-300 hover:bg-slate-800 opacity-0 group-hover:opacity-100'
-                              : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/20'
+                              ? 'text-slate-400 hover:text-slate-700 hover:bg-slate-100 opacity-0 group-hover:opacity-100'
+                              : 'text-blue-600 hover:bg-blue-50'
                           }`}
                           title={isRead ? 'Mark as unread' : 'Mark as read'}
                         >
@@ -410,11 +426,11 @@ export function NotificationCenter({
 
             {/* Footer */}
             {notifications.length > 0 && (
-              <div className="px-4 py-2.5 border-t border-slate-800/80 bg-slate-900/90 shrink-0 flex items-center justify-between text-[11px] text-slate-400">
+              <div className="px-4 py-2.5 border-t border-slate-200 bg-slate-50 shrink-0 flex items-center justify-between text-[11px] text-slate-500">
                 <span>{notifications.length} total notification{notifications.length > 1 ? 's' : ''}</span>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="text-slate-400 hover:text-white transition-colors"
+                  className="text-slate-600 hover:text-slate-900 font-medium transition-colors"
                 >
                   Close panel
                 </button>

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { QueryProvider } from '@/providers/QueryProvider';
@@ -10,20 +10,57 @@ import { DeveloperModeBlocker } from '@/components/common/DeveloperModeBlocker';
 
 const inter = Inter({ subsets: ['latin'] });
 
+export const viewport: Viewport = {
+  themeColor: '#f1f5f9',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+};
+
 export const metadata: Metadata = {
-  title: 'BizManage - Business Management & Accounting SaaS',
-  description: 'Manage sales, purchases, inventory, cashflow, and financial reports in one place.',
+  title: {
+    default: 'BizManage',
+    template: '%s | BizManage',
+  },
+  applicationName: 'BizManage',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'BizManage',
+  },
+  description: 'BizManage - Business Management & Accounting SaaS',
   manifest: '/manifest.json',
   icons: {
-    icon: '/icon.ico',
-    shortcut: '/icon.ico',
-    apple: '/logo-transparent.png',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon-192x192.png', type: 'image/png', sizes: '192x192' },
+      { url: '/icon-512x512.png', type: 'image/png', sizes: '512x512' },
+      { url: '/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
+      { url: '/favicon-16x16.png', type: 'image/png', sizes: '16x16' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
   },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/icon-192x192.png" type="image/png" sizes="192x192" />
+        <link rel="icon" href="/icon-512x512.png" type="image/png" sizes="512x512" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+        <meta name="theme-color" content="#16192E" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="BizManage" />
+        <meta name="application-name" content="BizManage" />
+      </head>
       <body className={inter.className}>
         <QueryProvider>
           <DeveloperModeBlocker />

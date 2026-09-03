@@ -9,7 +9,7 @@ export const AVAILABLE_FEATURES = [
   { id: 'CUSTOM_LOGO', label: 'Profile Business Logo Upload', category: 'Branding' },
   { id: 'ONLINE_STOREFRONT', label: 'Online Storefront & Website Builder', category: 'Website & Store' },
   { id: 'ADVANCED_REPORTS', label: 'Advanced P&L & Daybook Reports', category: 'Analytics' },
-  { id: 'POS_BILLING', label: 'Vyapar POS Quick Billing & Counter Mode', category: 'Sales & POS' },
+  { id: 'POS_BILLING', label: 'BizManage POS Quick Billing & Counter Mode', category: 'Sales & POS' },
   { id: 'BARCODE_PRINTING', label: 'Custom Label & Barcode Sticker Printing', category: 'Sales & POS' },
   { id: 'GODOWN_MANAGEMENT', label: 'Manage Godowns & Warehouse Stock Transfer', category: 'Inventory' },
   { id: 'MANUFACTURING', label: 'Manufacturing & Bill of Materials (BOM)', category: 'Manufacturing' },

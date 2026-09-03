@@ -164,6 +164,7 @@ export function buildApp() {
   app.register(dashboardRoutes,{ prefix: '/api/v1/dashboard' });
   app.register(reportRoutes,   { prefix: '/api/v1/reports' });
   app.register(utilityRoutes,  { prefix: '/api/v1/utilities' });
+  app.register(utilityRoutes,  { prefix: '/api/v1/utility' });
   app.register(accountRoutes,  { prefix: '/api/v1/accounts' });
   app.register(transferRoutes, { prefix: '/api/v1/transfers' });
   app.register(adminRoutes,    { prefix: '/api/v1/admin' });

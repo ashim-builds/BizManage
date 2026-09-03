@@ -1,4 +1,5 @@
 'use client';
+import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericInput';
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -310,7 +311,9 @@ export default function ManufacturingPage() {
                     Quantity to Produce <span className="text-red-400">*</span>
                   </label>
                   <input
-                    type="number"
+                    type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                    onFocus={onNumericFocus}
+                    onBlur={onNumericBlur}
                     min="1"
                     step="any"
                     value={targetQuantity}
@@ -348,7 +351,9 @@ export default function ManufacturingPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <input
-                      type="number"
+                      type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                      onFocus={onNumericFocus}
+                      onBlur={onNumericBlur}
                       min="0.1"
                       step="any"
                       placeholder="Qty"
@@ -396,7 +401,9 @@ export default function ManufacturingPage() {
                   Additional Labor, Electricity & Processing Charges (Rs.)
                 </label>
                 <input
-                  type="number"
+                  type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                  onFocus={onNumericFocus}
+                  onBlur={onNumericBlur}
                   min="0"
                   step="any"
                   value={additionalCost}

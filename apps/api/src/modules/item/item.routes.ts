@@ -221,7 +221,47 @@ export async function itemRoutes(fastify: FastifyInstance) {
         category: true,
         stockMovements: {
           orderBy: { createdAt: 'desc' },
-          take: 50,
+          take: 100,
+        },
+        saleItems: {
+          include: {
+            sale: {
+              include: {
+                party: true,
+              },
+            },
+          },
+          take: 100,
+        },
+        saleReturnItems: {
+          include: {
+            saleReturn: {
+              include: {
+                party: true,
+              },
+            },
+          },
+          take: 100,
+        },
+        purchaseItems: {
+          include: {
+            purchase: {
+              include: {
+                party: true,
+              },
+            },
+          },
+          take: 100,
+        },
+        purchaseReturnItems: {
+          include: {
+            purchaseReturn: {
+              include: {
+                party: true,
+              },
+            },
+          },
+          take: 100,
         },
       },
     });
@@ -256,6 +296,7 @@ export async function itemRoutes(fastify: FastifyInstance) {
           categoryId: body.categoryId || null,
           unit: body.unit,
           salePrice: body.salePrice,
+          wholesalePrice: body.wholesalePrice ?? 0,
           purchasePrice: body.purchasePrice,
           minStockAlert: body.minStockAlert,
           openingStock: body.openingStock,
@@ -267,6 +308,7 @@ export async function itemRoutes(fastify: FastifyInstance) {
           iv: body.iv || null,
           encPurchasePrice: body.encPurchasePrice || null,
           encSalePrice: body.encSalePrice || null,
+          encWholesalePrice: body.encWholesalePrice || null,
           hmacName: body.hmacName || null,
           hmacCode: body.hmacCode || null,
         },
@@ -350,6 +392,7 @@ export async function itemRoutes(fastify: FastifyInstance) {
             categoryId: categoryId || null,
             unit: itemInput.unit || 'Pcs',
             salePrice: itemInput.salePrice ?? 0,
+            wholesalePrice: itemInput.wholesalePrice ?? 0,
             purchasePrice: itemInput.purchasePrice ?? 0,
             minStockAlert: itemInput.minStockAlert ?? 0,
             openingStock: itemInput.openingStock ?? 0,
@@ -361,6 +404,7 @@ export async function itemRoutes(fastify: FastifyInstance) {
             iv: itemInput.iv || null,
             encPurchasePrice: itemInput.encPurchasePrice || null,
             encSalePrice: itemInput.encSalePrice || null,
+            encWholesalePrice: itemInput.encWholesalePrice || null,
             hmacName: itemInput.hmacName || null,
             hmacCode: itemInput.hmacCode || null,
           },
@@ -391,6 +435,37 @@ export async function itemRoutes(fastify: FastifyInstance) {
   });
 
   // ----------------------------------------------------
+  // BULK MOVE ITEMS TO CATEGORY
+  // ----------------------------------------------------
+  fastify.post('/bulk-move-category', async (request, reply) => {
+    const bulkMoveSchema = z.object({
+      itemIds: z.array(z.string()),
+      categoryId: z.string().nullable().optional(),
+    });
+
+    const { itemIds, categoryId } = bulkMoveSchema.parse(request.body);
+
+    if (itemIds.length === 0) {
+      return reply.send({ success: true, data: { count: 0 } });
+    }
+
+    const result = await request.db!.item.updateMany({
+      where: {
+        id: { in: itemIds },
+        businessId: request.tenant!.businessId,
+      },
+      data: {
+        categoryId: categoryId || null,
+      },
+    });
+
+    return reply.send({
+      success: true,
+      data: { count: result.count },
+    });
+  });
+
+  // ----------------------------------------------------
   // UPDATE ITEM
   // ----------------------------------------------------
   fastify.put('/:id', async (request, reply) => {
@@ -414,6 +489,7 @@ export async function itemRoutes(fastify: FastifyInstance) {
         categoryId,
         unit: body.unit ?? existing.unit,
         salePrice: body.salePrice ?? existing.salePrice,
+        wholesalePrice: body.wholesalePrice !== undefined ? body.wholesalePrice : existing.wholesalePrice,
         purchasePrice: body.purchasePrice ?? existing.purchasePrice,
         minStockAlert: body.minStockAlert ?? existing.minStockAlert,
         imageUrl: body.imageUrl !== undefined ? (body.imageUrl || null) : existing.imageUrl,
@@ -425,6 +501,7 @@ export async function itemRoutes(fastify: FastifyInstance) {
         iv: body.iv !== undefined ? body.iv : undefined,
         encPurchasePrice: body.encPurchasePrice !== undefined ? body.encPurchasePrice : undefined,
         encSalePrice: body.encSalePrice !== undefined ? body.encSalePrice : undefined,
+        encWholesalePrice: body.encWholesalePrice !== undefined ? body.encWholesalePrice : undefined,
         hmacName: body.hmacName !== undefined ? body.hmacName : undefined,
         hmacCode: body.hmacCode !== undefined ? body.hmacCode : undefined,
       },

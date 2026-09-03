@@ -193,7 +193,7 @@ export default function Home() {
                     <div className="flex items-center gap-2">
                       <div className="px-3.5 py-1.5 rounded-lg bg-red-600 text-white font-bold text-xs shadow-md shadow-red-600/20 flex items-center gap-1.5">
                         <Plus className="w-3.5 h-3.5" />
-                        <span>Add Sale (F2)</span>
+                        <span>Add Sale</span>
                       </div>
                       <div className="px-3.5 py-1.5 rounded-lg bg-slate-800 text-white font-semibold text-xs border border-slate-700 flex items-center gap-1.5">
                         <Plus className="w-3.5 h-3.5" />

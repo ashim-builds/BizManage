@@ -6,12 +6,16 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "cap:sync": "cap sync android",
+    "cap:open": "cap open android"
   },
   "dependencies": {
     "@bizmanage/config": "workspace:*",
     "@bizmanage/types": "workspace:*",
     "@bizmanage/validation": "workspace:*",
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/core": "^8.5.1",
     "@hookform/resolvers": "^3.3.4",
     "@tanstack/react-query": "^5.29.2",
     "autoprefixer": "^10.4.19",
@@ -32,6 +36,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.1",
     "@types/node": "^20.12.7",
     "@types/react": "^18.2.79",
     "@types/react-dom": "^18.2.25",

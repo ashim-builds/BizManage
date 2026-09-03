@@ -1,16 +1,24 @@
 {
   "appId": "com.bizmanage.app",
-  "appName": "BizManage ERP & POS",
+  "appName": "BizManage",
   "webDir": "public",
   "bundledWebRuntime": false,
   "server": {
-    "url": "https://bizmanage.app",
-    "cleartext": true,
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "cleartext": true
   },
   "android": {
     "allowMixedContent": true,
     "captureInput": true,
     "webContentsDebuggingEnabled": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "launchAutoHide": true,
+      "backgroundColor": "#0F172A",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP"
+    }
   }
 }

@@ -1,4 +1,5 @@
 'use client';
+import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericInput';
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -151,7 +152,9 @@ export default function BarcodeLabelPage() {
               <label className="block text-[11px] font-semibold text-zinc-400 mb-1">Stickers Count</label>
               <div className="flex items-center gap-2">
                 <input
-                  type="number"
+                  type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                  onFocus={onNumericFocus}
+                  onBlur={onNumericBlur}
                   min="1"
                   max="500"
                   value={chosenCopies}

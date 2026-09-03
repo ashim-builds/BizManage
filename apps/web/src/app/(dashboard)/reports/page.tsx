@@ -20,6 +20,9 @@ import { VatSalesBookAnnex5 } from '@/components/reports/VatSalesBookAnnex5';
 import { VatPurchaseBookAnnex6 } from '@/components/reports/VatPurchaseBookAnnex6';
 import { CustomerAgingReport } from '@/components/reports/CustomerAgingReport';
 import { VyaparPremiumReports } from '@/components/reports/VyaparPremiumReports';
+import { ExportConfirmModal } from '@/components/common/ExportConfirmModal';
+import { downloadCsv, downloadJson } from '@/lib/exportUtils';
+import { toast } from 'react-hot-toast';
 import {
   FileText,
   Search,
@@ -101,6 +104,41 @@ export default function ReportsPage() {
     window.print();
   };
 
+  const [exportModalConfig, setExportModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    description?: string;
+    recordCount: number;
+    onConfirm: (format: 'csv' | 'json') => void;
+  } | null>(null);
+
+  const handleTriggerExportReport = () => {
+    const rows: any[] = reportData?.rows || [];
+    if (rows.length === 0) {
+      toast.error('No report data to export.');
+      return;
+    }
+    const reportTitle = `${activeTab.toUpperCase()} Report`;
+    setExportModalConfig({
+      isOpen: true,
+      title: reportTitle,
+      description: `Export data records currently visible in ${reportTitle}.`,
+      recordCount: rows.length,
+      onConfirm: (format) => {
+        const dateStr = new Date().toISOString().split('T')[0];
+        if (format === 'csv') {
+          const keys = Object.keys(rows[0] || {});
+          const headers = keys.map((k) => k.replace(/([A-Z])/g, ' $1').toUpperCase());
+          const csvRows = rows.map((r) => keys.map((k) => r[k]));
+          downloadCsv(`report_${activeTab}_${dateStr}.csv`, headers, csvRows);
+        } else {
+          downloadJson(`report_${activeTab}_${dateStr}.json`, rows);
+        }
+        toast.success(`Exported ${rows.length} records to ${format.toUpperCase()}!`);
+      },
+    });
+  };
+
   const activeQuery =
     activeTab === 'sales' || activeTab === 'annex5-sales' || activeTab === 'billwise-pnl' || activeTab === 'tally-export'
       ? salesQuery
@@ -139,12 +177,22 @@ export default function ReportsPage() {
           </p>
         </div>
 
-        <button
-          onClick={handlePrint}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition-all border border-slate-700"
-        >
-          <Printer className="w-4 h-4" /> Print / Export PDF
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleTriggerExportReport}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-all shadow-md shadow-blue-500/20 cursor-pointer"
+          >
+            <Download className="w-4 h-4" /> Export (Excel / JSON)
+          </button>
+          <button
+            type="button"
+            onClick={handlePrint}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition-all border border-slate-700 cursor-pointer"
+          >
+            <Printer className="w-4 h-4" /> Print / Export PDF
+          </button>
+        </div>
       </div>
 
       {/* REPORT TABS NAVIGATION */}
@@ -796,6 +844,18 @@ export default function ReportsPage() {
           itemRows={inventoryQuery.data?.rows || []}
           businessName={business?.name}
           businessPan={business?.taxNumber || '-'}
+        />
+      )}
+
+      {/* Export Confirmation Modal */}
+      {exportModalConfig && (
+        <ExportConfirmModal
+          isOpen={exportModalConfig.isOpen}
+          onClose={() => setExportModalConfig(null)}
+          title={exportModalConfig.title}
+          description={exportModalConfig.description}
+          recordCount={exportModalConfig.recordCount}
+          onConfirm={exportModalConfig.onConfirm}
         />
       )}
     </div>

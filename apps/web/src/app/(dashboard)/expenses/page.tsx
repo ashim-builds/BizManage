@@ -1,4 +1,5 @@
 'use client';
+import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericInput';
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -438,9 +439,11 @@ export default function ExpensesPage() {
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">Amount Spent (Rs.) *</label>
                 <input
-                  type="number"
-                  step="any"
-                  {...form.register('amount', { valueAsNumber: true })}
+                  type="text"
+                  inputMode="decimal"
+                  onKeyDown={onNumericKeyDown}
+                  onFocus={onNumericFocus}
+                  {...form.register('amount', { valueAsNumber: true, onBlur: onNumericBlur })}
                   className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-mono text-rose-400 font-bold focus:outline-none focus:ring-1 focus:ring-blue-500"
                   placeholder="e.g. 2500"
                 />

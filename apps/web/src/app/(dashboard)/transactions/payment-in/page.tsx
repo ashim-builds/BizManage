@@ -1,4 +1,5 @@
 'use client';
+import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericInput';
 
 import Link from 'next/link';
 
@@ -9,6 +10,7 @@ import { createPaymentInSchema, CreatePaymentInInput } from '@bizmanage/validati
 import { PaymentMode } from '@bizmanage/types';
 import { usePaymentsIn, usePaymentsInSummary, useCreatePaymentIn, useVoidPaymentIn } from '@/services/paymentService';
 import { useParties } from '@/services/partyService';
+
 import { useAccounts } from '@/services/accountService';
 import { getPartyBalanceDisplay } from '@/lib/balance';
 import { formatCurrency } from '@/lib/accounting';
@@ -17,6 +19,7 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ModalPortal } from '@/components/common/ModalPortal';
 import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
+import { SaveConfirmModal } from '@/components/common/SaveConfirmModal';
 import { CustomDateRangePicker } from '@/components/common/CustomDateRangePicker';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { toast } from 'react-hot-toast';
@@ -38,6 +41,8 @@ export default function PaymentInPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isSaveConfirmOpen, setIsSaveConfirmOpen] = useState(false);
+  const [pendingPaymentData, setPendingPaymentData] = useState<CreatePaymentInInput | null>(null);
   const [voidingPaymentId, setVoidingPaymentId] = useState<string | null>(null);
   const [voidError, setVoidError] = useState('');
 
@@ -86,6 +91,18 @@ export default function PaymentInPage() {
       : 'CASH';
 
   const filteredAccounts = accounts.filter((a: any) => a.accountType === desiredAccountType);
+
+  const handlePaymentSaveRequest = (data: CreatePaymentInInput) => {
+    setPendingPaymentData(data);
+    setIsSaveConfirmOpen(true);
+  };
+
+  const handleConfirmPaymentSave = () => {
+    setIsSaveConfirmOpen(false);
+    if (pendingPaymentData) {
+      handleCreateSubmit(pendingPaymentData);
+    }
+  };
 
   const handleCreateSubmit = async (data: CreatePaymentInInput) => {
     try {
@@ -393,7 +410,7 @@ export default function PaymentInPage() {
               </p>
             </div>
 
-            <form onSubmit={form.handleSubmit(handleCreateSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(handlePaymentSaveRequest)} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">Customer Party *</label>
                 <select
@@ -460,9 +477,11 @@ export default function PaymentInPage() {
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">Amount Received (Rs.) *</label>
                 <input
-                  type="number"
-                  step="any"
-                  {...form.register('amount', { valueAsNumber: true })}
+                  type="text"
+                  inputMode="decimal"
+                  onKeyDown={onNumericKeyDown}
+                  onFocus={onNumericFocus}
+                  {...form.register('amount', { valueAsNumber: true, onBlur: onNumericBlur })}
                   className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-mono text-emerald-400 font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   placeholder="e.g. 5000"
                 />
@@ -536,6 +555,17 @@ export default function PaymentInPage() {
             setVoidError(err.response?.data?.error?.message || 'Failed to void payment.');
           }
         }}
+      />
+
+      {/* Save Confirmation Alert */}
+      <SaveConfirmModal
+        isOpen={isSaveConfirmOpen}
+        onClose={() => setIsSaveConfirmOpen(false)}
+        onConfirm={handleConfirmPaymentSave}
+        isLoading={createPaymentIn.isPending}
+        title="Record Customer Payment In?"
+        message={`Are you sure you want to record payment of Rs. ${Number(pendingPaymentData?.amount || 0).toLocaleString()}?`}
+        confirmText="Confirm & Save"
       />
     </div>
   );

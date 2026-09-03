@@ -4,48 +4,26 @@
 
 @layer base {
   :root {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
-    --card: 240 5% 7%;
-    --card-foreground: 0 0% 100%;
-    --popover: 240 5% 7%;
-    --popover-foreground: 0 0% 100%;
-    --primary: 0 0% 100%;
-    --primary-foreground: 0 0% 0%;
-    --secondary: 240 4% 12%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 240 4% 14%;
-    --muted-foreground: 240 5% 65%;
-    --accent: 240 4% 16%;
-    --accent-foreground: 0 0% 100%;
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 347 77% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
-    --ring: 0 0% 100%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 347 77% 50%;
     --radius: 0.75rem;
-  }
-
-  .dark {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
-    --card: 240 5% 7%;
-    --card-foreground: 0 0% 100%;
-    --popover: 240 5% 7%;
-    --popover-foreground: 0 0% 100%;
-    --primary: 0 0% 100%;
-    --primary-foreground: 0 0% 0%;
-    --secondary: 240 4% 12%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 240 4% 14%;
-    --muted-foreground: 240 5% 65%;
-    --accent: 240 4% 16%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
-    --ring: 0 0% 100%;
   }
 }
 
@@ -53,11 +31,122 @@
   * {
     @apply border-border;
     scrollbar-width: thin;
-    scrollbar-color: #27272a transparent;
+    scrollbar-color: #cbd5e1 transparent;
   }
   body {
-    @apply bg-black text-white font-sans antialiased selection:bg-white selection:text-black;
+    @apply bg-[#F4F6F9] text-slate-900 font-sans antialiased selection:bg-red-500 selection:text-white;
   }
+
+  /* =========================================================
+     DASHBOARD CLEAN WHITE & BLACK THEME AUTOMATION
+  ========================================================= */
+  main .bg-zinc-900,
+  main .bg-slate-900,
+  main .bg-zinc-950,
+  main .bg-slate-950,
+  main .bg-zinc-900\/90,
+  main .bg-zinc-950\/60,
+  main .bg-slate-900\/90 {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #e2e8f0 !important;
+  }
+
+  main .border-zinc-800,
+  main .border-slate-800,
+  main .border-zinc-800\/60,
+  main .border-slate-800\/60,
+  main .border-zinc-800\/80,
+  main .border-slate-800\/80 {
+    border-color: #e2e8f0 !important;
+  }
+
+  /* =========================================================
+     WHITE TEXT ON RED, BLUE & BLACK PRIMARY BUTTONS
+  ========================================================= */
+  .bg-red-500,
+  .bg-red-600,
+  .bg-red-700,
+  .bg-blue-500,
+  .bg-blue-600,
+  .bg-blue-700,
+  .bg-black,
+  button.bg-red-600,
+  button.bg-blue-600,
+  a.bg-red-600,
+  a.bg-blue-600,
+  main .bg-red-600,
+  main .bg-red-500,
+  main .bg-blue-600,
+  main .bg-blue-500,
+  main a.bg-red-600,
+  main a.bg-blue-600,
+  main button.bg-red-600,
+  main button.bg-blue-600 {
+    color: #ffffff !important;
+  }
+
+  .bg-red-500 *,
+  .bg-red-600 *,
+  .bg-red-700 *,
+  .bg-blue-500 *,
+  .bg-blue-600 *,
+  .bg-blue-700 *,
+  button.bg-red-600 *,
+  button.bg-blue-600 *,
+  a.bg-red-600 *,
+  a.bg-blue-600 *,
+  main .bg-red-600 *,
+  main .bg-red-500 *,
+  main .bg-blue-600 *,
+  main .bg-blue-500 *,
+  main a.bg-red-600 *,
+  main a.bg-blue-600 *,
+  main button.bg-red-600 *,
+  main button.bg-blue-600 * {
+    color: #ffffff !important;
+  }
+
+  main .text-zinc-400,
+  main .text-slate-400,
+  main .text-zinc-300,
+  main .text-slate-300,
+  main .text-zinc-500,
+  main .text-slate-500 {
+    color: #64748b !important;
+  }
+
+  main .divide-zinc-800,
+  main .divide-slate-800,
+  main .divide-zinc-800\/60,
+  main .divide-slate-800\/60,
+  main .divide-zinc-800\/80 {
+    border-color: #f1f5f9 !important;
+  }
+
+  main thead,
+  main thead tr {
+    background-color: #f8fafc !important;
+    color: #475569 !important;
+  }
+
+  main tbody tr:hover {
+    background-color: #f8fafc !important;
+  }
+
+  main input,
+  main select,
+  main textarea {
+    background-color: #f8fafc !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  main input::placeholder,
+  main textarea::placeholder {
+    color: #94a3b8 !important;
+  }
+}
 
   /* Custom Minimalist Scrollbar for Webkit */
   ::-webkit-scrollbar {
@@ -93,11 +182,16 @@
     opacity: 1;
     filter: invert(1);
   }
-}
+
 
 @media print {
+  @page {
+    margin: 0;
+    size: auto;
+  }
   header,
   aside,
+  nav,
   .print\:hidden {
     display: none !important;
   }

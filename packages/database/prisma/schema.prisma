@@ -313,6 +313,7 @@ model Item {
   type                ItemType             @default(PRODUCT)
   unit                String               @default("Pcs")
   salePrice           Decimal              @default(0) @db.Decimal(12, 2)
+  wholesalePrice      Decimal              @default(0) @db.Decimal(12, 2)
   purchasePrice       Decimal              @default(0) @db.Decimal(12, 2)
   openingStock        Decimal              @default(0) @db.Decimal(12, 3)
   currentStock        Decimal              @default(0) @db.Decimal(12, 3)
@@ -342,6 +343,7 @@ model Item {
   hmacCode            String?
   encPurchasePrice    String?
   encSalePrice        String?
+  encWholesalePrice   String?
 
   @@index([businessId, name])
   @@index([businessId, code])

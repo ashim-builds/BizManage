@@ -1,4 +1,5 @@
 'use client';
+import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericInput';
 
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
@@ -301,7 +302,9 @@ export default function AdminPackagesPage() {
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-1">Price</label>
                     <input
-                      type="number"
+                      type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                      onFocus={onNumericFocus}
+                      onBlur={onNumericBlur}
                       required
                       min="0"
                       step="0.01"
@@ -335,7 +338,9 @@ export default function AdminPackagesPage() {
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-1">Free Trial (days)</label>
                     <input
-                      type="number"
+                      type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                      onFocus={onNumericFocus}
+                      onBlur={onNumericBlur}
                       required
                       min="0"
                       value={formData.trialDays}
@@ -447,7 +452,9 @@ export default function AdminPackagesPage() {
                     <div>
                       <label className="block text-sm font-medium text-slate-300 mb-1">Display Order</label>
                       <input
-                        type="number"
+                        type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                        onFocus={onNumericFocus}
+                        onBlur={onNumericBlur}
                         min="0"
                         value={formData.displayOrder}
                         onChange={e => setFormData({ ...formData, displayOrder: parseInt(e.target.value) })}

@@ -402,10 +402,26 @@ export default function SubscriptionPage() {
                   </p>
 
                   <div className="mb-6">
-                    <span className="text-3xl font-extrabold text-white font-mono">
-                      {pkg.currency} {pkg.price}
+                    <div className="flex items-baseline gap-2">
+                      {Number(pkg.price) > 0 && (
+                        <span className="text-sm line-through text-slate-500 font-mono">
+                          Rs. {(Number(pkg.price) * 1.6).toFixed(0)}
+                        </span>
+                      )}
+                      <span className="text-2xl sm:text-3xl font-black text-white font-mono">
+                        Rs. {Number(pkg.price).toLocaleString()}
+                      </span>
+                    </div>
+                    {Number(pkg.price) > 0 ? (
+                      <p className="text-[11px] text-emerald-400 font-semibold mt-1">
+                        Save 38% • Only Rs. {Math.round(Number(pkg.price) / (pkg.billingPeriod === 'YEARLY' ? 12 : 1)).toLocaleString()}/month
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-zinc-400 font-semibold mt-1">Free Forever Base Features</p>
+                    )}
+                    <span className="inline-block px-2 py-0.5 mt-2 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                      7 Days Full Free Trial Included
                     </span>
-                    <span className="text-xs text-slate-400"> / {pkg.billingPeriod.toLowerCase()}</span>
                   </div>
 
                   <ul className="space-y-3 text-xs text-slate-300 border-t border-slate-800 pt-6">
@@ -448,15 +464,15 @@ export default function SubscriptionPage() {
                     isActive
                       ? 'bg-slate-800 text-emerald-400 border border-emerald-500/40 cursor-default'
                       : isPopular
-                      ? 'bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white shadow-lg shadow-blue-600/30 flex items-center justify-center gap-1.5'
-                      : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/25 flex items-center justify-center gap-1.5'
+                      ? 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/30 flex items-center justify-center gap-1.5 active:scale-95'
+                      : 'bg-zinc-900 hover:bg-zinc-800 text-red-400 hover:text-red-300 border border-red-500/40 shadow-sm flex items-center justify-center gap-1.5 active:scale-95'
                   }`}
                 >
                   {isActive ? (
                     'Current Active Plan'
                   ) : Number(pkg.price) > 0 ? (
                     <>
-                      <QrCode className="w-4 h-4" /> Pay & Request {pkg.name}
+                      <QrCode className="w-4 h-4" /> Get {pkg.name} (7-Day Trial)
                     </>
                   ) : (
                     `Select ${pkg.name}`

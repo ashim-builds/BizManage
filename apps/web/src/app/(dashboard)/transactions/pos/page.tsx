@@ -1,4 +1,5 @@
 'use client';
+import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericInput';
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
@@ -698,7 +699,9 @@ export default function POSPage() {
             <div>
               <label className="block text-[10px] font-bold text-slate-400 mb-1">Cash Received</label>
               <input
-                type="number"
+                type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                onFocus={onNumericFocus}
+                onBlur={onNumericBlur}
                 placeholder={`Rs. ${subTotal}`}
                 value={amountReceived}
                 onChange={(e) => setAmountReceived(e.target.value === '' ? '' : Number(e.target.value))}

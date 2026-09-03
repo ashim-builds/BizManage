@@ -197,37 +197,37 @@ export function CustomDateRangePicker({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-xs font-semibold transition-all shadow-sm shrink-0 ${
+        className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-xs font-semibold transition-all shadow-xs shrink-0 ${
           isCustomActive
-            ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-600/30 ring-2 ring-blue-500/20'
-            : 'bg-slate-900 text-slate-300 border-slate-800 hover:text-white hover:border-slate-700'
+            ? 'bg-blue-600 text-white border-blue-500 shadow-sm'
+            : 'bg-white text-slate-800 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
         }`}
         title="Open custom calendar date picker"
       >
-        <CalendarIcon className={`w-3.5 h-3.5 ${isCustomActive ? 'text-white' : 'text-blue-400'} shrink-0`} />
-        <span className="font-mono tracking-tight whitespace-nowrap">{formatDisplayLabel()}</span>
+        <CalendarIcon className={`w-3.5 h-3.5 ${isCustomActive ? 'text-white' : 'text-slate-600'} shrink-0`} />
+        <span className="font-mono tracking-tight whitespace-nowrap text-slate-800">{formatDisplayLabel()}</span>
       </button>
 
       {/* FULLY ACCESSIBLE CENTERED CALENDAR MODAL WITH BACKDROP */}
       {isOpen && (
         <ModalPortal>
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-slate-950/50 backdrop-blur-xs animate-in fade-in duration-150">
             {/* Modal Container */}
             <div
-              className="w-full max-w-[560px] rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden font-sans text-slate-200 animate-in zoom-in-95 duration-150"
+              className="w-full max-w-[560px] rounded-2xl bg-white border border-slate-200 shadow-2xl overflow-hidden font-sans text-slate-800 animate-in zoom-in-95 duration-150"
               onClick={(e) => e.stopPropagation()}
             >
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-950/60">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 bg-slate-50">
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                <div className="w-7 h-7 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
                   <CalendarIcon className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white">
+                  <h3 className="text-sm font-bold text-slate-900">
                     Custom Date Range (क्यालेन्डर मिति छान्नुहोस्)
                   </h3>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[11px] text-slate-500">
                     Select start and end dates from the calendar below.
                   </p>
                 </div>
@@ -235,7 +235,7 @@ export function CustomDateRangePicker({
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-all border border-slate-700/50"
+                className="p-1.5 rounded-xl bg-white text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all border border-slate-200"
                 title="Close modal"
               >
                 <X className="w-4 h-4" />
@@ -243,9 +243,9 @@ export function CustomDateRangePicker({
             </div>
 
             {/* Modal Body */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-800">
+            <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
               {/* Left Column: Presets */}
-              <div className="p-3 space-y-1 bg-slate-950/40">
+              <div className="p-3 space-y-1 bg-slate-50">
                 <p className="text-[10px] font-bold uppercase text-slate-500 px-2 py-1 tracking-wider">
                   Quick Presets
                 </p>
@@ -255,8 +255,8 @@ export function CustomDateRangePicker({
                     onClick={() => applyPreset('today')}
                     className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                       tempPreset === 'today'
-                        ? 'bg-blue-600 text-white font-bold'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                        ? 'bg-blue-600 text-white font-bold shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                     }`}
                   >
                     Today (आज)
@@ -264,7 +264,7 @@ export function CustomDateRangePicker({
                   <button
                     type="button"
                     onClick={() => applyPreset('yesterday')}
-                    className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all"
+                    className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all"
                   >
                     Yesterday (हिजो)
                   </button>
@@ -273,8 +273,8 @@ export function CustomDateRangePicker({
                     onClick={() => applyPreset('week')}
                     className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                       tempPreset === 'week'
-                        ? 'bg-blue-600 text-white font-bold'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                        ? 'bg-blue-600 text-white font-bold shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                     }`}
                   >
                     Last 7 Days (७ दिन)
@@ -284,8 +284,8 @@ export function CustomDateRangePicker({
                     onClick={() => applyPreset('month')}
                     className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                       tempPreset === 'month'
-                        ? 'bg-blue-600 text-white font-bold'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                        ? 'bg-blue-600 text-white font-bold shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                     }`}
                   >
                     This Month (यो महिना)
@@ -293,7 +293,7 @@ export function CustomDateRangePicker({
                   <button
                     type="button"
                     onClick={() => applyPreset('lastMonth')}
-                    className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all"
+                    className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all"
                   >
                     Last Month (अघिल्लो)
                   </button>
@@ -302,8 +302,8 @@ export function CustomDateRangePicker({
                     onClick={() => applyPreset('all')}
                     className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                       tempPreset === 'all'
-                        ? 'bg-blue-600 text-white font-bold'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                        ? 'bg-blue-600 text-white font-bold shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                     }`}
                   >
                     All Time (सबै)
@@ -312,24 +312,24 @@ export function CustomDateRangePicker({
               </div>
 
               {/* Right 2-Columns: Visual Interactive Month Calendar */}
-              <div className="sm:col-span-2 p-4 space-y-3.5">
+              <div className="sm:col-span-2 p-4 space-y-3.5 bg-white">
                 {/* Month & Year Navigation */}
                 <div className="flex items-center justify-between px-1">
                   <button
                     type="button"
                     onClick={handlePrevMonth}
-                    className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all border border-slate-700"
+                    className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all border border-slate-200"
                     title="Previous month"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-                  <span className="text-sm font-bold text-white tracking-wide">
+                  <span className="text-sm font-bold text-slate-900 tracking-wide">
                     {monthNames[month]} {year}
                   </span>
                   <button
                     type="button"
                     onClick={handleNextMonth}
-                    className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all border border-slate-700"
+                    className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all border border-slate-200"
                     title="Next month"
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -388,13 +388,13 @@ export function CustomDateRangePicker({
                           isSelectedStart || isSelectedEnd
                             ? 'bg-blue-600 text-white font-bold shadow-md ring-2 ring-blue-400/40 z-10'
                             : isInRange || isHoverInRange
-                            ? 'bg-blue-500/20 text-blue-300 font-semibold rounded-none'
-                            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                            ? 'bg-blue-50 text-blue-700 font-semibold rounded-none'
+                            : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
                         }`}
                       >
                         {dayNum}
                         {isToday && !isSelectedStart && !isSelectedEnd && (
-                          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-blue-400" />
+                          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-blue-500" />
                         )}
                       </button>
                     );
@@ -402,9 +402,9 @@ export function CustomDateRangePicker({
                 </div>
 
                 {/* Direct Manual Date Inputs */}
-                <div className="pt-2.5 border-t border-slate-800 flex items-center gap-3 text-xs">
+                <div className="pt-2.5 border-t border-slate-200 flex items-center gap-3 text-xs">
                   <div className="flex-1">
-                    <label className="text-[10px] font-semibold text-slate-400 block mb-1">
+                    <label className="text-[10px] font-semibold text-slate-500 block mb-1">
                       Start Date
                     </label>
                     <input
@@ -414,11 +414,11 @@ export function CustomDateRangePicker({
                         setTempStart(e.target.value);
                         setTempPreset('custom');
                       }}
-                      className="w-full px-2.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-none focus:border-blue-500 font-mono"
+                      className="w-full px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-blue-500 font-mono"
                     />
                   </div>
                   <div className="flex-1">
-                    <label className="text-[10px] font-semibold text-slate-400 block mb-1">
+                    <label className="text-[10px] font-semibold text-slate-500 block mb-1">
                       End Date
                     </label>
                     <input
@@ -428,7 +428,7 @@ export function CustomDateRangePicker({
                         setTempEnd(e.target.value);
                         setTempPreset('custom');
                       }}
-                      className="w-full px-2.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-none focus:border-blue-500 font-mono"
+                      className="w-full px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-blue-500 font-mono"
                     />
                   </div>
                 </div>
@@ -436,11 +436,11 @@ export function CustomDateRangePicker({
             </div>
 
             {/* Modal Footer */}
-            <div className="flex items-center justify-between px-5 py-3 border-t border-slate-800 bg-slate-950/80">
+            <div className="flex items-center justify-between px-5 py-3 border-t border-slate-200 bg-slate-50">
               <button
                 type="button"
                 onClick={handleResetClick}
-                className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors py-1.5"
+                className="inline-flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 transition-colors py-1.5 font-medium"
               >
                 <RotateCcw className="w-3.5 h-3.5" /> Reset (All Time)
               </button>
@@ -449,7 +449,7 @@ export function CustomDateRangePicker({
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-700"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors border border-slate-200 bg-white"
                 >
                   Cancel
                 </button>

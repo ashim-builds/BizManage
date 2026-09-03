@@ -1,4 +1,5 @@
 'use client';
+import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericInput';
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
@@ -19,6 +20,7 @@ import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ModalPortal } from '@/components/ui/ModalPortal';
+import { SaveConfirmModal } from '@/components/common/SaveConfirmModal';
 import {
   TrendingUp,
   Plus,
@@ -41,6 +43,8 @@ export default function SalesPage() {
   const [search, setSearch] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<InvoiceStatus | ''>('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isSaveConfirmOpen, setIsSaveConfirmOpen] = useState(false);
+  const [pendingSaleData, setPendingSaleData] = useState<CreateSaleInput | null>(null);
 
   // Pay Due modal state
   const [payDueId, setPayDueId] = useState<string | null>(null);
@@ -191,7 +195,7 @@ export default function SalesPage() {
     }
   };
 
-  const handleCreateSubmit = async (data: CreateSaleInput) => {
+  const handleSaleSaveRequest = (data: CreateSaleInput) => {
     // Client-side stock validation check
     const itemQtyMap = new Map<string, number>();
     for (const line of data.items) {
@@ -215,6 +219,18 @@ export default function SalesPage() {
       }
     }
 
+    setPendingSaleData(data);
+    setIsSaveConfirmOpen(true);
+  };
+
+  const handleConfirmSaleSave = () => {
+    setIsSaveConfirmOpen(false);
+    if (pendingSaleData) {
+      handleCreateSubmit(pendingSaleData);
+    }
+  };
+
+  const handleCreateSubmit = async (data: CreateSaleInput) => {
     try {
       const formattedItems = data.items.map((item) => {
         return {
@@ -576,7 +592,7 @@ export default function SalesPage() {
               <span className="text-xs text-slate-500 font-mono">Auto-Numbering Active</span>
             </div>
 
-            <form onSubmit={form.handleSubmit(handleCreateSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(handleSaleSaveRequest)} className="space-y-6">
               {/* Header Fields */}
               <div className="grid grid-cols-1 md:grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
@@ -750,10 +766,12 @@ export default function SalesPage() {
                             Quantity
                           </label>
                           <input
-                            type="number"
-                            step="any"
+                            type="text"
+                            inputMode="decimal"
+                            onKeyDown={onNumericKeyDown}
+                            onFocus={onNumericFocus}
                             placeholder="Qty"
-                            {...form.register(`items.${idx}.quantity`, { valueAsNumber: true })}
+                            {...form.register(`items.${idx}.quantity`, { valueAsNumber: true, onBlur: onNumericBlur })}
                             className={`w-full px-3 py-2 rounded-xl bg-slate-800/90 border text-white text-xs font-mono focus:outline-none focus:ring-2 transition-all ${
                               isOverStock
                                 ? 'border-rose-500/80 focus:ring-rose-500/40 focus:border-rose-500'
@@ -767,12 +785,42 @@ export default function SalesPage() {
                             Unit Price (Rs.)
                           </label>
                           <input
-                            type="number"
-                            step="any"
+                            type="text"
+                            inputMode="decimal"
+                            onKeyDown={onNumericKeyDown}
+                            onFocus={onNumericFocus}
                             placeholder="Unit Price"
-                            {...form.register(`items.${idx}.unitPrice`, { valueAsNumber: true })}
+                            {...form.register(`items.${idx}.unitPrice`, { valueAsNumber: true, onBlur: onNumericBlur })}
                             className="w-full px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700/80 text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
                           />
+                          {Number(selectedItem?.wholesalePrice || 0) > 0 && (
+                            <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() => form.setValue(`items.${idx}.unitPrice`, Number(selectedItem.salePrice || 0))}
+                                className={`text-[9px] px-1.5 py-0.5 rounded font-bold transition-all cursor-pointer ${
+                                  Number(linePrice) === Number(selectedItem.salePrice)
+                                    ? 'bg-blue-500 text-white shadow-xs'
+                                    : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
+                                }`}
+                                title={`Set Retail Price (Rs. ${Number(selectedItem.salePrice)})`}
+                              >
+                                Retail
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => form.setValue(`items.${idx}.unitPrice`, Number(selectedItem.wholesalePrice || 0))}
+                                className={`text-[9px] px-1.5 py-0.5 rounded font-bold transition-all cursor-pointer ${
+                                  Number(linePrice) === Number(selectedItem.wholesalePrice)
+                                    ? 'bg-purple-600 text-white shadow-xs'
+                                    : 'bg-slate-800 text-purple-300 hover:text-white border border-slate-700'
+                                }`}
+                                title={`Set Wholesale Rate: Rs. ${Number(selectedItem.wholesalePrice)}`}
+                              >
+                                Wholesale
+                              </button>
+                            </div>
+                          )}
                         </div>
 
                         <div className="col-span-4 md:col-span-2">
@@ -780,10 +828,12 @@ export default function SalesPage() {
                             Disc (%)
                           </label>
                           <input
-                            type="number"
-                            step="any"
+                            type="text"
+                            inputMode="decimal"
+                            onKeyDown={onNumericKeyDown}
+                            onFocus={onNumericFocus}
                             placeholder="Disc %"
-                            {...form.register(`items.${idx}.discount`, { valueAsNumber: true })}
+                            {...form.register(`items.${idx}.discount`, { valueAsNumber: true, onBlur: onNumericBlur })}
                             className="w-full px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700/80 text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
                           />
                         </div>
@@ -822,9 +872,11 @@ export default function SalesPage() {
                     <div>
                       <label className="block text-[11px] text-slate-400 mb-1">Received Amount (Rs.)</label>
                       <input
-                        type="number"
-                        step="any"
-                        {...form.register('paidAmount', { valueAsNumber: true })}
+                        type="text"
+                        inputMode="decimal"
+                        onKeyDown={onNumericKeyDown}
+                        onFocus={onNumericFocus}
+                        {...form.register('paidAmount', { valueAsNumber: true, onBlur: onNumericBlur })}
                         className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       />
                     </div>
@@ -1018,9 +1070,12 @@ export default function SalesPage() {
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">Amount to Pay (Rs.)</label>
                 <input
-                  type="number"
-                  step="any"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
+                  onKeyDown={onNumericKeyDown}
+                                    onFocus={onNumericFocus}
+                                    onBlur={onNumericBlur}
+                                    min="0"
                   placeholder={`Full due: Rs. ${payDueAmount.toLocaleString()}`}
                   value={payDueCustomAmount}
                   onChange={(e) => setPayDueCustomAmount(e.target.value)}
@@ -1063,6 +1118,17 @@ export default function SalesPage() {
           </div>
         </div></ModalPortal>
       )}
+
+      {/* SAVE CONFIRMATION MODAL */}
+      <SaveConfirmModal
+        isOpen={isSaveConfirmOpen}
+        onClose={() => setIsSaveConfirmOpen(false)}
+        onConfirm={handleConfirmSaleSave}
+        isLoading={createSale.isPending}
+        title="Issue Sales Invoice?"
+        message="Are you sure you want to issue this sales invoice? Stock will be updated and customer balance will be adjusted accordingly."
+        confirmText="Confirm & Issue"
+      />
     </div>
   );
 }

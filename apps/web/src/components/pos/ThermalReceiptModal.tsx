@@ -1,4 +1,5 @@
 'use client';
+import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericInput';
 
 import { useState, useRef } from 'react';
 import { ModalPortal } from '@/components/common/ModalPortal';
@@ -177,7 +178,9 @@ export function ThermalReceiptModal({
                 <Calculator className="w-3.5 h-3.5 text-blue-400" /> Cash Tendered (Rs.)
               </label>
               <input
-                type="number"
+                type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                onFocus={onNumericFocus}
+                onBlur={onNumericBlur}
                 value={cashTendered}
                 onChange={(e) => setCashTendered(e.target.value)}
                 placeholder={`e.g. ${totalAmount}`}

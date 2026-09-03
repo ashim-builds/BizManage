@@ -1,8 +1,8 @@
 'use client';
 
-import { ReactNode, useState, useEffect, useRef } from 'react';
+import { ReactNode, useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/providers/AuthProvider';
 import { Breadcrumbs } from '@/components/common/Breadcrumbs';
 import { QuickEntryModal } from '@/components/common/QuickEntryModal';
@@ -35,39 +35,43 @@ import {
   ShoppingBag,
   RotateCcw,
   Zap,
+  ArrowRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react';
 import { useNetworkStatus } from '@/services/offlineSyncService';
 
 import { sidebarSections, NavSection, NavGroupItem } from '@/components/layout/navConfig';
 
-export default function DashboardLayout({ children }: { children: ReactNode }) {
+function DashboardLayoutContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const currentTab = searchParams.get('tab');
   const { user, activeBusinessId, loading, setActiveBusinessId, logout } = useAuth();
   const { isOnline, pendingCount, isSyncing, triggerManualSync } = useNetworkStatus();
 
   const [readNotifIds, setReadNotifIds] = useState<string[]>([]);
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  // Close mobile sidebar on route change
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
-
-  useEffect(() => {
-    if (user?.readNotifications) {
-      setReadNotifIds(user.readNotifications);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sidebar-collapsed') === 'true';
     }
-  }, [user?.readNotifications]);
-
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    'Items & Inventory': pathname?.startsWith('/inventory') ?? false,
-    'Sales': pathname?.startsWith('/transactions/sales') || pathname?.startsWith('/transactions/pos') || pathname?.startsWith('/transactions/payment-in') || pathname?.startsWith('/transactions/sales-return') || pathname === '/transactions',
-    'Purchases': pathname?.startsWith('/transactions/purchases') || pathname?.startsWith('/transactions/payment-out') || pathname?.startsWith('/transactions/purchase-return'),
+    return false;
   });
+
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [quickEntryOpen, setQuickEntryOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem('sidebar-collapsed', String(next));
+      return next;
+    });
+  };
 
   // Global Quick Entry trigger listener & keyboard shortcut (Ctrl+Q)
   useEffect(() => {
@@ -109,12 +113,19 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const hasSelectedPlan = Boolean(currentBiz?.subscriptionPackage);
 
   // Global feature lock calculation
-  const currentSection = sidebarSections.find(s =>
-    s.href === pathname || (s.children && s.children.some(c => c.href === pathname))
-  );
+  const currentSection = sidebarSections.find(s => {
+    const [sHref] = (s.href || '').split('?');
+    return sHref === pathname || s.children?.some(c => {
+      const [cHref] = c.href.split('?');
+      return cHref === pathname;
+    });
+  });
   let requiredFeature = currentSection?.requiredFeature;
   if (!requiredFeature && currentSection?.children) {
-    const child = currentSection.children.find(c => c.href === pathname);
+    const child = currentSection.children.find(c => {
+      const [cHref] = c.href.split('?');
+      return cHref === pathname;
+    });
     if (child && (child as any).requiredFeature) {
       requiredFeature = (child as any).requiredFeature;
     }
@@ -142,10 +153,22 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
-    if (pathname?.startsWith('/transactions')) {
-      setOpenSections(prev => ({ ...prev, 'Sales': true }));
-    } else if (pathname?.startsWith('/inventory')) {
-      setOpenSections(prev => ({ ...prev, 'Items & Inventory': true }));
+    setMobileOpen(false);
+    // Find if the current path belongs to any dropdown section
+    const matchingSection = sidebarSections.find(
+      (s) =>
+        s.children &&
+        s.children.some((c) => {
+          const [cHref] = c.href.split('?');
+          return cHref === pathname;
+        })
+    );
+
+    if (matchingSection) {
+      setOpenSections({ [matchingSection.name]: true });
+    } else {
+      // Auto close dropdowns when navigating to Home, Parties, Reports, etc.
+      setOpenSections({});
     }
   }, [pathname]);
 
@@ -223,191 +246,264 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         />
       )}
 
-      {/* Sidebar Navigation (Desktop Fixed + Mobile Slide-over) */}
       <aside
-        className={`fixed top-0 left-0 bottom-0 w-64 bg-black border-r border-zinc-800 z-50 flex flex-col transition-transform duration-300 print:hidden ${
+        className={`fixed top-0 left-0 bottom-0 bg-[#16192E] border-r border-[#222744] z-40 flex flex-col transition-all duration-300 print:hidden ${
           mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'
-        }`}
+        } ${sidebarCollapsed ? 'w-[60px]' : 'w-64'}`}
       >
-        {/* Brand & Business Switcher Header */}
-        <div className="p-4 border-b border-zinc-800 flex items-center justify-center relative min-h-[72px]">
-          <Link href="/" onClick={() => window.scrollTo(0, 0)} className="flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity">
-            <img
-              src="/logo-full-transparent.png"
-              alt="BizManage Logo"
-              className="h-10 sm:h-12 lg:h-14 w-auto max-w-[200px] object-contain drop-shadow-[0_0_15px_rgba(59,130,246,0.25)] hover:drop-shadow-[0_0_25px_rgba(59,130,246,0.4)] hover:scale-105 transition-all duration-300 shrink-0"
-            />
-          </Link>
-          <button
-            onClick={() => setMobileOpen(false)}
-            className="lg:hidden text-slate-400 hover:text-white p-1 rounded-lg absolute right-4 top-1/2 -translate-y-1/2"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Business Selector Area */}
-        <div className="p-3 border-b border-zinc-800/80">
-          <div className="p-2 rounded-xl bg-zinc-900/90 border border-zinc-800 flex items-center justify-between">
-            <div className="flex items-center gap-3 overflow-hidden">
-              {currentBusiness?.logoUrl ? (
-                <img src={currentBusiness.logoUrl} alt={currentBusiness.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
+        <div className={`py-4 border-b border-[#222744] flex items-center min-h-[68px] ${sidebarCollapsed ? 'px-2 justify-center' : 'px-5 justify-between'}`}>
+          {!sidebarCollapsed && (
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <img
+                src="/logo-full-transparent.png"
+                alt="BizManage Logo"
+                className="h-9 sm:h-10 w-auto max-w-[150px] object-contain drop-shadow-md group-hover:scale-105 transition-transform"
+              />
+            </Link>
+          )}
+          {sidebarCollapsed && (
+            <Link href="/" className="flex items-center justify-center group" title="BizManage">
+              <img
+                src="/logo-full-transparent.png"
+                alt="BizManage"
+                className="h-7 w-7 object-contain drop-shadow-md group-hover:scale-110 transition-transform"
+              />
+            </Link>
+          )}
+          <div className="flex items-center gap-1">
+            {/* Collapse / Expand toggle — desktop only */}
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              className="hidden lg:flex items-center justify-center w-7 h-7 rounded-lg text-slate-400 hover:text-white hover:bg-[#212646] transition-all"
+            >
+              {sidebarCollapsed ? (
+                <ChevronsRight className="w-4 h-4" />
               ) : (
-                <div className="w-8 h-8 rounded-lg bg-zinc-800 text-white flex items-center justify-center font-bold text-xs shrink-0 border border-zinc-700">
-                  {currentBusiness?.name?.charAt(0).toUpperCase() || 'B'}
-                </div>
+                <ChevronsLeft className="w-4 h-4" />
               )}
-              <div className="overflow-hidden">
-                <p className="text-xs font-semibold text-white truncate">
-                  {currentBusiness?.name || 'My Business'}
-                </p>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-[10px] text-zinc-400 truncate">
-                    {currentBusiness?.subscriptionPackage?.name || (currentBusiness?.subscriptionStatus === 'ACTIVE' ? 'Free Plan' : 'No Plan Selected')}
-                  </span>
-                </div>
-              </div>
-            </div>
+            </button>
+            <button
+              onClick={() => setMobileOpen(false)}
+              className="lg:hidden text-slate-400 hover:text-white p-1 rounded-lg"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
-        {/* Navigation Sections */}
-        <nav className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin scrollbar-thumb-zinc-800">
+        <nav className="flex-1 overflow-y-auto p-2 space-y-0.5 scrollbar-thin scrollbar-thumb-[#222744]">
           {sidebarSections.map((section) => {
             const Icon = section.icon;
-            const isActive = pathname === section.href;
-
-            const isLocked = section.requiredFeature && !(currentBusiness?.subscriptionPackage?.features || []).includes(section.requiredFeature);
+            const isActive = pathname === section.href || (section.href === '/dashboard' && pathname === '/');
 
             if (!section.children) {
               return (
-                <Link
+                <div
                   key={section.name}
-                  href={isLocked ? '/subscription' : section.href!}
-                  onClick={(e) => {
-                    if (isLocked) {
-                      e.preventDefault();
-                      toast.error(`Please upgrade your plan to access ${section.name}`);
-                      router.push('/subscription');
-                    }
-                  }}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all ${isActive
-                    ? 'bg-red-600 text-white font-bold shadow-md shadow-red-600/25'
-                    : isLocked
-                      ? 'text-zinc-600 opacity-60 hover:opacity-100 hover:bg-zinc-900/40'
-                      : 'text-zinc-400 hover:text-white hover:bg-zinc-900/80'
-                    }`}
+                  className={`group/nav flex items-center justify-between transition-all ${
+                    isActive
+                      ? 'bg-[#212646] text-white font-semibold border-l-4 border-[#EF4444] rounded-r-xl shadow-xs'
+                      : 'text-slate-300 hover:text-white hover:bg-[#212646]/60 rounded-xl'
+                  } ${sidebarCollapsed ? 'pr-0' : 'pr-2'}`}
+                  title={sidebarCollapsed ? section.name : undefined}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-white stroke-[2.5]' : isLocked ? 'text-zinc-600' : 'text-zinc-400'}`} />
-                  <span className="truncate">{section.name}</span>
-                  {isLocked && <Crown className="w-3 h-3 text-zinc-600 ml-auto" />}
-                </Link>
+                  <Link
+                    href={section.href!}
+                    className={`flex-1 flex items-center gap-3 py-2 text-xs font-medium min-w-0 ${
+                      sidebarCollapsed ? 'px-3 justify-center' : 'px-3'
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-300'}`} />
+                    {!sidebarCollapsed && <span className="truncate">{section.name}</span>}
+                  </Link>
+
+                  {section.hasPlusButton && !sidebarCollapsed && (
+                    <Link
+                      href={section.plusHref || section.href!}
+                      onClick={(e) => {
+                        if (section.name === 'Items' && pathname === '/inventory') {
+                          e.preventDefault();
+                          window.dispatchEvent(new CustomEvent('open-create-item'));
+                        }
+                      }}
+                      title={`Add New ${section.name === 'Parties' ? 'Party' : 'Item'}`}
+                      className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-blue-600 active:scale-90 transition-all shrink-0 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </Link>
+                  )}
+                </div>
               );
             }
 
-            const isGroupActive = section.children.some(c => c.href === pathname);
-            const isGroupLocked = section.requiredFeature && !(currentBusiness?.subscriptionPackage?.features || []).includes(section.requiredFeature);
+            const isGroupActive = section.children.some((c) => {
+              const [cPath] = c.href.split('?');
+              return cPath === pathname;
+            });
             const isSectionOpen = openSections[section.name] ?? false;
 
-            return (
-              <div key={section.name} className="space-y-1">
-                <button
+            // In collapsed mode, render group as icon-only button with tooltip
+            if (sidebarCollapsed) {
+              return (
+                <div
+                  key={section.name}
+                  title={section.name}
+                  className={`flex items-center justify-center px-2 py-2 rounded-xl transition-all cursor-pointer ${
+                    isGroupActive
+                      ? 'bg-[#212646] text-white border-l-4 border-[#EF4444]'
+                      : 'text-slate-300 hover:text-white hover:bg-[#212646]/60'
+                  }`}
                   onClick={() => {
-                    if (isGroupLocked) {
-                      toast.error(`Please upgrade your plan to access ${section.name}`);
-                      router.push('/subscription');
-                    } else {
-                      setOpenSections(prev => ({ ...prev, [section.name]: !prev[section.name] }));
-                    }
+                    setSidebarCollapsed(false);
+                    localStorage.setItem('sidebar-collapsed', 'false');
+                    setTimeout(() => setOpenSections({ [section.name]: true }), 50);
                   }}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all ${isGroupActive
-                    ? 'text-white bg-zinc-900 font-semibold border border-zinc-800'
-                    : isGroupLocked
-                      ? 'text-zinc-600 opacity-70 hover:opacity-100 hover:bg-zinc-900/40'
-                      : 'text-zinc-400 hover:text-white hover:bg-zinc-900/50'
-                    }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${isGroupLocked ? 'text-zinc-600' : isGroupActive ? 'text-white' : 'text-zinc-400'}`} />
-                    <span>{section.name}</span>
+                  <Icon className={`w-4 h-4 ${ isGroupActive ? 'text-white' : 'text-slate-300'}`} />
+                </div>
+              );
+            }
+
+            return (
+              <div key={section.name} className="space-y-0.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpenSections((prev) => (prev[section.name] ? {} : { [section.name]: true }));
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-r-xl text-xs font-medium cursor-pointer transition-all ${
+                    isGroupActive
+                      ? 'text-white bg-[#212646] font-semibold border-l-4 border-[#EF4444]'
+                      : 'text-slate-300 hover:text-white hover:bg-[#212646]/60'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Icon className={`w-4 h-4 ${isGroupActive ? 'text-white' : 'text-slate-300'}`} />
+                    <span className="truncate">{section.name}</span>
                   </div>
-                  {isGroupLocked ? (
-                    <Crown className="w-3.5 h-3.5 text-zinc-600" />
-                  ) : isSectionOpen ? (
-                    <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
-                  ) : (
-                    <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
-                  )}
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-250 ease-in-out ${
+                      isSectionOpen ? 'rotate-180 text-white' : ''
+                    }`}
+                  />
                 </button>
 
-                {isSectionOpen && !isGroupLocked && (
-                  <div className="pl-6 space-y-1 border-l border-zinc-800 ml-5 my-1">
-                    {section.children.map((child) => {
-                      const ChildIcon = child.icon;
-                      const isChildActive = pathname === child.href;
-                      const isChildLocked = child.requiredFeature && !(currentBusiness?.subscriptionPackage?.features || []).includes(child.requiredFeature);
-                      return (
-                        <Link
-                          key={child.name}
-                          href={isChildLocked ? '/subscription' : child.href}
-                          onClick={(e) => {
-                            if (isChildLocked) {
-                              e.preventDefault();
-                              toast.error(`Please upgrade your plan to access ${child.name}`);
-                              router.push('/subscription');
-                            }
-                          }}
-                          className={`flex items-center justify-between gap-2.5 px-3 py-2 rounded-lg text-[11px] font-medium transition-all ${isChildActive
-                            ? 'bg-blue-500/10 text-blue-400 font-bold border border-blue-500/20'
-                            : isChildLocked
-                              ? 'text-slate-500 opacity-70 hover:opacity-100 hover:bg-slate-800/40'
-                              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                <div
+                  className={`grid transition-[grid-template-rows,opacity] duration-250 ease-in-out ${
+                    isSectionOpen
+                      ? 'grid-rows-[1fr] opacity-100'
+                      : 'grid-rows-[0fr] opacity-0 pointer-events-none'
+                  }`}
+                >
+                  <div className="overflow-hidden">
+                    <div className="pl-6 space-y-0.5 border-l border-[#232847] ml-5 my-0.5 py-0.5">
+                      {section.children.map((child) => {
+                        const ChildIcon = child.icon;
+                        const [childPath, childQuery] = child.href.split('?');
+                        const isChildActive = childQuery
+                          ? pathname === childPath && (currentTab === new URLSearchParams(childQuery).get('tab') || (!currentTab && new URLSearchParams(childQuery).get('tab') === 'sync-share'))
+                          : pathname === child.href;
+                        return (
+                          <Link
+                            key={child.name}
+                            href={child.href}
+                            className={`flex items-center gap-2.5 px-3 py-1.5 text-[11px] font-medium transition-all duration-150 ${
+                              isChildActive
+                                ? 'bg-[#212646] text-white font-bold border-l-2 border-[#EF4444] rounded-r-lg'
+                                : 'text-slate-400 hover:text-white hover:bg-[#212646]/40 rounded-lg'
                             }`}
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <ChildIcon className={`w-3.5 h-3.5 ${isChildActive ? 'text-blue-400' : isChildLocked ? 'text-slate-600' : 'text-slate-400'}`} />
+                          >
+                            {ChildIcon && (
+                              <ChildIcon
+                                className={`w-3.5 h-3.5 ${
+                                  isChildActive ? 'text-white' : 'text-slate-400'
+                                }`}
+                              />
+                            )}
                             <span className="truncate">{child.name}</span>
-                          </div>
-                          {isChildLocked && <Crown className="w-3.5 h-3.5 text-amber-500/70 shrink-0" />}
-                        </Link>
-                      );
-                    })}
+                          </Link>
+                        );
+                      })}
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
             );
           })}
         </nav>
 
-        {/* Sidebar Footer User Info */}
-        <div className="p-4 border-t border-slate-800">
-          <div className="flex items-center gap-3 px-2 mb-3">
-            <div className="w-8 h-8 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center font-bold text-xs text-blue-400">
-              {user.name.substring(0, 2).toUpperCase()}
+        <div className={`border-t border-[#222744] space-y-2 ${sidebarCollapsed ? 'p-2' : 'p-3'}`}>
+          {!sidebarCollapsed && (
+            <div className="rounded-2xl overflow-hidden border border-[#FDE047]/30 shadow-md">
+              <div className="p-3.5 bg-gradient-to-b from-[#FFFDF0] to-[#FFF1CD] text-[#1E293B] space-y-2">
+                <h4 className="font-extrabold text-xs text-[#1E293B]">
+                  6 days Free Trial left
+                </h4>
+                <div className="w-full bg-[#FFE6A8] h-2 rounded-full overflow-hidden">
+                  <div className="bg-[#10B981] h-full rounded-full w-[85%]" />
+                </div>
+              </div>
+
+              <Link
+                href="/subscription"
+                className="flex items-center justify-between px-3.5 py-2.5 bg-[#212646] hover:bg-[#282E55] transition-colors group"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-slate-950 font-black text-[10px] shadow-xs">
+                    ★
+                  </div>
+                  <span className="font-extrabold text-xs text-[#FDE047] group-hover:text-yellow-200 transition-colors">
+                    Get BizManage Premium
+                  </span>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-white group-hover:translate-x-0.5 transition-transform" />
+              </Link>
             </div>
-            <div className="overflow-hidden">
-              <p className="text-xs font-semibold text-white truncate">{user.name}</p>
-              <p className="text-[10px] text-slate-400 truncate">{user.email}</p>
-            </div>
-          </div>
-          <button
-            onClick={logout}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 border border-slate-700 text-xs font-medium text-slate-300 transition-all"
+          )}
+
+          {sidebarCollapsed && (
+            <Link
+              href="/subscription"
+              title="Get BizManage Premium"
+              className="flex items-center justify-center w-full py-2 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-300 text-slate-950 font-black text-[10px] hover:opacity-90 transition-opacity shadow-xs"
+            >
+              ★
+            </Link>
+          )}
+
+          <div
+            onClick={() => router.push('/settings')}
+            className={`rounded-2xl bg-[#212646] hover:bg-[#282E55] border border-[#2D335E] flex items-center cursor-pointer transition-all ${
+              sidebarCollapsed ? 'p-2 justify-center' : 'p-2.5 justify-between'
+            }`}
+            title="Business Profile & Settings"
           >
-            <LogOut className="w-3.5 h-3.5" /> Sign Out
-          </button>
+            <div className={`flex items-center min-w-0 ${sidebarCollapsed ? '' : 'gap-2.5'}`}>
+              <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
+                {(currentBusiness?.name || 'RB').substring(0, 2).toUpperCase()}
+              </div>
+              {!sidebarCollapsed && (
+                <span className="font-bold text-white text-xs truncate">
+                  {currentBusiness?.name || 'RB Hardware'}
+                </span>
+              )}
+            </div>
+            {!sidebarCollapsed && <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />}
+          </div>
         </div>
       </aside>
 
-      {/* Main Content Shell */}
-      <main className="lg:pl-64 flex-1 min-h-screen bg-black flex flex-col pb-20 lg:pb-0 print:pl-0 print:bg-white print:min-h-0 print:pb-0">
+      {/* Main Content Shell (Clean Light Workspace) */}
+      <main className={`flex-1 min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col pb-20 lg:pb-0 print:pl-0 print:bg-white print:min-h-0 print:pb-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-[60px]' : 'lg:pl-64'}`}>
         {/* Header Bar */}
-        <header className="h-16 border-b border-zinc-800 px-3 sm:px-6 flex items-center justify-between sticky top-0 bg-black/90 backdrop-blur-md z-30 print:hidden gap-2">
+        <header className="h-16 border-b border-slate-200 px-3 sm:px-6 flex items-center justify-between sticky top-0 bg-white backdrop-blur-md z-30 print:hidden gap-2 shadow-xs">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
-              className="p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white lg:hidden shrink-0 transition-colors"
+              className="p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 lg:hidden shrink-0 transition-colors"
               title="Open Navigation"
             >
               <Menu className="w-5 h-5" />
@@ -422,32 +518,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
-            {/* Vyapar + Add Sale Action Button */}
-            <Link
-              href="/transactions/sales"
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition-all shadow-md shadow-red-600/25 active:scale-95 whitespace-nowrap shrink-0"
-              title="Create Sale Invoice (F2)"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" /> <span className="hidden sm:inline">Add Sale</span>
-            </Link>
-
-            {/* Vyapar + Add Purchase Action Button */}
-            <Link
-              href="/transactions/purchases"
-              className="hidden md:inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 hover:text-white border border-zinc-800 text-xs font-semibold transition-all active:scale-95 whitespace-nowrap shrink-0"
-              title="Record Purchase Bill (F3)"
-            >
-              <Plus className="w-3.5 h-3.5" /> <span>Add Purchase</span>
-            </Link>
-
-            {/* Quick Entry Trigger Button */}
-            <button
-              onClick={() => setQuickEntryOpen(true)}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white text-xs font-semibold transition-all border border-zinc-700 active:scale-95 whitespace-nowrap shrink-0"
-              title="Fast transaction entry interface (Ctrl+Q)"
-            >
-              <Zap className="w-3.5 h-3.5 text-amber-400" /> <span className="hidden sm:inline">Quick Entry</span>
-            </button>
 
             {/* Dynamic Notifications Dropdown */}
             <NotificationCenter
@@ -460,38 +530,40 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setUserMenuOpen((prev) => !prev)}
-                className="flex items-center gap-2.5 p-1.5 pl-3 rounded-xl border border-slate-800 bg-slate-900 hover:border-slate-700 transition-all"
+                className="flex items-center gap-2 p-1.5 pl-2 pr-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all shadow-xs"
               >
-                <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center font-bold text-[10px] text-white">
-                  {user.name.substring(0, 2).toUpperCase()}
+                <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center font-bold text-[10px] text-white shrink-0">
+                  {(user?.name || 'U').substring(0, 2).toUpperCase()}
                 </div>
-                <span className="text-xs font-semibold text-white hidden md:inline">{user.name}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                <span className="text-xs font-semibold text-slate-800 hidden sm:inline max-w-[120px] truncate">
+                  {user?.name || 'Account'}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               </button>
 
               {userMenuOpen && (
                 <>
                   {/* Backdrop for mobile closing */}
                   <div
-                    className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-40 sm:hidden"
+                    className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs z-40 sm:hidden"
                     onClick={() => setUserMenuOpen(false)}
                   />
 
-                  <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="px-3 py-2 border-b border-slate-800 mb-1">
-                      <p className="text-xs font-bold text-white">{user.name}</p>
-                      <p className="text-[10px] text-slate-400 truncate">{user.email}</p>
+                  <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white border border-slate-200 shadow-xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="px-3 py-2 border-b border-slate-100 mb-1">
+                      <p className="text-xs font-bold text-slate-900">{user.name}</p>
+                      <p className="text-[10px] text-slate-500 truncate">{user.email}</p>
                     </div>
                     <Link
                       href="/settings"
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800"
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-50"
                       onClick={() => setUserMenuOpen(false)}
                     >
-                      <Settings className="w-3.5 h-3.5" /> Account Settings
+                      <Settings className="w-3.5 h-3.5 text-slate-500" /> Account Settings
                     </Link>
                     <button
                       onClick={logout}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors mt-1"
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-red-600 hover:bg-red-50 transition-colors mt-1"
                     >
                       <LogOut className="w-3.5 h-3.5" /> Sign Out
                     </button>
@@ -548,5 +620,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav onQuickEntry={() => setQuickEntryOpen(true)} />
     </div>
+  );
+}
+
+export default function DashboardLayout({ children }: { children: ReactNode }) {
+  return (
+    <Suspense fallback={null}>
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+    </Suspense>
   );
 }

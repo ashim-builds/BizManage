@@ -1,4 +1,5 @@
 'use client';
+import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericInput';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
@@ -626,7 +627,9 @@ export default function StaffPayrollPage() {
                 <div>
                   <label className="block text-slate-300 font-semibold mb-1">Base Monthly Salary (Rs.)</label>
                   <input
-                    type="number"
+                    type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                    onFocus={onNumericFocus}
+                    onBlur={onNumericBlur}
                     required
                     value={newStaff.baseSalary}
                     onChange={(e) => setNewStaff({ ...newStaff, baseSalary: Number(e.target.value) })}
@@ -697,7 +700,9 @@ export default function StaffPayrollPage() {
                 <div>
                   <label className="block text-slate-300 font-semibold mb-1">Opening Cash in Counter Float (Rs.)</label>
                   <input
-                    type="number"
+                    type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                    onFocus={onNumericFocus}
+                    onBlur={onNumericBlur}
                     required
                     value={newShift.openingCash}
                     onChange={(e) => setNewShift({ ...newShift, openingCash: Number(e.target.value) })}
@@ -769,7 +774,9 @@ export default function StaffPayrollPage() {
                 <div>
                   <label className="block text-slate-300 font-semibold mb-1">Final Counter Closing Cash Count (Rs.)</label>
                   <input
-                    type="number"
+                    type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                    onFocus={onNumericFocus}
+                    onBlur={onNumericBlur}
                     required
                     value={clockOutClosingCash}
                     onChange={(e) => setClockOutClosingCash(e.target.value)}
@@ -887,7 +894,9 @@ export default function StaffPayrollPage() {
                   <div>
                     <label className="block text-slate-300 font-semibold mb-1">Base Salary</label>
                     <input
-                      type="number"
+                      type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                      onFocus={onNumericFocus}
+                      onBlur={onNumericBlur}
                       required
                       value={newPayroll.baseSalary}
                       onChange={(e) => setNewPayroll({ ...newPayroll, baseSalary: Number(e.target.value) })}
@@ -897,7 +906,9 @@ export default function StaffPayrollPage() {
                   <div>
                     <label className="block text-emerald-400 font-semibold mb-1">+ Bonus</label>
                     <input
-                      type="number"
+                      type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                      onFocus={onNumericFocus}
+                      onBlur={onNumericBlur}
                       value={newPayroll.bonusCommission}
                       onChange={(e) => setNewPayroll({ ...newPayroll, bonusCommission: Number(e.target.value) })}
                       className="w-full px-2.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-emerald-400 font-mono focus:outline-none focus:border-blue-500"
@@ -906,7 +917,9 @@ export default function StaffPayrollPage() {
                   <div>
                     <label className="block text-rose-400 font-semibold mb-1">- Deduction</label>
                     <input
-                      type="number"
+                      type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                      onFocus={onNumericFocus}
+                      onBlur={onNumericBlur}
                       value={newPayroll.advanceDeduction}
                       onChange={(e) => setNewPayroll({ ...newPayroll, advanceDeduction: Number(e.target.value) })}
                       className="w-full px-2.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-rose-400 font-mono focus:outline-none focus:border-blue-500"
