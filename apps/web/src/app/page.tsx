@@ -352,6 +352,9 @@ export default function Home() {
         ========================================================= */}
         <section id="pricing" className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 max-w-7xl mx-auto">
           <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
+            <div className="inline-flex items-center justify-center gap-2 px-4 py-1.5 rounded-full border border-slate-200 bg-slate-100 text-slate-800 text-xs font-semibold uppercase tracking-wider mb-4 shadow-xs">
+              <span>Transparent Pricing</span>
+            </div>
             <h2 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-black">
               Simple Pricing in Rupees
             </h2>
@@ -360,105 +363,152 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto items-stretch">
             {/* Free Starter */}
-            <div className="p-8 rounded-2xl bg-white border-2 border-black shadow-md space-y-6 flex flex-col justify-between">
+            <div className="p-6 sm:p-8 rounded-3xl bg-white border-2 border-black shadow-md space-y-6 flex flex-col justify-between hover:shadow-xl transition-all">
               <div className="space-y-4">
-                <h3 className="text-xl font-bold text-black">Free Starter</h3>
-                <p className="text-sm text-slate-700">For new businesses and freelancers.</p>
-                <div className="pt-2">
-                  <span className="text-4xl font-black text-black font-mono">Rs. 0</span>
-                  <span className="text-xs text-slate-600 ml-2">/ forever</span>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-black text-black">Free Starter</h3>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 border border-slate-200">
+                    Forever Free
+                  </span>
                 </div>
-                <ul className="space-y-3 text-sm text-slate-700 pt-4 border-t-2 border-black">
+                <p className="text-xs sm:text-sm text-slate-600">For new businesses and freelancers.</p>
+                <div className="pt-2">
+                  <div className="flex items-baseline gap-1.5 flex-wrap">
+                    <span className="text-3xl sm:text-4xl font-black text-black font-mono tracking-tight whitespace-nowrap">Rs. 0</span>
+                    <span className="text-xs text-slate-600 font-medium">/ forever</span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-semibold mt-1">Free Base Accounting</p>
+                </div>
+                <ul className="space-y-3 text-xs sm:text-sm text-slate-700 pt-4 border-t-2 border-black/10">
                   <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-black shrink-0 font-bold" /> Up to 50 Sale Invoices
+                    <Check className="w-4 h-4 text-black shrink-0 stroke-[3]" /> Up to 50 Sale Invoices
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-black shrink-0 font-bold" /> Basic Inventory & Stock
+                    <Check className="w-4 h-4 text-black shrink-0 stroke-[3]" /> Basic Inventory & Stock
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-black shrink-0 font-bold" /> Thermal Print Support
+                    <Check className="w-4 h-4 text-black shrink-0 stroke-[3]" /> Thermal Print Support
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-black shrink-0 stroke-[3]" /> Single User / Device
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-black shrink-0 stroke-[3]" /> Cash & Bank Ledgers
                   </li>
                 </ul>
               </div>
               <Link
                 href="/register"
-                className="w-full py-3 rounded-xl bg-white border-2 border-black hover:bg-black hover:text-white text-black font-bold text-base text-center transition-all"
+                className="w-full py-3.5 rounded-2xl bg-white border-2 border-black hover:bg-black hover:text-white text-black font-extrabold text-sm text-center transition-all active:scale-95 shadow-xs"
               >
                 Get Started Free
               </Link>
             </div>
 
-            {/* Gold (Most Popular) */}
-            <div className="p-8 rounded-2xl bg-black border-2 border-black shadow-xl space-y-6 flex flex-col justify-between relative transform scale-105">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-white text-black font-bold text-xs uppercase tracking-wider border-2 border-black">
+            {/* Gold Edition (Most Popular) */}
+            <div className="p-6 sm:p-8 rounded-3xl bg-black border-2 border-black shadow-2xl space-y-6 flex flex-col justify-between relative md:-translate-y-2 hover:shadow-2xl transition-all">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-blue-600 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-600/40 border border-blue-400 whitespace-nowrap">
                 Most Popular
               </div>
               <div className="space-y-4">
-                <h3 className="text-xl font-bold text-white">Gold Edition</h3>
-                <p className="text-sm text-slate-300">Complete POS billing & inventory for retail.</p>
-                <div className="pt-2">
-                  <span className="text-xs text-slate-400 line-through mr-2 font-mono">Rs. 4,999</span>
-                  <h1 className="text-4xl font-black text-white font-mono">Rs. 2,499</h1>
-                  <span className="text-xs text-slate-400 ml-2">/ year</span>
-                  <p className="text-xs text-slate-300 font-bold mt-2">Only Rs. 208 / month</p>
+                <div className="flex items-center justify-between mt-1">
+                  <h3 className="text-xl font-black text-white">Gold Edition</h3>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                    Retail Pro
+                  </span>
                 </div>
-                <ul className="space-y-3 text-sm text-slate-200 pt-4 border-t-2 border-slate-700">
-                  <li className="flex items-center gap-2 font-bold">
-                    <Check className="w-5 h-5 text-white shrink-0" /> 14-Day Full Free Trial
+                <p className="text-xs sm:text-sm text-slate-300">Complete POS billing & inventory for retail.</p>
+                <div className="pt-2">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs text-slate-400 line-through font-mono">Rs. 4,999</span>
+                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      Save 50%
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-1.5 flex-wrap">
+                    <span className="text-3xl sm:text-4xl font-black text-white font-mono tracking-tight whitespace-nowrap">Rs. 2,499</span>
+                    <span className="text-xs text-slate-300 font-medium">/ year</span>
+                  </div>
+                  <p className="text-xs text-slate-300 font-bold mt-1.5">Only Rs. 208 / month</p>
+                </div>
+                <ul className="space-y-3 text-xs sm:text-sm text-slate-200 pt-4 border-t border-slate-800">
+                  <li className="flex items-center gap-2 font-bold text-white">
+                    <Check className="w-4 h-4 text-blue-400 shrink-0 stroke-[3]" /> 14-Day Full Free Trial
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-slate-200 shrink-0" /> Unlimited GST / PAN Bills
+                    <Check className="w-4 h-4 text-blue-400 shrink-0 stroke-[3]" /> Unlimited GST / PAN Bills
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-slate-200 shrink-0" /> High-Speed POS Billing
+                    <Check className="w-4 h-4 text-blue-400 shrink-0 stroke-[3]" /> High-Speed POS Billing
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-slate-200 shrink-0" /> Custom Barcode Printing
+                    <Check className="w-4 h-4 text-blue-400 shrink-0 stroke-[3]" /> Custom Barcode Printing
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-slate-200 shrink-0" /> WhatsApp Invoicing
+                    <Check className="w-4 h-4 text-blue-400 shrink-0 stroke-[3]" /> WhatsApp Invoicing & Reminders
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-blue-400 shrink-0 stroke-[3]" /> Up to 5 Staff Users
                   </li>
                 </ul>
               </div>
               <Link
                 href="/register"
-                className="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-base text-center transition-all shadow-lg active:scale-95"
+                className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-sm text-center transition-all shadow-lg shadow-blue-600/30 active:scale-95"
               >
                 Start 14 Days Free Trial
               </Link>
             </div>
 
-            {/* Platinum */}
-            <div className="p-8 rounded-2xl bg-white border-2 border-black shadow-md space-y-6 flex flex-col justify-between">
+            {/* Platinum ERP */}
+            <div className="p-6 sm:p-8 rounded-3xl bg-white border-2 border-black shadow-md space-y-6 flex flex-col justify-between hover:shadow-xl transition-all">
               <div className="space-y-4">
-                <h3 className="text-xl font-bold text-black">Platinum ERP</h3>
-                <p className="text-sm text-slate-700">Multi-godown & manufacturing operations.</p>
-                <div className="pt-2">
-                  <span className="text-xs text-slate-600 line-through mr-2 font-mono">Rs. 7,999</span>
-                  <h1 className="text-4xl font-black text-black font-mono">Rs. 3,999</h1>
-                  <span className="text-xs text-slate-600 ml-2">/ year</span>
-                  <p className="text-xs text-slate-700 font-bold mt-2">Only Rs. 333 / month</p>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-black text-black">Platinum ERP</h3>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+                    Enterprise
+                  </span>
                 </div>
-                <ul className="space-y-3 text-sm text-slate-700 pt-4 border-t-2 border-black">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-black shrink-0 font-bold" /> Multi-Godowns & Transfers
+                <p className="text-xs sm:text-sm text-slate-600">Multi-godown & manufacturing operations.</p>
+                <div className="pt-2">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs text-slate-400 line-through font-mono">Rs. 7,999</span>
+                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      Save 50%
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-1.5 flex-wrap">
+                    <span className="text-3xl sm:text-4xl font-black text-black font-mono tracking-tight whitespace-nowrap">Rs. 3,999</span>
+                    <span className="text-xs text-slate-600 font-medium">/ year</span>
+                  </div>
+                  <p className="text-xs text-slate-700 font-bold mt-1.5">Only Rs. 333 / month</p>
+                </div>
+                <ul className="space-y-3 text-xs sm:text-sm text-slate-700 pt-4 border-t-2 border-black/10">
+                  <li className="flex items-center gap-2 font-semibold">
+                    <Check className="w-4 h-4 text-black shrink-0 stroke-[3]" /> Everything in Gold Edition
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-black shrink-0 font-bold" /> Manufacturing Assembly
+                    <Check className="w-4 h-4 text-black shrink-0 stroke-[3]" /> Multi-Godowns & Transfers
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-black shrink-0 font-bold" /> Export to Tally ERP
+                    <Check className="w-4 h-4 text-black shrink-0 stroke-[3]" /> Manufacturing & BOM Assembly
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-black shrink-0 font-bold" /> E-commerce Storefront
+                    <Check className="w-4 h-4 text-black shrink-0 stroke-[3]" /> Export to Tally ERP & Excel
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-black shrink-0 stroke-[3]" /> Online E-commerce Storefront
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-black shrink-0 stroke-[3]" /> Unlimited Staff & Priority 24/7
                   </li>
                 </ul>
               </div>
               <Link
                 href="/register"
-                className="w-full py-3 rounded-xl bg-black hover:bg-slate-900 text-white font-bold text-base text-center transition-all"
+                className="w-full py-3.5 rounded-2xl bg-black hover:bg-slate-900 text-white font-extrabold text-sm text-center transition-all active:scale-95 shadow-md"
               >
                 Start Platinum Trial
               </Link>

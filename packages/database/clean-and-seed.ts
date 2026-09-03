@@ -3,12 +3,12 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Seeding 3 Official Subscription Packages...');
+  console.log('Synchronizing official 3 plans and cleaning legacy packages...');
 
   const plans = [
     {
       name: 'Free Starter',
-      price: 0.00,
+      price: 0.0,
       currency: 'NPR',
       billingPeriod: 'MONTHLY',
       trialDays: 0,
@@ -25,7 +25,7 @@ async function main() {
     },
     {
       name: 'Gold Edition',
-      price: 2499.00,
+      price: 2499.0,
       currency: 'NPR',
       billingPeriod: 'YEARLY',
       trialDays: 14,
@@ -49,7 +49,7 @@ async function main() {
     },
     {
       name: 'Platinum ERP',
-      price: 3999.00,
+      price: 3999.0,
       currency: 'NPR',
       billingPeriod: 'YEARLY',
       trialDays: 14,
@@ -80,16 +80,67 @@ async function main() {
     },
   ];
 
+  // 1. Upsert the 3 official plans
   for (const plan of plans) {
     await prisma.subscriptionPackage.upsert({
       where: { name: plan.name },
       update: plan,
       create: plan,
     });
-    console.log(`Upserted plan: ${plan.name} (Rs. ${plan.price})`);
+    console.log(`Upserted plan: ${plan.name}`);
   }
 
-  console.log('Seeding completed successfully!');
+  const freePkg = await prisma.subscriptionPackage.findUnique({ where: { name: 'Free Starter' } });
+  const goldPkg = await prisma.subscriptionPackage.findUnique({ where: { name: 'Gold Edition' } });
+
+  // 2. Find any legacy packages and migrate their businesses before deleting
+  const legacyNames = [
+    'Standard Monthly',
+    'Premium Monthly',
+    'Premium Yearly',
+    'Free Forever',
+    'Starter Monthly',
+    'Pro Monthly',
+    'Enterprise Yearly',
+    'Developer Testing (Localhost Only)',
+  ];
+
+  for (const name of legacyNames) {
+    const legacyPkg = await prisma.subscriptionPackage.findUnique({ where: { name } });
+    if (legacyPkg) {
+      console.log(`Migrating data from legacy package: ${name}`);
+      const targetId = Number(legacyPkg.price) === 0 ? freePkg!.id : goldPkg!.id;
+
+      await prisma.business.updateMany({
+        where: { subscriptionPackageId: legacyPkg.id },
+        data: { subscriptionPackageId: targetId },
+      });
+
+      await prisma.subscription.updateMany({
+        where: { subscriptionPackageId: legacyPkg.id },
+        data: { subscriptionPackageId: targetId },
+      });
+
+      await prisma.subscriptionPayment.updateMany({
+        where: { subscriptionPackageId: legacyPkg.id },
+        data: { subscriptionPackageId: targetId },
+      });
+
+      await prisma.subscriptionPackage.delete({
+        where: { id: legacyPkg.id },
+      });
+      console.log(`Deleted legacy package: ${name}`);
+    }
+  }
+
+  const current = await prisma.subscriptionPackage.findMany({
+    orderBy: { displayOrder: 'asc' },
+  });
+
+  console.log('Current Subscription Packages in Database:');
+  current.forEach((pkg) => {
+    console.log(`- [${pkg.displayOrder}] ${pkg.name} | Rs. ${pkg.price} / ${pkg.billingPeriod} | Active: ${pkg.isActive}`);
+  });
 }
 
 main()
@@ -100,4 +151,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-

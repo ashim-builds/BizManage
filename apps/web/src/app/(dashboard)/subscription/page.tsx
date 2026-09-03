@@ -262,47 +262,47 @@ export default function SubscriptionPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-8 font-sans pb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-6">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-bold border border-blue-500/20 mb-2">
-            <Crown className="w-3.5 h-3.5" /> Plan & Licensing
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200 mb-2">
+            <Crown className="w-3.5 h-3.5 text-blue-600" /> Plan & Licensing
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white">Business Subscription</h1>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Select a plan to activate and unlock your BMS features.
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900">Business Subscription</h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Choose your plan to activate and unlock all business features.
           </p>
         </div>
 
-        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold">
+        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 font-bold">
             <Crown className="w-5 h-5" />
           </div>
           <div>
             <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Current Status</p>
             <div className="flex flex-col">
-              <p className="text-sm font-bold text-white flex items-center gap-1.5">
+              <p className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
                 {activePackage ? activePackage.name : 'No Plan'}
                 {activePackage ? (
                   currentBiz?.subscriptionStatus === 'ACTIVE' ? (
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] border border-emerald-500/20 font-semibold">
-                      Online & Active
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] border border-emerald-200 font-bold">
+                      Active
                     </span>
                   ) : currentBiz?.subscriptionStatus === 'EXPIRED' ? (
-                    <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 text-[10px] border border-red-500/20 font-semibold">
+                    <span className="px-2 py-0.5 rounded-full bg-red-50 text-red-700 text-[10px] border border-red-200 font-bold">
                       Expired
                     </span>
                   ) : (
-                    <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-[10px] border border-amber-500/20 font-semibold">
-                      Active
+                    <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[10px] border border-amber-200 font-bold">
+                      Trial Active
                     </span>
                   )
                 ) : null}
               </p>
               {currentBiz?.currentPeriodEnd && (
-                <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                  Valid until: <span className="text-slate-200 font-semibold">{new Date(currentBiz.currentPeriodEnd).toLocaleDateString()}</span>
+                <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                  Valid until: <span className="text-slate-800 font-semibold">{new Date(currentBiz.currentPeriodEnd).toLocaleDateString()}</span>
                   {new Date(currentBiz.currentPeriodEnd).getTime() > Date.now() && (
-                    <span className="text-blue-400 ml-1 font-semibold">
+                    <span className="text-blue-600 ml-1 font-semibold">
                       ({Math.max(1, Math.ceil((new Date(currentBiz.currentPeriodEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} days remaining)
                     </span>
                   )}
@@ -315,18 +315,18 @@ export default function SubscriptionPage() {
 
       {/* PENDING VERIFICATION BANNER */}
       {pendingPayment && (
-        <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs shadow-lg flex items-start gap-3.5">
-          <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 shrink-0">
+        <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs shadow-sm flex items-start gap-3.5">
+          <div className="p-2 rounded-xl bg-amber-100 text-amber-800 shrink-0">
             <Clock className="w-5 h-5" />
           </div>
           <div className="flex-1">
-            <h4 className="font-bold text-amber-300 text-sm">
+            <h4 className="font-bold text-amber-900 text-sm">
               Payment Verification Pending (प्रमाणीकरण प्रक्रियामा छ)
             </h4>
-            <p className="mt-1 text-amber-200/90 leading-relaxed">
-              Your payment for <span className="font-bold text-white">{pendingPayment.subscriptionPackage.name}</span> (Amount: <span className="font-mono font-bold text-white">Rs. {Number(pendingPayment.amount).toLocaleString()}</span>, Ref ID: <span className="font-mono font-bold text-white">{pendingPayment.referenceId}</span>) has been submitted.
+            <p className="mt-1 text-amber-800 leading-relaxed">
+              Your payment for <span className="font-bold text-slate-900">{pendingPayment.subscriptionPackage.name}</span> (Amount: <span className="font-mono font-bold text-slate-900">Rs. {Number(pendingPayment.amount).toLocaleString()}</span>, Ref ID: <span className="font-mono font-bold text-slate-900">{pendingPayment.referenceId}</span>) has been submitted.
             </p>
-            <p className="text-[11px] text-amber-400/80 mt-1">
+            <p className="text-[11px] text-amber-700 mt-1">
               Our superadmin is verifying the transfer in Garima Bikas Bank and will activate your plan shortly.
             </p>
           </div>
@@ -334,22 +334,22 @@ export default function SubscriptionPage() {
       )}
 
       {!activePackage && !pendingPayment && (
-        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-2">
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold flex items-center gap-2">
           <span>⚠️ Please select a plan below to activate your account and unlock features.</span>
         </div>
       )}
 
       {msg && (
-        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center justify-between">
           <span>{msg}</span>
-          <button onClick={() => setMsg(null)} className="text-slate-400 hover:text-white text-xs">
+          <button onClick={() => setMsg(null)} className="text-slate-500 hover:text-slate-900 text-xs">
             Dismiss
           </button>
         </div>
       )}
 
-      {/* Subscription Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:items-stretch">
+      {/* Subscription Cards - 3 Columns */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch max-w-6xl mx-auto">
         {packages
           .filter((pkg) => {
             const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
@@ -361,121 +361,215 @@ export default function SubscriptionPage() {
           .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
           .map((pkg) => {
             const isActive = selectedPlanId === pkg.id;
-            const isPopular = pkg.name.toLowerCase().includes('premium monthly') || pkg.name.toLowerCase().includes('pro');
+            const isPopular = pkg.name.toLowerCase().includes('gold') || pkg.name.toLowerCase().includes('popular');
+            const isFree = Number(pkg.price) === 0;
+
+            if (isPopular) {
+              return (
+                <div
+                  key={pkg.id}
+                  className="p-6 sm:p-8 rounded-3xl bg-black border-2 border-black shadow-2xl space-y-6 flex flex-col justify-between relative md:-translate-y-2 transition-all text-white"
+                >
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-blue-600 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-600/40 border border-blue-400 whitespace-nowrap">
+                    Most Popular
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between mt-1">
+                      <div className="flex items-center gap-2">
+                        <Crown className="w-5 h-5 text-amber-400" />
+                        <h3 className="text-xl font-black text-white">{pkg.name}</h3>
+                      </div>
+                      {isActive ? (
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          Active Plan
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                          Retail Pro
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-300">Complete POS billing & inventory for retail.</p>
+
+                    <div className="pt-2">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs text-slate-400 line-through font-mono">Rs. 4,999</span>
+                        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          Save 50%
+                        </span>
+                      </div>
+                      <div className="flex items-baseline gap-1.5 flex-wrap">
+                        <span className="text-3xl sm:text-4xl font-black text-white font-mono tracking-tight whitespace-nowrap">
+                          Rs. {Number(pkg.price).toLocaleString()}
+                        </span>
+                        <span className="text-xs text-slate-300 font-medium">/ year</span>
+                      </div>
+                      <p className="text-xs text-slate-300 font-bold mt-1.5">Only Rs. 208 / month</p>
+                    </div>
+
+                    <ul className="space-y-3 text-xs sm:text-sm text-slate-200 pt-4 border-t border-slate-800">
+                      <li className="flex items-center gap-2 font-bold text-white">
+                        <Check className="w-4 h-4 text-blue-400 shrink-0 stroke-[3]" /> 14-Day Full Free Trial
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-blue-400 shrink-0 stroke-[3]" /> Unlimited GST / PAN Bills
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-blue-400 shrink-0 stroke-[3]" /> High-Speed POS Billing
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-blue-400 shrink-0 stroke-[3]" /> Custom Barcode Printing
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-blue-400 shrink-0 stroke-[3]" /> WhatsApp Invoicing & Reminders
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-blue-400 shrink-0 stroke-[3]" /> Up to 5 Staff Users
+                      </li>
+                    </ul>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSelectPlan(pkg)}
+                    disabled={isActive}
+                    className={`w-full py-4 rounded-2xl font-black text-sm text-center transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 ${
+                      isActive
+                        ? 'bg-slate-800 text-slate-400 cursor-default shadow-none'
+                        : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/30'
+                    }`}
+                  >
+                    {isActive ? (
+                      'Current Active Plan'
+                    ) : (
+                      <>
+                        <QrCode className="w-4 h-4" /> Start 14 Days Free Trial
+                      </>
+                    )}
+                  </button>
+                </div>
+              );
+            }
 
             return (
               <div
                 key={pkg.id}
-                className={`relative p-6 rounded-3xl border flex flex-col justify-between transition-all ${
-                  isActive
-                    ? 'bg-slate-900 border-emerald-500 ring-2 ring-emerald-500/20 shadow-xl'
-                    : isPopular
-                    ? 'bg-gradient-to-b from-blue-950/80 to-slate-900 border-blue-500 ring-2 ring-blue-500/20 shadow-2xl shadow-blue-500/10'
-                    : 'bg-slate-900/50 border-slate-800'
+                className={`p-6 sm:p-8 rounded-3xl bg-white border-2 shadow-md space-y-6 flex flex-col justify-between hover:shadow-xl transition-all ${
+                  isActive ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-black'
                 }`}
               >
-                {isPopular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-blue-600 to-violet-600 text-white text-[11px] font-extrabold uppercase tracking-widest shadow-lg shadow-blue-600/40 flex items-center gap-1.5 whitespace-nowrap">
-                    <span>⭐</span> Most Popular
-                  </div>
-                )}
-                <div>
-                  <div className="flex items-center justify-between mb-3 mt-1">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      {isPopular ? (
-                        <Crown className="w-4 h-4 text-blue-400" />
-                      ) : pkg.isDefault ? null : (
-                        <Zap className="w-4 h-4 text-blue-400" />
+                      {isFree ? (
+                        <Zap className="w-5 h-5 text-slate-800" />
+                      ) : (
+                        <Crown className="w-5 h-5 text-purple-600" />
                       )}
-                      <h3 className="text-lg font-bold text-white">{pkg.name}</h3>
+                      <h3 className="text-xl font-black text-black">{pkg.name}</h3>
                     </div>
-                    {isActive && (
-                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
-                        Active
+                    {isActive ? (
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        Active Plan
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 border border-slate-200">
+                        {isFree ? 'Forever Free' : 'Enterprise'}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-400 mb-6">
-                    {pkg.isDefault
-                      ? 'Essential billing & inventory tracking.'
-                      : 'Complete suite of features for your business.'}
+                  <p className="text-xs sm:text-sm text-slate-600">
+                    {isFree
+                      ? 'For new businesses and freelancers.'
+                      : 'Multi-godown & manufacturing operations.'}
                   </p>
 
-                  <div className="mb-6">
-                    <div className="flex items-baseline gap-2">
-                      {Number(pkg.price) > 0 && (
-                        <span className="text-sm line-through text-slate-500 font-mono">
-                          Rs. {(Number(pkg.price) * 1.6).toFixed(0)}
+                  <div className="pt-2">
+                    {!isFree && (
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs text-slate-400 line-through font-mono">Rs. 7,999</span>
+                        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          Save 50%
                         </span>
-                      )}
-                      <span className="text-2xl sm:text-3xl font-black text-white font-mono">
+                      </div>
+                    )}
+                    <div className="flex items-baseline gap-1.5 flex-wrap">
+                      <span className="text-3xl sm:text-4xl font-black text-black font-mono tracking-tight whitespace-nowrap">
                         Rs. {Number(pkg.price).toLocaleString()}
                       </span>
+                      <span className="text-xs text-slate-600 font-medium">
+                        {isFree ? '/ forever' : '/ year'}
+                      </span>
                     </div>
-                    {Number(pkg.price) > 0 ? (
-                      <p className="text-[11px] text-emerald-400 font-semibold mt-1">
-                        Save 38% • Only Rs. {Math.round(Number(pkg.price) / (pkg.billingPeriod === 'YEARLY' ? 12 : 1)).toLocaleString()}/month
-                      </p>
-                    ) : (
-                      <p className="text-[11px] text-zinc-400 font-semibold mt-1">Free Forever Base Features</p>
-                    )}
-                    <span className="inline-block px-2 py-0.5 mt-2 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                      7 Days Full Free Trial Included
-                    </span>
+                    <p className="text-xs text-slate-700 font-bold mt-1.5">
+                      {isFree ? 'Free Base Accounting' : 'Only Rs. 333 / month'}
+                    </p>
                   </div>
 
-                  <ul className="space-y-3 text-xs text-slate-300 border-t border-slate-800 pt-6">
-                    {(expandedPackages.includes(pkg.id) ? pkg.features : pkg.features.slice(0, 5)).map(
-                      (featId) => {
-                        const featObj = AVAILABLE_FEATURES.find((f) => f.id === featId);
-                        return (
-                          <li key={featId} className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                            <span>{featObj ? featObj.label : featId}</span>
-                          </li>
-                        );
-                      }
-                    )}
-                    {pkg.features.length > 5 && (
-                      <li
-                        className="flex items-center gap-2 text-slate-400 hover:text-slate-200 font-medium pt-2 cursor-pointer transition-colors"
-                        onClick={() => toggleExpand(pkg.id)}
-                      >
-                        {expandedPackages.includes(pkg.id) ? (
-                          <>
-                            <Minus className="w-4 h-4 shrink-0" />
-                            <span>Show less</span>
-                          </>
-                        ) : (
-                          <>
-                            <Plus className="w-4 h-4 shrink-0" />
-                            <span>{pkg.features.length - 5} more features included</span>
-                          </>
-                        )}
-                      </li>
+                  <ul className="space-y-3 text-xs sm:text-sm text-slate-700 pt-4 border-t-2 border-black/10">
+                    {isFree ? (
+                      <>
+                        <li className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-black shrink-0 stroke-[3]" /> Up to 50 Sale Invoices
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-black shrink-0 stroke-[3]" /> Basic Inventory & Stock
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-black shrink-0 stroke-[3]" /> Thermal Print Support
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-black shrink-0 stroke-[3]" /> Single User / Device
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-black shrink-0 stroke-[3]" /> Cash & Bank Ledgers
+                        </li>
+                      </>
+                    ) : (
+                      <>
+                        <li className="flex items-center gap-2 font-semibold">
+                          <Check className="w-4 h-4 text-black shrink-0 stroke-[3]" /> Everything in Gold Edition
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-black shrink-0 stroke-[3]" /> Multi-Godowns & Transfers
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-black shrink-0 stroke-[3]" /> Manufacturing & BOM Assembly
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-black shrink-0 stroke-[3]" /> Export to Tally ERP & Excel
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-black shrink-0 stroke-[3]" /> Online E-commerce Storefront
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-black shrink-0 stroke-[3]" /> Unlimited Staff & Priority 24/7
+                        </li>
+                      </>
                     )}
                   </ul>
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => handleSelectPlan(pkg)}
                   disabled={isActive}
-                  className={`w-full mt-8 py-3 px-4 rounded-xl text-xs font-bold transition-all ${
+                  className={`w-full py-3.5 rounded-2xl font-extrabold text-sm text-center transition-all active:scale-95 flex items-center justify-center gap-2 ${
                     isActive
-                      ? 'bg-slate-800 text-emerald-400 border border-emerald-500/40 cursor-default'
-                      : isPopular
-                      ? 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/30 flex items-center justify-center gap-1.5 active:scale-95'
-                      : 'bg-zinc-900 hover:bg-zinc-800 text-red-400 hover:text-red-300 border border-red-500/40 shadow-sm flex items-center justify-center gap-1.5 active:scale-95'
+                      ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-default'
+                      : isFree
+                      ? 'bg-white border-2 border-black hover:bg-black hover:text-white text-black shadow-xs'
+                      : 'bg-black hover:bg-slate-900 text-white shadow-md'
                   }`}
                 >
                   {isActive ? (
                     'Current Active Plan'
-                  ) : Number(pkg.price) > 0 ? (
-                    <>
-                      <QrCode className="w-4 h-4" /> Get {pkg.name} (7-Day Trial)
-                    </>
+                  ) : isFree ? (
+                    `Switch to ${pkg.name}`
                   ) : (
-                    `Select ${pkg.name}`
+                    <>
+                      <QrCode className="w-4 h-4" /> Start Platinum Trial
+                    </>
                   )}
                 </button>
               </div>
@@ -484,16 +578,16 @@ export default function SubscriptionPage() {
       </div>
 
       {/* Feature Licensing Matrix */}
-      <div className="p-4 sm:p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+      <div className="p-5 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-6">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-base sm:text-lg font-bold text-white">Feature Licensing Matrix</h3>
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            <h3 className="text-lg sm:text-xl font-black text-slate-900">Feature Licensing Matrix</h3>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
               Tier Comparison
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            See which BMS features are unlocked on each plan level.
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Detailed breakdown of features and capabilities unlocked in each tier.
           </p>
         </div>
 
@@ -503,22 +597,18 @@ export default function SubscriptionPage() {
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
             {packages.map((pkg) => {
               const isSelected = (matrixTabId || packages[0]?.id) === pkg.id;
-              const isPremium = pkg.name.toLowerCase().includes('premium');
               return (
                 <button
                   key={pkg.id}
                   type="button"
                   onClick={() => setMatrixTabId(pkg.id)}
-                  className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
                     isSelected
-                      ? isPremium
-                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                        : 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
-                      : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                      ? 'bg-slate-900 text-white shadow-md'
+                      : 'bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200'
                   }`}
                 >
-                  {isPremium && <Crown className="w-3.5 h-3.5 text-amber-400" />}
-                  {pkg.name} ({pkg.currency} {pkg.price})
+                  {pkg.name} (Rs. {Number(pkg.price).toLocaleString()})
                 </button>
               );
             })}
@@ -530,49 +620,42 @@ export default function SubscriptionPage() {
             if (!currentMatrixPkg) return null;
 
             return (
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 space-y-3">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-200">
                   <div>
-                    <h4 className="font-bold text-white text-sm">{currentMatrixPkg.name} Features</h4>
-                    <p className="text-[11px] text-slate-400">
+                    <h4 className="font-bold text-slate-900 text-sm">{currentMatrixPkg.name}</h4>
+                    <p className="text-[11px] text-slate-500">
                       {currentMatrixPkg.features.length} of {AVAILABLE_FEATURES.length} feature modules included
                     </p>
                   </div>
-                  <span className="font-mono font-bold text-emerald-400 text-xs">
-                    {currentMatrixPkg.currency} {currentMatrixPkg.price}
+                  <span className="font-mono font-black text-slate-900 text-xs">
+                    Rs. {Number(currentMatrixPkg.price).toLocaleString()}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 gap-2">
                   {AVAILABLE_FEATURES.map((feat) => {
                     const isUnlocked = currentMatrixPkg.features.includes(feat.id);
-                    const isPremiumFeature = feat.id === 'POS_BILLING' || feat.id === 'BARCODE_PRINTING' || feat.id === 'STAFF_PAYROLL';
 
                     return (
                       <div
                         key={feat.id}
                         className={`p-2.5 rounded-xl border flex items-center justify-between text-xs transition-all ${
                           isUnlocked
-                            ? 'bg-slate-900 border-slate-800 text-slate-200'
-                            : 'bg-slate-950/40 border-slate-900 text-slate-500 opacity-60'
+                            ? 'bg-white border-slate-200 text-slate-800 shadow-2xs'
+                            : 'bg-slate-100/60 border-slate-200/60 text-slate-400 opacity-60'
                         }`}
                       >
                         <div className="flex items-center gap-2 min-w-0 pr-2">
                           {isUnlocked ? (
-                            <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                            <Check className="w-4 h-4 text-emerald-600 shrink-0 font-bold" />
                           ) : (
-                            <Lock className="w-3.5 h-3.5 text-amber-500/70 shrink-0" />
+                            <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                           )}
-                          <span className={`truncate font-medium ${isUnlocked ? 'text-white' : 'text-slate-500'}`}>
+                          <span className={`truncate font-medium ${isUnlocked ? 'text-slate-900 font-semibold' : 'text-slate-400'}`}>
                             {feat.label}
                           </span>
                         </div>
-
-                        {isPremiumFeature && (
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30 shrink-0">
-                            Premium Only
-                          </span>
-                        )}
                       </div>
                     );
                   })}
@@ -586,47 +669,40 @@ export default function SubscriptionPage() {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs min-w-[800px]">
             <thead>
-              <tr className="border-b border-slate-800 text-slate-400 font-semibold uppercase tracking-wider">
+              <tr className="border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
                 <th className="pb-3 px-3 w-2/5">ERP Module Feature</th>
                 {packages.map((pkg) => (
                   <th key={pkg.id} className="pb-3 px-3 text-center">
-                    {pkg.name}
-                    <span className="block text-[10px] text-slate-500 font-normal lowercase">
-                      {pkg.currency} {pkg.price}
+                    <span className="font-extrabold text-slate-900">{pkg.name}</span>
+                    <span className="block text-[10px] text-slate-500 font-normal">
+                      Rs. {Number(pkg.price).toLocaleString()}
                     </span>
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-slate-300">
-              {AVAILABLE_FEATURES.map((feat) => {
-                const isPremiumFeat = feat.id === 'POS_BILLING' || feat.id === 'BARCODE_PRINTING' || feat.id === 'STAFF_PAYROLL';
-                return (
-                  <tr key={feat.id} className="hover:bg-slate-800/30 transition-colors">
-                    <td className="py-3.5 px-3 font-semibold text-white flex items-center gap-2">
-                      <span>{feat.label}</span>
-                      {isPremiumFeat && (
-                        <span className="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                          Premium
-                        </span>
+            <tbody className="divide-y divide-slate-100 text-slate-700">
+              {AVAILABLE_FEATURES.map((feat) => (
+                <tr key={feat.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="py-3.5 px-3 font-semibold text-slate-900 flex items-center gap-2">
+                    <span>{feat.label}</span>
+                    <span className="text-[10px] text-slate-400 font-normal">({feat.category})</span>
+                  </td>
+                  {packages.map((pkg) => (
+                    <td key={pkg.id} className="py-3.5 px-3 text-center">
+                      {pkg.features.includes(feat.id) ? (
+                        <div className="w-6 h-6 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center mx-auto">
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        </div>
+                      ) : (
+                        <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center mx-auto">
+                          <Lock className="w-3 h-3 text-slate-400" />
+                        </div>
                       )}
                     </td>
-                    {packages.map((pkg) => (
-                      <td key={pkg.id} className="py-3.5 px-3 text-center">
-                        {pkg.features.includes(feat.id) ? (
-                          <div className="w-6 h-6 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto">
-                            <Check className="w-3.5 h-3.5 text-emerald-400" />
-                          </div>
-                        ) : (
-                          <div className="w-6 h-6 rounded-full bg-slate-950 border border-slate-800 flex items-center justify-center mx-auto">
-                            <Lock className="w-3 h-3 text-slate-600" />
-                          </div>
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                );
-              })}
+                  ))}
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
