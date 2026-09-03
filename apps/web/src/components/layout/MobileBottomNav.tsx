@@ -45,6 +45,16 @@ export function MobileBottomNav({ onQuickEntry }: MobileBottomNavProps) {
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Hide global navigation on full-screen editor & new transaction pages so page action bars are visible
+  const isFullScreenEditor = 
+    pathname?.endsWith('/new') || 
+    pathname?.includes('/transactions/pos') || 
+    pathname?.endsWith('/edit');
+
+  if (isFullScreenEditor) {
+    return null;
+  }
+
   const isMoreActive = !['/dashboard', '/parties', '/inventory'].includes(pathname || '');
 
   const navItems = [

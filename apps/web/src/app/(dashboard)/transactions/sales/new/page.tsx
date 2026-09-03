@@ -935,13 +935,13 @@ export default function NewSalesInvoicePage() {
         {/* ========================================================= */}
         {/* VYAPAR-STYLE MOBILE STICKY BOTTOM BAR (3 BUTTONS)         */}
         {/* ========================================================= */}
-        <div className="fixed md:hidden bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 p-2.5 px-3 shadow-2xl flex items-center justify-between gap-2">
+        <div className="fixed md:hidden bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200/90 p-2.5 px-3 pb-4 shadow-2xl flex items-center justify-between gap-2">
           {/* Save & New Button */}
           <button
             type="submit"
             onClick={() => setSaveAndNew(true)}
             disabled={createSale.isPending}
-            className="flex-1 py-3 px-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-extrabold active:scale-95 transition-all text-center"
+            className="flex-1 py-3 px-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-extrabold active:scale-95 transition-all text-center border border-slate-200"
           >
             Save & New
           </button>
