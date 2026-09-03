@@ -208,10 +208,10 @@ export function ItemSearchSelect({
         onKeyDown={handleKeyDown}
         className={[
           'w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left min-h-[42px]',
-          'bg-slate-800/90 border transition-all',
+          'bg-white border transition-all shadow-xs',
           'focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500',
-          open ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-slate-700/80 hover:border-slate-600',
-          selectedItem ? 'text-white' : 'text-slate-400',
+          open ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-slate-300 hover:border-slate-400',
+          selectedItem ? 'text-slate-900' : 'text-slate-500',
         ].join(' ')}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -219,22 +219,22 @@ export function ItemSearchSelect({
         <span className="flex items-center gap-2 min-w-0 flex-1 py-0.5">
           {selectedItem ? (
             <div className="flex flex-wrap items-center gap-1.5 min-w-0" title={selectedItem.name}>
-              <Package className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
-              <span className="font-semibold text-white break-words text-xs leading-snug">
+              <Package className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+              <span className="font-bold text-slate-900 break-words text-xs leading-snug">
                 {selectedItem.name}
               </span>
               {selectedItem.code && (
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-700">
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
                   {selectedItem.code}
                 </span>
               )}
-              <span className="text-slate-400 font-normal text-[11px] flex-shrink-0">
+              <span className="text-slate-500 font-normal text-[11px] flex-shrink-0">
                 · {selectedItem.unit}
               </span>
             </div>
           ) : (
             <div className="flex items-center gap-2 text-slate-400 min-w-0">
-              <QrCode className="w-3.5 h-3.5 flex-shrink-0 text-purple-400" />
+              <QrCode className="w-3.5 h-3.5 flex-shrink-0 text-slate-400" />
               <span className="break-words text-xs">{placeholder}</span>
             </div>
           )}
@@ -248,7 +248,7 @@ export function ItemSearchSelect({
               setIsCameraOpen(true);
             }}
             title="Scan QR/Barcode with Camera"
-            className="p-1 rounded-md text-purple-400 hover:text-purple-300 hover:bg-slate-700/80 transition-all flex items-center gap-1 text-[10px] font-bold"
+            className="p-1 rounded-md text-purple-600 hover:text-purple-700 hover:bg-purple-50 transition-all flex items-center gap-1 text-[10px] font-bold"
           >
             <Camera className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Camera Scan</span>
@@ -258,14 +258,14 @@ export function ItemSearchSelect({
               role="button"
               tabIndex={-1}
               onClick={clear}
-              className="p-1 rounded-md text-slate-500 hover:text-rose-400 hover:bg-slate-700 transition-colors"
+              className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
               aria-label="Clear selection"
             >
               <X className="w-3 h-3" />
             </span>
           )}
           <ChevronDown
-            className={`w-3.5 h-3.5 text-slate-500 transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
+            className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
           />
         </span>
       </button>
@@ -273,15 +273,15 @@ export function ItemSearchSelect({
       {/* Dropdown panel */}
       {open && (
         <div
-          className="absolute z-[200] left-0 right-0 mt-1.5 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+          className="absolute z-[200] left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100"
           style={{ maxHeight: '20rem' }}
           role="listbox"
         >
           {/* Search input */}
-          <div className="p-2.5 border-b border-slate-800 flex-shrink-0 bg-slate-900/90 backdrop-blur">
+          <div className="p-2.5 border-b border-slate-200 flex-shrink-0 bg-slate-50">
             <div className="relative flex items-center gap-1.5">
               <div className="relative flex-1">
-                <QrCode className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-purple-400 pointer-events-none" />
+                <QrCode className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                 <input
                   ref={inputRef}
                   type="text"
@@ -289,13 +289,13 @@ export function ItemSearchSelect({
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Scan Barcode (SKU) or type name..."
-                  className="w-full pl-8 pr-8 py-2 bg-slate-800/90 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500 transition-all"
+                  className="w-full pl-8 pr-8 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
                 />
                 {query && (
                   <button
                     type="button"
                     onClick={() => setQuery('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-500 hover:text-white"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -305,7 +305,7 @@ export function ItemSearchSelect({
                 type="button"
                 onClick={() => setIsCameraOpen(true)}
                 title="Scan QR Code / Barcode with Camera"
-                className="px-2.5 py-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 text-xs font-bold transition-all flex items-center gap-1 shrink-0"
+                className="px-2.5 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-bold transition-all flex items-center gap-1 shrink-0"
               >
                 <Camera className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Camera</span>
@@ -314,10 +314,10 @@ export function ItemSearchSelect({
           </div>
 
           {/* Item List */}
-          <div className="overflow-y-auto flex-1 overscroll-contain divide-y divide-slate-800/40">
+          <div className="overflow-y-auto flex-1 overscroll-contain divide-y divide-slate-100">
             {filtered.length === 0 ? (
               <div className="px-4 py-6 text-center text-slate-500 text-xs space-y-2">
-                <Package className="w-6 h-6 mx-auto text-slate-600 opacity-50" />
+                <Package className="w-6 h-6 mx-auto text-slate-400 opacity-50" />
                 <p>No products match &quot;{query}&quot;</p>
                 {onCreateNewItem && (
                   <button
@@ -350,34 +350,34 @@ export function ItemSearchSelect({
                     className={[
                       'w-full text-left px-3.5 py-2.5 flex items-center justify-between gap-3',
                       'transition-colors',
-                      idx === highlighted ? 'bg-blue-500/10' : 'hover:bg-slate-800/60',
-                      isSelected ? 'bg-blue-500/15 border-l-[3px] border-l-blue-500 pl-3' : '',
+                      idx === highlighted ? 'bg-blue-50/80' : 'hover:bg-slate-50',
+                      isSelected ? 'bg-blue-50 border-l-[3px] border-l-blue-600 pl-3 font-semibold' : '',
                     ].join(' ')}
                   >
                     {/* Name + details */}
                     <div className="flex items-start gap-2.5 min-w-0 flex-1">
                       <Package
-                        className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isSelected ? 'text-blue-400' : 'text-slate-500'}`}
+                        className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isSelected ? 'text-blue-600' : 'text-slate-400'}`}
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <p
                             title={item.name}
-                            className={`text-xs font-semibold break-words leading-snug ${isSelected ? 'text-blue-300' : 'text-white'}`}
+                            className={`text-xs font-semibold break-words leading-snug ${isSelected ? 'text-blue-700 font-bold' : 'text-slate-800'}`}
                           >
                             {item.name}
                           </p>
                           {item.code && (
-                            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700/80">
+                            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 border border-slate-200">
                               {item.code}
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5 flex-wrap">
+                        <div className="flex items-center gap-2 text-[10px] text-slate-500 mt-0.5 flex-wrap">
                           <span>Unit: {item.unit}</span>
                           {item.category?.name && (
-                            <span className="inline-flex items-center gap-1 text-slate-400">
-                              <Tag className="w-2.5 h-2.5 text-slate-500" />
+                            <span className="inline-flex items-center gap-1 text-slate-500">
+                              <Tag className="w-2.5 h-2.5 text-slate-400" />
                               {item.category.name}
                             </span>
                           )}
@@ -388,7 +388,7 @@ export function ItemSearchSelect({
                     {/* Stock + price badges */}
                     <div className="flex flex-col items-end gap-1 flex-shrink-0 text-right">
                       {price > 0 && (
-                        <span className="text-xs text-white font-mono font-bold">
+                        <span className="text-xs text-slate-900 font-mono font-bold">
                           Rs. {price.toLocaleString()}
                         </span>
                       )}
@@ -399,7 +399,7 @@ export function ItemSearchSelect({
                           {stock <= 0 ? 'Out of stock' : `Stock: ${stock} ${item.unit}`}
                         </span>
                       ) : (
-                        <span className="text-[10px] text-purple-400 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded-md font-semibold">
+                        <span className="text-[10px] text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-md font-semibold">
                           Service
                         </span>
                       )}
