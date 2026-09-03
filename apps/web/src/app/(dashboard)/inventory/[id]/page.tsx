@@ -46,81 +46,84 @@ export default function ItemDetailsPage({ params }: { params: { id: string } }) 
   const stockMovements = item.stockMovements || [];
 
   return (
-    <div className="space-y-8">
-      {/* Top Header */}
-      <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-5 gap-4">
-        <div className="flex items-center gap-4">
+    <div className="space-y-4 font-sans pb-12">
+      {/* Top Header Bar */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-3">
           <Link
             href="/inventory"
-            className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 transition-all"
+            className="p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition-all"
+            title="Back to Inventory"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-white">{item.name}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">{item.name}</h1>
               <span
-                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
                   isProduct
-                    ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                    : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                    : 'bg-purple-50 text-purple-700 border border-purple-200'
                 }`}
               >
                 {item.type}
               </span>
             </div>
-            {item.code && <p className="text-xs text-slate-400 font-mono mt-0.5">SKU / Code: {item.code}</p>}
+            {item.code && <p className="text-xs text-slate-500 font-mono mt-0.5">SKU / Code: {item.code}</p>}
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsBarcodeOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600/15 hover:bg-purple-600/25 text-purple-300 border border-purple-500/30 text-xs font-semibold transition-all shadow-sm"
-        >
-          <QrCode className="w-4 h-4 text-purple-400" /> Print Barcode / QR Label
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsBarcodeOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 text-xs font-bold transition-all shadow-xs"
+          >
+            <QrCode className="w-4 h-4 text-purple-600" /> Barcode / QR
+          </button>
+        </div>
       </div>
 
       {/* Overview Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Item Master Attributes Card */}
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-          <h3 className="text-sm font-bold text-slate-200 border-b border-slate-800 pb-3 flex items-center gap-2">
-            <Package className="w-4 h-4 text-purple-400" /> Item Master Details
+        <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-4">
+          <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-2.5 flex items-center gap-2">
+            <Package className="w-4 h-4 text-slate-700" /> Product Specifications
           </h3>
 
-          <div className="space-y-3 text-xs text-slate-300">
-            <div className="flex justify-between items-center py-1 border-b border-slate-800/50">
-              <span className="text-slate-500">Category</span>
-              <span className="font-semibold text-white">{item.category?.name || 'Uncategorized'}</span>
+          <div className="space-y-2.5 text-xs text-slate-700">
+            <div className="flex justify-between items-center py-1 border-b border-slate-100">
+              <span className="text-slate-500 font-medium">Category</span>
+              <span className="font-bold text-slate-900">{item.category?.name || 'Uncategorized'}</span>
             </div>
 
-            <div className="flex justify-between items-center py-1 border-b border-slate-800/50">
-              <span className="text-slate-500">Measurement Unit</span>
-              <span className="font-semibold text-white">{item.unit}</span>
+            <div className="flex justify-between items-center py-1 border-b border-slate-100">
+              <span className="text-slate-500 font-medium">Measuring Unit</span>
+              <span className="font-bold text-slate-900">{item.unit || 'PCS'}</span>
             </div>
 
-            <div className="flex justify-between items-center py-1 border-b border-slate-800/50">
-              <span className="text-slate-500">Purchase Price</span>
-              <span className="font-semibold font-mono text-white">Rs. {purchasePrice.toLocaleString()}</span>
+            <div className="flex justify-between items-center py-1 border-b border-slate-100">
+              <span className="text-slate-500 font-medium">Purchase Cost</span>
+              <span className="font-bold font-mono text-slate-900">Rs. {purchasePrice.toLocaleString()}</span>
             </div>
 
-            <div className="flex justify-between items-center py-1 border-b border-slate-800/50">
-              <span className="text-slate-500">Selling Price</span>
-              <span className="font-semibold font-mono text-emerald-400">Rs. {salePrice.toLocaleString()}</span>
+            <div className="flex justify-between items-center py-1 border-b border-slate-100">
+              <span className="text-slate-500 font-medium">Selling Price</span>
+              <span className="font-bold font-mono text-emerald-600">Rs. {salePrice.toLocaleString()}</span>
             </div>
 
-            <div className="flex justify-between items-center py-1 border-b border-slate-800/50">
-              <span className="text-slate-500">Profit Margin</span>
-              <span className="font-semibold font-mono text-blue-400">{marginPct}%</span>
+            <div className="flex justify-between items-center py-1 border-b border-slate-100">
+              <span className="text-slate-500 font-medium">Gross Margin</span>
+              <span className="font-bold font-mono text-blue-600">{marginPct}%</span>
             </div>
 
             {isProduct && (
               <div className="flex justify-between items-center py-1">
-                <span className="text-slate-500">Min Stock Alert</span>
-                <span className="font-semibold font-mono text-amber-400">
-                  {minAlert} {item.unit}
+                <span className="text-slate-500 font-medium">Min Stock Alert</span>
+                <span className="font-bold font-mono text-amber-600">
+                  {minAlert} {item.unit || 'PCS'}
                 </span>
               </div>
             )}
@@ -128,109 +131,109 @@ export default function ItemDetailsPage({ params }: { params: { id: string } }) 
         </div>
 
         {/* Stock Valuation & Status Cards */}
-        <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col justify-between">
+        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Current In-Stock Quantity</p>
-              <h3 className="text-3xl font-bold font-mono mt-2 text-white">
-                {stock} <span className="text-sm font-sans text-slate-400 font-normal">{item.unit}</span>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Current In-Stock Balance</p>
+              <h3 className="text-3xl font-black font-mono mt-2 text-slate-900">
+                {stock} <span className="text-sm font-sans text-slate-500 font-bold">{item.unit || 'PCS'}</span>
               </h3>
             </div>
 
-            <div className="mt-4 border-t border-slate-800/80 pt-3 flex items-center justify-between">
-              <span className="text-xs text-slate-400">Stock Status</span>
+            <div className="mt-4 border-t border-slate-100 pt-3 flex items-center justify-between">
+              <span className="text-xs text-slate-500 font-medium">Stock Status</span>
               {isOut && (
-                <span className="px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-400 text-xs font-semibold border border-rose-500/20">
+                <span className="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 text-xs font-bold border border-rose-200">
                   Out of Stock
                 </span>
               )}
               {isLow && (
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-xs font-semibold border border-amber-500/20">
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
                   Low Stock Alert
                 </span>
               )}
               {!isOut && !isLow && (
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold border border-emerald-500/20">
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
                   Healthy In-Stock
                 </span>
               )}
             </div>
           </div>
 
-          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col justify-between">
+          <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Inventory Valuation (Cost)</p>
-              <h3 className="text-2xl font-bold font-mono mt-2 text-blue-400">
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Inventory Valuation (Cost)</p>
+              <h3 className="text-2xl font-black font-mono mt-2 text-blue-600">
                 Rs. {costValuation.toLocaleString()}
               </h3>
-              <p className="text-xs text-slate-400 font-mono mt-1">
-                Retail Sales Value: Rs. {saleValuation.toLocaleString()}
+              <p className="text-xs text-slate-500 font-mono font-medium mt-1">
+                Retail Valuation: Rs. {saleValuation.toLocaleString()}
               </p>
             </div>
-            <p className="text-[11px] text-slate-500 mt-4 border-t border-slate-800/80 pt-3">
-              Calculated dynamically from current in-stock balance and unit cost.
+            <p className="text-[11px] text-slate-400 mt-4 border-t border-slate-100 pt-2.5 font-medium">
+              Calculated dynamically from current stock and unit purchase cost.
             </p>
           </div>
         </div>
       </div>
 
       {/* Stock Movement History Table */}
-      <div className="space-y-4">
-        <h3 className="text-base font-bold text-white flex items-center gap-2">
-          <History className="w-5 h-5 text-blue-400" /> Stock Movement Audit History
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
+        <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+          <History className="w-4 h-4 text-blue-600" /> Stock Movement Audit History
         </h3>
 
         {stockMovements.length === 0 ? (
           <EmptyState
             icon={<Boxes className="w-7 h-7 text-slate-400" />}
             title="No Stock Movements Logged"
-            description="Stock changes from purchases, sales, returns, and manual adjustments will be audited here."
+            description="Stock changes from purchases, sales, returns, and manual adjustments will appear here."
           />
         ) : (
-          <div className="border border-slate-800 rounded-2xl overflow-x-auto overflow-y-hidden bg-slate-900 shadow-xl">
-            <table className="w-full text-left text-xs min-w-[800px]">
-              <thead className="bg-slate-800/70 text-slate-400 font-semibold border-b border-slate-800">
+          <div className="border border-slate-200 rounded-xl overflow-x-auto bg-white">
+            <table className="w-full text-left text-xs min-w-[600px]">
+              <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
                 <tr>
-                  <th className="px-6 py-4">Date</th>
-                  <th className="px-6 py-4">Movement Type</th>
-                  <th className="px-6 py-4 text-right">Quantity Change</th>
-                  <th className="px-6 py-4 text-right">Reference / Notes</th>
+                  <th className="px-4 py-3">Date</th>
+                  <th className="px-4 py-3">Movement Type</th>
+                  <th className="px-4 py-3 text-right">Quantity Change</th>
+                  <th className="px-4 py-3 text-right">Reference / Notes</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-slate-100">
                 {stockMovements.map((sm: any) => {
                   const qty = Number(sm.quantity || 0);
                   const isAdd = qty > 0;
 
                   return (
-                    <tr key={sm.id} className="hover:bg-slate-800/30 transition-colors">
-                      <td className="px-6 py-4 text-slate-300 font-mono">
-                        {new Date(sm.createdAt).toLocaleString()}
+                    <tr key={sm.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="px-4 py-3 text-slate-600 font-mono">
+                        {new Date(sm.createdAt).toLocaleDateString()}
                       </td>
 
-                      <td className="px-6 py-4 font-semibold">
+                      <td className="px-4 py-3 font-semibold">
                         <span
-                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
                             sm.type === 'INITIAL'
-                              ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                              ? 'bg-blue-50 text-blue-700 border border-blue-200'
                               : sm.type === 'PURCHASE' || sm.type === 'SALE_RETURN'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                               : sm.type === 'SALE' || sm.type === 'PURCHASE_RETURN'
-                              ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                              : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                              ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                              : 'bg-amber-50 text-amber-700 border border-amber-200'
                           }`}
                         >
                           {sm.type}
                         </span>
                       </td>
 
-                      <td className="px-6 py-4 text-right font-mono font-bold">
-                        <span className={isAdd ? 'text-emerald-400' : 'text-rose-400'}>
-                          {isAdd ? `+${qty}` : qty} {item.unit}
+                      <td className="px-4 py-3 text-right font-mono font-bold">
+                        <span className={isAdd ? 'text-emerald-600' : 'text-rose-600'}>
+                          {isAdd ? `+${qty}` : qty} {item.unit || 'PCS'}
                         </span>
                       </td>
 
-                      <td className="px-6 py-4 text-right text-slate-300 font-sans">
+                      <td className="px-4 py-3 text-right text-slate-600 font-medium">
                         {sm.reference || '-'}
                       </td>
                     </tr>

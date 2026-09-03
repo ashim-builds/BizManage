@@ -316,8 +316,8 @@ export default function AddItemPage() {
         </div>
       </div>
 
-      {/* ── STEP INDICATOR ── */}
-      <div className="px-6 pt-5 pb-2">
+      {/* ── STEP INDICATOR (DESKTOP) ── */}
+      <div className="hidden md:block px-6 pt-5 pb-2">
         <div className="flex items-center gap-0">
           {visibleSteps.map((step, idx) => {
             const StepIcon = step.icon;
@@ -839,8 +839,27 @@ export default function AddItemPage() {
         )}
       </form>
 
-      {/* ── BOTTOM NAVIGATION BAR ── */}
-      <div className="fixed bottom-0 left-0 right-0 lg:left-64 bg-white/95 backdrop-blur-md border-t border-slate-200 px-6 py-4 z-30 flex items-center justify-between gap-3">
+      {/* ── MOBILE STICKY BOTTOM BAR (Elevated z-50) ── */}
+      <div className="fixed md:hidden bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200/90 p-2.5 px-3 pb-4 shadow-2xl flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={handleAttemptClose}
+          className="flex-1 py-3 px-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-extrabold active:scale-95 transition-all text-center border border-slate-200"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleSubmit((data) => handleSaveRequest(data, false))}
+          disabled={createItem.isPending}
+          className="flex-1 py-3 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black shadow-lg shadow-blue-600/30 active:scale-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+        >
+          <Save className="w-4 h-4" /> {createItem.isPending ? 'Saving...' : createType === ItemType.SERVICE ? 'Save Service' : 'Save Product'}
+        </button>
+      </div>
+
+      {/* ── DESKTOP BOTTOM NAVIGATION BAR ── */}
+      <div className="hidden md:flex fixed bottom-0 left-0 right-0 lg:left-64 bg-white/95 backdrop-blur-md border-t border-slate-200 px-6 py-4 z-30 items-center justify-between gap-3">
         <button
           type="button"
           onClick={currentStep === 1 ? handleAttemptClose : handlePrevStep}

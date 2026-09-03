@@ -479,810 +479,646 @@ function SettingsPageContent() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="border-b border-slate-800 pb-5">
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-          Settings & Business Utilities <Settings className="w-6 h-6 text-blue-400" />
-        </h1>
-        <p className="text-sm text-slate-400 mt-1">
-          Manage tenant profile, team accounts, data imports, secure backups, and business tools.
-        </p>
-      </div>
-
-      {/* TABS NAVIGATION */}
-      <div className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-2xl bg-slate-900 border border-slate-800 text-xs font-semibold">
-        <button
-          onClick={() => setActiveTab('profile')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${activeTab === 'profile'
-            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-            : 'text-slate-400 hover:text-white'
-            }`}
-        >
-          <Building2 className="w-3.5 h-3.5" /> Business Profile
-        </button>
-
-        <button
-          onClick={() => setActiveTab('guide')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${activeTab === 'guide'
-            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-            : 'text-slate-400 hover:text-white'
-            }`}
-        >
-          <BookOpen className="w-3.5 h-3.5" /> User Guide / निर्देशिका
-        </button>
-
-        <button
-          onClick={() => setActiveTab('account')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${activeTab === 'account'
-            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-            : 'text-slate-400 hover:text-white'
-            }`}
-        >
-          <User className="w-3.5 h-3.5" /> Account & Security
-        </button>
-
-        <button
-          onClick={() => setActiveTab('subscription')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${activeTab === 'subscription'
-            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-            : 'text-slate-400 hover:text-white'
-            }`}
-        >
-          <Crown className="w-3.5 h-3.5" /> Subscription Plan
-        </button>
-
-        <button
-          onClick={() => setActiveTab('import')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${activeTab === 'import'
-            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-            : 'text-slate-400 hover:text-white'
-            }`}
-        >
-          <Upload className="w-3.5 h-3.5" /> Import Data
-        </button>
-
-        <button
-          onClick={() => setActiveTab('backup')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${activeTab === 'backup'
-            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-            : 'text-slate-400 hover:text-white'
-            }`}
-        >
-          <Download className="w-3.5 h-3.5" /> Secure Backup
-        </button>
-
-        <button
-          onClick={() => setActiveTab('calculators')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${activeTab === 'calculators'
-            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-            : 'text-slate-400 hover:text-white'
-            }`}
-        >
-          <Calculator className="w-3.5 h-3.5" /> Business Tools
-        </button>
-
-        <button
-          onClick={() => setActiveTab('about')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${activeTab === 'about'
-            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-            : 'text-slate-400 hover:text-white'
-            }`}
-        >
-          <HelpCircle className="w-3.5 h-3.5" /> Help & About
-        </button>
-      </div>
-
-      {/* TAB 1: BUSINESS PROFILE */}
-      {activeTab === 'profile' && (
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6 max-w-2xl">
-          <h3 className="text-base font-bold text-white border-b border-slate-800 pb-3">Business Profile</h3>
-
-          {profileSuccess && (
-            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 shrink-0" /> {profileSuccess}
-            </div>
-          )}
-          {profileError && (
-            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 shrink-0" /> {profileError}
-            </div>
-          )}
-
-          <div className="space-y-5 text-xs">
-            {/* BUSINESS LOGO UPLOAD */}
-            <div className={`p-4 rounded-xl border space-y-3 ${canCustomBranding ? 'bg-slate-800/60 border-slate-700/80' : 'bg-slate-900/40 border-slate-800 opacity-75'}`}>
-              <div className="flex items-center justify-between">
-                <label className="block text-slate-300 font-semibold">Business Logo</label>
-                {!canCustomBranding && (
-                  <span className="text-[10px] bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded border border-amber-500/20 font-bold flex items-center gap-1">
-                    <Lock className="w-3 h-3" /> Requires Pro Plan
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-4">
-                {logoUrl ? (
-                  <div className="relative group">
-                    <img
-                      src={logoUrl}
-                      alt="Business Logo"
-                      className={`w-16 h-16 rounded-xl object-contain bg-slate-900 border p-1 ${!canCustomBranding ? 'border-slate-800 opacity-50 grayscale' : 'border-slate-700'}`}
-                    />
-                    {canCustomBranding && (
-                      <button
-                        type="button"
-                        onClick={() => setLogoUrl('')}
-                        className="absolute -top-1.5 -right-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-md text-[10px]"
-                        title="Remove Logo"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="w-16 h-16 rounded-xl bg-slate-900 border border-dashed border-slate-700 flex items-center justify-center text-slate-500 font-bold text-xs">
-                    No Logo
-                  </div>
-                )}
-
-                <div className="flex-1">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleLogoUpload}
-                    disabled={!canCustomBranding}
-                    className={`block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-500/10 file:text-blue-500 ${canCustomBranding ? 'hover:file:bg-blue-500/20 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
-                  />
-                  <p className="text-[10px] text-slate-500 mt-1">Recommended: Square image, max 5MB (PNG/JPG).</p>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-slate-300 font-semibold mb-1">Business Name *</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white font-bold"
-                placeholder="e.g. RB Hardware & Sanitary House"
-              />
-            </div>
-
-            <div>
-              <label className="block text-slate-300 font-semibold mb-1">Business Address</label>
-              <input
-                type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white"
-                placeholder="e.g. New Road, Pokhara, Nepal"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Contact Number (Phone - 10 Digits)</label>
-                <input
-                  type="tel"
-                  maxLength={10}
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono"
-                  placeholder="e.g. 9841234567"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Business Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono"
-                  placeholder="e.g. contact@mybusiness.com"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-slate-300 font-semibold mb-1">PAN / VAT Registration Number</label>
-              <input
-                type="text"
-                value={taxNumber}
-                onChange={(e) => setTaxNumber(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono"
-                placeholder="e.g. 601928374"
-              />
-            </div>
-
-            {/* FIXED PREFIXES - Read-only */}
-            <div>
-              <label className="block text-slate-300 font-semibold mb-2">Document Number Prefixes</label>
-              <div className="p-3 rounded-xl bg-slate-800/40 border border-slate-700/50 space-y-2">
-                <p className="text-[10px] text-slate-500 flex items-center gap-1.5 mb-3">
-                  <Lock className="w-3 h-3" /> These prefixes are system-fixed and cannot be changed.
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-2.5 rounded-lg bg-slate-800 border border-slate-700">
-                    <p className="text-[10px] text-slate-400 mb-1">Sales Invoice Prefix</p>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-blue-400 text-sm">INV-</span>
-                      <span className="text-[10px] text-slate-500">e.g. INV-000001</span>
-                    </div>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-slate-800 border border-slate-700">
-                    <p className="text-[10px] text-slate-400 mb-1">Purchase Bill Prefix</p>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-purple-400 text-sm">PUR-</span>
-                      <span className="text-[10px] text-slate-500">e.g. PUR-000001</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setIsSaveProfileConfirmOpen(true)}
-              disabled={updateBusiness.isPending || updateSettings.isPending}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 cursor-pointer active:scale-95"
-            >
-              <Save className="w-4 h-4" /> {updateBusiness.isPending ? 'Saving...' : 'Save Profile & Logo'}
-            </button>
+    <div className="space-y-4 font-sans pb-12">
+      {/* Main Settings Container */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden flex flex-col md:flex-row min-h-[calc(100vh-140px)]">
+        {/* Left Category Sidebar (Dark Navy matching Vyapar desktop) */}
+        <div className="w-full md:w-60 lg:w-64 shrink-0 bg-[#16192E] text-slate-300 p-2 sm:p-3 border-r border-slate-800 flex md:flex-col overflow-x-auto md:overflow-x-visible no-scrollbar gap-1">
+          <div className="hidden md:flex items-center justify-between px-3 py-2 mb-1 border-b border-slate-800/80">
+            <span className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-1.5">
+              <Settings className="w-4 h-4 text-blue-400" /> Settings
+            </span>
           </div>
-        </div>
-      )}
 
-      {/* TAB: USER GUIDE */}
-      {activeTab === 'guide' && (
-        <div className="max-w-5xl">
-          <UserGuide initialLanguage="np" showLanguageSelector={true} />
-        </div>
-      )}
+          <button
+            type="button"
+            onClick={() => setActiveTab('profile')}
+            className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wide text-left transition-all flex items-center gap-2.5 shrink-0 ${
+              activeTab === 'profile'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <Building2 className="w-4 h-4 shrink-0" />
+            <span>GENERAL</span>
+          </button>
 
-      {activeTab === 'account' && (
-        <div className="space-y-6 max-w-2xl">
-          {/* User Profile Card */}
-          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-5">
-            <h3 className="text-base font-bold text-white border-b border-slate-800 pb-3 flex items-center gap-2">
-              <User className="w-4 h-4 text-blue-400" /> User Profile
-            </h3>
-            <div className="space-y-4 text-xs">
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-800/60 border border-slate-700">
-                <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-lg">
-                  {user?.name.substring(0, 2).toUpperCase()}
-                </div>
+          <button
+            type="button"
+            onClick={() => setActiveTab('account')}
+            className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wide text-left transition-all flex items-center gap-2.5 shrink-0 ${
+              activeTab === 'account'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <User className="w-4 h-4 shrink-0" />
+            <span>SECURITY & SESSIONS</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('subscription')}
+            className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wide text-left transition-all flex items-center gap-2.5 shrink-0 ${
+              activeTab === 'subscription'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <Crown className="w-4 h-4 shrink-0" />
+            <span>SUBSCRIPTION</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('import')}
+            className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wide text-left transition-all flex items-center gap-2.5 shrink-0 ${
+              activeTab === 'import'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <Upload className="w-4 h-4 shrink-0" />
+            <span>IMPORT DATA</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('backup')}
+            className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wide text-left transition-all flex items-center gap-2.5 shrink-0 ${
+              activeTab === 'backup'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <Download className="w-4 h-4 shrink-0" />
+            <span>BACKUP</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('calculators')}
+            className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wide text-left transition-all flex items-center gap-2.5 shrink-0 ${
+              activeTab === 'calculators'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <Calculator className="w-4 h-4 shrink-0" />
+            <span>TOOLS & EMI</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('guide')}
+            className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wide text-left transition-all flex items-center gap-2.5 shrink-0 ${
+              activeTab === 'guide'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <BookOpen className="w-4 h-4 shrink-0" />
+            <span>GUIDE / निर्देशिका</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('about')}
+            className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wide text-left transition-all flex items-center gap-2.5 shrink-0 ${
+              activeTab === 'about'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <HelpCircle className="w-4 h-4 shrink-0" />
+            <span>ABOUT</span>
+          </button>
+        </div>
+
+        {/* Right Content Area (Clean White ERP Paper Theme) */}
+        <div className="flex-1 p-4 sm:p-6 lg:p-8 bg-white overflow-y-auto">
+          {/* TAB 1: GENERAL SETTINGS */}
+          {activeTab === 'profile' && (
+            <div className="space-y-6 max-w-4xl">
+              <div className="border-b border-slate-200 pb-3 flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-bold text-white">{user?.name}</h4>
-                  <p className="text-slate-400 font-mono">{user?.email}</p>
-                  <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 font-bold uppercase text-[10px] border border-blue-500/20 mt-1 inline-block">
-                    Business Owner / Admin
-                  </span>
+                  <h2 className="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight">
+                    General & Business Profile
+                  </h2>
+                  <p className="text-xs text-slate-500">Configure business identity, currency, tax rates, and document prefixes.</p>
                 </div>
               </div>
-              <div className="pt-2 border-t border-slate-800">
+
+              {profileSuccess && (
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" /> {profileSuccess}
+                </div>
+              )}
+              {profileError && (
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" /> {profileError}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Left Column: Business Info */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Business Name *</label>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 font-bold text-xs focus:outline-none focus:border-blue-500"
+                      placeholder="e.g. RB Hardware & Sanitary House"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Business Address</label>
+                    <input
+                      type="text"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-500"
+                      placeholder="e.g. New Road, Pokhara, Nepal"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Phone Number</label>
+                      <input
+                        type="tel"
+                        maxLength={10}
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono text-xs focus:outline-none focus:border-blue-500"
+                        placeholder="e.g. 9841234567"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Business Email</label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono text-xs focus:outline-none focus:border-blue-500"
+                        placeholder="e.g. contact@business.com"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">PAN / VAT Registration Number</label>
+                    <input
+                      type="text"
+                      value={taxNumber}
+                      onChange={(e) => setTaxNumber(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono font-bold text-xs focus:outline-none focus:border-blue-500"
+                      placeholder="e.g. 601928374"
+                    />
+                  </div>
+                </div>
+
+                {/* Right Column: Logo & System Options */}
+                <div className="space-y-4">
+                  {/* LOGO UPLOAD */}
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                    <label className="block text-xs font-bold text-slate-800">Business Logo for Invoices</label>
+                    <div className="flex items-center gap-3">
+                      {logoUrl ? (
+                        <div className="relative group">
+                          <img
+                            src={logoUrl}
+                            alt="Logo"
+                            className="w-16 h-16 rounded-xl object-contain bg-white border border-slate-200 p-1 shadow-2xs"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setLogoUrl('')}
+                            className="absolute -top-1.5 -right-1.5 bg-rose-600 text-white rounded-full p-1 shadow-sm text-[10px]"
+                            title="Remove Logo"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="w-16 h-16 rounded-xl bg-white border border-dashed border-slate-300 flex items-center justify-center text-slate-400 font-bold text-xs">
+                          No Logo
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLogoUpload}
+                          className="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                        />
+                        <p className="text-[10px] text-slate-400 mt-1">Square image (PNG/JPG).</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Document Prefixes */}
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+                    <label className="block text-xs font-bold text-slate-800">Standard Document Prefixes</label>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="p-2.5 rounded-xl bg-white border border-slate-200">
+                        <span className="text-[10px] font-semibold text-slate-500 block">Sales Invoices</span>
+                        <span className="font-mono font-black text-blue-600 text-sm">INV-</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-white border border-slate-200">
+                        <span className="text-[10px] font-semibold text-slate-500 block">Purchase Bills</span>
+                        <span className="font-mono font-black text-purple-600 text-sm">PUR-</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-200 flex justify-end">
                 <button
-                  onClick={logout}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white font-semibold transition-all border border-red-500/30 text-xs"
+                  type="button"
+                  onClick={() => setIsSaveProfileConfirmOpen(true)}
+                  disabled={updateBusiness.isPending || updateSettings.isPending}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-all shadow-md shadow-blue-600/20 active:scale-95 cursor-pointer disabled:opacity-50"
                 >
-                  <LogOut className="w-4 h-4" /> Sign Out of All Devices
+                  <Save className="w-4 h-4" /> {updateBusiness.isPending ? 'Saving...' : 'Save General Settings'}
                 </button>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Change Password Section */}
-          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-5">
-            <h3 className="text-base font-bold text-white border-b border-slate-800 pb-3 flex items-center gap-2">
-              <KeyRound className="w-4 h-4 text-amber-400" /> Change Password
-            </h3>
-
-            {pwdSuccess && (
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 shrink-0" /> {pwdSuccess}
+          {/* TAB 2: SECURITY & SESSIONS */}
+          {activeTab === 'account' && (
+            <div className="space-y-6 max-w-4xl">
+              <div className="border-b border-slate-200 pb-3">
+                <h2 className="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight">
+                  Security & Active Sessions
+                </h2>
+                <p className="text-xs text-slate-500">Manage account password, two-factor authentication, and connected devices.</p>
               </div>
-            )}
-            {pwdError && (
-              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 shrink-0" /> {pwdError}
-              </div>
-            )}
 
-            <div className="space-y-4 text-xs">
-              {/* Current Password */}
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Current Password *</label>
-                <div className="relative">
-                  <input
-                    type={showCurrentPwd ? 'text' : 'password'}
-                    value={currentPwd}
-                    onChange={(e) => setCurrentPwd(e.target.value)}
-                    placeholder="Enter your current password"
-                    className="w-full px-3.5 py-2.5 pr-10 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
+              {/* User Profile Card */}
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-base shadow-xs">
+                      {user?.name.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900">{user?.name}</h4>
+                      <p className="text-xs text-slate-500 font-mono">{user?.email}</p>
+                    </div>
+                  </div>
                   <button
-                    type="button"
-                    onClick={() => setShowCurrentPwd(!showCurrentPwd)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                    onClick={logout}
+                    className="px-4 py-2 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 font-bold text-xs transition-all flex items-center gap-1.5"
                   >
-                    {showCurrentPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    <LogOut className="w-3.5 h-3.5" /> Sign Out
                   </button>
                 </div>
               </div>
 
-              {/* New Password */}
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">New Password *</label>
-                <div className="relative">
-                  <input
-                    type={showNewPwd ? 'text' : 'password'}
-                    value={newPwd}
-                    onChange={(e) => setNewPwd(e.target.value)}
-                    placeholder="Min. 8 characters"
-                    className="w-full px-3.5 py-2.5 pr-10 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPwd(!showNewPwd)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
-                  >
-                    {showNewPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                {newPwd.length > 0 && newPwd.length < 8 && (
-                  <p className="text-[10px] text-amber-400 mt-1 flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3" /> Must be at least 8 characters
-                  </p>
-                )}
-              </div>
-
-              {/* Confirm New Password */}
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Confirm New Password *</label>
-                <div className="relative">
-                  <input
-                    type={showConfirmPwd ? 'text' : 'password'}
-                    value={confirmPwd}
-                    onChange={(e) => setConfirmPwd(e.target.value)}
-                    placeholder="Repeat new password"
-                    className="w-full px-3.5 py-2.5 pr-10 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPwd(!showConfirmPwd)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
-                  >
-                    {showConfirmPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                {confirmPwd.length > 0 && newPwd !== confirmPwd && (
-                  <p className="text-[10px] text-red-400 mt-1 flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3" /> Passwords do not match
-                  </p>
-                )}
-                {confirmPwd.length > 0 && newPwd === confirmPwd && newPwd.length >= 8 && (
-                  <p className="text-[10px] text-emerald-400 mt-1 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Passwords match
-                  </p>
-                )}
-              </div>
-
-              <button
-                onClick={handleChangePassword}
-                disabled={pwdPending || !!pwdSuccess}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold transition-all shadow-lg shadow-amber-600/20 disabled:opacity-50 text-xs"
-              >
-                <KeyRound className="w-4 h-4" />
-                {pwdPending ? 'Changing Password...' : 'Change Password'}
-              </button>
-              <p className="text-[10px] text-slate-500">
-                🔒 All active sessions will be revoked after changing password.
-              </p>
-            </div>
-          </div>
-
-          {/* Active Sessions Section */}
-          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Monitor className="w-5 h-5 text-indigo-400" /> Active Sessions
+              {/* Change Password Form */}
+              <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-4">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-2">
+                  <KeyRound className="w-4 h-4 text-amber-600" /> Change Account Password
                 </h3>
-                <p className="text-xs text-slate-400 mt-1">Manage the devices that are currently logged in to your account.</p>
-              </div>
-              <button
-                onClick={() => {
-                  toast.promise(deleteOtherSessions.mutateAsync(), {
-                    loading: 'Logging out other devices...',
-                    success: 'All other devices logged out!',
-                    error: 'Failed to log out other devices.',
-                  });
-                }}
-                disabled={deleteOtherSessions.isPending || sessionsLoading || sessions?.length === 1}
-                className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all font-semibold disabled:opacity-50"
-              >
-                Log out all other devices
-              </button>
-            </div>
 
-            <div className="space-y-3">
-              {sessionsLoading ? (
-                <div className="text-center py-6 text-slate-500 text-xs">Loading sessions...</div>
-              ) : sessions?.length === 0 ? (
-                <div className="text-center py-6 text-slate-500 text-xs">No active sessions found.</div>
-              ) : (
-                sessions?.map((session) => (
-                  <div key={session.id} className={`flex items-center justify-between p-4 rounded-xl border ${session.isCurrent ? 'bg-indigo-500/5 border-indigo-500/20' : 'bg-slate-800/50 border-slate-700/50'}`}>
-                    <div className="flex items-start gap-4">
-                      <div className={`p-3 rounded-xl ${session.isCurrent ? 'bg-indigo-500/20 text-indigo-400' : 'bg-slate-700 text-slate-300'}`}>
-                        {session.device?.toLowerCase().includes('mobile') || session.device?.toLowerCase().includes('android') || session.device?.toLowerCase().includes('iphone') ? (
-                          <Smartphone className="w-5 h-5" />
-                        ) : (
-                          <Monitor className="w-5 h-5" />
-                        )}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-sm font-bold text-white">
-                            {session.device || 'Unknown Device'}
-                          </h4>
-                          {session.isCurrent && (
-                            <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-bold">
-                              Current Session
-                            </span>
+                {pwdSuccess && (
+                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-600" /> {pwdSuccess}
+                  </div>
+                )}
+                {pwdError && (
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" /> {pwdError}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Current Password *</label>
+                    <input
+                      type={showCurrentPwd ? 'text' : 'password'}
+                      value={currentPwd}
+                      onChange={(e) => setCurrentPwd(e.target.value)}
+                      placeholder="Current password"
+                      className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">New Password *</label>
+                    <input
+                      type={showNewPwd ? 'text' : 'password'}
+                      value={newPwd}
+                      onChange={(e) => setNewPwd(e.target.value)}
+                      placeholder="Min. 8 characters"
+                      className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Confirm New Password *</label>
+                    <input
+                      type={showConfirmPwd ? 'text' : 'password'}
+                      value={confirmPwd}
+                      onChange={(e) => setConfirmPwd(e.target.value)}
+                      placeholder="Repeat password"
+                      className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleChangePassword}
+                  disabled={pwdPending || !newPwd || newPwd !== confirmPwd}
+                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition-all shadow-xs disabled:opacity-50"
+                >
+                  {pwdPending ? 'Updating...' : 'Update Password'}
+                </button>
+              </div>
+
+              {/* Active Sessions */}
+              <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-2">
+                      <Monitor className="w-4 h-4 text-indigo-600" /> Active Devices & Sessions
+                    </h3>
+                  </div>
+                  <button
+                    onClick={() => {
+                      toast.promise(deleteOtherSessions.mutateAsync(), {
+                        loading: 'Logging out other devices...',
+                        success: 'All other devices logged out!',
+                        error: 'Failed to log out other devices.',
+                      });
+                    }}
+                    disabled={deleteOtherSessions.isPending || sessions?.length === 1}
+                    className="text-xs px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 font-bold transition-all disabled:opacity-50"
+                  >
+                    Log out other devices
+                  </button>
+                </div>
+
+                <div className="space-y-2.5">
+                  {sessions?.map((session) => (
+                    <div key={session.id} className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 shadow-2xs">
+                          {session.device?.toLowerCase().includes('mobile') ? (
+                            <Smartphone className="w-4 h-4" />
+                          ) : (
+                            <Monitor className="w-4 h-4" />
                           )}
                         </div>
-                        <p className="text-xs text-slate-400 mt-1 flex items-center gap-2">
-                          <span>{session.browser || 'Unknown Browser'}</span>
-                          <span className="w-1 h-1 rounded-full bg-slate-600"></span>
-                          <span>{session.os || 'Unknown OS'}</span>
-                        </p>
-                        <div className="flex items-center gap-3 mt-2 text-[11px] text-slate-500">
-                          <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {session.ipAddress || 'Unknown IP'}</span>
-                          <span className="w-1 h-1 rounded-full bg-slate-700"></span>
-                          <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Active: {new Date(session.lastActiveAt).toLocaleString()}</span>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-slate-900">{session.device || 'Browser Device'}</span>
+                            {session.isCurrent && (
+                              <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                                Current
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-400 font-mono">
+                            {session.browser || 'Web'} • {session.ipAddress || 'Local IP'}
+                          </p>
                         </div>
                       </div>
+
+                      {!session.isCurrent && (
+                        <button
+                          onClick={() => deleteSession.mutateAsync(session.id)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                          title="Revoke session"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
-                    {!session.isCurrent && (
-                      <button
-                        onClick={() => {
-                          toast.promise(deleteSession.mutateAsync(session.id), {
-                            loading: 'Logging out...',
-                            success: 'Session logged out!',
-                            error: 'Failed to log out session.',
-                          });
-                        }}
-                        disabled={deleteSession.isPending}
-                        className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all group disabled:opacity-50"
-                        title="Log out this device"
-                      >
-                        <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                      </button>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 3: SUBSCRIPTION PLAN */}
-      {activeTab === 'subscription' && (
-        <div className="space-y-6 max-w-3xl">
-          {profileSuccess && (
-            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 shrink-0" /> {profileSuccess}
-            </div>
-          )}
-
-          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Crown className="w-5 h-5 text-amber-400" /> Subscription & SaaS Plan
-                </h3>
-                <p className="text-xs text-slate-400 mt-1">Manage your active workspace license and features.</p>
+                  ))}
+                </div>
               </div>
-              <span className={`px-4 py-1.5 rounded-full font-bold text-xs border ${selectedPlan?.toLowerCase() === 'enterprise'
-                ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                : selectedPlan?.toLowerCase() === 'pro'
-                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                }`}>
-                {selectedPlan?.toLowerCase() === 'enterprise' ? 'Enterprise Active' : selectedPlan?.toLowerCase() === 'pro' ? 'Pro Plan Active' : 'Free Starter Active'}
-              </span>
-            </div>
-
-            <div className={`p-6 rounded-xl border space-y-3 ${selectedPlan?.toLowerCase() === 'enterprise'
-              ? 'bg-gradient-to-r from-amber-900/20 to-orange-900/20 border-amber-500/20'
-              : selectedPlan?.toLowerCase() === 'pro'
-                ? 'bg-gradient-to-r from-blue-900/20 to-indigo-900/20 border-blue-500/20'
-                : 'bg-gradient-to-r from-emerald-900/20 to-teal-900/20 border-emerald-500/20'
-              }`}>
-              <h4 className="text-lg font-bold text-white">
-                {selectedPlan?.toLowerCase() === 'enterprise' ? 'Enterprise License' : selectedPlan?.toLowerCase() === 'pro' ? 'Pro Business License' : 'Free Starter License'}
-              </h4>
-              <p className="text-sm text-slate-300">
-                {selectedPlan?.toLowerCase() === 'enterprise'
-                  ? 'Unlimited transaction volume, multi-business isolation, real-time double-entry ledgers, and priority support.'
-                  : selectedPlan?.toLowerCase() === 'pro'
-                    ? 'Advanced reporting, unlimited parties, up to 10,000 transactions/mo, and automated backups.'
-                    : 'Basic double-entry accounting, up to 100 transactions/mo, and single business management.'}
-              </p>
-            </div>
-            <div className="pt-4 border-t border-slate-800 space-y-4">
-              <h4 className="text-sm font-semibold text-white">Need to upgrade or downgrade?</h4>
-              <Link
-                href="/subscription"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all shadow-lg shadow-blue-600/20"
-              >
-                <Crown className="w-4 h-4" />
-                View Subscription Plans
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 4: IMPORT DATA & FULL BACKUP RESTORATION */}
-      {activeTab === 'import' && (
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6 max-w-3xl">
-          <div className="border-b border-slate-800 pb-3">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Upload className="w-5 h-5 text-blue-400" /> Data Importer & Full Database Restore
-            </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Import parties and products, or restore an entire business database backup JSON file exported from BizManage.
-            </p>
-          </div>
-
-          {importSuccessMsg && (
-            <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-2.5">
-              <CheckCircle2 className="w-5 h-5 shrink-0" />
-              <span>{importSuccessMsg}</span>
             </div>
           )}
 
-          {importErrors.length > 0 && (
-            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-xs space-y-2">
-              <p className="font-bold flex items-center gap-1.5 text-sm">
-                <AlertTriangle className="w-4 h-4 text-red-400" /> Import Validation Errors:
-              </p>
-              <ul className="list-disc pl-5 space-y-1 font-mono text-[11px] max-h-48 overflow-y-auto">
-                {importErrors.map((err, idx) => (
-                  <li key={idx}>
-                    Row {err.row} ({err.name}): {err.error}
-                  </li>
-                ))}
-              </ul>
+          {/* TAB 3: SUBSCRIPTION PLAN */}
+          {activeTab === 'subscription' && (
+            <div className="space-y-6 max-w-4xl">
+              <div className="border-b border-slate-200 pb-3">
+                <h2 className="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight">
+                  Subscription & Workspace Plan
+                </h2>
+                <p className="text-xs text-slate-500">View license details, trial status, and upgrade packages.</p>
+              </div>
+
+              <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="px-3 py-1 rounded-full bg-blue-600 text-white font-black text-xs uppercase tracking-wider">
+                    {selectedPlan || 'Free Starter / 14-Day Trial'}
+                  </span>
+                  <Link
+                    href="/subscription"
+                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition-all"
+                  >
+                    Manage Plans &rarr;
+                  </Link>
+                </div>
+                <h3 className="text-lg font-black text-slate-900">
+                  {selectedPlan ? `${selectedPlan} Plan Active` : '14-Day Full Free Trial Active'}
+                </h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Enjoy all ERP tools, WhatsApp marketing, POS billing, unlimited invoices, barcode printing, and reports.
+                </p>
+              </div>
             </div>
           )}
 
-          <div className="space-y-4 text-xs">
-            <div>
-              <label className="block text-slate-300 font-semibold mb-2">Select JSON File *</label>
-              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition-colors space-y-3">
+          {/* TAB 4: IMPORT DATA */}
+          {activeTab === 'import' && (
+            <div className="space-y-6 max-w-4xl">
+              <div className="border-b border-slate-200 pb-3">
+                <h2 className="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight">
+                  Import Data & Full Backup Restore
+                </h2>
+                <p className="text-xs text-slate-500">Upload JSON or Excel data files to import parties and inventory items in bulk.</p>
+              </div>
+
+              {importSuccessMsg && (
+                <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                  <span>{importSuccessMsg}</span>
+                </div>
+              )}
+
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+                <label className="block text-xs font-bold text-slate-800">Choose JSON / Excel Data File</label>
                 <input
                   type="file"
                   accept=".json"
                   onChange={handleFileUpload}
-                  className="w-full text-slate-300 text-xs font-mono file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer"
+                  className="w-full text-xs text-slate-600 font-mono file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
                 />
 
-                {importFileName && (
-                  <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2 text-slate-200">
-                      <FileCheck className="w-4 h-4 text-blue-400" />
-                      <span className="font-mono font-medium">{importFileName}</span>
-                    </div>
-                    {parsedBackupMeta?.isFullBackup && (
-                      <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold uppercase">
-                        Full Backup Detected
-                      </span>
-                    )}
-                  </div>
-                )}
+                <div className="flex flex-wrap items-center gap-3 pt-2">
+                  <button
+                    onClick={handleImportFullBackup}
+                    disabled={!importJsonText || importingFull}
+                    className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+                  >
+                    <Database className="w-4 h-4" />
+                    <span>{importingFull ? 'Restoring...' : 'Restore Full Backup'}</span>
+                  </button>
+
+                  <button
+                    onClick={handleImportParties}
+                    disabled={!importJsonText}
+                    className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <span>Import Parties Only</span>
+                  </button>
+
+                  <button
+                    onClick={handleImportItems}
+                    disabled={!importJsonText}
+                    className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold text-xs transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <span>Import Items Only</span>
+                  </button>
+                </div>
               </div>
             </div>
+          )}
 
-            {/* Smart Detection Card */}
-            {parsedBackupMeta && (
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] uppercase font-bold text-slate-400 flex items-center gap-1.5">
-                    <Database className="w-3.5 h-3.5 text-emerald-400" /> Detected Data in File
-                  </span>
-                  {parsedBackupMeta.businessName && (
-                    <span className="text-xs text-white font-semibold">
-                      Business: <strong className="text-blue-400">{parsedBackupMeta.businessName}</strong>
-                    </span>
+          {/* TAB 5: BACKUP */}
+          {activeTab === 'backup' && (
+            <div className="space-y-6 max-w-4xl">
+              <div className="border-b border-slate-200 pb-3">
+                <h2 className="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight">
+                  Secure Data Backup
+                </h2>
+                <p className="text-xs text-slate-500">Download a complete backup archive of your business records.</p>
+              </div>
+
+              <div className="p-6 rounded-2xl bg-white border border-slate-200 space-y-4 shadow-xs">
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Export a complete JSON data snapshot containing all parties, products, transactions, invoices, and accounting ledgers.
+                </p>
+                <button
+                  onClick={handleBackupDownload}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all shadow-md shadow-emerald-600/20 active:scale-95 cursor-pointer"
+                >
+                  <Download className="w-4 h-4" /> Download Complete JSON Backup
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 6: CALCULATORS */}
+          {activeTab === 'calculators' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+              {/* EMI Calculator */}
+              <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                  <Calculator className="w-4 h-4 text-blue-600" /> Business Loan EMI Calculator
+                </h3>
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Principal Amount (Rs.)</label>
+                    <input
+                      type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                      onFocus={onNumericFocus}
+                      onBlur={onNumericBlur}
+                      value={loanAmount}
+                      onChange={(e) => setLoanAmount(Number(e.target.value))}
+                      className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono font-bold"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Annual Rate (%)</label>
+                      <input
+                        type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                        onFocus={onNumericFocus}
+                        onBlur={onNumericBlur}
+                        value={interestRate}
+                        onChange={(e) => setInterestRate(Number(e.target.value))}
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Tenure (Months)</label>
+                      <input
+                        type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                        onFocus={onNumericFocus}
+                        onBlur={onNumericBlur}
+                        value={loanMonths}
+                        onChange={(e) => setLoanMonths(Number(e.target.value))}
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono font-bold"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    onClick={calculateEmi}
+                    className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs"
+                  >
+                    Calculate EMI
+                  </button>
+                  {emiResult !== null && (
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-center font-mono">
+                      <p className="text-slate-500 text-[10px] font-bold uppercase">Monthly Payment:</p>
+                      <p className="text-lg font-black text-emerald-600">Rs. {emiResult.toLocaleString()}</p>
+                    </div>
                   )}
                 </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-                  <div className="p-2 rounded-xl bg-slate-900 border border-slate-800">
-                    <span className="block text-[10px] text-slate-400">Parties</span>
-                    <strong className="text-sm font-mono text-white">{parsedBackupMeta.totalParties || 0}</strong>
-                  </div>
-                  <div className="p-2 rounded-xl bg-slate-900 border border-slate-800">
-                    <span className="block text-[10px] text-slate-400">Items / Products</span>
-                    <strong className="text-sm font-mono text-white">{parsedBackupMeta.totalItems || 0}</strong>
-                  </div>
-                  <div className="p-2 rounded-xl bg-slate-900 border border-slate-800">
-                    <span className="block text-[10px] text-slate-400">Accounts</span>
-                    <strong className="text-sm font-mono text-white">{parsedBackupMeta.totalAccounts || 0}</strong>
-                  </div>
-                  <div className="p-2 rounded-xl bg-slate-900 border border-slate-800">
-                    <span className="block text-[10px] text-slate-400">Invoices</span>
-                    <strong className="text-sm font-mono text-white">{parsedBackupMeta.totalInvoices || 0}</strong>
-                  </div>
-                </div>
               </div>
-            )}
 
-            {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-3 pt-2">
-              <button
-                onClick={handleImportFullBackup}
-                disabled={!importJsonText || importingFull}
-                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold transition-all shadow-lg shadow-emerald-600/20 flex items-center gap-2 cursor-pointer active:scale-95"
-              >
-                <Database className="w-4 h-4" />
-                <span>{importingFull ? 'Restoring Full Database...' : 'Restore Full Database Backup'}</span>
-              </button>
-
-              <button
-                onClick={handleImportParties}
-                disabled={!importJsonText}
-                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold transition-all shadow-lg shadow-blue-600/20 flex items-center gap-1.5 cursor-pointer active:scale-95"
-              >
-                <span>Import Parties Only</span>
-                {parsedBackupMeta?.totalParties ? (
-                  <span className="px-1.5 py-0.5 rounded bg-blue-700 text-[10px] font-mono">
-                    {parsedBackupMeta.totalParties}
-                  </span>
-                ) : null}
-              </button>
-
-              <button
-                onClick={handleImportItems}
-                disabled={!importJsonText}
-                className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-semibold transition-all shadow-lg shadow-purple-600/20 flex items-center gap-1.5 cursor-pointer active:scale-95"
-              >
-                <span>Import Items Only</span>
-                {parsedBackupMeta?.totalItems ? (
-                  <span className="px-1.5 py-0.5 rounded bg-purple-700 text-[10px] font-mono">
-                    {parsedBackupMeta.totalItems}
-                  </span>
-                ) : null}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 5: SECURE BACKUP */}
-      {activeTab === 'backup' && (
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6 max-w-2xl">
-          <div className="border-b border-slate-800 pb-3">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Download className="w-5 h-5 text-emerald-400" /> Secure Business Data Backup
-            </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Export a complete JSON data dump of your business account ledgers, party directory, inventory masters, and invoices.
-            </p>
-          </div>
-
-          <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700 text-xs text-slate-300 space-y-2">
-            <p className="font-semibold text-white">🔒 Security Protocol Guarantee:</p>
-            <p className="text-[11px] text-slate-400">
-              Backups contain strictly business-owned transactional records. Sensitive passwords, JWT secret tokens, and database server credentials are never exposed.
-            </p>
-          </div>
-
-          <button
-            onClick={handleBackupDownload}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-all shadow-lg shadow-emerald-600/20 text-xs"
-          >
-            <Download className="w-4 h-4" /> Download Complete JSON Backup Dump
-          </button>
-        </div>
-      )}
-
-      {/* TAB 6: BUSINESS TOOLS & CALCULATORS */}
-      {activeTab === 'calculators' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* EMI CALCULATOR */}
-          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 text-xs">
-            <h3 className="text-base font-bold text-white border-b border-slate-800 pb-2 flex items-center gap-2">
-              <Calculator className="w-4 h-4 text-blue-400" /> Business EMI Calculator
-            </h3>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-slate-300 mb-1">Loan Principal (Rs.)</label>
-                <input
-                  type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
-                  onFocus={onNumericFocus}
-                  onBlur={onNumericBlur}
-                  value={loanAmount}
-                  onChange={(e) => setLoanAmount(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono"
+              {/* Notebook */}
+              <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-3 text-xs">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-purple-600" /> Business Scratchpad
+                </h3>
+                <textarea
+                  rows={8}
+                  value={notebook}
+                  onChange={(e) => saveNotebook(e.target.value)}
+                  className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs font-sans focus:outline-none focus:bg-white focus:border-blue-500 transition-all"
+                  placeholder="Notes, reminder tasks, or supplier quotes..."
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-300 mb-1">Annual Interest Rate (%)</label>
-                  <input
-                    type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
-                    onFocus={onNumericFocus}
-                    onBlur={onNumericBlur}
-                    value={interestRate}
-                    onChange={(e) => setInterestRate(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-300 mb-1">Tenure (Months)</label>
-                  <input
-                    type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
-                    onFocus={onNumericFocus}
-                    onBlur={onNumericBlur}
-                    value={loanMonths}
-                    onChange={(e) => setLoanMonths(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono"
-                  />
-                </div>
-              </div>
-              <button
-                onClick={calculateEmi}
-                className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold"
-              >
-                Calculate EMI
-              </button>
-              {emiResult !== null && (
-                <div className="p-3 rounded-xl bg-slate-800 text-center font-mono">
-                  <p className="text-slate-400 text-[10px]">Monthly EMI Payout:</p>
-                  <p className="text-lg font-bold text-emerald-400">Rs. {emiResult.toLocaleString()}</p>
-                </div>
-              )}
             </div>
-          </div>
+          )}
 
-          {/* NOTEBOOK SCRATCHPAD */}
-          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 text-xs">
-            <h3 className="text-base font-bold text-white border-b border-slate-800 pb-2 flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-purple-400" /> Business Scratchpad / Notebook
-            </h3>
-            <textarea
-              rows={8}
-              value={notebook}
-              onChange={(e) => saveNotebook(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 font-sans focus:outline-none"
-              placeholder="Keep quick business notes, supplier contacts, or reminder tasks..."
-            />
-            <p className="text-[10px] text-slate-500">Auto-saved to local browser storage.</p>
-          </div>
-        </div>
-      )}
+          {/* TAB 7: GUIDE */}
+          {activeTab === 'guide' && (
+            <div className="max-w-5xl">
+              <UserGuide initialLanguage="np" showLanguageSelector={true} />
+            </div>
+          )}
 
-      {/* TAB 7: HELP & ABOUT */}
-      {activeTab === 'about' && (
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 max-w-2xl text-xs">
-          <h3 className="text-base font-bold text-white border-b border-slate-800 pb-2">About BizManage ERP Suite</h3>
-          <p className="text-slate-300">
-            BizManage is a multi-tenant business accounting and inventory management SaaS system built with Next.js, Fastify, Prisma, and PostgreSQL.
-          </p>
-          <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700 space-y-2 font-mono text-[11px]">
-            <p className="text-white font-bold">System Specification:</p>
-            <p className="text-slate-400">• Version: 1.0.0 Enterprise Release</p>
-            <p className="text-slate-400">• Multi-Tenant Scoping: Enforced by businessId</p>
-            <p className="text-slate-400">• Accounting Engine: Real-time Double-Entry Ledger</p>
-          </div>
+          {/* TAB 8: ABOUT */}
+          {activeTab === 'about' && (
+            <div className="space-y-4 max-w-3xl text-xs">
+              <div className="border-b border-slate-200 pb-3">
+                <h2 className="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight">
+                  About BizManage ERP Platform
+                </h2>
+                <p className="text-xs text-slate-500">Enterprise accounting and inventory software platform.</p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                <p className="font-bold text-slate-900">BizManage 1.0.0 Enterprise Suite</p>
+                <p className="text-slate-600 leading-relaxed">
+                  Real-time double-entry bookkeeping, POS billing, warehouse godowns, multi-store sync, and audit trails.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Save Settings Confirmation Modal */}
       <SaveConfirmModal

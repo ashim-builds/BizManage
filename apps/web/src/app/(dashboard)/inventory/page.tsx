@@ -3,7 +3,7 @@ import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericIn
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -114,6 +114,7 @@ export default function InventoryPage() {
 }
 
 function InventoryPageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
 
   // Active top tab (from Vyapar: PRODUCTS | SERVICES | CATEGORY | UNITS)
@@ -798,57 +799,57 @@ function InventoryPageContent() {
   return (
     <div className="space-y-2.5 font-sans pb-4">
       {/* 1. TOP TABS HEADER (Vyapar ERP: PRODUCTS | SERVICES | CATEGORY | UNITS) */}
-      <div className="border-b border-slate-200 bg-white -mx-3 sm:-mx-6 -mt-3 sm:-mt-6 px-4 sm:px-6 pt-2 flex items-center justify-between shadow-2xs">
-        <div className="flex items-center gap-1 sm:gap-6 overflow-x-auto scrollbar-none">
+      <div className="border-b border-slate-200 bg-white -mx-3 sm:-mx-6 -mt-3 sm:-mt-6 px-3 sm:px-6 pt-1 flex items-center justify-between shadow-2xs gap-2">
+        <div className="flex items-center gap-2 sm:gap-6 overflow-x-auto scrollbar-none py-1">
           <button
             type="button"
             onClick={() => setActiveTab('products')}
-            className={`pb-3 pt-2 text-xs sm:text-sm font-bold tracking-wide transition-all border-b-2 cursor-pointer flex items-center gap-1.5 ${
+            className={`pb-2.5 pt-2 px-2 text-xs sm:text-sm font-black tracking-wide transition-all border-b-2 cursor-pointer flex items-center gap-1.5 shrink-0 min-w-max ${
               activeTab === 'products'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            <Package className="w-4 h-4" />
+            <Package className="w-4 h-4 shrink-0" />
             <span>PRODUCTS</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('services')}
-            className={`pb-3 pt-2 text-xs sm:text-sm font-bold tracking-wide transition-all border-b-2 cursor-pointer flex items-center gap-1.5 ${
+            className={`pb-2.5 pt-2 px-2 text-xs sm:text-sm font-black tracking-wide transition-all border-b-2 cursor-pointer flex items-center gap-1.5 shrink-0 min-w-max ${
               activeTab === 'services'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            <Wrench className="w-4 h-4" />
+            <Wrench className="w-4 h-4 shrink-0" />
             <span>SERVICES</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('category')}
-            className={`pb-3 pt-2 text-xs sm:text-sm font-bold tracking-wide transition-all border-b-2 cursor-pointer flex items-center gap-1.5 ${
+            className={`pb-2.5 pt-2 px-2 text-xs sm:text-sm font-black tracking-wide transition-all border-b-2 cursor-pointer flex items-center gap-1.5 shrink-0 min-w-max ${
               activeTab === 'category'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            <Layers className="w-4 h-4" />
+            <Layers className="w-4 h-4 shrink-0" />
             <span>CATEGORY</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('units')}
-            className={`pb-3 pt-2 text-xs sm:text-sm font-bold tracking-wide transition-all border-b-2 cursor-pointer flex items-center gap-1.5 ${
+            className={`pb-2.5 pt-2 px-2 text-xs sm:text-sm font-black tracking-wide transition-all border-b-2 cursor-pointer flex items-center gap-1.5 shrink-0 min-w-max ${
               activeTab === 'units'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            <Scale className="w-4 h-4" />
+            <Scale className="w-4 h-4 shrink-0" />
             <span>UNITS</span>
           </button>
         </div>
@@ -936,7 +937,13 @@ function InventoryPageContent() {
                   return (
                     <div
                       key={p.id}
-                      onClick={() => setSelectedProductId(p.id)}
+                      onClick={() => {
+                        if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                          router.push(`/inventory/${p.id}`);
+                        } else {
+                          setSelectedProductId(p.id);
+                        }
+                      }}
                       className={`px-4 py-3 flex items-center justify-between cursor-pointer transition-colors group ${
                         isSelected
                           ? 'bg-sky-50 text-blue-900 font-bold border-l-4 border-blue-600'
@@ -944,28 +951,38 @@ function InventoryPageContent() {
                       }`}
                     >
                       <div className="min-w-0 pr-2">
-                        <span className="text-xs truncate block font-medium group-hover:text-blue-600">
+                        <span className="text-xs truncate block font-bold text-slate-900 group-hover:text-blue-600">
                           {p.name}
                         </span>
-                        {p.code && (
-                          <span className="text-[10px] text-slate-400 font-mono block">
-                            SKU: {p.code}
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {p.code && (
+                            <span className="text-[10px] text-slate-400 font-mono block">
+                              SKU: {p.code}
+                            </span>
+                          )}
+                          <span className="text-[10px] text-slate-500 font-bold md:hidden">
+                            Rs. {Number(p.salePrice || 0).toFixed(0)}
                           </span>
-                        )}
+                        </div>
                       </div>
 
                       <div className="text-right shrink-0 flex items-center gap-2">
-                        <span
-                          className={`text-xs font-mono font-bold ${
-                            stock < 0
-                              ? 'text-rose-600'
-                              : stock > 0
-                              ? 'text-emerald-600'
-                              : 'text-slate-500'
-                          }`}
-                        >
-                          {stock}
-                        </span>
+                        <div className="flex flex-col items-end">
+                          <span
+                            className={`text-xs font-mono font-black ${
+                              stock < 0
+                                ? 'text-rose-600'
+                                : stock > 0
+                                ? 'text-emerald-600'
+                                : 'text-slate-500'
+                            }`}
+                          >
+                            {stock}
+                          </span>
+                          <span className="text-[9px] text-slate-400 uppercase font-bold md:hidden">
+                            {p.unit || 'PCS'}
+                          </span>
+                        </div>
 
                         <button
                           type="button"
