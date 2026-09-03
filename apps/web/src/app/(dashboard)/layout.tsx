@@ -109,10 +109,22 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
     };
   }, [userMenuOpen]);
 
-  const currentBiz = user?.memberships?.[0]?.business;
-  const hasSelectedPlan = Boolean(currentBiz?.subscriptionPackage);
+  const currentBiz = user?.memberships?.[0]?.business as any;
+  const createdAt = currentBiz?.createdAt ? new Date(currentBiz.createdAt) : new Date();
+  const trialDays = 14;
+  const trialEndDate = currentBiz?.trialEndsAt 
+    ? new Date(currentBiz.trialEndsAt) 
+    : new Date(createdAt.getTime() + trialDays * 24 * 60 * 60 * 1000);
 
-  // Global feature lock calculation
+  const now = new Date();
+  const isTrialActive = now < trialEndDate;
+  const daysLeftInTrial = Math.max(0, Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+  const trialProgressPercent = Math.min(100, Math.max(5, (daysLeftInTrial / trialDays) * 100));
+
+  // During 14-day trial, user has access to everything without needing to select any package
+  const hasSelectedPlan = isTrialActive || Boolean(currentBiz?.subscriptionPackage);
+
+  // Global feature lock calculation - 100% unlocked during trial
   const currentSection = sidebarSections.find(s => {
     const [sHref] = (s.href || '').split('?');
     return sHref === pathname || s.children?.some(c => {
@@ -131,7 +143,7 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
     }
   }
 
-  const isFeatureLocked = Boolean(
+  const isFeatureLocked = isTrialActive ? false : Boolean(
     requiredFeature &&
     !(currentBiz?.subscriptionPackage?.features || []).includes(requiredFeature)
   );
@@ -480,14 +492,20 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
         </nav>
 
         <div className={`border-t border-[#222744] space-y-2 ${sidebarCollapsed ? 'p-2' : 'p-3'}`}>
-          {!sidebarCollapsed && (
+          {!sidebarCollapsed && isTrialActive && (
             <div className="rounded-2xl overflow-hidden border border-[#FDE047]/30 shadow-md">
               <div className="p-3.5 bg-gradient-to-b from-[#FFFDF0] to-[#FFF1CD] text-[#1E293B] space-y-2">
-                <h4 className="font-extrabold text-xs text-[#1E293B]">
-                  6 days Free Trial left
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-extrabold text-xs text-[#1E293B]">
+                    {daysLeftInTrial} {daysLeftInTrial === 1 ? 'day' : 'days'} Free Trial left
+                  </h4>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">All Free</span>
+                </div>
                 <div className="w-full bg-[#FFE6A8] h-2 rounded-full overflow-hidden">
-                  <div className="bg-[#10B981] h-full rounded-full w-[85%]" />
+                  <div 
+                    className="bg-[#10B981] h-full rounded-full transition-all duration-500" 
+                    style={{ width: `${trialProgressPercent}%` }} 
+                  />
                 </div>
               </div>
 
@@ -504,6 +522,25 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
                   </span>
                 </div>
                 <ArrowRight className="w-3.5 h-3.5 text-white group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </div>
+          )}
+
+          {!sidebarCollapsed && !isTrialActive && !currentBiz?.subscriptionPackage && (
+            <div className="rounded-2xl overflow-hidden border border-rose-500/40 shadow-md">
+              <div className="p-3.5 bg-gradient-to-b from-rose-50 to-rose-100 text-rose-900 space-y-1.5">
+                <h4 className="font-extrabold text-xs text-rose-900">
+                  14-Day Free Trial Expired
+                </h4>
+                <p className="text-[10px] text-rose-700 font-medium">Please choose a subscription plan to continue.</p>
+              </div>
+              <Link
+                href="/subscription"
+                className="flex items-center justify-between px-3.5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white transition-colors group"
+              >
+                <span className="font-extrabold text-xs">
+                  Choose Plan Now &rarr;
+                </span>
               </Link>
             </div>
           )}
@@ -618,9 +655,9 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
                 <Crown className="w-8 h-8" />
               </div>
               <div>
-                <h2 className="text-xl font-extrabold text-white">Subscription Selection Required</h2>
+                <h2 className="text-xl font-extrabold text-white">14-Day Free Trial Ended</h2>
                 <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                  You must select a subscription plan (including the <span className="font-bold text-emerald-400">Free Starter plan</span>) before accessing this feature.
+                  Your 14-day full free trial has concluded. To continue using all billing features, godowns, WhatsApp, and accounting reports, please select a subscription plan.
                 </p>
               </div>
               <Link

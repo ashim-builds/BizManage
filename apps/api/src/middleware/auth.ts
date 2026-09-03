@@ -115,16 +115,33 @@ export async function requireBusinessTenant(request: FastifyRequest, _reply: Fas
     throw new AppError('Your business account has been suspended. Please contact the administrator.', 403, 'FORBIDDEN');
   }
 
+  const now = new Date();
+  const createdAt = (membership.business as any).createdAt ? new Date((membership.business as any).createdAt) : now;
+  const trialEndsAt = (membership.business as any).trialEndsAt 
+    ? new Date((membership.business as any).trialEndsAt) 
+    : new Date(createdAt.getTime() + 14 * 24 * 60 * 60 * 1000);
+  const isTrialActive = now < trialEndsAt;
+
   let isExpired = false;
-  if (membership.business.subscriptionStatus === 'EXPIRED') {
-    isExpired = true;
-  } else if (membership.business.currentPeriodEnd && new Date(membership.business.currentPeriodEnd) < new Date()) {
-    isExpired = true;
+  if (!isTrialActive) {
+    if (membership.business.subscriptionStatus === 'EXPIRED') {
+      isExpired = true;
+    } else if (membership.business.currentPeriodEnd && new Date(membership.business.currentPeriodEnd) < now) {
+      isExpired = true;
+    }
   }
+
+  const allFeatures = [
+    'SALES_INVOICE', 'POS', 'PAYMENT_IN', 'SALES_RETURN',
+    'PURCHASE_BILL', 'PAYMENT_OUT', 'EXPENSES', 'PURCHASE_RETURN',
+    'INVENTORY', 'GODOWNS', 'BARCODE', 'MANUFACTURING',
+    'PARTIES', 'MARKETING_WHATSAPP', 'ONLINE_STORE', 'EXPLORE_STORES',
+    'ACCOUNTS', 'CASHFLOW', 'PROFIT_LOSS', 'REPORTS', 'STAFF', 'SETTINGS'
+  ];
 
   request.tenant = { 
     businessId,
-    features: (membership.business.subscriptionPackage?.features as string[]) || [],
+    features: isTrialActive ? allFeatures : ((membership.business.subscriptionPackage?.features as string[]) || allFeatures),
     isExpired
   };
   request.membership = { role: membership.role as Role };
