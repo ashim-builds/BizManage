@@ -249,7 +249,7 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
       <aside
         className={`fixed top-0 left-0 bottom-0 bg-[#16192E] border-r border-[#222744] z-40 flex flex-col transition-all duration-300 print:hidden ${
           mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'
-        } ${sidebarCollapsed ? 'w-[60px]' : 'w-64'}`}
+        } ${sidebarCollapsed ? 'w-[60px] overflow-visible' : 'w-64'}`}
       >
         <div className={`py-4 border-b border-[#222744] flex items-center min-h-[68px] ${sidebarCollapsed ? 'px-2 justify-center' : 'px-5 justify-between'}`}>
           {!sidebarCollapsed && (
@@ -293,7 +293,7 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto p-2 space-y-0.5 scrollbar-thin scrollbar-thumb-[#222744]">
+        <nav className={`flex-1 p-2 space-y-0.5 ${sidebarCollapsed ? 'overflow-visible' : 'overflow-y-auto scrollbar-thin scrollbar-thumb-[#222744]'}`}>
           {sidebarSections.map((section) => {
             const Icon = section.icon;
             const isActive = pathname === section.href || (section.href === '/dashboard' && pathname === '/');
@@ -302,12 +302,11 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
               return (
                 <div
                   key={section.name}
-                  className={`group/nav flex items-center justify-between transition-all ${
+                  className={`group/nav relative flex items-center justify-between transition-all ${
                     isActive
                       ? 'bg-[#212646] text-white font-semibold border-l-4 border-[#EF4444] rounded-r-xl shadow-xs'
                       : 'text-slate-300 hover:text-white hover:bg-[#212646]/60 rounded-xl'
-                  } ${sidebarCollapsed ? 'pr-0' : 'pr-2'}`}
-                  title={sidebarCollapsed ? section.name : undefined}
+                  } ${sidebarCollapsed ? 'pr-0 justify-center' : 'pr-2'}`}
                 >
                   <Link
                     href={section.href!}
@@ -318,6 +317,13 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
                     <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-300'}`} />
                     {!sidebarCollapsed && <span className="truncate">{section.name}</span>}
                   </Link>
+
+                  {/* Single Item Tooltip on Hover in Collapsed Mode */}
+                  {sidebarCollapsed && (
+                    <div className="absolute left-[54px] top-1/2 -translate-y-1/2 hidden group-hover/nav:flex items-center bg-[#16192E] border border-[#2B3258] text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-2xl whitespace-nowrap z-50 animate-in fade-in zoom-in-95 duration-150 pointer-events-none before:content-[''] before:absolute before:-left-1.5 before:top-1/2 before:-translate-y-1/2 before:w-3 before:h-3 before:bg-[#16192E] before:border-l before:border-b before:border-[#2B3258] before:rotate-45">
+                      {section.name}
+                    </div>
+                  )}
 
                   {section.hasPlusButton && !sidebarCollapsed && (
                     <Link
@@ -344,24 +350,56 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
             });
             const isSectionOpen = openSections[section.name] ?? false;
 
-            // In collapsed mode, render group as icon-only button with tooltip
+            // In collapsed mode, render group as icon-only button with rich floating flyout menu on hover
             if (sidebarCollapsed) {
               return (
                 <div
                   key={section.name}
-                  title={section.name}
-                  className={`flex items-center justify-center px-2 py-2 rounded-xl transition-all cursor-pointer ${
-                    isGroupActive
-                      ? 'bg-[#212646] text-white border-l-4 border-[#EF4444]'
-                      : 'text-slate-300 hover:text-white hover:bg-[#212646]/60'
-                  }`}
-                  onClick={() => {
-                    setSidebarCollapsed(false);
-                    localStorage.setItem('sidebar-collapsed', 'false');
-                    setTimeout(() => setOpenSections({ [section.name]: true }), 50);
-                  }}
+                  className="relative group/collapsed"
                 >
-                  <Icon className={`w-4 h-4 ${ isGroupActive ? 'text-white' : 'text-slate-300'}`} />
+                  <div
+                    className={`flex items-center justify-center w-full py-2 rounded-xl transition-all cursor-pointer ${
+                      isGroupActive
+                        ? 'bg-[#212646] text-white border-l-4 border-[#EF4444]'
+                        : 'text-slate-300 hover:text-white hover:bg-[#212646]/70'
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 ${isGroupActive ? 'text-white' : 'text-slate-300'}`} />
+                  </div>
+
+                  {/* Floating Flyout Dropdown Menu on Hover */}
+                  <div className="absolute left-[54px] top-0 hidden group-hover/collapsed:flex flex-col bg-[#16192E] border border-[#2B3258] rounded-xl shadow-2xl p-1.5 min-w-[210px] z-50 animate-in fade-in zoom-in-95 duration-150 before:content-[''] before:absolute before:-left-1.5 before:top-3.5 before:w-3 before:h-3 before:bg-[#16192E] before:border-l before:border-b before:border-[#2B3258] before:rotate-45">
+                    <div className="px-3 py-1.5 border-b border-[#222744] mb-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        {section.name}
+                      </span>
+                    </div>
+                    <div className="space-y-0.5">
+                      {section.children.map((child) => {
+                        const ChildIcon = child.icon;
+                        const [childPath, childQuery] = child.href.split('?');
+                        const isChildActive = childQuery
+                          ? pathname === childPath && (currentTab === new URLSearchParams(childQuery).get('tab') || (!currentTab && new URLSearchParams(childQuery).get('tab') === 'sync-share'))
+                          : pathname === child.href;
+                        return (
+                          <Link
+                            key={child.name}
+                            href={child.href}
+                            className={`flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-lg transition-all ${
+                              isChildActive
+                                ? 'bg-[#212646] text-white font-bold border-l-2 border-[#EF4444]'
+                                : 'text-slate-300 hover:text-white hover:bg-[#212646]/80'
+                            }`}
+                          >
+                            {ChildIcon && (
+                              <ChildIcon className={`w-3.5 h-3.5 shrink-0 ${isChildActive ? 'text-[#EF4444]' : 'text-slate-400'}`} />
+                            )}
+                            <span className="truncate">{child.name}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               );
             }
