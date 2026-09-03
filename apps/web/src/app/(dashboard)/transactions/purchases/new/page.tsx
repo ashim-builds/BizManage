@@ -304,7 +304,7 @@ export default function NewPurchaseBillPage() {
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div className="flex items-center gap-1.5">
-            <h1 className="text-base font-black text-slate-900 tracking-tight">Purchase Bill</h1>
+            <h1 className="text-base font-black text-slate-900 tracking-tight">Purchase</h1>
             <span className="hidden sm:inline-block px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200 font-mono">
               Auto #
             </span>
@@ -325,7 +325,7 @@ export default function NewPurchaseBillPage() {
                 : 'text-slate-600 hover:text-slate-900 font-bold'
             }`}
           >
-            <CreditCard className="w-3.5 h-3.5" /> Credit (उधारो)
+            <CreditCard className="w-3.5 h-3.5" /> Credit
           </button>
           <button
             type="button"
@@ -339,7 +339,7 @@ export default function NewPurchaseBillPage() {
                 : 'text-slate-600 hover:text-slate-900 font-bold'
             }`}
           >
-            <Banknote className="w-3.5 h-3.5" /> Cash (नगद)
+            <Banknote className="w-3.5 h-3.5" /> Cash
           </button>
         </div>
       </div>

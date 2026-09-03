@@ -545,14 +545,6 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
         {/* Header Bar */}
         <header className="h-16 border-b border-slate-200 px-3 sm:px-6 flex items-center justify-between sticky top-0 bg-white backdrop-blur-md z-30 print:hidden gap-2 shadow-xs">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            <button
-              type="button"
-              onClick={() => setMobileOpen(true)}
-              className="p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 lg:hidden shrink-0 transition-colors"
-              title="Open Navigation"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
             <div className="min-w-0 truncate pl-1 lg:pl-0">
               <Breadcrumbs />
             </div>

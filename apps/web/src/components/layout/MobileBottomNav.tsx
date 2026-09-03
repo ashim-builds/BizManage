@@ -234,16 +234,16 @@ export function MobileBottomNav({ onQuickEntry }: MobileBottomNavProps) {
 
           {/* Scrollable Compact Feature Grid */}
           <div
-            className="flex-1 overflow-y-auto p-3 space-y-4 bg-[#F8FAFC] pb-safe"
-            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 1.5rem)' }}
+            className="flex-1 overflow-y-auto p-3.5 space-y-5 bg-[#F8FAFC] pb-safe"
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 2rem)' }}
           >
             {filteredCategories.map((category, cIdx) => (
-              <div key={cIdx} className="space-y-1.5">
-                <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1">
+              <div key={cIdx} className="space-y-2">
+                <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 px-1">
                   {category.title}
                 </h3>
 
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 gap-2.5">
                   {category.items.map((item, iIdx) => {
                     const ItemIcon = item.icon;
                     return (
@@ -254,12 +254,12 @@ export function MobileBottomNav({ onQuickEntry }: MobileBottomNavProps) {
                           setMoreMenuOpen(false);
                           setSearchTerm('');
                         }}
-                        className="p-2 rounded-xl bg-white border border-slate-200/90 shadow-2xs hover:border-slate-300 active:bg-slate-50 active:scale-95 transition-all flex flex-col items-center justify-center text-center gap-1 group"
+                        className="p-3 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:border-slate-300 active:bg-slate-50 active:scale-98 transition-all flex items-center gap-2.5 group"
                       >
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${item.color}`}>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${item.color}`}>
                           <ItemIcon className="w-4 h-4" />
                         </div>
-                        <span className="text-[10px] font-semibold text-slate-800 leading-tight line-clamp-2 w-full truncate">
+                        <span className="text-xs font-bold text-slate-800 text-left leading-snug">
                           {item.name}
                         </span>
                       </Link>
@@ -270,7 +270,7 @@ export function MobileBottomNav({ onQuickEntry }: MobileBottomNavProps) {
             ))}
 
             {filteredCategories.length === 0 && (
-              <div className="py-12 text-center text-xs text-slate-400">
+              <div className="py-12 text-center text-xs text-slate-400 font-medium">
                 No features found matching "{searchTerm}"
               </div>
             )}
