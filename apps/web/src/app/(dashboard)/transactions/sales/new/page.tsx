@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray, useWatch } from 'react-hook-form';
@@ -13,41 +13,44 @@ import { useItems } from '@/services/itemService';
 import { useAccounts } from '@/services/accountService';
 import { calculateInvoiceTotals, formatCurrency } from '@/lib/accounting';
 import { getPartyBalanceDisplay } from '@/lib/balance';
+import { ItemSearchSelect } from '@/components/ui/ItemSearchSelect';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { SaveConfirmModal } from '@/components/common/SaveConfirmModal';
 import { DiscardConfirmModal } from '@/components/common/DiscardConfirmModal';
 import { ModalPortal } from '@/components/ui/ModalPortal';
 import { toast } from 'react-hot-toast';
 import {
+  Receipt,
   Plus,
   Trash2,
   ArrowLeft,
-  Calendar,
   Building2,
   Phone,
+  Percent,
   CheckCircle2,
+  AlertCircle,
+  FileText,
   CreditCard,
   Banknote,
   Minus,
   X,
   UserPlus,
-  FileText,
-  Paperclip,
-  Share2,
-  Printer,
-  ChevronDown,
+  Save,
+  RotateCcw,
   Search,
   Package,
+  ChevronDown,
+  ChevronUp,
+  Share2,
+  Check,
 } from 'lucide-react';
 
 export default function NewSalesInvoicePage() {
   const router = useRouter();
 
   // Mode: Credit (receivable) vs Cash (fully paid)
-  const [saleMode, setSaleMode] = useState<'CREDIT' | 'CASH'>('CASH');
-
-  // Multi-tab Simulation (Like Vyapar Desktop)
-  const [activeTab, setActiveTab] = useState('Sale #1');
+  const [saleMode, setSaleMode] = useState<'CASH' | 'CREDIT'>('CASH');
+  const [saveAndNew, setSaveAndNew] = useState(false);
 
   // Confirmation Modals
   const [isSaveConfirmOpen, setIsSaveConfirmOpen] = useState(false);
@@ -59,25 +62,19 @@ export default function NewSalesInvoicePage() {
   const [quickPartyName, setQuickPartyName] = useState('');
   const [quickPartyPhone, setQuickPartyPhone] = useState('');
 
-  // Desktop Item Dropdown State (Active Row ID)
-  const [activeItemDropdownRow, setActiveItemDropdownRow] = useState<number | null>(null);
-  const [itemSearchQuery, setItemSearchQuery] = useState('');
+  // Mobile Customer Selector Sheet
+  const [isMobileCustomerOpen, setIsMobileCustomerOpen] = useState(false);
+  const [mobileCustomerSearch, setMobileCustomerSearch] = useState('');
 
-  // Mobile Add Item Modal
+  // Mobile Add Item Sheet
   const [isMobileAddItemOpen, setIsMobileAddItemOpen] = useState(false);
   const [mobileItemSearch, setMobileItemSearch] = useState('');
 
-  // Optional Section Visibility
+  // Optional Section Accordions
   const [showTerms, setShowTerms] = useState(false);
-  const [showDescription, setShowDescription] = useState(false);
   const [termsText, setTermsText] = useState('1. Goods once sold will not be taken back.\n2. Payment is due within agreed credit period.');
-  const [descriptionText, setDescriptionText] = useState('');
+  const [notesText, setNotesText] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
-
-  // Bottom Share / Save Dropdown Menu
-  const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
-  const [isRoundOff, setIsRoundOff] = useState(true);
-  const [globalDiscountPct, setGlobalDiscountPct] = useState<number>(0);
 
   // Queries
   const { data: partiesData } = useParties({ limit: 100 });
@@ -104,10 +101,7 @@ export default function NewSalesInvoicePage() {
       isVatBill: false,
       paidAmount: 0,
       paymentMode: PaymentMode.CASH,
-      items: [
-        { itemId: '', quantity: 1, unitPrice: 0, discountPercent: 0, discount: 0, taxAmount: 0 },
-        { itemId: '', quantity: 1, unitPrice: 0, discountPercent: 0, discount: 0, taxAmount: 0 },
-      ],
+      items: [{ itemId: '', quantity: 1, unitPrice: 0, discountPercent: 0, discount: 0, taxAmount: 0 }],
     },
   });
 
@@ -116,7 +110,7 @@ export default function NewSalesInvoicePage() {
     name: 'items',
   });
 
-  // Watch Form Fields Reactively
+  // Watch Form Fields Reactively using useWatch
   const watchItems = useWatch({ control: form.control, name: 'items' });
   const isVatBill = useWatch({ control: form.control, name: 'isVatBill' });
   const selectedPartyId = useWatch({ control: form.control, name: 'partyId' });
@@ -132,6 +126,8 @@ export default function NewSalesInvoicePage() {
   useEffect(() => {
     if (selectedCustomer?.phone) {
       setCustomerPhone(selectedCustomer.phone);
+    } else {
+      setCustomerPhone('');
     }
   }, [selectedCustomer]);
 
@@ -140,14 +136,13 @@ export default function NewSalesInvoicePage() {
     const rawItems = (watchItems || []).map((item) => ({
       quantity: Number(item?.quantity) || 0,
       unitPrice: Number(item?.unitPrice) || 0,
-      discountPercent: Number(item?.discountPercent) || 0,
+      discountPercent: Number(item?.discountPercent) || Number(item?.discount) || 0,
     }));
 
-    const computed = calculateInvoiceTotals(rawItems, Boolean(isVatBill), globalDiscountPct);
-    return computed;
-  }, [watchItems, isVatBill, globalDiscountPct]);
+    return calculateInvoiceTotals(rawItems, Boolean(isVatBill));
+  }, [watchItems, isVatBill]);
 
-  // Sync paidAmount with Cash/Credit mode
+  // Sync paidAmount when switching between Cash and Credit mode or when totals change in Cash mode
   useEffect(() => {
     if (saleMode === 'CASH') {
       form.setValue('paidAmount', totals.totalAmount, { shouldValidate: true, shouldDirty: true });
@@ -169,48 +164,49 @@ export default function NewSalesInvoicePage() {
     return accounts.filter((a: any) => a.type === 'CASH');
   }, [accounts, selectedPaymentMode]);
 
-  // Item select handler for desktop spreadsheet & mobile
-  const handleSelectItem = (index: number, item: any) => {
-    form.setValue(`items.${index}.itemId`, item.id, { shouldValidate: true, shouldDirty: true });
-    form.setValue(`items.${index}.unitPrice`, Number(item.salePrice || 0), { shouldValidate: true, shouldDirty: true });
+  // Item select handler for desktop & mobile
+  const handleItemSelect = useCallback((index: number, itemId: string) => {
+    const selected = availableItems.find((i: any) => i.id === itemId);
+    if (!selected) return;
+    form.setValue(`items.${index}.itemId`, itemId, { shouldValidate: true, shouldDirty: true });
+    form.setValue(`items.${index}.unitPrice`, Number(selected.salePrice || 0), { shouldValidate: true, shouldDirty: true });
     form.setValue(`items.${index}.quantity`, 1, { shouldValidate: true, shouldDirty: true });
+    form.setValue(`items.${index}.discount`, 0, { shouldValidate: true, shouldDirty: true });
     form.setValue(`items.${index}.discountPercent`, 0, { shouldValidate: true, shouldDirty: true });
-    setActiveItemDropdownRow(null);
-    setItemSearchQuery('');
+  }, [availableItems, form]);
+
+  // Add Item From Mobile Modal
+  const handleAddMobileItem = (item: any) => {
+    const firstItem = form.getValues('items.0');
+    if (fields.length === 1 && (!firstItem || !firstItem.itemId)) {
+      form.setValue('items.0.itemId', item.id, { shouldValidate: true, shouldDirty: true });
+      form.setValue('items.0.unitPrice', Number(item.salePrice || 0), { shouldValidate: true, shouldDirty: true });
+      form.setValue('items.0.quantity', 1, { shouldValidate: true, shouldDirty: true });
+      form.setValue('items.0.discountPercent', 0, { shouldValidate: true, shouldDirty: true });
+    } else {
+      append({
+        itemId: item.id,
+        quantity: 1,
+        unitPrice: Number(item.salePrice || 0),
+        discountPercent: 0,
+        discount: 0,
+        taxAmount: 0,
+      });
+    }
+    setIsMobileAddItemOpen(false);
+    toast.success(`Added ${item.name}`);
   };
 
-  // Filtered items for desktop dropdown search
-  const filteredDesktopItems = useMemo(() => {
-    if (!itemSearchQuery.trim()) return availableItems;
-    const q = itemSearchQuery.toLowerCase();
-    return availableItems.filter(
-      (i: any) =>
-        i.name.toLowerCase().includes(q) ||
-        (i.code && i.code.toLowerCase().includes(q))
-    );
-  }, [availableItems, itemSearchQuery]);
-
-  // Filtered items for mobile item modal
-  const filteredMobileItems = useMemo(() => {
-    if (!mobileItemSearch.trim()) return availableItems;
-    const q = mobileItemSearch.toLowerCase();
-    return availableItems.filter(
-      (it: any) =>
-        it.name.toLowerCase().includes(q) ||
-        (it.code && it.code.toLowerCase().includes(q))
-    );
-  }, [availableItems, mobileItemSearch]);
-
-  // Form Submit Interceptor
+  // Form Submit Interceptor for Save Confirmation
   const onFormSubmit = (data: CreateSaleInput) => {
     if (saleMode === 'CREDIT' && !data.partyId) {
-      toast.error('Please select a Customer for Credit sale.');
+      toast.error('Please select a Customer Party for Credit (उधारो) sale.');
       return;
     }
 
-    const validItems = (data.items || []).filter((it) => it.itemId && Number(it.quantity) > 0);
+    const validItems = (data.items || []).filter((it) => it.itemId);
     if (validItems.length === 0) {
-      toast.error('Please add at least one valid item to the invoice.');
+      toast.error('Please add at least one product item to the invoice.');
       return;
     }
 
@@ -224,7 +220,21 @@ export default function NewSalesInvoicePage() {
     try {
       await createSale.mutateAsync(pendingFormData);
       toast.success('Sale Invoice created successfully!');
-      router.push('/transactions/sales');
+      if (saveAndNew) {
+        // Reset form for next invoice
+        form.reset({
+          date: new Date().toISOString().split('T')[0],
+          isVatBill: false,
+          paidAmount: 0,
+          paymentMode: PaymentMode.CASH,
+          items: [{ itemId: '', quantity: 1, unitPrice: 0, discountPercent: 0, discount: 0, taxAmount: 0 }],
+        });
+        setCustomerPhone('');
+        setNotesText('');
+        setIsSaveConfirmOpen(false);
+      } else {
+        router.push('/transactions/sales');
+      }
     } catch (err: any) {
       toast.error(err.response?.data?.error?.message || 'Failed to create sale invoice.');
     }
@@ -247,6 +257,7 @@ export default function NewSalesInvoicePage() {
         setCustomerPhone(created.phone || '');
       }
       setIsQuickAddPartyOpen(false);
+      setIsMobileCustomerOpen(false);
       setQuickPartyName('');
       setQuickPartyPhone('');
       toast.success('Customer added successfully!');
@@ -255,676 +266,805 @@ export default function NewSalesInvoicePage() {
     }
   };
 
+  // Compute Balance Due
   const balanceDue = Math.max(0, totals.totalAmount - (Number(paidAmount) || 0));
 
+  // Filter items for mobile item modal
+  const filteredMobileItems = useMemo(() => {
+    if (!mobileItemSearch.trim()) return availableItems;
+    const q = mobileItemSearch.toLowerCase();
+    return availableItems.filter(
+      (it: any) =>
+        it.name.toLowerCase().includes(q) ||
+        (it.code && it.code.toLowerCase().includes(q))
+    );
+  }, [availableItems, mobileItemSearch]);
+
+  // Filter customers for mobile customer modal
+  const filteredMobileCustomers = useMemo(() => {
+    if (!mobileCustomerSearch.trim()) return customers;
+    const q = mobileCustomerSearch.toLowerCase();
+    return customers.filter(
+      (c: any) =>
+        c.name.toLowerCase().includes(q) ||
+        (c.phone && c.phone.includes(q))
+    );
+  }, [customers, mobileCustomerSearch]);
+
   return (
-    <div className="bg-[#f4f5f8] min-h-screen text-slate-900 font-sans -m-4 sm:-m-6 lg:-m-8">
+    <div className="bg-[#F8FAFC] text-slate-900 font-sans -m-4 sm:-m-6 lg:-m-8 p-3 sm:p-4 pb-32 md:pb-4 space-y-3">
       
-      {/* ======================================================== */}
-      {/* DESKTOP VYAPAR APPLICATION VIEW (HIDDEN ON MOBILE: >= md) */}
-      {/* ======================================================== */}
-      <div className="hidden md:flex flex-col min-h-screen bg-white">
-        
-        {/* TOP TAB BAR (Like Vyapar Desktop) */}
-        <div className="bg-[#e9edf2] border-b border-slate-300 px-4 pt-2 flex items-center gap-1">
-          <div className="flex items-center gap-2 px-4 py-1.5 bg-white border-t-2 border-t-blue-600 border-x border-slate-300 rounded-t-lg text-xs font-bold text-slate-800 shadow-xs">
-            <span>{activeTab}</span>
-            <button
-              type="button"
-              onClick={() => router.push('/transactions/sales')}
-              className="p-0.5 hover:bg-slate-200 rounded text-slate-400 hover:text-slate-700"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
+      {/* 1. TOP HEADER & CREDIT / CASH PILL */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl px-3.5 py-2.5 flex items-center justify-between shadow-xs">
+        <div className="flex items-center gap-2">
+          <Link
+            href="/transactions/sales"
+            className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all"
+            title="Back to Sales"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
+          <div className="flex items-center gap-1.5">
+            <h1 className="text-base font-black text-slate-900 tracking-tight">Sale</h1>
+            <span className="hidden sm:inline-block px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 font-mono">
+              Auto #
+            </span>
           </div>
+        </div>
+
+        {/* CREDIT / CASH TOGGLE */}
+        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
           <button
             type="button"
             onClick={() => {
-              form.reset();
-              toast.success('Opened new sale tab');
+              setSaleMode('CREDIT');
+              form.setValue('paidAmount', 0, { shouldValidate: true, shouldDirty: true });
             }}
-            className="p-1.5 text-blue-600 hover:bg-slate-200 rounded-md transition-colors"
-            title="New Sale Tab"
+            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1 ${
+              saleMode === 'CREDIT'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 font-bold'
+            }`}
           >
-            <Plus className="w-4 h-4" />
+            <CreditCard className="w-3.5 h-3.5" /> Credit
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSaleMode('CASH');
+              form.setValue('paidAmount', totals.totalAmount, { shouldValidate: true, shouldDirty: true });
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1 ${
+              saleMode === 'CASH'
+                ? 'bg-slate-800 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 font-bold'
+            }`}
+          >
+            <Banknote className="w-3.5 h-3.5" /> Cash
           </button>
         </div>
+      </div>
 
-        {/* MAIN DESKTOP FORM */}
-        <form onSubmit={form.handleSubmit(onFormSubmit)} className="flex-1 p-6 space-y-5">
+      <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-3">
+        
+        {/* ========================================================= */}
+        {/* MOBILE SPECIFIC DESIGN (< md) - EXACT VYAPAR MOBILE FLOW  */}
+        {/* ========================================================= */}
+        <div className="md:hidden space-y-3">
           
-          {/* HEADER ROW: Title + Credit/Cash Toggle */}
-          <div className="flex items-center gap-4">
-            <h2 className="text-xl font-bold text-slate-800 tracking-tight">Sale</h2>
-
-            {/* Toggle Switch */}
-            <div className="flex items-center gap-2 text-xs font-bold">
-              <span className={saleMode === 'CREDIT' ? 'text-blue-600 font-black' : 'text-slate-500'}>Credit</span>
-              <button
-                type="button"
-                onClick={() => {
-                  const nextMode = saleMode === 'CREDIT' ? 'CASH' : 'CREDIT';
-                  setSaleMode(nextMode);
-                  if (nextMode === 'CASH') {
-                    form.setValue('paidAmount', totals.totalAmount, { shouldValidate: true, shouldDirty: true });
-                  } else {
-                    form.setValue('paidAmount', 0, { shouldValidate: true, shouldDirty: true });
-                  }
-                }}
-                className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors ${
-                  saleMode === 'CASH' ? 'bg-blue-600 justify-end' : 'bg-slate-300 justify-start'
-                }`}
-              >
-                <div className="w-4 h-4 rounded-full bg-white shadow-md" />
-              </button>
-              <span className={saleMode === 'CASH' ? 'text-blue-600 font-black' : 'text-slate-500'}>Cash</span>
+          {/* Mobile Meta Row */}
+          <div className="grid grid-cols-2 gap-2 bg-white p-3 rounded-2xl border border-slate-200 shadow-xs text-xs">
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase">Invoice No.</span>
+              <p className="font-bold text-slate-800 font-mono mt-0.5">Auto #</p>
+            </div>
+            <div>
+              <DatePicker
+                label="Date"
+                required
+                value={form.watch('date')}
+                onChange={(dateStr) => form.setValue('date', dateStr, { shouldValidate: true, shouldDirty: true })}
+              />
             </div>
           </div>
 
-          {/* CUSTOMER & INVOICE DETAILS ROW */}
-          <div className="flex flex-wrap items-start justify-between gap-6 pb-2">
-            
-            {/* Customer Dropdown & Phone Inputs */}
-            <div className="flex items-center gap-3 flex-1 max-w-2xl">
-              <div className="relative flex-1">
+          {/* Mobile Customer Card (Big Touch Friendly) */}
+          <div
+            onClick={() => setIsMobileCustomerOpen(true)}
+            className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between cursor-pointer active:bg-slate-50"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+                <Building2 className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-slate-500 uppercase">
+                  {saleMode === 'CREDIT' ? 'Customer Party *' : 'Customer Party'}
+                </p>
+                <p className="font-bold text-slate-900 text-sm truncate">
+                  {selectedCustomer ? selectedCustomer.name : (saleMode === 'CREDIT' ? 'Select Customer (Required)' : 'Cash / Walk-in Customer')}
+                </p>
+                {selectedCustomer && (
+                  <p className="text-[10px] text-slate-500">
+                    Ledger: <strong className="text-slate-800">{getPartyBalanceDisplay(selectedCustomer.currentBalance, 'CUSTOMER')}</strong>
+                  </p>
+                )}
+              </div>
+            </div>
+            <span className="text-xs font-bold text-blue-600 shrink-0">Change</span>
+          </div>
+
+          {/* Mobile Items List Card */}
+          <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+                Invoice Items ({fields.filter(f => form.watch(`items.${fields.indexOf(f)}.itemId`)).length})
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsMobileAddItemOpen(true)}
+                className="px-3 py-1 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold flex items-center gap-1 active:scale-95"
+              >
+                <Plus className="w-3.5 h-3.5" /> + Add Items
+              </button>
+            </div>
+
+            {/* Empty State */}
+            {fields.length === 1 && !form.watch('items.0.itemId') ? (
+              <button
+                type="button"
+                onClick={() => setIsMobileAddItemOpen(true)}
+                className="w-full py-6 rounded-xl border-2 border-dashed border-slate-200 hover:border-blue-400 text-center space-y-1.5 active:bg-blue-50/50"
+              >
+                <Package className="w-6 h-6 mx-auto text-blue-500" />
+                <p className="text-xs font-bold text-blue-600">+ Add Items (Products / Services)</p>
+                <p className="text-[10px] text-slate-400">Tap to search & add items to bill</p>
+              </button>
+            ) : (
+              <div className="space-y-2.5">
+                {fields.map((field, idx) => {
+                  const selectedItemId = form.watch(`items.${idx}.itemId`);
+                  if (!selectedItemId) return null;
+                  const selectedItem = availableItems.find((i: any) => i.id === selectedItemId);
+                  const lineQty = Number(form.watch(`items.${idx}.quantity`)) || 0;
+                  const linePrice = Number(form.watch(`items.${idx}.unitPrice`)) || 0;
+                  const lineDisc = Number(form.watch(`items.${idx}.discountPercent`)) || 0;
+                  const itemLineTotal = totals.items[idx]?.total ?? (lineQty * linePrice * (1 - lineDisc / 100));
+
+                  return (
+                    <div key={field.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="font-bold text-slate-900 text-xs">{selectedItem?.name}</p>
+                          {selectedItem?.code && (
+                            <span className="text-[10px] font-mono text-slate-500">SKU: {selectedItem.code}</span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => remove(idx)}
+                          className="p-1 text-slate-400 hover:text-rose-600"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-200/60 text-xs items-center">
+                        {/* Qty Stepper */}
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 mb-0.5">Qty</label>
+                          <div className="flex items-center border border-slate-300 rounded-lg p-0.5 bg-white">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (lineQty > 1) form.setValue(`items.${idx}.quantity`, lineQty - 1, { shouldValidate: true, shouldDirty: true });
+                              }}
+                              className="p-1 text-slate-600 hover:bg-slate-100 rounded"
+                            >
+                              <Minus className="w-2.5 h-2.5" />
+                            </button>
+                            <input
+                              type="number"
+                              min="1"
+                              {...form.register(`items.${idx}.quantity`, { valueAsNumber: true })}
+                              className="w-full text-center bg-transparent font-bold text-xs focus:outline-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => form.setValue(`items.${idx}.quantity`, lineQty + 1, { shouldValidate: true, shouldDirty: true })}
+                              className="p-1 text-slate-600 hover:bg-slate-100 rounded"
+                            >
+                              <Plus className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Rate */}
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 mb-0.5">Rate (Rs.)</label>
+                          <input
+                            type="number"
+                            step="any"
+                            {...form.register(`items.${idx}.unitPrice`, { valueAsNumber: true })}
+                            className="w-full px-2 py-1 rounded-lg border border-slate-300 bg-white text-right font-mono font-bold text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          />
+                        </div>
+
+                        {/* Amount */}
+                        <div className="text-right">
+                          <label className="block text-[10px] font-bold text-slate-400 mb-0.5">Subtotal</label>
+                          <p className="font-mono font-black text-slate-900 text-xs">
+                            Rs. {formatCurrency(itemLineTotal)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Totals Breakdown Card */}
+          <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs space-y-2 text-xs">
+            <div className="flex justify-between items-center text-slate-600 font-semibold border-b border-dashed border-slate-200 pb-1.5">
+              <span>Total Amount</span>
+              <span className="font-mono font-bold text-slate-900 text-sm">
+                Rs. {formatCurrency(totals.totalAmount)}
+              </span>
+            </div>
+
+            <div className="flex justify-between items-center text-slate-600 font-semibold border-b border-dashed border-slate-200 pb-1.5">
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Received
+              </span>
+              <div className="flex items-center gap-1">
+                <span className="text-slate-400 font-mono">Rs.</span>
+                <input
+                  type="number"
+                  step="any"
+                  {...form.register('paidAmount', { valueAsNumber: true })}
+                  className="w-28 px-2 py-0.5 text-right font-mono font-black text-xs rounded border border-slate-300 text-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center font-bold">
+              <span className={balanceDue > 0 ? 'text-amber-700' : 'text-emerald-700'}>
+                Balance Due
+              </span>
+              <span className={`font-mono font-black text-sm ${balanceDue > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>
+                Rs. {formatCurrency(balanceDue)}
+              </span>
+            </div>
+          </div>
+
+          {/* Mobile Payment Type Selector */}
+          <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs space-y-2 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-600">Payment Type:</span>
+              <select
+                {...form.register('paymentMode')}
+                className="px-2.5 py-1 rounded-lg border border-slate-300 text-slate-900 font-bold bg-white text-xs focus:outline-none"
+              >
+                <option value={PaymentMode.CASH}>Cash (नगद)</option>
+                <option value={PaymentMode.BANK}>Bank Transfer</option>
+                <option value={PaymentMode.ONLINE}>eSewa / Mobile Wallet</option>
+                <option value={PaymentMode.CHEQUE}>Cheque</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Mobile Description */}
+          <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs">
+            <input
+              type="text"
+              value={notesText}
+              onChange={(e) => setNotesText(e.target.value)}
+              placeholder="Description / Remarks (Optional)..."
+              className="w-full px-3 py-1.5 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none"
+            />
+          </div>
+
+          {/* Mobile Terms & Conditions Accordion */}
+          <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs">
+            <button
+              type="button"
+              onClick={() => setShowTerms(!showTerms)}
+              className="w-full flex items-center justify-between text-xs font-bold text-slate-700"
+            >
+              <span className="flex items-center gap-1">
+                <FileText className="w-3.5 h-3.5 text-slate-400" /> Terms & Conditions
+              </span>
+              {showTerms ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+            {showTerms && (
+              <textarea
+                rows={2}
+                value={termsText}
+                onChange={(e) => setTermsText(e.target.value)}
+                className="w-full mt-2 px-3 py-1.5 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none font-sans"
+              />
+            )}
+          </div>
+        </div>
+
+        {/* ========================================================= */}
+        {/* DESKTOP SPECIFIC DESIGN (>= md) - HIGH DENSITY SPREADSHEET */}
+        {/* ========================================================= */}
+        <div className="hidden md:block space-y-3">
+          
+          {/* Desktop Meta & Customer */}
+          <div className="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
+            <div className="grid grid-cols-12 gap-3 items-end">
+              <div className="col-span-4 space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
+                    <Building2 className="w-3 h-3 text-blue-600" />
+                    {saleMode === 'CREDIT' ? 'Customer Party *' : 'Customer Party'}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsQuickAddPartyOpen(true)}
+                    className="text-[10px] text-blue-600 hover:text-blue-700 font-bold flex items-center gap-0.5 hover:underline"
+                  >
+                    <Plus className="w-2.5 h-2.5" /> Quick Add
+                  </button>
+                </div>
+
                 <select
                   {...form.register('partyId')}
-                  className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-xs appearance-none pr-8"
+                  className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-xs"
                 >
                   <option value="">
-                    {saleMode === 'CREDIT' ? 'Search by Name/Phone *' : 'Search by Name/Phone (Cash Customer)'}
+                    {saleMode === 'CREDIT' ? '-- Select Customer (Required) --' : 'Cash / Walk-in Customer'}
                   </option>
-                  {customers.map((c: any) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({getPartyBalanceDisplay(c.currentBalance, 'CUSTOMER')})
-                    </option>
-                  ))}
+                  {customers.map((c: any) => {
+                    const balLabel = getPartyBalanceDisplay(c.currentBalance, 'CUSTOMER');
+                    return (
+                      <option key={c.id} value={c.id}>
+                        {c.name} ({balLabel})
+                      </option>
+                    );
+                  })}
                 </select>
-                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
               </div>
 
-              <div className="w-48">
+              <div className="col-span-3 space-y-1">
+                <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
+                  <Phone className="w-3 h-3 text-slate-400" /> Phone Number
+                </label>
                 <input
                   type="text"
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
-                  placeholder="Phone No."
-                  className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-xs"
+                  placeholder="e.g. 98XXXXXXXX"
+                  className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-xs"
                 />
               </div>
 
-              <button
-                type="button"
-                onClick={() => setIsQuickAddPartyOpen(true)}
-                className="px-2.5 py-2 text-xs font-bold text-blue-600 hover:bg-blue-50 rounded-lg border border-blue-200 transition-colors whitespace-nowrap"
-              >
-                + Add Customer
-              </button>
-            </div>
-
-            {/* Invoice Number & Date */}
-            <div className="space-y-1.5 text-xs">
-              <div className="flex items-center justify-end gap-3">
-                <span className="text-slate-500 font-semibold">Invoice Number</span>
-                <span className="font-mono font-bold text-slate-900 w-32 text-right">2</span>
+              <div className="col-span-3 space-y-1">
+                <DatePicker
+                  label="Invoice Date"
+                  required
+                  value={form.watch('date')}
+                  onChange={(dateStr) => form.setValue('date', dateStr, { shouldValidate: true, shouldDirty: true })}
+                />
               </div>
-              <div className="flex items-center justify-end gap-3">
-                <span className="text-slate-500 font-semibold">Invoice Date</span>
-                <div className="w-36">
-                  <DatePicker
-                    required
-                    value={form.watch('date')}
-                    onChange={(dateStr) => form.setValue('date', dateStr, { shouldValidate: true, shouldDirty: true })}
-                  />
-                </div>
+
+              <div className="col-span-2 space-y-1">
+                <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
+                  <Percent className="w-3 h-3 text-emerald-600" /> Tax Type
+                </label>
+                <select
+                  value={isVatBill ? 'VAT' : 'NORMAL'}
+                  onChange={(e) => form.setValue('isVatBill', e.target.value === 'VAT', { shouldValidate: true, shouldDirty: true })}
+                  className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-xs"
+                >
+                  <option value="NORMAL">Normal Bill</option>
+                  <option value="VAT">VAT 13%</option>
+                </select>
               </div>
             </div>
           </div>
 
-          {/* SPREADSHEET LINE ITEMS TABLE (Exact Vyapar Grid) */}
-          <div className="border border-slate-300 rounded-lg overflow-visible bg-white shadow-xs">
+          {/* Desktop Line Items Table */}
+          <div className="rounded-2xl bg-white border border-slate-200/90 shadow-xs overflow-visible">
+            <div className="p-2.5 px-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-slate-800 tracking-wide uppercase">
+                  Invoice Items ({fields.length})
+                </span>
+                {isVatBill && (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                    VAT 13% Applied
+                  </span>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => append({ itemId: '', quantity: 1, unitPrice: 0, discountPercent: 0, discount: 0, taxAmount: 0 })}
+                className="flex items-center gap-1 px-3 py-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs active:scale-95"
+              >
+                <Plus className="w-3 h-3" /> Add Row
+              </button>
+            </div>
+
             <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-[#f4f5f8] text-slate-700 font-bold border-b border-slate-300 uppercase tracking-wider text-[11px]">
-                  <th className="py-2.5 px-3 text-center w-12 border-r border-slate-300">#</th>
-                  <th className="py-2.5 px-4 min-w-[320px] border-r border-slate-300">ITEM</th>
-                  <th className="py-2.5 px-3 text-center w-28 border-r border-slate-300">QTY</th>
-                  <th className="py-2.5 px-3 text-center w-28 border-r border-slate-300">UNIT</th>
-                  <th className="py-2.5 px-3 text-right w-40 border-r border-slate-300">PRICE/UNIT</th>
-                  <th className="py-2.5 px-4 text-right w-40">AMOUNT</th>
+              <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider text-[10px]">
+                <tr>
+                  <th className="py-2.5 px-2.5 text-center w-10 border-r border-slate-200">#</th>
+                  <th className="py-2.5 px-3 min-w-[260px] border-r border-slate-200">Product / Item</th>
+                  <th className="py-2.5 px-2.5 text-center w-28 border-r border-slate-200">Quantity</th>
+                  <th className="py-2.5 px-2.5 text-center w-16 border-r border-slate-200">Unit</th>
+                  <th className="py-2.5 px-2.5 text-right w-36 border-r border-slate-200">Rate (Rs.)</th>
+                  <th className="py-2.5 px-2 text-center w-24 border-r border-slate-200">Disc (%)</th>
+                  {isVatBill && <th className="py-2.5 px-2.5 text-right w-24 border-r border-slate-200">VAT (13%)</th>}
+                  <th className="py-2.5 px-3 text-right w-32 border-r border-slate-200">Amount (Rs.)</th>
+                  <th className="py-2.5 px-2 text-center w-10"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-slate-100">
                 {fields.map((field, idx) => {
                   const selectedItemId = form.watch(`items.${idx}.itemId`);
                   const selectedItem = availableItems.find((i: any) => i.id === selectedItemId);
+
                   const lineQty = Number(form.watch(`items.${idx}.quantity`)) || 0;
                   const linePrice = Number(form.watch(`items.${idx}.unitPrice`)) || 0;
-                  const lineAmount = lineQty * linePrice;
-
-                  const isDropdownOpen = activeItemDropdownRow === idx;
+                  const lineDiscount = Number(form.watch(`items.${idx}.discountPercent`)) || 0;
+                  const computedItemTotal = totals.items[idx]?.total ?? (lineQty * linePrice * (1 - lineDiscount / 100));
 
                   return (
-                    <tr key={field.id} className="hover:bg-slate-50/70 transition-colors group relative">
-                      
-                      {/* # Index & Delete */}
-                      <td className="py-2 px-2 text-center font-mono text-slate-500 border-r border-slate-200 relative">
-                        <span className="group-hover:hidden">{idx + 1}</span>
-                        <button
-                          type="button"
-                          onClick={() => remove(idx)}
-                          className="hidden group-hover:inline-flex p-1 text-slate-400 hover:text-rose-600 rounded transition-colors"
-                          title="Delete Row"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                    <tr key={field.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-2 px-2 text-center font-mono text-slate-400 font-bold border-r border-slate-200">
+                        {idx + 1}
                       </td>
 
-                      {/* ITEM SELECTOR INPUT & VYAPAR FLOATING POPUP */}
-                      <td className="py-1 px-2 border-r border-slate-200 relative">
-                        <input
-                          type="text"
-                          value={isDropdownOpen ? itemSearchQuery : (selectedItem?.name || '')}
-                          onFocus={() => {
-                            setActiveItemDropdownRow(idx);
-                            setItemSearchQuery(selectedItem?.name || '');
-                          }}
-                          onChange={(e) => setItemSearchQuery(e.target.value)}
-                          placeholder="Type item name..."
-                          className="w-full px-2.5 py-1.5 rounded bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 text-slate-900 font-semibold text-xs focus:outline-none"
-                        />
-
-                        {/* Vyapar Floating Dropdown Menu */}
-                        {isDropdownOpen && (
-                          <div className="absolute left-0 top-full mt-1 w-[460px] bg-white border border-slate-300 rounded-lg shadow-2xl z-50 overflow-hidden text-xs">
-                            <div className="p-2 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  toast.success('Quick item create modal');
-                                }}
-                                className="text-blue-600 font-bold flex items-center gap-1 hover:underline"
-                              >
-                                <Plus className="w-3.5 h-3.5" /> Add Item
-                              </button>
-                              <div className="flex items-center gap-6 text-[10px] font-bold text-slate-400 uppercase">
-                                <span>SALE PRICE</span>
-                                <span>PURCHASE PRICE</span>
-                                <span>STOCK</span>
-                              </div>
-                            </div>
-
-                            <div className="max-h-56 overflow-y-auto divide-y divide-slate-100">
-                              {filteredDesktopItems.length === 0 ? (
-                                <div className="p-4 text-center text-slate-400">No matching items</div>
-                              ) : (
-                                filteredDesktopItems.map((item: any) => {
-                                  const stock = Number(item.currentStock || 0);
-                                  return (
-                                    <button
-                                      key={item.id}
-                                      type="button"
-                                      onClick={() => handleSelectItem(idx, item)}
-                                      className="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-blue-50/80 transition-colors"
-                                    >
-                                      <div>
-                                        <p className="font-bold text-slate-800">{item.name}</p>
-                                        {item.code && <p className="text-[10px] font-mono text-slate-400">{item.code}</p>}
-                                      </div>
-                                      <div className="flex items-center gap-8 font-mono text-right text-xs">
-                                        <span className="w-16 font-bold text-slate-900">
-                                          {item.salePrice || 0}
-                                        </span>
-                                        <span className="w-16 text-slate-500">
-                                          {item.purchasePrice || 0}
-                                        </span>
-                                        <span className={`w-12 font-bold ${stock > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
-                                          {stock}
-                                        </span>
-                                      </div>
-                                    </button>
-                                  );
-                                })
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </td>
-
-                      {/* QTY */}
-                      <td className="py-1 px-2 text-center border-r border-slate-200">
-                        <input
-                          type="number"
-                          min="0"
-                          step="any"
-                          {...form.register(`items.${idx}.quantity`, { valueAsNumber: true })}
-                          className="w-full text-center px-2 py-1.5 rounded bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 font-mono font-bold text-xs focus:outline-none"
+                      <td className="py-1.5 px-2.5 border-r border-slate-200">
+                        <ItemSearchSelect
+                          items={availableItems}
+                          value={selectedItemId || ''}
+                          onChange={(id) => handleItemSelect(idx, id)}
+                          placeholder="Select product…"
+                          priceField="salePrice"
                         />
                       </td>
 
-                      {/* UNIT */}
-                      <td className="py-1 px-2 border-r border-slate-200">
-                        <select
-                          value={selectedItem?.unit || 'NONE'}
-                          className="w-full px-2 py-1.5 rounded bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 text-xs font-medium text-slate-700 focus:outline-none"
-                        >
-                          <option value="NONE">{selectedItem?.unit || 'NONE'}</option>
-                          <option value="PCS">PCS</option>
-                          <option value="BOX">BOX</option>
-                          <option value="KG">KG</option>
-                          <option value="MTR">MTR</option>
-                        </select>
+                      <td className="py-1.5 px-2 text-center border-r border-slate-200">
+                        <div className="inline-flex items-center gap-0.5 bg-slate-50 border border-slate-300 rounded-lg p-0.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (lineQty > 1) form.setValue(`items.${idx}.quantity`, lineQty - 1, { shouldValidate: true, shouldDirty: true });
+                            }}
+                            className="p-1 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-200"
+                          >
+                            <Minus className="w-2.5 h-2.5" />
+                          </button>
+                          <input
+                            type="number"
+                            min="1"
+                            {...form.register(`items.${idx}.quantity`, { valueAsNumber: true })}
+                            className="w-10 text-center bg-transparent text-slate-900 font-mono text-xs font-bold focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => form.setValue(`items.${idx}.quantity`, lineQty + 1, { shouldValidate: true, shouldDirty: true })}
+                            className="p-1 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-200"
+                          >
+                            <Plus className="w-2.5 h-2.5" />
+                          </button>
+                        </div>
                       </td>
 
-                      {/* PRICE / UNIT */}
-                      <td className="py-1 px-2 border-r border-slate-200">
+                      <td className="py-1.5 px-2 text-center font-semibold text-slate-600 border-r border-slate-200">
+                        {selectedItem?.unit || 'Pcs'}
+                      </td>
+
+                      <td className="py-1.5 px-2 border-r border-slate-200">
                         <input
                           type="number"
                           step="any"
                           {...form.register(`items.${idx}.unitPrice`, { valueAsNumber: true })}
-                          className="w-full text-right px-2 py-1.5 rounded bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 font-mono font-bold text-xs focus:outline-none"
+                          className="w-full px-2.5 py-1 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono text-xs text-right font-bold focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-xs"
                         />
                       </td>
 
-                      {/* AMOUNT */}
-                      <td className="py-1 px-4 text-right font-mono font-bold text-slate-900 text-xs">
-                        {formatCurrency(lineAmount)}
+                      <td className="py-1.5 px-2 border-r border-slate-200">
+                        <div className="relative">
+                          <input
+                            type="number"
+                            step="any"
+                            {...form.register(`items.${idx}.discountPercent`, { valueAsNumber: true })}
+                            className="w-full pr-4 pl-1.5 py-1 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono text-xs text-center font-bold focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-xs"
+                          />
+                          <span className="absolute right-1.5 top-1 text-slate-400 text-[9px]">%</span>
+                        </div>
+                      </td>
+
+                      {isVatBill && (
+                        <td className="py-1.5 px-2.5 text-right font-mono font-bold text-slate-700 border-r border-slate-200">
+                          Rs. {formatCurrency(totals.items[idx]?.taxAmount || 0)}
+                        </td>
+                      )}
+
+                      <td className="py-1.5 px-3 text-right font-mono font-black text-slate-900 text-xs border-r border-slate-200">
+                        Rs. {formatCurrency(computedItemTotal)}
+                      </td>
+
+                      <td className="py-1.5 px-1.5 text-center">
+                        {fields.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => remove(idx)}
+                            className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                            title="Remove item"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
-
-            {/* TABLE FOOTER (ADD ROW & TOTAL SUMMARY) */}
-            <div className="p-2.5 px-4 bg-[#f8fafc] border-t border-slate-300 flex items-center justify-between text-xs font-bold text-slate-700">
-              <button
-                type="button"
-                onClick={() => append({ itemId: '', quantity: 1, unitPrice: 0, discountPercent: 0, discount: 0, taxAmount: 0 })}
-                className="px-3 py-1 rounded border border-blue-500 text-blue-600 hover:bg-blue-50 font-bold transition-all"
-              >
-                ADD ROW
-              </button>
-
-              <div className="flex items-center gap-12 font-mono">
-                <span>
-                  TOTAL QTY:{' '}
-                  <strong className="text-slate-900 font-black">
-                    {(watchItems || []).reduce((acc, it) => acc + (Number(it.quantity) || 0), 0)}
-                  </strong>
-                </span>
-                <span>
-                  SUBTOTAL:{' '}
-                  <strong className="text-slate-900 font-black text-sm">
-                    {formatCurrency(totals.subTotal)}
-                  </strong>
-                </span>
-              </div>
-            </div>
           </div>
 
-          {/* LOWER SECTION: ACTIONS (LEFT) & INVOICE BREAKDOWN (RIGHT) */}
-          <div className="grid grid-cols-12 gap-6 pt-2">
-            
-            {/* LEFT 4 BUTTONS (Terms, Description, Image, Document) */}
-            <div className="col-span-6 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowTerms(!showTerms)}
-                  className="px-4 py-2.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 font-bold text-xs flex items-center gap-2"
-                >
-                  <FileText className="w-4 h-4 text-slate-400" />
-                  {showTerms ? 'HIDE TERMS' : 'ADD TERMS & CONDITIONS'}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setShowDescription(!showDescription)}
-                  className="px-4 py-2.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 font-bold text-xs flex items-center gap-2"
-                >
-                  <FileText className="w-4 h-4 text-slate-400" />
-                  {showDescription ? 'HIDE DESCRIPTION' : 'ADD DESCRIPTION'}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => toast.success('Image upload ready')}
-                  className="px-4 py-2.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 font-bold text-xs flex items-center gap-2"
-                >
-                  <Paperclip className="w-4 h-4 text-slate-400" /> ADD IMAGE
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => toast.success('Document upload ready')}
-                  className="px-4 py-2.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 font-bold text-xs flex items-center gap-2"
-                >
-                  <Paperclip className="w-4 h-4 text-slate-400" /> ADD DOCUMENT
-                </button>
+          {/* Desktop Summary & Actions */}
+          <div className="grid grid-cols-12 gap-3 items-stretch">
+            <div className="col-span-7 p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <Banknote className="w-3.5 h-3.5 text-emerald-600" /> Payment & Settlement
+                </span>
+                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
+                  saleMode === 'CREDIT' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                }`}>
+                  {saleMode === 'CREDIT' ? 'Credit Sale' : 'Cash Sale'}
+                </span>
               </div>
 
-              {showTerms && (
-                <textarea
-                  rows={2}
-                  value={termsText}
-                  onChange={(e) => setTermsText(e.target.value)}
-                  className="w-full p-2.5 rounded-lg border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 font-sans"
-                />
-              )}
+              <div className="grid grid-cols-3 gap-2.5">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Received (Rs.)</label>
+                  <input
+                    type="number"
+                    step="any"
+                    {...form.register('paidAmount', { valueAsNumber: true })}
+                    className="w-full px-2.5 py-1.5 rounded-xl bg-white border border-slate-300 text-emerald-600 font-mono font-black text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-xs"
+                  />
+                </div>
 
-              {showDescription && (
-                <textarea
-                  rows={2}
-                  value={descriptionText}
-                  onChange={(e) => setDescriptionText(e.target.value)}
-                  placeholder="Enter private description / transport notes..."
-                  className="w-full p-2.5 rounded-lg border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 font-sans"
-                />
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Mode</label>
+                  <select
+                    {...form.register('paymentMode')}
+                    className="w-full px-2.5 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-xs"
+                  >
+                    <option value={PaymentMode.CASH}>Cash (नगद)</option>
+                    <option value={PaymentMode.BANK}>Bank Transfer</option>
+                    <option value={PaymentMode.ONLINE}>eSewa / Wallet</option>
+                    <option value={PaymentMode.CHEQUE}>Cheque</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Deposit Account</label>
+                  <select
+                    {...form.register('accountId')}
+                    className="w-full px-2.5 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-xs"
+                  >
+                    <option value="">Default Account</option>
+                    {filteredAccounts.map((a: any) => (
+                      <option key={a.id} value={a.id}>
+                        {a.bankName || a.accountName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {saleMode === 'CREDIT' ? (
+                <div className="p-2 px-3 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between text-xs">
+                  <span className="text-amber-800 font-bold text-[11px] flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 text-amber-600" /> Customer Receivable:
+                  </span>
+                  <span className="font-mono font-black text-amber-700">
+                    Rs. {formatCurrency(balanceDue)}
+                  </span>
+                </div>
+              ) : (
+                <div className="p-2 px-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between text-xs">
+                  <span className="text-emerald-800 font-bold text-[11px] flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Settled in Cash:
+                  </span>
+                  <span className="font-mono font-black text-emerald-700">
+                    Paid Rs. {formatCurrency(paidAmount || 0)}
+                  </span>
+                </div>
               )}
             </div>
 
-            {/* RIGHT BREAKDOWN & SAVE BUTTONS */}
-            <div className="col-span-6 flex flex-col items-end space-y-3">
-              
-              <div className="w-80 space-y-2.5 text-xs font-semibold text-slate-600">
-                {/* Discount */}
-                <div className="flex items-center justify-between">
-                  <span>Discount</span>
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="number"
-                      value={globalDiscountPct || ''}
-                      onChange={(e) => setGlobalDiscountPct(Number(e.target.value) || 0)}
-                      placeholder="%"
-                      className="w-16 px-2 py-1 rounded border border-slate-300 text-center font-mono text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                    <span>-</span>
-                    <input
-                      type="text"
-                      readOnly
-                      value={formatCurrency(totals.discount)}
-                      className="w-24 px-2 py-1 rounded bg-slate-100 border border-slate-200 text-right font-mono text-xs text-slate-700"
-                    />
-                  </div>
+            <div className="col-span-5 p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between space-y-3">
+              <div className="space-y-1.5 text-xs">
+                <div className="flex justify-between text-slate-600 font-medium text-[11px]">
+                  <span>Subtotal ({fields.length} items)</span>
+                  <span className="font-mono text-slate-900 font-bold">Rs. {formatCurrency(totals.subTotal)}</span>
                 </div>
 
-                {/* Tax (VAT) */}
-                <div className="flex items-center justify-between">
-                  <span>Tax</span>
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={isVatBill ? 'VAT' : 'NONE'}
-                      onChange={(e) => form.setValue('isVatBill', e.target.value === 'VAT', { shouldValidate: true, shouldDirty: true })}
-                      className="w-28 px-2 py-1 rounded border border-slate-300 text-xs focus:outline-none"
-                    >
-                      <option value="NONE">NONE</option>
-                      <option value="VAT">VAT 13%</option>
-                    </select>
-                    <span className="font-mono text-slate-900 w-16 text-right font-bold">
-                      {formatCurrency(totals.taxAmount)}
-                    </span>
+                {isVatBill && (
+                  <div className="flex justify-between text-blue-600 font-semibold text-[11px]">
+                    <span>VAT (13%)</span>
+                    <span className="font-mono font-bold">+ Rs. {formatCurrency(totals.taxAmount)}</span>
                   </div>
-                </div>
+                )}
 
-                {/* Round off & Total */}
-                <div className="flex items-center justify-between pt-1 border-t border-slate-200">
-                  <label className="flex items-center gap-1.5 cursor-pointer text-slate-500 text-[11px]">
-                    <input
-                      type="checkbox"
-                      checked={isRoundOff}
-                      onChange={(e) => setIsRoundOff(e.target.checked)}
-                      className="rounded text-blue-600 focus:ring-blue-500"
-                    />
-                    Round Off
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-slate-900 text-sm">Total</span>
-                    <input
-                      type="text"
-                      readOnly
-                      value={formatCurrency(totals.totalAmount)}
-                      className="w-36 px-3 py-1.5 rounded-lg bg-white border border-slate-400 font-mono font-black text-right text-sm text-slate-900 shadow-inner"
-                    />
-                  </div>
+                <div className="p-3 rounded-xl bg-slate-900 text-white flex items-baseline justify-between shadow-sm">
+                  <span className="text-xs font-bold text-slate-200">Grand Total</span>
+                  <span className="text-xl font-black font-mono text-emerald-400 tracking-tight">
+                    Rs. {formatCurrency(totals.totalAmount)}
+                  </span>
                 </div>
               </div>
 
-              {/* BOTTOM ACTION BUTTONS (Share Dropdown + Save) */}
-              <div className="flex items-center gap-2 pt-2 relative">
-                
-                {/* Share Dropdown Button */}
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setIsShareMenuOpen(!isShareMenuOpen)}
-                    className="px-4 py-2 rounded-lg border border-blue-500 text-blue-600 hover:bg-blue-50 font-bold text-xs flex items-center gap-1.5 transition-colors"
-                  >
-                    <span>Share</span>
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  </button>
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsDiscardConfirmOpen(true)}
+                  className="px-3.5 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 text-xs font-bold transition-all flex items-center gap-1"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-slate-500" /> Discard
+                </button>
 
-                  {isShareMenuOpen && (
-                    <div className="absolute right-0 bottom-full mb-1 w-44 bg-white border border-slate-200 rounded-xl shadow-xl py-1 z-50 text-xs font-semibold text-slate-700 divide-y divide-slate-100">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsShareMenuOpen(false);
-                          toast.success('Share link generated');
-                        }}
-                        className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center justify-between"
-                      >
-                        <span>Share</span>
-                        <Share2 className="w-3.5 h-3.5 text-slate-400" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsShareMenuOpen(false);
-                          window.print();
-                        }}
-                        className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center justify-between"
-                      >
-                        <span>Print</span>
-                        <Printer className="w-3.5 h-3.5 text-slate-400" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsShareMenuOpen(false);
-                          form.handleSubmit(onFormSubmit)();
-                        }}
-                        className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center justify-between text-blue-600 font-bold"
-                      >
-                        <span>Save & New</span>
-                        <Plus className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Primary Save Button */}
                 <button
                   type="submit"
+                  onClick={() => setSaveAndNew(false)}
                   disabled={createSale.isPending}
-                  className="px-8 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-black text-xs shadow-md shadow-blue-600/20 active:scale-95 transition-all"
+                  className="flex-1 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black shadow-md shadow-blue-600/20 active:scale-95 transition-all flex items-center justify-center gap-1.5"
                 >
-                  {createSale.isPending ? 'Saving...' : 'Save'}
+                  <Save className="w-3.5 h-3.5" />
+                  {createSale.isPending ? 'Saving...' : 'Save & Generate Invoice'}
                 </button>
               </div>
             </div>
-          </div>
-        </form>
-      </div>
-
-      {/* ======================================================== */}
-      {/* MOBILE VYAPAR APPLICATION VIEW (HIDDEN ON DESKTOP: < md) */}
-      {/* ======================================================== */}
-      <div className="md:hidden flex flex-col min-h-screen bg-[#F8FAFC] p-3 space-y-3">
-        
-        {/* Top Header */}
-        <div className="bg-white border border-slate-200 rounded-2xl px-3.5 py-2.5 flex items-center justify-between shadow-xs">
-          <div className="flex items-center gap-2">
-            <Link href="/transactions/sales" className="p-1.5 rounded-xl bg-slate-100 text-slate-700">
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
-            <h1 className="text-base font-black text-slate-900 tracking-tight">Sale</h1>
-          </div>
-
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
-            <button
-              type="button"
-              onClick={() => {
-                setSaleMode('CREDIT');
-                form.setValue('paidAmount', 0, { shouldValidate: true, shouldDirty: true });
-              }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
-                saleMode === 'CREDIT' ? 'bg-emerald-600 text-white' : 'text-slate-600 font-bold'
-              }`}
-            >
-              Credit
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setSaleMode('CASH');
-                form.setValue('paidAmount', totals.totalAmount, { shouldValidate: true, shouldDirty: true });
-              }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
-                saleMode === 'CASH' ? 'bg-slate-800 text-white' : 'text-slate-600 font-bold'
-              }`}
-            >
-              Cash
-            </button>
           </div>
         </div>
 
-        <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-3 pb-24">
-          
-          {/* Invoice Meta */}
-          <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2.5">
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Invoice No.</span>
-                <p className="font-bold text-slate-800 font-mono">2</p>
-              </div>
-              <div>
-                <DatePicker
-                  label="Date"
-                  required
-                  value={form.watch('date')}
-                  onChange={(dateStr) => form.setValue('date', dateStr, { shouldValidate: true, shouldDirty: true })}
-                />
-              </div>
-            </div>
+        {/* ========================================================= */}
+        {/* VYAPAR-STYLE MOBILE STICKY BOTTOM BAR (3 BUTTONS)         */}
+        {/* ========================================================= */}
+        <div className="fixed md:hidden bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 p-2.5 px-3 shadow-2xl flex items-center justify-between gap-2">
+          {/* Save & New Button */}
+          <button
+            type="submit"
+            onClick={() => setSaveAndNew(true)}
+            disabled={createSale.isPending}
+            className="flex-1 py-3 px-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-extrabold active:scale-95 transition-all text-center"
+          >
+            Save & New
+          </button>
 
-            <div className="pt-2 border-t border-slate-100">
-              <select
-                {...form.register('partyId')}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-slate-900 text-xs font-semibold"
-              >
-                <option value="">{saleMode === 'CREDIT' ? 'Customer *' : 'Customer (Optional)'}</option>
-                {customers.map((c: any) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+          {/* Primary Save Button */}
+          <button
+            type="submit"
+            onClick={() => setSaveAndNew(false)}
+            disabled={createSale.isPending}
+            className="flex-1 py-3 px-4 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black shadow-lg shadow-rose-600/30 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+          >
+            <Save className="w-4 h-4" /> Save
+          </button>
 
-          {/* Items Box */}
-          <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-700 uppercase">Items ({fields.length})</span>
-              <button
-                type="button"
-                onClick={() => setIsMobileAddItemOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold flex items-center gap-1"
-              >
-                <Plus className="w-3.5 h-3.5" /> Add Items
-              </button>
-            </div>
+          {/* Share/Print Action */}
+          <button
+            type="submit"
+            onClick={() => setSaveAndNew(false)}
+            className="p-3 rounded-2xl bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 active:scale-95 transition-all"
+            title="Save & Share"
+          >
+            <Share2 className="w-4 h-4" />
+          </button>
+        </div>
+      </form>
 
-            <div className="divide-y divide-slate-100">
-              {fields.map((field, idx) => {
-                const selectedItemId = form.watch(`items.${idx}.itemId`);
-                const selectedItem = availableItems.find((i: any) => i.id === selectedItemId);
-                const lineQty = Number(form.watch(`items.${idx}.quantity`)) || 0;
-                const linePrice = Number(form.watch(`items.${idx}.unitPrice`)) || 0;
-
-                return (
-                  <div key={field.id} className="py-2.5 flex items-center justify-between text-xs">
-                    <div>
-                      <p className="font-bold text-slate-800">{selectedItem?.name || `Item #${idx + 1}`}</p>
-                      <p className="text-[10px] text-slate-400">
-                        {lineQty} x Rs. {linePrice}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-mono font-bold text-slate-900">Rs. {formatCurrency(lineQty * linePrice)}</p>
-                      {fields.length > 1 && (
-                        <button type="button" onClick={() => remove(idx)} className="text-[10px] text-rose-500">
-                          Remove
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Totals Summary */}
-          <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2 text-xs">
-            <div className="flex justify-between items-center text-slate-600 font-semibold">
-              <span>Total Amount</span>
-              <span className="font-mono font-bold text-slate-900 text-sm">Rs. {formatCurrency(totals.totalAmount)}</span>
-            </div>
-            <div className="flex justify-between items-center text-slate-600 font-semibold">
-              <span>Received</span>
-              <input
-                type="number"
-                {...form.register('paidAmount', { valueAsNumber: true })}
-                className="w-24 px-2 py-0.5 text-right font-mono font-bold rounded border border-slate-300"
-              />
-            </div>
-            <div className="flex justify-between items-center font-bold">
-              <span className={balanceDue > 0 ? 'text-amber-700' : 'text-emerald-700'}>Balance Due</span>
-              <span className={`font-mono font-black ${balanceDue > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>
-                Rs. {formatCurrency(balanceDue)}
-              </span>
-            </div>
-          </div>
-
-          {/* Mobile Bottom Bar */}
-          <div className="fixed bottom-0 left-0 right-0 p-3 bg-white border-t border-slate-200 flex items-center gap-2 z-40">
-            <button
-              type="button"
-              onClick={() => router.push('/transactions/sales')}
-              className="px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-700"
-            >
-              Discard
-            </button>
-            <button
-              type="submit"
-              disabled={createSale.isPending}
-              className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-black shadow-md shadow-blue-600/20"
-            >
-              {createSale.isPending ? 'Saving...' : 'Save'}
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* MOBILE ADD ITEM MODAL */}
-      {isMobileAddItemOpen && (
+      {/* MOBILE CUSTOMER SELECTION SHEET */}
+      {isMobileCustomerOpen && (
         <ModalPortal>
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex flex-col justify-end md:justify-center p-0 md:p-4">
-            <div className="w-full max-w-lg bg-white rounded-t-3xl md:rounded-3xl p-4 shadow-2xl space-y-3 max-h-[85vh] flex flex-col">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex flex-col justify-end p-0">
+            <div className="w-full bg-white rounded-t-3xl p-4 shadow-2xl space-y-3 max-h-[85vh] flex flex-col">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                  <Package className="w-4 h-4 text-blue-600" /> Select Item to Add
+                  <Building2 className="w-4 h-4 text-blue-600" /> Select Customer
+                </h3>
+                <button
+                  onClick={() => setIsMobileCustomerOpen(false)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Search + Quick Add */}
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search customer by name or phone..."
+                    value={mobileCustomerSearch}
+                    onChange={(e) => setMobileCustomerSearch(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileCustomerOpen(false);
+                    setIsQuickAddPartyOpen(true);
+                  }}
+                  className="p-2 px-3 rounded-xl bg-blue-600 text-white text-xs font-bold shrink-0 flex items-center gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add
+                </button>
+              </div>
+
+              {/* Customers List */}
+              <div className="overflow-y-auto flex-1 divide-y divide-slate-100 space-y-1">
+                {saleMode === 'CASH' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      form.setValue('partyId', '', { shouldValidate: true, shouldDirty: true });
+                      setCustomerPhone('');
+                      setIsMobileCustomerOpen(false);
+                    }}
+                    className="w-full text-left p-2.5 rounded-xl hover:bg-slate-50 flex items-center justify-between"
+                  >
+                    <div>
+                      <p className="font-bold text-slate-900 text-xs">Cash / Walk-in Customer</p>
+                      <p className="text-[10px] text-slate-400">Default for immediate cash sales</p>
+                    </div>
+                    {!selectedPartyId && <Check className="w-4 h-4 text-blue-600" />}
+                  </button>
+                )}
+
+                {filteredMobileCustomers.map((c: any) => {
+                  const isSelected = c.id === selectedPartyId;
+                  const balLabel = getPartyBalanceDisplay(c.currentBalance, 'CUSTOMER');
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => {
+                        form.setValue('partyId', c.id, { shouldValidate: true, shouldDirty: true });
+                        setCustomerPhone(c.phone || '');
+                        setIsMobileCustomerOpen(false);
+                      }}
+                      className="w-full text-left p-2.5 rounded-xl hover:bg-slate-50 flex items-center justify-between"
+                    >
+                      <div>
+                        <p className="font-bold text-slate-900 text-xs">{c.name}</p>
+                        <p className="text-[10px] text-slate-500">{c.phone || 'No phone'} · {balLabel}</p>
+                      </div>
+                      {isSelected && <Check className="w-4 h-4 text-blue-600" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+
+      {/* MOBILE ADD ITEM SHEET */}
+      {isMobileAddItemOpen && (
+        <ModalPortal>
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex flex-col justify-end p-0">
+            <div className="w-full bg-white rounded-t-3xl p-4 shadow-2xl space-y-3 max-h-[85vh] flex flex-col">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                <h3 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <Package className="w-4 h-4 text-blue-600" /> Select Product / Item
                 </h3>
                 <button
                   onClick={() => setIsMobileAddItemOpen(false)}
@@ -934,45 +1074,39 @@ export default function NewSalesInvoicePage() {
                 </button>
               </div>
 
+              {/* Search Bar */}
               <div className="relative">
                 <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search item name or SKU..."
+                  placeholder="Search item name or SKU barcode..."
                   value={mobileItemSearch}
                   onChange={(e) => setMobileItemSearch(e.target.value)}
                   className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
-              <div className="overflow-y-auto flex-1 divide-y divide-slate-100">
+              {/* Item List */}
+              <div className="overflow-y-auto flex-1 divide-y divide-slate-100 space-y-1">
                 {filteredMobileItems.map((item: any) => (
                   <button
                     key={item.id}
                     type="button"
-                    onClick={() => {
-                      const firstItem = form.getValues('items.0');
-                      if (fields.length === 1 && (!firstItem || !firstItem.itemId)) {
-                        handleSelectItem(0, item);
-                      } else {
-                        append({
-                          itemId: item.id,
-                          quantity: 1,
-                          unitPrice: Number(item.salePrice || 0),
-                          discountPercent: 0,
-                          discount: 0,
-                          taxAmount: 0,
-                        });
-                      }
-                      setIsMobileAddItemOpen(false);
-                    }}
-                    className="w-full text-left p-2.5 rounded-xl hover:bg-slate-50 flex items-center justify-between"
+                    onClick={() => handleAddMobileItem(item)}
+                    className="w-full text-left p-2.5 rounded-xl hover:bg-slate-50 flex items-center justify-between gap-2 active:bg-blue-50"
                   >
                     <div>
                       <p className="font-bold text-slate-900 text-xs">{item.name}</p>
-                      <p className="text-[10px] text-slate-400 font-mono">Stock: {item.currentStock || 0}</p>
+                      <p className="text-[10px] text-slate-400 font-mono">
+                        Stock: {item.currentStock || 0} {item.unit} {item.code ? `· SKU: ${item.code}` : ''}
+                      </p>
                     </div>
-                    <span className="font-bold font-mono text-slate-900 text-xs">Rs. {item.salePrice || 0}</span>
+                    <div className="text-right">
+                      <p className="font-bold font-mono text-slate-900 text-xs">
+                        Rs. {formatCurrency(item.salePrice || 0)}
+                      </p>
+                      <span className="text-[10px] font-bold text-blue-600">+ Add</span>
+                    </div>
                   </button>
                 ))}
               </div>
@@ -1007,7 +1141,7 @@ export default function NewSalesInvoicePage() {
                     value={quickPartyName}
                     onChange={(e) => setQuickPartyName(e.target.value)}
                     placeholder="e.g. Ramesh Hardware"
-                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-xs"
                   />
                 </div>
 
@@ -1018,7 +1152,7 @@ export default function NewSalesInvoicePage() {
                     value={quickPartyPhone}
                     onChange={(e) => setQuickPartyPhone(e.target.value)}
                     placeholder="e.g. 9841234567"
-                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-xs"
                   />
                 </div>
 
@@ -1060,7 +1194,7 @@ export default function NewSalesInvoicePage() {
         onClose={() => setIsDiscardConfirmOpen(false)}
         onConfirm={() => router.push('/transactions/sales')}
         title="Discard Sales Invoice?"
-        message="Are you sure you want to discard this new invoice?"
+        message="Are you sure you want to discard this new invoice? Any entered line items and customer details will be lost."
       />
     </div>
   );
