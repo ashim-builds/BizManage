@@ -169,6 +169,11 @@ function InventoryPageContent() {
   const [isAddConversionOpen, setIsAddConversionOpen] = useState(false);
   const [deletingItemInfo, setDeletingItemInfo] = useState<{ id: string; name: string } | null>(null);
 
+  // Mobile Bottom Sheet Pickers
+  const [isServicePickerOpen, setIsServicePickerOpen] = useState(false);
+  const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
+  const [isUnitPickerOpen, setIsUnitPickerOpen] = useState(false);
+
   // Long-press action-sheet state (mobile)
   const [longPressItem, setLongPressItem] = useState<any | null>(null);
 
@@ -177,6 +182,16 @@ function InventoryPageContent() {
   const [selectedItemIdsForMove, setSelectedItemIdsForMove] = useState<Set<string>>(new Set());
   const [moveSearchQuery, setMoveSearchQuery] = useState('');
   const [isMovingCategory, setIsMovingCategory] = useState(false);
+
+  // Removal Confirmation Modal state
+  const [removeConfirmConfig, setRemoveConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    actionText?: string;
+    onConfirm: () => void | Promise<void>;
+  } | null>(null);
+  const [isProcessingRemoval, setIsProcessingRemoval] = useState(false);
 
   // Export Confirmation Modal state
   const [exportModalConfig, setExportModalConfig] = useState<{
@@ -857,59 +872,59 @@ function InventoryPageContent() {
 
   return (
     <div className="space-y-3 font-sans pb-4">
-      {/* 1. TOP SUBTABS HEADER BAR: Products | Services | Category | Units (Compact - No Scroll) */}
+      {/* 1. TOP SUBTABS HEADER BAR: Products | Services | Category | Units (No Scroll) */}
       <div className="bg-white rounded-2xl border border-slate-200/90 p-1.5 sm:px-4 sm:py-2 flex items-center justify-between shadow-2xs gap-2">
         <div className="grid grid-cols-4 sm:flex items-center gap-1 sm:gap-2 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => setActiveTab('products')}
-            className={`px-1.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 ${
+            className={`py-2 px-1 sm:px-3.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 whitespace-nowrap ${
               activeTab === 'products'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
-            <Package className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">Products</span>
+            <Package className="w-3.5 h-3.5 shrink-0 hidden sm:block" />
+            <span>Products</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('services')}
-            className={`px-1.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 ${
+            className={`py-2 px-1 sm:px-3.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 whitespace-nowrap ${
               activeTab === 'services'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
-            <Wrench className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">Services</span>
+            <Wrench className="w-3.5 h-3.5 shrink-0 hidden sm:block" />
+            <span>Services</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('category')}
-            className={`px-1.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 ${
+            className={`py-2 px-1 sm:px-3.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 whitespace-nowrap ${
               activeTab === 'category'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
-            <Layers className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">Category</span>
+            <Layers className="w-3.5 h-3.5 shrink-0 hidden sm:block" />
+            <span>Category</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('units')}
-            className={`px-1.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 ${
+            className={`py-2 px-1 sm:px-3.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 whitespace-nowrap ${
               activeTab === 'units'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
-            <Scale className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">Units</span>
+            <Scale className="w-3.5 h-3.5 shrink-0 hidden sm:block" />
+            <span>Units</span>
           </button>
         </div>
 
@@ -1607,50 +1622,216 @@ function InventoryPageContent() {
         <>
           {/* MOBILE VIEW (< md) for Services */}
           <div className="block md:hidden space-y-3 pb-24">
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Search Services & SAC..."
-                value={serviceSearch}
-                onChange={(e) => setServiceSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs transition-all"
-              />
+            {/* Search Bar & Quick Add */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search Services & SAC..."
+                  value={serviceSearch}
+                  onChange={(e) => setServiceSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs transition-all"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setCreateType(ItemType.SERVICE);
+                  createForm.setValue('type', ItemType.SERVICE);
+                  setIsCreateOpen(true);
+                }}
+                className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-xs shrink-0 cursor-pointer transition-all shadow-xs flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                <span>Add Service</span>
+              </button>
             </div>
+
+            {/* Service Selector Card (Opens Custom Bottom Sheet Picker) */}
+            {filteredServices.length > 0 && (
+              <div
+                onClick={() => setIsServicePickerOpen(true)}
+                className="bg-white rounded-2xl border border-slate-200/90 p-3 shadow-2xs flex items-center justify-between gap-3 cursor-pointer hover:border-blue-300 hover:shadow-xs active:scale-[0.99] transition-all"
+              >
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100 shadow-2xs">
+                    <Wrench className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                      Service ({filteredServices.length})
+                    </span>
+                    <span className="text-xs sm:text-sm font-bold text-slate-900 truncate block">
+                      {activeItem?.name || 'Select a Service'}
+                    </span>
+                  </div>
+                </div>
+                <div className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/70 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-colors border border-slate-200/60 shrink-0">
+                  <span>Select</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
+                </div>
+              </div>
+            )}
 
             {filteredServices.length === 0 ? (
               <div className="p-8 text-center bg-white rounded-3xl border border-slate-200/80 shadow-xs space-y-3">
                 <Wrench className="w-10 h-10 text-slate-300 mx-auto" />
                 <p className="text-xs text-slate-500 font-medium">No services found.</p>
-                <Link
-                  href="/inventory/new"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCreateType(ItemType.SERVICE);
+                    createForm.setValue('type', ItemType.SERVICE);
+                    setIsCreateOpen(true);
+                  }}
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs shadow-md shadow-blue-600/20 active:scale-95 transition-all"
                 >
                   <Plus className="w-4 h-4" /> Add New Service
-                </Link>
+                </button>
               </div>
-            ) : (
+            ) : activeItem ? (
               <div className="space-y-3">
-                {filteredServices.map((s) => (
-                  <MobileServiceCard
-                    key={s.id}
-                    item={s}
-                    onClick={() => router.push(`/inventory/${s.id}`)}
-                    onLongPress={() => setLongPressItem(s)}
-                  />
-                ))}
+                {/* Service Header & Action Buttons Card */}
+                <div className="p-4 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-3 select-text">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h2 className="text-base font-bold text-slate-900 leading-snug">{activeItem.name}</h2>
+                        {activeItem.code && (
+                          <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md font-medium">
+                            SAC: {activeItem.code}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Billing Rate:{' '}
+                        <strong className="text-slate-900 font-mono">
+                          Rs. {Number(activeItem.salePrice || 0).toFixed(2)}
+                        </strong>{' '}
+                        per {activeItem.unit || 'Hrs'}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => openEditModal(activeItem)}
+                        className="p-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 shadow-2xs flex items-center gap-1 cursor-pointer"
+                        title="Edit Service"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeletingItemInfo({ id: activeItem.id, name: activeItem.name })}
+                        className="p-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 text-xs font-bold hover:bg-rose-100 cursor-pointer flex items-center gap-1"
+                        title="Delete Service"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Quick Metric Cards (3 columns) */}
+                  <div className="grid grid-cols-3 gap-2 text-left pt-2 border-t border-slate-100">
+                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                      <span className="text-[9px] uppercase font-bold text-slate-400 block truncate">Service Charge</span>
+                      <span className="text-xs font-mono font-bold text-emerald-600 mt-0.5 block truncate">
+                        Rs. {Number(activeItem.salePrice || 0).toFixed(2)}
+                      </span>
+                      <span className="text-[9px] text-slate-400 block truncate">per {activeItem.unit || 'Hrs'}</span>
+                    </div>
+                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                      <span className="text-[9px] uppercase font-bold text-slate-400 block truncate">Category</span>
+                      <span className="text-xs font-bold text-slate-800 mt-0.5 block truncate">
+                        {activeItem.category?.name || 'General'}
+                      </span>
+                    </div>
+                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                      <span className="text-[9px] uppercase font-bold text-slate-400 block truncate">SAC / Code</span>
+                      <span className="text-xs font-mono font-bold text-slate-800 mt-0.5 block truncate">
+                        {activeItem.code || '-'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {activeItem.storeDescription && (
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs mt-2">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">
+                        Scope & Description
+                      </span>
+                      <p className="text-slate-700 text-xs leading-relaxed">{activeItem.storeDescription}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Service Sales & Billing History (Div-based Cards, No Tables) */}
+                <div className="p-4 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                        BILLING & SALES HISTORY
+                      </h3>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded-full font-bold">
+                        {transactions.length}
+                      </span>
+                    </div>
+                  </div>
+
+                  {transactions.length === 0 ? (
+                    <div className="p-6 text-center bg-slate-50/60 rounded-xl border border-dashed border-slate-200">
+                      <Receipt className="w-7 h-7 text-slate-300 mx-auto mb-1.5" />
+                      <p className="text-xs font-semibold text-slate-700">No Sales Recorded Yet</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">
+                        Invoices billing this service will appear here.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {transactions.map((tx: any) => (
+                        <div
+                          key={tx.id}
+                          className="p-3 rounded-xl bg-slate-50/80 border border-slate-200 text-xs space-y-1.5 select-text hover:bg-slate-100/70 transition-colors"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1">
+                                <span className="w-1 h-1 rounded-full bg-emerald-500" />
+                                Sale
+                              </span>
+                              <span className="font-mono font-bold text-slate-700 text-[11px]">{tx.ref}</span>
+                            </div>
+                            <span className="text-slate-400 font-mono text-[10px]">
+                              {tx.date ? new Date(tx.date).toLocaleDateString() : '-'}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between pt-1 border-t border-slate-200/60">
+                            <span className="text-slate-800 font-medium text-xs truncate max-w-[60%]">{tx.name}</span>
+                            <span className="font-mono font-bold text-slate-900 text-xs">
+                              Rs. {Number(tx.total || 0).toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
+            ) : null}
 
             {/* Floating Red Add Service Button */}
-            <Link
-              href="/inventory/new"
-              className="fixed bottom-28 left-1/2 -translate-x-1/2 md:hidden z-40 inline-flex items-center gap-2 px-7 py-3 rounded-full bg-[#FF0033] hover:bg-[#E6002E] text-white font-bold text-xs sm:text-sm shadow-xl shadow-red-600/30 active:scale-95 transition-all whitespace-nowrap"
+            <button
+              type="button"
+              onClick={() => {
+                setCreateType(ItemType.SERVICE);
+                createForm.setValue('type', ItemType.SERVICE);
+                setIsCreateOpen(true);
+              }}
+              className="fixed bottom-28 left-1/2 -translate-x-1/2 md:hidden z-40 inline-flex items-center gap-2 px-7 py-3 rounded-full bg-[#FF0033] hover:bg-[#E6002E] text-white font-bold text-xs sm:text-sm shadow-xl shadow-red-600/30 active:scale-95 transition-all whitespace-nowrap cursor-pointer"
             >
               <Wrench className="w-4 h-4 stroke-[2.5]" />
               <span>Add New Service</span>
-            </Link>
+            </button>
           </div>
 
           {/* DESKTOP SPLIT VIEW (>= md) */}
@@ -1874,70 +2055,69 @@ function InventoryPageContent() {
       {/* 4. TAB CONTENT 3: CATEGORY (Screenshot 3) */}
       {/* ========================================================================= */}
       {activeTab === 'category' && (
-        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs flex flex-col md:flex-row overflow-hidden h-[calc(100vh-130px)] max-h-[calc(100vh-130px)]">
-          {/* Left Directory Pane: Categories */}
-          <div className="w-full md:w-80 lg:w-88 shrink-0 border-r border-slate-200 flex flex-col bg-white h-full overflow-hidden">
-            <div className="p-3 border-b border-slate-100 flex items-center gap-2">
+        <>
+          {/* MOBILE VIEW (< md) for Categories */}
+          <div className="block md:hidden space-y-3 pb-24">
+            {/* Search & Add Category */}
+            <div className="flex items-center gap-2">
               <div className="relative flex-1">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+                <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400 pointer-events-none" />
                 <input
                   type="text"
                   placeholder="Search Category..."
                   value={categorySearch}
                   onChange={(e) => setCategorySearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs focus:bg-white focus:outline-none"
+                  className="w-full pl-9 pr-4 py-2 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs transition-all"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => setIsAddCategoryOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-xs flex items-center gap-1 cursor-pointer shrink-0"
+                className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-xs shrink-0 cursor-pointer transition-all shadow-xs flex items-center gap-1"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[3]" />
                 <span>Add Category</span>
               </button>
             </div>
 
-            {/* Table Header: Category | Item */}
-            <div className="px-4 py-2 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between text-[11px] font-bold text-slate-600">
-              <span>CATEGORY</span>
-              <span>ITEM</span>
+            {/* Category Selector Card (Opens Custom Bottom Sheet Picker) */}
+            <div
+              onClick={() => setIsCategoryPickerOpen(true)}
+              className="bg-white rounded-2xl border border-slate-200/90 p-3 shadow-2xs flex items-center justify-between gap-3 cursor-pointer hover:border-amber-300 hover:shadow-xs active:scale-[0.99] transition-all"
+            >
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-100 shadow-2xs">
+                  <Layers className="w-4 h-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                    Category ({filteredCategoryDirectory.length})
+                  </span>
+                  <span className="text-xs sm:text-sm font-bold text-slate-900 truncate block">
+                    {selectedCategoryId === 'none'
+                      ? 'Items not in any Category'
+                      : categories.find((c: any) => c.id === selectedCategoryId)?.name || 'Category'}
+                  </span>
+                </div>
+              </div>
+              <div className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/70 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-colors border border-slate-200/60 shrink-0">
+                <span>Select</span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
+              </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
-              {filteredCategoryDirectory.map((cat) => {
-                const isSelected = selectedCategoryId === cat.id;
-                return (
-                  <div
-                    key={cat.id}
-                    onClick={() => setSelectedCategoryId(cat.id)}
-                    className={`px-4 py-3 flex items-center justify-between cursor-pointer transition-colors ${
-                      isSelected
-                        ? 'bg-sky-50 text-blue-900 font-bold border-l-4 border-blue-600'
-                        : 'hover:bg-slate-50 text-slate-800'
-                    }`}
-                  >
-                    <span className="text-xs truncate">{cat.name}</span>
-                    <span className="text-xs font-mono font-semibold text-slate-600">{cat.count}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Right Main Pane: Category Items */}
-          <div className="flex-1 flex flex-col bg-white overflow-hidden h-full">
-            {/* Header */}
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-              <div>
-                <h2 className="text-sm sm:text-base font-bold text-slate-900 uppercase">
+            {/* Selected Category Header Card */}
+            <div className="p-4 bg-white rounded-2xl border border-slate-200/90 shadow-2xs flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <h2 className="text-xs sm:text-sm font-bold text-slate-900 uppercase truncate">
                   {selectedCategoryId === 'none'
                     ? 'ITEMS NOT IN ANY CATEGORY'
                     : categories.find((c: any) => c.id === selectedCategoryId)?.name || 'CATEGORY'}
                 </h2>
-                <span className="text-xs text-slate-500 font-mono">{selectedCategoryItems.length} item(s)</span>
+                <span className="text-[11px] text-slate-500 font-mono font-medium">
+                  {selectedCategoryItems.length} item(s) in category
+                </span>
               </div>
-
               <button
                 type="button"
                 onClick={() => {
@@ -1945,199 +2125,513 @@ function InventoryPageContent() {
                   setMoveSearchQuery('');
                   setIsMoveCategoryOpen(true);
                 }}
-                className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1.5 transition-all"
+                className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1 shrink-0 transition-all"
               >
                 <FolderInput className="w-3.5 h-3.5" />
-                <span>Move To This Category</span>
+                <span>Move Items</span>
               </button>
             </div>
 
-            {/* Items Table in Category */}
-            <div className="px-6 py-2.5 border-b border-slate-100 bg-slate-50/50">
-              <span className="text-xs font-bold text-slate-700 uppercase">ITEMS</span>
-            </div>
-
-            <div className="flex-1 overflow-y-auto">
-              <div className="grid grid-cols-5 px-6 py-2 bg-slate-50/60 border-b border-slate-200 text-[11px] font-bold text-slate-500">
-                <div className="col-span-2">NAME</div>
-                <div className="text-right">QUANTITY</div>
-                <div className="text-right">STOCK VALUE</div>
-                <div className="text-right">ACTION</div>
+            {/* Items in Category (Div-based Cards, No Tables) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  ITEMS IN CATEGORY ({selectedCategoryItems.length})
+                </span>
               </div>
 
               {selectedCategoryItems.length === 0 ? (
-                <div className="p-8 text-center text-xs text-slate-400">No items in this category.</div>
+                <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 text-xs text-slate-400">
+                  No items in this category.
+                </div>
               ) : (
-                <div className="divide-y divide-slate-100">
-                  {selectedCategoryItems.map((item) => (
-                    <div key={item.id} className="grid grid-cols-5 px-6 py-3 text-xs hover:bg-slate-50/60 items-center">
-                      <div className="col-span-2 font-medium text-slate-800 truncate pr-2">
-                        {item.name}
+                selectedCategoryItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-3.5 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-2 select-text"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug truncate">
+                          {item.name}
+                        </h3>
                         {item.code && (
-                          <span className="text-[10px] text-slate-400 font-mono ml-2">SKU: {item.code}</span>
+                          <span className="text-[10px] text-slate-400 font-mono block mt-0.5">
+                            SKU: {item.code}
+                          </span>
                         )}
                       </div>
-                      <div
-                        className={`text-right font-mono font-bold ${
-                          Number(item.currentStock || 0) < 0 ? 'text-rose-600' : 'text-emerald-600'
-                        }`}
-                      >
-                        {item.currentStock}
-                      </div>
-                      <div className="text-right font-mono text-emerald-600 font-bold">
-                        Rs.{' '}
-                        {(Number(item.currentStock || 0) * Number(item.purchasePrice || item.salePrice || 0)).toFixed(
-                          2
-                        )}
+                      {item.categoryId && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRemoveConfirmConfig({
+                              isOpen: true,
+                              title: 'Remove from Category?',
+                              description: `Are you sure you want to remove "${item.name}" from this category? It will become uncategorized.`,
+                              actionText: 'Yes, Remove',
+                              onConfirm: async () => {
+                                setIsProcessingRemoval(true);
+                                try {
+                                  await api.post('/items/bulk-move-category', {
+                                    itemIds: [item.id],
+                                    categoryId: null,
+                                  });
+                                  toast.success(`Removed "${item.name}" from category`);
+                                  refetchItems();
+                                  refetchCategories();
+                                  setRemoveConfirmConfig(null);
+                                } catch (_) {
+                                  toast.error('Failed to remove from category');
+                                } finally {
+                                  setIsProcessingRemoval(false);
+                                }
+                              },
+                            });
+                          }}
+                          className="px-2 py-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors text-[10px] font-bold inline-flex items-center gap-1 cursor-pointer border border-slate-200 shrink-0"
+                        >
+                          <X className="w-3 h-3" />
+                          <span>Remove</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-left pt-1.5 border-t border-slate-100">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-medium">Quantity</span>
+                        <span
+                          className={`text-xs font-mono font-bold ${
+                            Number(item.currentStock || 0) < 0 ? 'text-rose-600' : 'text-emerald-600'
+                          }`}
+                        >
+                          {item.currentStock} {item.unit || ''}
+                        </span>
                       </div>
                       <div className="text-right">
-                        {item.categoryId && (
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              try {
-                                await api.post('/items/bulk-move-category', {
-                                  itemIds: [item.id],
-                                  categoryId: null,
-                                });
-                                toast.success(`Removed "${item.name}" from category`);
-                                refetchItems();
-                                refetchCategories();
-                              } catch (_) {
-                                toast.error('Failed to remove from category');
-                              }
-                            }}
-                            className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors text-[10px] font-bold inline-flex items-center gap-0.5 cursor-pointer"
-                            title="Remove from category"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                            <span>Remove</span>
-                          </button>
-                        )}
+                        <span className="text-[10px] text-slate-400 block font-medium">Stock Value</span>
+                        <span className="text-xs font-mono font-bold text-emerald-600">
+                          Rs.{' '}
+                          {(
+                            Number(item.currentStock || 0) *
+                            Number(item.purchasePrice || item.salePrice || 0)
+                          ).toFixed(2)}
+                        </span>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))
               )}
             </div>
           </div>
-        </div>
+
+          {/* DESKTOP SPLIT VIEW (>= md) */}
+          <div className="hidden md:flex bg-white rounded-2xl border border-slate-200/90 shadow-xs flex-col md:flex-row overflow-hidden h-[calc(100vh-130px)] max-h-[calc(100vh-130px)]">
+            {/* Left Directory Pane: Categories */}
+            <div className="w-full md:w-80 lg:w-88 shrink-0 border-r border-slate-200 flex flex-col bg-white h-full overflow-hidden">
+              <div className="p-3 border-b border-slate-100 flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search Category..."
+                    value={categorySearch}
+                    onChange={(e) => setCategorySearch(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs focus:bg-white focus:outline-none"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAddCategoryOpen(true)}
+                  className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-xs flex items-center gap-1 cursor-pointer shrink-0"
+                >
+                  <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                  <span>Add Category</span>
+                </button>
+              </div>
+
+              {/* Table Header: Category | Item */}
+              <div className="px-4 py-2 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between text-[11px] font-bold text-slate-600">
+                <span>CATEGORY</span>
+                <span>ITEM</span>
+              </div>
+
+              <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
+                {filteredCategoryDirectory.map((cat) => {
+                  const isSelected = selectedCategoryId === cat.id;
+                  return (
+                    <div
+                      key={cat.id}
+                      onClick={() => setSelectedCategoryId(cat.id)}
+                      className={`px-4 py-3 flex items-center justify-between cursor-pointer transition-colors ${
+                        isSelected
+                          ? 'bg-sky-50 text-blue-900 font-bold border-l-4 border-blue-600'
+                          : 'hover:bg-slate-50 text-slate-800'
+                      }`}
+                    >
+                      <span className="text-xs truncate">{cat.name}</span>
+                      <span className="text-xs font-mono font-semibold text-slate-600">{cat.count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Right Main Pane: Category Items */}
+            <div className="flex-1 flex flex-col bg-white overflow-hidden h-full">
+              {/* Header */}
+              <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm sm:text-base font-bold text-slate-900 uppercase">
+                    {selectedCategoryId === 'none'
+                      ? 'ITEMS NOT IN ANY CATEGORY'
+                      : categories.find((c: any) => c.id === selectedCategoryId)?.name || 'CATEGORY'}
+                  </h2>
+                  <span className="text-xs text-slate-500 font-mono">{selectedCategoryItems.length} item(s)</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedItemIdsForMove(new Set());
+                    setMoveSearchQuery('');
+                    setIsMoveCategoryOpen(true);
+                  }}
+                  className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1.5 transition-all"
+                >
+                  <FolderInput className="w-3.5 h-3.5" />
+                  <span>Move To This Category</span>
+                </button>
+              </div>
+
+              {/* Items Table in Category */}
+              <div className="px-6 py-2.5 border-b border-slate-100 bg-slate-50/50">
+                <span className="text-xs font-bold text-slate-700 uppercase">ITEMS</span>
+              </div>
+
+              <div className="flex-1 overflow-y-auto">
+                <div className="grid grid-cols-5 px-6 py-2 bg-slate-50/60 border-b border-slate-200 text-[11px] font-bold text-slate-500">
+                  <div className="col-span-2">NAME</div>
+                  <div className="text-right">QUANTITY</div>
+                  <div className="text-right">STOCK VALUE</div>
+                  <div className="text-right">ACTION</div>
+                </div>
+
+                {selectedCategoryItems.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-slate-400">No items in this category.</div>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {selectedCategoryItems.map((item) => (
+                      <div key={item.id} className="grid grid-cols-5 px-6 py-3 text-xs hover:bg-slate-50/60 items-center">
+                        <div className="col-span-2 font-medium text-slate-800 truncate pr-2">
+                          {item.name}
+                          {item.code && (
+                            <span className="text-[10px] text-slate-400 font-mono ml-2">SKU: {item.code}</span>
+                          )}
+                        </div>
+                        <div
+                          className={`text-right font-mono font-bold ${
+                            Number(item.currentStock || 0) < 0 ? 'text-rose-600' : 'text-emerald-600'
+                          }`}
+                        >
+                          {item.currentStock}
+                        </div>
+                        <div className="text-right font-mono text-emerald-600 font-bold">
+                          Rs.{' '}
+                          {(Number(item.currentStock || 0) * Number(item.purchasePrice || item.salePrice || 0)).toFixed(
+                            2
+                          )}
+                        </div>
+                        <div className="text-right">
+                          {item.categoryId && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setRemoveConfirmConfig({
+                                  isOpen: true,
+                                  title: 'Remove from Category?',
+                                  description: `Are you sure you want to remove "${item.name}" from this category? It will become uncategorized.`,
+                                  actionText: 'Yes, Remove',
+                                  onConfirm: async () => {
+                                    setIsProcessingRemoval(true);
+                                    try {
+                                      await api.post('/items/bulk-move-category', {
+                                        itemIds: [item.id],
+                                        categoryId: null,
+                                      });
+                                      toast.success(`Removed "${item.name}" from category`);
+                                      refetchItems();
+                                      refetchCategories();
+                                      setRemoveConfirmConfig(null);
+                                    } catch (_) {
+                                      toast.error('Failed to remove from category');
+                                    } finally {
+                                      setIsProcessingRemoval(false);
+                                    }
+                                  },
+                                });
+                              }}
+                              className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors text-[10px] font-bold inline-flex items-center gap-0.5 cursor-pointer"
+                              title="Remove from category"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              <span>Remove</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {/* ========================================================================= */}
       {/* 5. TAB CONTENT 4: UNITS (Screenshot 4) */}
       {/* ========================================================================= */}
       {activeTab === 'units' && (
-        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs flex flex-col md:flex-row overflow-hidden h-[calc(100vh-130px)] max-h-[calc(100vh-130px)]">
-          {/* Left Directory Pane: Units */}
-          <div className="w-full md:w-80 lg:w-88 shrink-0 border-r border-slate-200 flex flex-col bg-white h-full overflow-hidden">
-            <div className="p-3 border-b border-slate-100 flex items-center gap-2">
+        <>
+          {/* MOBILE VIEW (< md) for Units */}
+          <div className="block md:hidden space-y-3 pb-24">
+            {/* Search & Add Units */}
+            <div className="flex items-center gap-2">
               <div className="relative flex-1">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+                <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400 pointer-events-none" />
                 <input
                   type="text"
                   placeholder="Search Units..."
                   value={unitSearch}
                   onChange={(e) => setUnitSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs focus:bg-white focus:outline-none"
+                  className="w-full pl-9 pr-4 py-2 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs transition-all"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => setIsAddUnitOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-xs flex items-center gap-1 cursor-pointer shrink-0"
+                className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-xs shrink-0 cursor-pointer transition-all shadow-xs flex items-center gap-1"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[3]" />
                 <span>Add Units</span>
               </button>
             </div>
 
-            {/* Table Header: Fullname | Shortname */}
-            <div className="px-4 py-2 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between text-[11px] font-bold text-slate-600">
-              <span>FULLNAME</span>
-              <span>SHORTNAME</span>
-            </div>
-
-            <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
-              {filteredUnits.map((u) => {
-                const isSelected = selectedUnitName.toUpperCase() === u.fullname.toUpperCase();
-                return (
-                  <div
-                    key={u.fullname}
-                    onClick={() => setSelectedUnitName(u.fullname)}
-                    className={`px-4 py-3 flex items-center justify-between cursor-pointer transition-colors ${
-                      isSelected
-                        ? 'bg-sky-50 text-blue-900 font-bold border-l-4 border-blue-600'
-                        : 'hover:bg-slate-50 text-slate-800'
-                    }`}
-                  >
-                    <span className="text-xs font-semibold">{u.fullname}</span>
-                    <span className="text-xs font-mono text-slate-600">{u.shortname}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Right Main Pane: Unit Conversions */}
-          <div className="flex-1 flex flex-col bg-white overflow-hidden h-full">
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-              <div>
-                <h2 className="text-base font-bold text-slate-900 uppercase tracking-tight">{selectedUnitName}</h2>
-                <p className="text-xs text-slate-500">Unit of Measurement & Conversion rules</p>
+            {/* Unit Selector Card (Opens Custom Bottom Sheet Picker) */}
+            <div
+              onClick={() => setIsUnitPickerOpen(true)}
+              className="bg-white rounded-2xl border border-slate-200/90 p-3 shadow-2xs flex items-center justify-between gap-3 cursor-pointer hover:border-indigo-300 hover:shadow-xs active:scale-[0.99] transition-all"
+            >
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100 shadow-2xs">
+                  <Scale className="w-4 h-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                    Unit ({filteredUnits.length})
+                  </span>
+                  <span className="text-xs sm:text-sm font-bold text-slate-900 truncate block">
+                    {selectedUnitName}
+                  </span>
+                </div>
               </div>
+              <div className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/70 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-colors border border-slate-200/60 shrink-0">
+                <span>Select</span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
+              </div>
+            </div>
 
+            {/* Selected Unit Card */}
+            <div className="p-4 bg-white rounded-2xl border border-slate-200/90 shadow-2xs flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <h2 className="text-sm font-bold text-slate-900 uppercase tracking-tight truncate">
+                  {selectedUnitName}
+                </h2>
+                <p className="text-[11px] text-slate-500">Unit of Measurement & Conversion rules</p>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsAddConversionOpen(true)}
-                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-xs cursor-pointer"
+                className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-xs font-bold shadow-xs cursor-pointer shrink-0 transition-all"
               >
                 Add Conversion
               </button>
             </div>
 
-            <div className="px-6 py-2.5 border-b border-slate-100 bg-slate-50/50">
-              <span className="text-xs font-bold text-slate-700 uppercase">CONVERSION RULES</span>
-            </div>
+            {/* Conversion Rules (Div-based Cards, No Tables) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  CONVERSION RULES ({selectedUnitConversions.length})
+                </span>
+              </div>
 
-            <div className="flex-1 overflow-y-auto">
               {selectedUnitConversions.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center p-12 text-center my-auto">
-                  <Scale className="w-12 h-12 text-slate-300 mb-2" />
-                  <h4 className="text-sm font-bold text-slate-700">No Rows To Show</h4>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Click "Add Conversion" to define e.g. 1 {selectedUnitName} = 12 PIECES.
+                <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 space-y-2">
+                  <Scale className="w-10 h-10 text-slate-300 mx-auto" />
+                  <h4 className="text-xs font-bold text-slate-700">No Rows To Show</h4>
+                  <p className="text-[11px] text-slate-400">
+                    Tap "Add Conversion" to define e.g. 1 {selectedUnitName} = 12 PIECES.
                   </p>
                 </div>
               ) : (
-                <div className="divide-y divide-slate-100 p-6">
-                  {selectedUnitConversions.map((conv, idx) => (
-                    <div
-                      key={idx}
-                      className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs flex justify-between items-center"
+                selectedUnitConversions.map((conv, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3.5 bg-white rounded-2xl border border-slate-200/90 shadow-2xs text-xs flex justify-between items-center select-text"
+                  >
+                    <span className="font-bold text-slate-800">
+                      1 {conv.baseUnit} = {conv.rate} {conv.secondaryUnit}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRemoveConfirmConfig({
+                          isOpen: true,
+                          title: 'Remove Conversion Rule?',
+                          description: `Are you sure you want to remove the conversion rule: 1 ${conv.baseUnit} = ${conv.rate} ${conv.secondaryUnit}?`,
+                          actionText: 'Yes, Remove',
+                          onConfirm: () => {
+                            const filtered = unitConversions.filter((c) => c !== conv);
+                            setUnitConversions(filtered);
+                            localStorage.setItem('bizmanage_unit_conversions', JSON.stringify(filtered));
+                            toast.success('Conversion rule removed');
+                            setRemoveConfirmConfig(null);
+                          },
+                        });
+                      }}
+                      className="px-2.5 py-1 rounded-lg text-rose-600 bg-rose-50 hover:bg-rose-100 transition-colors text-[11px] font-bold cursor-pointer"
                     >
-                      <span className="font-bold text-slate-800">
-                        1 {conv.baseUnit} = {conv.rate} {conv.secondaryUnit}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const filtered = unitConversions.filter((c) => c !== conv);
-                          setUnitConversions(filtered);
-                          localStorage.setItem('bizmanage_unit_conversions', JSON.stringify(filtered));
-                          toast.success('Conversion rule removed');
-                        }}
-                        className="text-rose-600 text-xs hover:underline cursor-pointer"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                      Remove
+                    </button>
+                  </div>
+                ))
               )}
             </div>
           </div>
-        </div>
+
+          {/* DESKTOP SPLIT VIEW (>= md) */}
+          <div className="hidden md:flex bg-white rounded-2xl border border-slate-200/90 shadow-xs flex-col md:flex-row overflow-hidden h-[calc(100vh-130px)] max-h-[calc(100vh-130px)]">
+            {/* Left Directory Pane: Units */}
+            <div className="w-full md:w-80 lg:w-88 shrink-0 border-r border-slate-200 flex flex-col bg-white h-full overflow-hidden">
+              <div className="p-3 border-b border-slate-100 flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search Units..."
+                    value={unitSearch}
+                    onChange={(e) => setUnitSearch(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs focus:bg-white focus:outline-none"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAddUnitOpen(true)}
+                  className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-xs flex items-center gap-1 cursor-pointer shrink-0"
+                >
+                  <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                  <span>Add Units</span>
+                </button>
+              </div>
+
+              {/* Table Header: Fullname | Shortname */}
+              <div className="px-4 py-2 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between text-[11px] font-bold text-slate-600">
+                <span>FULLNAME</span>
+                <span>SHORTNAME</span>
+              </div>
+
+              <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
+                {filteredUnits.map((u) => {
+                  const isSelected = selectedUnitName.toUpperCase() === u.fullname.toUpperCase();
+                  return (
+                    <div
+                      key={u.fullname}
+                      onClick={() => setSelectedUnitName(u.fullname)}
+                      className={`px-4 py-3 flex items-center justify-between cursor-pointer transition-colors ${
+                        isSelected
+                          ? 'bg-sky-50 text-blue-900 font-bold border-l-4 border-blue-600'
+                          : 'hover:bg-slate-50 text-slate-800'
+                      }`}
+                    >
+                      <span className="text-xs font-semibold">{u.fullname}</span>
+                      <span className="text-xs font-mono text-slate-600">{u.shortname}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Right Main Pane: Unit Conversions */}
+            <div className="flex-1 flex flex-col bg-white overflow-hidden h-full">
+              <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 uppercase tracking-tight">{selectedUnitName}</h2>
+                  <p className="text-xs text-slate-500">Unit of Measurement & Conversion rules</p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsAddConversionOpen(true)}
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-xs cursor-pointer"
+                >
+                  Add Conversion
+                </button>
+              </div>
+
+              <div className="px-6 py-2.5 border-b border-slate-100 bg-slate-50/50">
+                <span className="text-xs font-bold text-slate-700 uppercase">CONVERSION RULES</span>
+              </div>
+
+              <div className="flex-1 overflow-y-auto">
+                {selectedUnitConversions.length === 0 ? (
+                  <div className="flex-1 flex flex-col items-center justify-center p-12 text-center my-auto">
+                    <Scale className="w-12 h-12 text-slate-300 mb-2" />
+                    <h4 className="text-sm font-bold text-slate-700">No Rows To Show</h4>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Click "Add Conversion" to define e.g. 1 {selectedUnitName} = 12 PIECES.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100 p-6">
+                    {selectedUnitConversions.map((conv, idx) => (
+                      <div
+                        key={idx}
+                        className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs flex justify-between items-center"
+                      >
+                        <span className="font-bold text-slate-800">
+                          1 {conv.baseUnit} = {conv.rate} {conv.secondaryUnit}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRemoveConfirmConfig({
+                              isOpen: true,
+                              title: 'Remove Conversion Rule?',
+                              description: `Are you sure you want to remove the conversion rule: 1 ${conv.baseUnit} = ${conv.rate} ${conv.secondaryUnit}?`,
+                              actionText: 'Yes, Remove',
+                              onConfirm: () => {
+                                const filtered = unitConversions.filter((c) => c !== conv);
+                                setUnitConversions(filtered);
+                                localStorage.setItem('bizmanage_unit_conversions', JSON.stringify(filtered));
+                                toast.success('Conversion rule removed');
+                                setRemoveConfirmConfig(null);
+                              },
+                            });
+                          }}
+                          className="text-rose-600 text-xs hover:underline cursor-pointer"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {/* ========================================================================= */}
@@ -3286,6 +3780,20 @@ function InventoryPageContent() {
         isProcessing={deleteItem.isPending}
       />
 
+      {/* Remove Confirmation Modal */}
+      {removeConfirmConfig && (
+        <ConfirmActionModal
+          isOpen={removeConfirmConfig.isOpen}
+          onClose={() => setRemoveConfirmConfig(null)}
+          onConfirm={removeConfirmConfig.onConfirm}
+          title={removeConfirmConfig.title}
+          description={removeConfirmConfig.description}
+          actionText={removeConfirmConfig.actionText || 'Yes, Remove'}
+          isProcessing={isProcessingRemoval}
+          variant="danger"
+        />
+      )}
+
       {/* Import Inventory Modal */}
       <ImportInventoryModal
         isOpen={isImportOpen}
@@ -3339,6 +3847,315 @@ function InventoryPageContent() {
         message={`Are you sure you want to update "${pendingEditData?.name || editingItem?.name || 'this item'}"?`}
         confirmText="Yes, Save Changes"
       />
+
+      {/* Custom Mobile Bottom Sheet Pickers */}
+
+      {/* 1. Service Picker Modal */}
+      {isServicePickerOpen && (
+        <ModalPortal>
+          <div
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[130] flex items-end sm:items-center justify-center p-0 sm:p-4 font-sans animate-in fade-in duration-200"
+            onClick={() => setIsServicePickerOpen(false)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl border border-slate-200/90 shadow-2xl flex flex-col max-h-[85vh] sm:max-h-[75vh] overflow-hidden animate-in slide-in-from-bottom-6 duration-200"
+            >
+              {/* Mobile grab handle */}
+              <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto my-2.5 sm:hidden" />
+
+              {/* Header */}
+              <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-2xs">
+                    <Wrench className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">Select Service</h3>
+                    <p className="text-[10px] text-slate-400 font-medium">{filteredServices.length} available</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsServicePickerOpen(false)}
+                  className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Live Search */}
+              <div className="p-3 border-b border-slate-100 bg-slate-50/50">
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Search service by name or SAC..."
+                    value={serviceSearch}
+                    onChange={(e) => setServiceSearch(e.target.value)}
+                    className="w-full pl-8 pr-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Scrollable Items List */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-1.5 divide-y divide-slate-50">
+                {filteredServices.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-slate-400">No services match your search.</div>
+                ) : (
+                  filteredServices.map((s) => {
+                    const isSelected = selectedServiceId === s.id;
+                    return (
+                      <div
+                        key={s.id}
+                        onClick={() => {
+                          setSelectedServiceId(s.id);
+                          setIsServicePickerOpen(false);
+                        }}
+                        className={`p-3 rounded-2xl cursor-pointer transition-all flex items-center justify-between gap-3 ${
+                          isSelected
+                            ? 'bg-blue-50/90 border border-blue-200 text-blue-900 shadow-2xs font-bold'
+                            : 'hover:bg-slate-50 border border-transparent text-slate-800'
+                        }`}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <span className="text-xs font-bold truncate block">{s.name}</span>
+                          <span className="text-[11px] font-mono font-semibold text-emerald-600 block mt-0.5">
+                            Rs. {Number(s.salePrice || 0).toFixed(2)}
+                            {s.unit ? ` / ${s.unit}` : ''}
+                          </span>
+                        </div>
+                        {isSelected && (
+                          <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                            <Check className="w-3 h-3 stroke-[3]" />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Quick Add Footer */}
+              <div className="p-3 border-t border-slate-100 bg-slate-50/50">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsServicePickerOpen(false);
+                    setCreateType(ItemType.SERVICE);
+                    createForm.setValue('type', ItemType.SERVICE);
+                    setIsCreateOpen(true);
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add New Service</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+
+      {/* 2. Category Picker Modal */}
+      {isCategoryPickerOpen && (
+        <ModalPortal>
+          <div
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[130] flex items-end sm:items-center justify-center p-0 sm:p-4 font-sans animate-in fade-in duration-200"
+            onClick={() => setIsCategoryPickerOpen(false)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl border border-slate-200/90 shadow-2xl flex flex-col max-h-[85vh] sm:max-h-[75vh] overflow-hidden animate-in slide-in-from-bottom-6 duration-200"
+            >
+              {/* Mobile grab handle */}
+              <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto my-2.5 sm:hidden" />
+
+              {/* Header */}
+              <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 shadow-2xs">
+                    <Layers className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">Select Category</h3>
+                    <p className="text-[10px] text-slate-400 font-medium">{filteredCategoryDirectory.length} total categories</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCategoryPickerOpen(false)}
+                  className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Live Search */}
+              <div className="p-3 border-b border-slate-100 bg-slate-50/50">
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Search category..."
+                    value={categorySearch}
+                    onChange={(e) => setCategorySearch(e.target.value)}
+                    className="w-full pl-8 pr-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Scrollable Items List */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
+                {filteredCategoryDirectory.map((cat) => {
+                  const isSelected = selectedCategoryId === cat.id;
+                  return (
+                    <div
+                      key={cat.id}
+                      onClick={() => {
+                        setSelectedCategoryId(cat.id);
+                        setIsCategoryPickerOpen(false);
+                      }}
+                      className={`p-3 rounded-2xl cursor-pointer transition-all flex items-center justify-between gap-3 ${
+                        isSelected
+                          ? 'bg-amber-50/90 border border-amber-200 text-amber-950 shadow-2xs font-bold'
+                          : 'hover:bg-slate-50 border border-transparent text-slate-800'
+                      }`}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <span className="text-xs font-bold truncate block">{cat.name}</span>
+                        <span className="text-[11px] font-mono text-slate-500 block mt-0.5">
+                          {cat.count} {cat.count === 1 ? 'item' : 'items'}
+                        </span>
+                      </div>
+                      {isSelected && (
+                        <div className="w-5 h-5 rounded-full bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                          <Check className="w-3 h-3 stroke-[3]" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Quick Add Footer */}
+              <div className="p-3 border-t border-slate-100 bg-slate-50/50">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCategoryPickerOpen(false);
+                    setIsAddCategoryOpen(true);
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add New Category</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+
+      {/* 3. Unit Picker Modal */}
+      {isUnitPickerOpen && (
+        <ModalPortal>
+          <div
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[130] flex items-end sm:items-center justify-center p-0 sm:p-4 font-sans animate-in fade-in duration-200"
+            onClick={() => setIsUnitPickerOpen(false)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl border border-slate-200/90 shadow-2xl flex flex-col max-h-[85vh] sm:max-h-[75vh] overflow-hidden animate-in slide-in-from-bottom-6 duration-200"
+            >
+              {/* Mobile grab handle */}
+              <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto my-2.5 sm:hidden" />
+
+              {/* Header */}
+              <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-2xs">
+                    <Scale className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">Select Unit of Measurement</h3>
+                    <p className="text-[10px] text-slate-400 font-medium">{filteredUnits.length} units available</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsUnitPickerOpen(false)}
+                  className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Live Search */}
+              <div className="p-3 border-b border-slate-100 bg-slate-50/50">
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Search unit (e.g. Kg, Bags, Pcs)..."
+                    value={unitSearch}
+                    onChange={(e) => setUnitSearch(e.target.value)}
+                    className="w-full pl-8 pr-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-2xs transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Scrollable Items List */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
+                {filteredUnits.map((u) => {
+                  const isSelected = selectedUnitName.toUpperCase() === u.fullname.toUpperCase();
+                  return (
+                    <div
+                      key={u.fullname}
+                      onClick={() => {
+                        setSelectedUnitName(u.fullname);
+                        setIsUnitPickerOpen(false);
+                      }}
+                      className={`p-3 rounded-2xl cursor-pointer transition-all flex items-center justify-between gap-3 ${
+                        isSelected
+                          ? 'bg-indigo-50/90 border border-indigo-200 text-indigo-950 shadow-2xs font-bold'
+                          : 'hover:bg-slate-50 border border-transparent text-slate-800'
+                      }`}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <span className="text-xs font-bold truncate block">{u.fullname}</span>
+                        <span className="text-[11px] font-mono text-slate-500 block mt-0.5">
+                          Symbol: {u.shortname}
+                        </span>
+                      </div>
+                      {isSelected && (
+                        <div className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                          <Check className="w-3 h-3 stroke-[3]" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Quick Add Footer */}
+              <div className="p-3 border-t border-slate-100 bg-slate-50/50">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsUnitPickerOpen(false);
+                    setIsAddUnitOpen(true);
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Custom Unit</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
 
       {/* Long-Press Action Sheet (Mobile) */}
       <LongPressActionSheet
