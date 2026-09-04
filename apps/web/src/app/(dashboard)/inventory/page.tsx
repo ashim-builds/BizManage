@@ -68,6 +68,7 @@ import {
   Square,
   FolderInput,
   Check,
+  AlertTriangle,
 } from 'lucide-react';
 
 const DEFAULT_UNITS = [
@@ -124,11 +125,27 @@ function InventoryPageContent() {
 
   // Search & Filtering
   const [productSearch, setProductSearch] = useState('');
+  const [stockFilter, setStockFilter] = useState<'ALL' | 'LOW' | 'OUT_OF_STOCK' | 'IN_STOCK'>('ALL');
   const [serviceSearch, setServiceSearch] = useState('');
   const [categorySearch, setCategorySearch] = useState('');
   const [unitSearch, setUnitSearch] = useState('');
   const [txSearch, setTxSearch] = useState('');
   const [txTypeFilter, setTxTypeFilter] = useState<'ALL' | 'SELL' | 'BUY' | 'STOCK'>('ALL');
+
+  // Sync with searchParams ?filter=low_stock / ?stock=low
+  useEffect(() => {
+    const filterParam = searchParams.get('filter') || searchParams.get('stock');
+    if (filterParam === 'low_stock' || filterParam === 'low') {
+      setStockFilter('LOW');
+      setActiveTab('products');
+    } else if (filterParam === 'out_of_stock' || filterParam === 'zero') {
+      setStockFilter('OUT_OF_STOCK');
+      setActiveTab('products');
+    } else if (filterParam === 'in_stock') {
+      setStockFilter('IN_STOCK');
+      setActiveTab('products');
+    }
+  }, [searchParams]);
 
   // Selected entities for split view
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -240,17 +257,49 @@ function InventoryPageContent() {
     return rawItems.filter((i) => i.type === ItemType.SERVICE);
   }, [rawItems]);
 
+  // Stock count metrics
+  const lowStockCount = useMemo(() => {
+    return products.filter((p) => {
+      const stock = Number(p.currentStock || 0);
+      const minAlert = Number(p.minStockAlert || 0);
+      return stock <= 0 || (minAlert > 0 && stock <= minAlert);
+    }).length;
+  }, [products]);
+
+  const outOfStockCount = useMemo(() => {
+    return products.filter((p) => Number(p.currentStock || 0) <= 0).length;
+  }, [products]);
+
   // Filtered Products
   const filteredProducts = useMemo(() => {
-    if (!productSearch.trim()) return products;
+    let list = products;
+
+    // Apply stock status filter
+    if (stockFilter === 'LOW') {
+      list = list.filter((p) => {
+        const stock = Number(p.currentStock || 0);
+        const minAlert = Number(p.minStockAlert || 0);
+        return stock <= 0 || (minAlert > 0 && stock <= minAlert);
+      });
+    } else if (stockFilter === 'OUT_OF_STOCK') {
+      list = list.filter((p) => Number(p.currentStock || 0) <= 0);
+    } else if (stockFilter === 'IN_STOCK') {
+      list = list.filter((p) => {
+        const stock = Number(p.currentStock || 0);
+        const minAlert = Number(p.minStockAlert || 0);
+        return stock > 0 && (minAlert === 0 || stock > minAlert);
+      });
+    }
+
+    if (!productSearch.trim()) return list;
     const q = productSearch.toLowerCase();
-    return products.filter(
+    return list.filter(
       (p) =>
         p.name.toLowerCase().includes(q) ||
         (p.code && p.code.toLowerCase().includes(q)) ||
         (p.category?.name && p.category.name.toLowerCase().includes(q))
     );
-  }, [products, productSearch]);
+  }, [products, productSearch, stockFilter]);
 
   // Filtered Services
   const filteredServices = useMemo(() => {
@@ -902,17 +951,81 @@ function InventoryPageContent() {
               />
             </div>
 
+            {/* Stock Level Filter Pills (Mobile) */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] font-bold">
+              <button
+                type="button"
+                onClick={() => setStockFilter('ALL')}
+                className={`px-3 py-1.5 rounded-xl transition-all shrink-0 cursor-pointer ${
+                  stockFilter === 'ALL'
+                    ? 'bg-slate-900 text-white shadow-2xs'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                All Items ({products.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStockFilter('LOW')}
+                className={`px-3 py-1.5 rounded-xl transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                  stockFilter === 'LOW'
+                    ? 'bg-amber-600 text-white shadow-2xs'
+                    : 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
+                }`}
+              >
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                <span>Low Stock</span>
+                {lowStockCount > 0 && (
+                  <span className={`px-1.5 py-0.2 rounded-full text-[9px] ${stockFilter === 'LOW' ? 'bg-white/25 text-white' : 'bg-amber-200 text-amber-900'}`}>
+                    {lowStockCount}
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setStockFilter('OUT_OF_STOCK')}
+                className={`px-3 py-1.5 rounded-xl transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                  stockFilter === 'OUT_OF_STOCK'
+                    ? 'bg-rose-600 text-white shadow-2xs'
+                    : 'bg-rose-50 text-rose-800 border border-rose-200 hover:bg-rose-100'
+                }`}
+              >
+                <span>Out of Stock</span>
+                {outOfStockCount > 0 && (
+                  <span className={`px-1.5 py-0.2 rounded-full text-[9px] ${stockFilter === 'OUT_OF_STOCK' ? 'bg-white/25 text-white' : 'bg-rose-200 text-rose-900'}`}>
+                    {outOfStockCount}
+                  </span>
+                )}
+              </button>
+            </div>
+
             {/* Products List Cards */}
             {filteredProducts.length === 0 ? (
               <div className="p-8 text-center bg-white rounded-3xl border border-slate-200/80 shadow-xs space-y-3">
                 <Package className="w-10 h-10 text-slate-300 mx-auto" />
-                <p className="text-xs text-slate-500 font-medium">No items found.</p>
-                <Link
-                  href="/inventory/new"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs shadow-md shadow-blue-600/20 active:scale-95 transition-all"
-                >
-                  <Plus className="w-4 h-4" /> Add New Item
-                </Link>
+                <p className="text-xs text-slate-500 font-medium">
+                  {stockFilter === 'LOW'
+                    ? 'No low stock items found. All items are well stocked!'
+                    : stockFilter === 'OUT_OF_STOCK'
+                    ? 'No out of stock items found.'
+                    : 'No items found.'}
+                </p>
+                {stockFilter !== 'ALL' ? (
+                  <button
+                    type="button"
+                    onClick={() => setStockFilter('ALL')}
+                    className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs hover:bg-slate-200 transition"
+                  >
+                    View All Items
+                  </button>
+                ) : (
+                  <Link
+                    href="/inventory/new"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs shadow-md shadow-blue-600/20 active:scale-95 transition-all"
+                  >
+                    <Plus className="w-4 h-4" /> Add New Item
+                  </Link>
+                )}
               </div>
             ) : (
               <div className="space-y-3">
@@ -966,6 +1079,44 @@ function InventoryPageContent() {
                   <Plus className="w-3.5 h-3.5 stroke-[3]" />
                   <span>Add Item</span>
                 </Link>
+              </div>
+
+              {/* Stock Filter Pills (Desktop) */}
+              <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5 overflow-x-auto bg-slate-50/60 text-[10px] font-bold">
+                <button
+                  type="button"
+                  onClick={() => setStockFilter('ALL')}
+                  className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                    stockFilter === 'ALL'
+                      ? 'bg-white text-slate-900 shadow-2xs font-black'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  All ({products.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStockFilter('LOW')}
+                  className={`px-2 py-0.5 rounded-md transition-all cursor-pointer flex items-center gap-1 ${
+                    stockFilter === 'LOW'
+                      ? 'bg-amber-600 text-white shadow-2xs font-black'
+                      : 'text-amber-800 bg-amber-50 border border-amber-200 hover:bg-amber-100'
+                  }`}
+                >
+                  <AlertTriangle className="w-2.5 h-2.5 text-amber-600" />
+                  <span>Low Stock ({lowStockCount})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStockFilter('OUT_OF_STOCK')}
+                  className={`px-2 py-0.5 rounded-md transition-all cursor-pointer flex items-center gap-1 ${
+                    stockFilter === 'OUT_OF_STOCK'
+                      ? 'bg-rose-600 text-white shadow-2xs font-black'
+                      : 'text-rose-800 bg-rose-50 border border-rose-200 hover:bg-rose-100'
+                  }`}
+                >
+                  <span>Out ({outOfStockCount})</span>
+                </button>
               </div>
 
               {/* Table Header: Item & Quantity */}

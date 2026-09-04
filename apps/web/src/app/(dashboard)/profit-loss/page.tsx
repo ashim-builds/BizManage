@@ -23,7 +23,12 @@ export default function ProfitLossPage() {
   const [endDate, setEndDate] = useState('');
   const [preset, setPreset] = useState<'all' | 'today' | 'week' | 'month' | 'custom'>('all');
 
-  const { data: metrics, isLoading, isError, refetch } = useDashboardMetrics({
+  const {
+    data: metrics,
+    isLoading,
+    isError,
+    refetch,
+  } = useDashboardMetrics({
     startDate: startDate || undefined,
     endDate: endDate || undefined,
   });
@@ -78,9 +83,7 @@ export default function ProfitLossPage() {
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-bold text-white">
-                Profit & Loss Statement
-              </h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-black-500">Profit & Loss Statement</h1>
               <span
                 className={`px-2 py-0.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider border ${
                   isProfitable

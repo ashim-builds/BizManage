@@ -270,7 +270,7 @@ export default function ExecutiveDashboardPage() {
 
         {/* Low Stock Alert (Amber Alert) */}
         <Link
-          href="/inventory"
+          href="/inventory?filter=low_stock"
           className="p-4 sm:p-4.5 rounded-2xl bg-white border border-amber-200/90 shadow-xs hover:border-amber-400 hover:shadow-sm transition-all group relative overflow-hidden"
         >
           <div className="flex items-center justify-between">
@@ -542,7 +542,7 @@ export default function ExecutiveDashboardPage() {
                   </h3>
                 </div>
               </div>
-              <Link href="/inventory" className="text-xs font-bold text-amber-700 hover:text-amber-900 hover:underline">
+              <Link href="/inventory?filter=low_stock" className="text-xs font-bold text-amber-700 hover:text-amber-900 hover:underline">
                 View All
               </Link>
             </div>
