@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Search, Package, X, ChevronDown, Tag, QrCode, Plus, Camera } from 'lucide-react';
+import { Search, Package, X, ChevronDown, Tag, QrCode, Plus, Camera, AlertCircle } from 'lucide-react';
 import { CameraScannerModal } from '@/components/common/CameraScannerModal';
+import { toast } from 'react-hot-toast';
 
 export interface SelectableItem {
   id: string;
@@ -23,6 +24,7 @@ interface ItemSearchSelectProps {
   onChange: (itemId: string) => void;
   placeholder?: string;
   priceField?: 'salePrice' | 'purchasePrice';
+  disableOutOfStock?: boolean;
   className?: string;
   onCreateNewItem?: (initialName?: string) => void;
 }
@@ -33,6 +35,7 @@ export function ItemSearchSelect({
   onChange,
   placeholder = 'Search product or scan barcode (SKU)…',
   priceField = 'salePrice',
+  disableOutOfStock,
   className = '',
   onCreateNewItem,
 }: ItemSearchSelectProps) {
@@ -43,6 +46,8 @@ export function ItemSearchSelect({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const shouldBlockOutOfStock = disableOutOfStock !== undefined ? disableOutOfStock : priceField === 'salePrice';
 
   const safeItems = useMemo(() => (Array.isArray(items) ? items : []), [items]);
   const selectedItem = useMemo(
@@ -135,11 +140,20 @@ export function ItemSearchSelect({
 
   const select = useCallback(
     (id: string) => {
+      const targetItem = safeItems.find((i) => i.id === id);
+      if (targetItem && shouldBlockOutOfStock && targetItem.type !== 'SERVICE') {
+        const stock = Number(targetItem.currentStock ?? 0);
+        if (stock <= 0) {
+          toast.error(`"${targetItem.name}" is Out of Stock (0 ${targetItem.unit}). Cannot select.`);
+          return;
+        }
+      }
+
       onChange(id);
       setOpen(false);
       setQuery('');
     },
-    [onChange]
+    [onChange, safeItems, shouldBlockOutOfStock]
   );
 
   const clear = useCallback(
@@ -177,9 +191,9 @@ export function ItemSearchSelect({
   const stockColor = (item: SelectableItem) => {
     const stock = Number(item.currentStock ?? 0);
     const min = Number(item.minStockAlert ?? 0);
-    if (stock <= 0) return 'text-rose-400 bg-rose-500/10 border-rose-500/20';
-    if (stock <= min) return 'text-amber-400 bg-amber-500/10 border-amber-500/20';
-    return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+    if (stock <= 0) return 'text-rose-500 bg-rose-50 border-rose-200';
+    if (stock <= min) return 'text-amber-500 bg-amber-50 border-amber-200';
+    return 'text-emerald-600 bg-emerald-50 border-emerald-200';
   };
 
   const handleCameraScan = (scannedText: string) => {
@@ -338,6 +352,8 @@ export function ItemSearchSelect({
                 const price = Number(priceField === 'salePrice' ? item.salePrice : item.purchasePrice);
                 const isSelected = item.id === value;
                 const isService = item.type === 'SERVICE';
+                const isOutOfStock = !isService && stock <= 0;
+                const isBlocked = isOutOfStock && shouldBlockOutOfStock;
 
                 return (
                   <button
@@ -350,20 +366,32 @@ export function ItemSearchSelect({
                     className={[
                       'w-full text-left px-3.5 py-2.5 flex items-center justify-between gap-3',
                       'transition-colors',
-                      idx === highlighted ? 'bg-blue-50/80' : 'hover:bg-slate-50',
+                      isBlocked
+                        ? 'opacity-50 bg-slate-50/70 hover:bg-rose-50/40 cursor-not-allowed'
+                        : idx === highlighted
+                        ? 'bg-blue-50/80'
+                        : 'hover:bg-slate-50',
                       isSelected ? 'bg-blue-50 border-l-[3px] border-l-blue-600 pl-3 font-semibold' : '',
                     ].join(' ')}
                   >
                     {/* Name + details */}
                     <div className="flex items-start gap-2.5 min-w-0 flex-1">
                       <Package
-                        className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isSelected ? 'text-blue-600' : 'text-slate-400'}`}
+                        className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                          isBlocked ? 'text-slate-300' : isSelected ? 'text-blue-600' : 'text-slate-400'
+                        }`}
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <p
                             title={item.name}
-                            className={`text-xs font-semibold break-words leading-snug ${isSelected ? 'text-blue-700 font-bold' : 'text-slate-800'}`}
+                            className={`text-xs font-semibold break-words leading-snug ${
+                              isBlocked
+                                ? 'text-slate-500 line-through'
+                                : isSelected
+                                ? 'text-blue-700 font-bold'
+                                : 'text-slate-800'
+                            }`}
                           >
                             {item.name}
                           </p>
@@ -396,7 +424,11 @@ export function ItemSearchSelect({
                         <span
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${stockColor(item)}`}
                         >
-                          {stock <= 0 ? 'Out of stock' : `Stock: ${stock} ${item.unit}`}
+                          {stock <= 0
+                            ? shouldBlockOutOfStock
+                              ? 'Out of Stock (Disabled)'
+                              : 'Out of Stock'
+                            : `Stock: ${stock} ${item.unit}`}
                         </span>
                       ) : (
                         <span className="text-[10px] text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-md font-semibold">
@@ -412,11 +444,11 @@ export function ItemSearchSelect({
 
           {/* Footer stats */}
           {safeItems.length > 0 && (
-            <div className="px-3.5 py-1.5 border-t border-slate-800 flex-shrink-0 flex items-center justify-between bg-slate-900 text-[10px] text-slate-500">
+            <div className="px-3.5 py-1.5 border-t border-slate-200 flex-shrink-0 flex items-center justify-between bg-slate-50 text-[10px] text-slate-500">
               <span>
                 Showing {filtered.length} of {safeItems.length} products
               </span>
-              <span className="hidden sm:inline text-slate-600">
+              <span className="hidden sm:inline text-slate-400">
                 ↑↓ Navigate · Enter Select · Esc Close
               </span>
             </div>

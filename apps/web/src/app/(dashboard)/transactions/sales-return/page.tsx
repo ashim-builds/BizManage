@@ -295,21 +295,92 @@ export default function SalesReturnPage() {
         </button>
       </div>
 
-      {/* Summary Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-xs">
-          <p className="text-xs text-slate-500 uppercase font-bold">Total Credit Notes Issued</p>
-          <p className="text-2xl font-bold text-slate-900 font-mono mt-1">{returnsList.length}</p>
+      {/* Summary Stats Cards: 1+2 Layout on Mobile (Hero + 2 Grid), 3-Column on Desktop */}
+      {/* Mobile View (< md) */}
+      <div className="space-y-2 md:hidden">
+        {/* Top Hero: Total Return Value */}
+        <div className="bg-indigo-50/80 border border-indigo-200/90 rounded-2xl p-3 sm:p-3.5 flex items-center justify-between shadow-2xs">
+          <div className="min-w-0 pr-2">
+            <p className="text-[11px] font-bold text-indigo-700 uppercase tracking-wide">Total Return Value</p>
+            <p className="text-base font-black font-mono text-slate-900 mt-0.5 whitespace-nowrap">
+              Rs. {totalReturnAmount.toLocaleString()}
+            </p>
+            <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+              {returnsList.length} Credit notes issued
+            </p>
+          </div>
+          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+            <RotateCcw className="w-4 h-4 stroke-[2.5]" />
+          </div>
         </div>
-        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-xs">
-          <p className="text-xs text-slate-500 uppercase font-bold">Total Return Value</p>
-          <p className="text-2xl font-bold text-indigo-600 font-mono mt-1">Rs. {totalReturnAmount.toLocaleString()}</p>
+
+        {/* Breakdown Row (2 Columns): Total Credit Notes + Restored Items */}
+        <div className="grid grid-cols-2 gap-2">
+          {/* Total Notes */}
+          <div className="bg-blue-50/70 border border-blue-200/80 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between shadow-2xs">
+            <div className="min-w-0 pr-1">
+              <p className="text-[11px] font-bold text-blue-700 truncate">Total Notes</p>
+              <p className="text-sm font-black font-mono text-slate-900 mt-0.5 whitespace-nowrap">
+                {returnsList.length}
+              </p>
+              <p className="text-[9px] text-blue-600/80 font-semibold mt-0.5 truncate">Credit Notes</p>
+            </div>
+            <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+              <FileText className="w-4 h-4 stroke-[2.5]" />
+            </div>
+          </div>
+
+          {/* Restored Items */}
+          <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between shadow-2xs">
+            <div className="min-w-0 pr-1">
+              <p className="text-[11px] font-bold text-emerald-700 truncate">Stock Restored</p>
+              <p className="text-sm font-black font-mono text-emerald-700 mt-0.5 whitespace-nowrap">
+                {returnsList.reduce((acc, r) => acc + (r.items?.length || 0), 0)}
+              </p>
+              <p className="text-[9px] text-emerald-600/80 font-semibold mt-0.5 truncate">Items</p>
+            </div>
+            <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+              <ShoppingBag className="w-4 h-4 stroke-[2.5]" />
+            </div>
+          </div>
         </div>
-        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-xs">
-          <p className="text-xs text-slate-500 uppercase font-bold">Inventory Restored</p>
-          <p className="text-2xl font-bold text-emerald-600 font-mono mt-1">
-            {returnsList.reduce((acc, r) => acc + (r.items?.length || 0), 0)} line items
-          </p>
+      </div>
+
+      {/* Desktop View (>= md): 3 Full Width Cards */}
+      <div className="hidden md:grid md:grid-cols-3 gap-4 lg:gap-6">
+        <div className="p-5 lg:p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Credit Notes Issued</p>
+            <h3 className="text-2xl font-black text-slate-900 mt-1 font-mono">{returnsList.length}</h3>
+            <p className="text-[11px] text-slate-400 mt-1">Customer returns recorded</p>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-xs">
+            <FileText className="w-6 h-6" />
+          </div>
+        </div>
+
+        <div className="p-5 lg:p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Return Value</p>
+            <h3 className="text-2xl font-black text-indigo-600 mt-1 font-mono">Rs. {totalReturnAmount.toLocaleString()}</h3>
+            <p className="text-[11px] text-indigo-600/80 mt-1 font-medium">Refunds & ledger adjustments</p>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-xs">
+            <RotateCcw className="w-6 h-6" />
+          </div>
+        </div>
+
+        <div className="p-5 lg:p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Inventory Restored</p>
+            <h3 className="text-2xl font-black text-emerald-600 mt-1 font-mono">
+              {returnsList.reduce((acc, r) => acc + (r.items?.length || 0), 0)} line items
+            </h3>
+            <p className="text-[11px] text-slate-400 mt-1">Added back to stock</p>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-xs">
+            <ShoppingBag className="w-6 h-6" />
+          </div>
         </div>
       </div>
 

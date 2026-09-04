@@ -34,6 +34,8 @@ import {
   Wallet,
   Tag,
   X,
+  Clock,
+  TrendingDown,
 } from 'lucide-react';
 
 export default function ExpensesPage() {
@@ -199,27 +201,96 @@ export default function ExpensesPage() {
         </button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-xs">
-          <p className="text-xs text-slate-500 uppercase font-bold">Total Expenses Logged</p>
-          <p className="text-2xl font-bold text-slate-900 font-mono mt-1">
-            {summaryLoading ? '...' : (summary?.totalExpensesCount || 0).toLocaleString()}
-          </p>
+      {/* Summary Cards: 1+2 Layout on Mobile (Hero + 2 Grid), 3-Column on Desktop */}
+      {/* Mobile View (< md): All 3 metrics cleanly presented without truncation */}
+      <div className="space-y-2 md:hidden">
+        {/* Top Hero: Total Expense Amount */}
+        <div className="bg-rose-50/80 border border-rose-200/90 rounded-2xl p-3 sm:p-3.5 flex items-center justify-between shadow-2xs">
+          <div className="min-w-0 pr-2">
+            <p className="text-[11px] font-bold text-rose-700 uppercase tracking-wide">Total Expense Amount</p>
+            <p className="text-base font-black font-mono text-slate-900 mt-0.5 whitespace-nowrap">
+              Rs. {summaryLoading ? '...' : (summary?.totalExpensesAmount || 0).toLocaleString()}
+            </p>
+            <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+              {summary?.totalExpensesCount || 0} Expenses recorded
+            </p>
+          </div>
+          <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+            <TrendingDown className="w-4 h-4 stroke-[2.5]" />
+          </div>
         </div>
 
-        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-xs">
-          <p className="text-xs text-slate-500 uppercase font-bold">Total Expense Amount</p>
-          <p className="text-2xl font-bold text-rose-600 font-mono mt-1">
-            {summaryLoading ? '...' : `Rs. ${(summary?.totalExpensesAmount || 0).toLocaleString()}`}
-          </p>
+        {/* Breakdown Row (2 Columns): Total Logged + Today's Expenses */}
+        <div className="grid grid-cols-2 gap-2">
+          {/* Total Logged */}
+          <div className="bg-blue-50/70 border border-blue-200/80 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between shadow-2xs">
+            <div className="min-w-0 pr-1">
+              <p className="text-[11px] font-bold text-blue-700 truncate">Total Logged</p>
+              <p className="text-sm font-black font-mono text-slate-900 mt-0.5 whitespace-nowrap">
+                {summaryLoading ? '...' : (summary?.totalExpensesCount || 0).toLocaleString()}
+              </p>
+              <p className="text-[9px] text-blue-600/80 font-semibold mt-0.5 truncate">Entries</p>
+            </div>
+            <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+              <Receipt className="w-4 h-4 stroke-[2.5]" />
+            </div>
+          </div>
+
+          {/* Today's Expenses */}
+          <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between shadow-2xs">
+            <div className="min-w-0 pr-1">
+              <p className="text-[11px] font-bold text-amber-700 truncate">Today's Expenses</p>
+              <p className="text-sm font-black font-mono text-amber-700 mt-0.5 whitespace-nowrap">
+                Rs. {summaryLoading ? '...' : (summary?.todayExpensesAmount || 0).toLocaleString()}
+              </p>
+              <p className="text-[9px] text-amber-700/80 font-semibold mt-0.5 truncate">Today</p>
+            </div>
+            <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+              <Clock className="w-4 h-4 stroke-[2.5]" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop View (>= md): 3 Full Width Cards */}
+      <div className="hidden md:grid md:grid-cols-3 gap-4 lg:gap-6">
+        <div className="p-5 lg:p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Expenses Logged</p>
+            <h3 className="text-2xl font-black text-slate-900 mt-1 font-mono">
+              {summaryLoading ? '...' : (summary?.totalExpensesCount || 0).toLocaleString()}
+            </h3>
+            <p className="text-[11px] text-slate-400 mt-1">Operating expense vouchers</p>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-xs">
+            <Receipt className="w-6 h-6" />
+          </div>
         </div>
 
-        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-xs">
-          <p className="text-xs text-slate-500 uppercase font-bold">Today's Expenses</p>
-          <p className="text-2xl font-bold text-amber-600 font-mono mt-1">
-            {summaryLoading ? '...' : `Rs. ${(summary?.todayExpensesAmount || 0).toLocaleString()}`}
-          </p>
+        <div className="p-5 lg:p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Expense Amount</p>
+            <h3 className="text-2xl font-black text-rose-600 mt-1 font-mono">
+              Rs. {summaryLoading ? '...' : (summary?.totalExpensesAmount || 0).toLocaleString()}
+            </h3>
+            <p className="text-[11px] text-slate-400 mt-1">Cumulative operational outflow</p>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100 shadow-xs">
+            <TrendingDown className="w-6 h-6" />
+          </div>
+        </div>
+
+        <div className="p-5 lg:p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Expenses</p>
+            <h3 className="text-2xl font-black text-amber-600 mt-1 font-mono">
+              Rs. {summaryLoading ? '...' : (summary?.todayExpensesAmount || 0).toLocaleString()}
+            </h3>
+            <p className="text-[11px] text-slate-400 mt-1">Expenses paid today</p>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 shadow-xs">
+            <Clock className="w-6 h-6" />
+          </div>
         </div>
       </div>
 

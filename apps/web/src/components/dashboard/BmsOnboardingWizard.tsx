@@ -163,7 +163,7 @@ export function BmsOnboardingWizard({
                     <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold inline-flex items-center gap-1">
                       <Check className="w-3.5 h-3.5" /> Done
                     </span>
-                  ) : step.requiredFeature && !userFeatures.includes(step.requiredFeature) ? (
+                  ) : !hasSubscription && step.requiredFeature && !userFeatures.includes(step.requiredFeature) ? (
                     <Link
                       href="/subscription"
                       className="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-slate-800/80 hover:bg-slate-700 text-amber-500 border border-amber-500/30"

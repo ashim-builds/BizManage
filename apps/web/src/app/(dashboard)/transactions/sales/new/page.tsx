@@ -167,7 +167,17 @@ export default function NewSalesInvoicePage() {
   // Item select handler for desktop & mobile
   const handleItemSelect = useCallback((index: number, itemId: string) => {
     const selected = availableItems.find((i: any) => i.id === itemId);
-    if (!selected) return;
+    if (!selected) {
+      form.setValue(`items.${index}.itemId`, '', { shouldValidate: true, shouldDirty: true });
+      return;
+    }
+    const isService = selected.type === 'SERVICE';
+    const stock = Number(selected.currentStock ?? 0);
+    if (!isService && stock <= 0) {
+      toast.error(`"${selected.name}" is Out of Stock (0 ${selected.unit}). Cannot select.`);
+      form.setValue(`items.${index}.itemId`, '', { shouldValidate: true, shouldDirty: true });
+      return;
+    }
     form.setValue(`items.${index}.itemId`, itemId, { shouldValidate: true, shouldDirty: true });
     form.setValue(`items.${index}.unitPrice`, Number(selected.salePrice || 0), { shouldValidate: true, shouldDirty: true });
     form.setValue(`items.${index}.quantity`, 1, { shouldValidate: true, shouldDirty: true });
@@ -177,6 +187,12 @@ export default function NewSalesInvoicePage() {
 
   // Add Item From Mobile Modal
   const handleAddMobileItem = (item: any) => {
+    const isService = item.type === 'SERVICE';
+    const stock = Number(item.currentStock ?? 0);
+    if (!isService && stock <= 0) {
+      toast.error(`"${item.name}" is Out of Stock (0 ${item.unit}). Cannot select.`);
+      return;
+    }
     const firstItem = form.getValues('items.0');
     if (fields.length === 1 && (!firstItem || !firstItem.itemId)) {
       form.setValue('items.0.itemId', item.id, { shouldValidate: true, shouldDirty: true });
@@ -208,6 +224,23 @@ export default function NewSalesInvoicePage() {
     if (validItems.length === 0) {
       toast.error('Please add at least one product item to the invoice.');
       return;
+    }
+
+    // Strict Out of Stock & Maximum Quantity Validation
+    for (const line of validItems) {
+      const sel = availableItems.find((i: any) => i.id === line.itemId);
+      if (sel && sel.type !== 'SERVICE') {
+        const stock = Number(sel.currentStock ?? 0);
+        const reqQty = Number(line.quantity || 0);
+        if (stock <= 0) {
+          toast.error(`"${sel.name}" is Out of Stock (0 ${sel.unit}). Cannot create sale invoice.`);
+          return;
+        }
+        if (reqQty > stock) {
+          toast.error(`Quantity for "${sel.name}" (${reqQty}) exceeds available stock (${stock} ${sel.unit}).`);
+          return;
+        }
+      }
     }
 
     setPendingFormData({ ...data, items: validItems });
@@ -466,12 +499,34 @@ export default function NewSalesInvoicePage() {
                             <input
                               type="number"
                               min="1"
-                              {...form.register(`items.${idx}.quantity`, { valueAsNumber: true })}
+                              max={selectedItem && selectedItem.type !== 'SERVICE' ? Number(selectedItem.currentStock ?? 0) : undefined}
+                              {...form.register(`items.${idx}.quantity`, {
+                                valueAsNumber: true,
+                                onChange: (e) => {
+                                  const val = Number(e.target.value);
+                                  if (selectedItem && selectedItem.type !== 'SERVICE') {
+                                    const stock = Number(selectedItem.currentStock ?? 0);
+                                    if (val > stock) {
+                                      form.setValue(`items.${idx}.quantity`, stock, { shouldValidate: true, shouldDirty: true });
+                                      toast.error(`Cannot select more than available stock (${stock} ${selectedItem.unit})`);
+                                    }
+                                  }
+                                },
+                              })}
                               className="w-full text-center bg-transparent font-bold text-xs focus:outline-none"
                             />
                             <button
                               type="button"
-                              onClick={() => form.setValue(`items.${idx}.quantity`, lineQty + 1, { shouldValidate: true, shouldDirty: true })}
+                              onClick={() => {
+                                if (selectedItem && selectedItem.type !== 'SERVICE') {
+                                  const stock = Number(selectedItem.currentStock ?? 0);
+                                  if (lineQty + 1 > stock) {
+                                    toast.error(`Cannot select more than available stock (${stock} ${selectedItem.unit})`);
+                                    return;
+                                  }
+                                }
+                                form.setValue(`items.${idx}.quantity`, lineQty + 1, { shouldValidate: true, shouldDirty: true });
+                              }}
                               className="p-1 text-slate-600 hover:bg-slate-100 rounded"
                             >
                               <Plus className="w-2.5 h-2.5" />
@@ -745,12 +800,34 @@ export default function NewSalesInvoicePage() {
                           <input
                             type="number"
                             min="1"
-                            {...form.register(`items.${idx}.quantity`, { valueAsNumber: true })}
+                            max={selectedItem && selectedItem.type !== 'SERVICE' ? Number(selectedItem.currentStock ?? 0) : undefined}
+                            {...form.register(`items.${idx}.quantity`, {
+                              valueAsNumber: true,
+                              onChange: (e) => {
+                                const val = Number(e.target.value);
+                                if (selectedItem && selectedItem.type !== 'SERVICE') {
+                                  const stock = Number(selectedItem.currentStock ?? 0);
+                                  if (val > stock) {
+                                    form.setValue(`items.${idx}.quantity`, stock, { shouldValidate: true, shouldDirty: true });
+                                    toast.error(`Cannot select more than available stock (${stock} ${selectedItem.unit})`);
+                                  }
+                                }
+                              },
+                            })}
                             className="w-10 text-center bg-transparent text-slate-900 font-mono text-xs font-bold focus:outline-none"
                           />
                           <button
                             type="button"
-                            onClick={() => form.setValue(`items.${idx}.quantity`, lineQty + 1, { shouldValidate: true, shouldDirty: true })}
+                            onClick={() => {
+                              if (selectedItem && selectedItem.type !== 'SERVICE') {
+                                const stock = Number(selectedItem.currentStock ?? 0);
+                                if (lineQty + 1 > stock) {
+                                  toast.error(`Cannot select more than available stock (${stock} ${selectedItem.unit})`);
+                                  return;
+                                }
+                              }
+                              form.setValue(`items.${idx}.quantity`, lineQty + 1, { shouldValidate: true, shouldDirty: true });
+                            }}
                             className="p-1 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-200"
                           >
                             <Plus className="w-2.5 h-2.5" />
@@ -1088,27 +1165,46 @@ export default function NewSalesInvoicePage() {
 
               {/* Item List */}
               <div className="overflow-y-auto flex-1 divide-y divide-slate-100 space-y-1">
-                {filteredMobileItems.map((item: any) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => handleAddMobileItem(item)}
-                    className="w-full text-left p-2.5 rounded-xl hover:bg-slate-50 flex items-center justify-between gap-2 active:bg-blue-50"
-                  >
-                    <div>
-                      <p className="font-bold text-slate-900 text-xs">{item.name}</p>
-                      <p className="text-[10px] text-slate-400 font-mono">
-                        Stock: {item.currentStock || 0} {item.unit} {item.code ? `· SKU: ${item.code}` : ''}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold font-mono text-slate-900 text-xs">
-                        Rs. {formatCurrency(item.salePrice || 0)}
-                      </p>
-                      <span className="text-[10px] font-bold text-blue-600">+ Add</span>
-                    </div>
-                  </button>
-                ))}
+                {filteredMobileItems.map((item: any) => {
+                  const isService = item.type === 'SERVICE';
+                  const stock = Number(item.currentStock ?? 0);
+                  const isOutOfStock = !isService && stock <= 0;
+
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      disabled={isOutOfStock}
+                      onClick={() => handleAddMobileItem(item)}
+                      className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between gap-2 transition-all ${
+                        isOutOfStock
+                          ? 'opacity-50 bg-slate-50 cursor-not-allowed'
+                          : 'hover:bg-slate-50 active:bg-blue-50'
+                      }`}
+                    >
+                      <div>
+                        <p className={`font-bold text-xs ${isOutOfStock ? 'text-slate-500 line-through' : 'text-slate-900'}`}>
+                          {item.name}
+                        </p>
+                        <p className="text-[10px] text-slate-400 font-mono">
+                          {isOutOfStock ? (
+                            <span className="text-rose-500 font-bold">Out of Stock (0 {item.unit})</span>
+                          ) : (
+                            <span>Stock: {stock} {item.unit} {item.code ? `· SKU: ${item.code}` : ''}</span>
+                          )}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold font-mono text-slate-900 text-xs">
+                          Rs. {formatCurrency(item.salePrice || 0)}
+                        </p>
+                        <span className={`text-[10px] font-bold ${isOutOfStock ? 'text-slate-400' : 'text-blue-600'}`}>
+                          {isOutOfStock ? 'Unavailable' : '+ Add'}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>

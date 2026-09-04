@@ -8,12 +8,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createPurchaseSchema, CreatePurchaseInput } from '@bizmanage/validation';
 import { InvoiceStatus, PaymentMode, ItemType } from '@bizmanage/types';
-import {
-  usePurchases,
-  usePurchasesSummary,
-  useCreatePurchase,
-  usePayPurchase,
-} from '@/services/purchaseService';
+import { usePurchases, usePurchasesSummary, useCreatePurchase, usePayPurchase } from '@/services/purchaseService';
 import { useLongPress } from '@/hooks/useLongPress';
 import { LongPressActionSheet } from '@/components/ui/LongPressActionSheet';
 
@@ -133,9 +128,7 @@ export default function PurchasesPage() {
     }
   };
 
-  const suppliers = (partiesData?.data || []).filter(
-    (p: any) => p.type === 'SUPPLIER' || p.type === 'BOTH'
-  );
+  const suppliers = (partiesData?.data || []).filter((p: any) => p.type === 'SUPPLIER' || p.type === 'BOTH');
   const availableItems = itemsData?.data || [];
   const accounts = accountsData?.data || [];
 
@@ -159,8 +152,8 @@ export default function PurchasesPage() {
     watchPaymentMode === PaymentMode.BANK || watchPaymentMode === PaymentMode.CHEQUE
       ? 'BANK'
       : watchPaymentMode === PaymentMode.ONLINE
-      ? 'MOBILE_WALLET'
-      : 'CASH';
+        ? 'MOBILE_WALLET'
+        : 'CASH';
 
   const filteredAccounts = accounts.filter((a: any) => a.accountType === desiredAccountType);
 
@@ -196,8 +189,8 @@ export default function PurchasesPage() {
     try {
       // Convert % discount → Rs. amount per line before sending
       const formattedItems = data.items.map((item) => {
-        return { 
-          ...item, 
+        return {
+          ...item,
           discountPercent: Number(item.discount || 0),
         };
       });
@@ -239,28 +232,79 @@ export default function PurchasesPage() {
           href="/transactions/purchases/new"
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-md shadow-purple-600/20 active:scale-95"
         >
-          <Plus className="w-4 h-4" /> + Create Purchase Bill
+          <Plus className="w-4 h-4" /> Create Purchase Bill
         </Link>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-        <div className="p-5 sm:p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-center justify-between">
+      {/* Summary Cards: 1+2 Layout on Mobile (All 3 Metrics Clear & Prominent), 3-Column on Desktop */}
+      {/* Mobile View (< md): All 3 metrics cleanly presented without truncation */}
+      <div className="space-y-2 md:hidden">
+        {/* Top Hero: Total Purchase Volume */}
+        <div className="bg-purple-50/80 border border-purple-200/90 rounded-2xl p-3 sm:p-3.5 flex items-center justify-between shadow-2xs">
+          <div className="min-w-0 pr-2">
+            <p className="text-[11px] font-bold text-purple-700 uppercase tracking-wide">Total Purchase Volume</p>
+            <p className="text-base font-black font-mono text-slate-900 mt-0.5 whitespace-nowrap">
+              Rs. {summaryLoading ? '...' : (summary?.totalPurchases || 0).toLocaleString()}
+            </p>
+            <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+              {summary?.totalPurchasesCount || 0} Bills recorded
+            </p>
+          </div>
+          <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 shrink-0">
+            <ShoppingBag className="w-4 h-4 stroke-[2.5]" />
+          </div>
+        </div>
+
+        {/* Breakdown Row (2 Columns): Total Paid Out + To Pay */}
+        <div className="grid grid-cols-2 gap-2">
+          {/* Total Paid Out */}
+          <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between shadow-2xs">
+            <div className="min-w-0 pr-1">
+              <p className="text-[11px] font-bold text-emerald-700 truncate">Total Paid Out</p>
+              <p className="text-sm font-black font-mono text-emerald-700 mt-0.5 whitespace-nowrap">
+                Rs. {summaryLoading ? '...' : (summary?.totalPaid || 0).toLocaleString()}
+              </p>
+              <p className="text-[9px] text-emerald-600/80 font-semibold mt-0.5 truncate">Cash & Bank Paid</p>
+            </div>
+            <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+              <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
+            </div>
+          </div>
+
+          {/* Total Payables (To Pay) */}
+          <div className="bg-rose-50/70 border border-rose-200/80 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between shadow-2xs">
+            <div className="min-w-0 pr-1">
+              <p className="text-[11px] font-bold text-rose-700 truncate">To Pay</p>
+              <p className="text-sm font-black font-mono text-rose-700 mt-0.5 whitespace-nowrap">
+                Rs. {summaryLoading ? '...' : (summary?.totalDue || 0).toLocaleString()}
+              </p>
+              <p className="text-[9px] text-rose-700/80 font-semibold mt-0.5 truncate">
+                {summary?.unpaidCount || 0} Unpaid Bills
+              </p>
+            </div>
+            <div className="w-7 h-7 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+              <Clock className="w-4 h-4 stroke-[2.5]" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop View (>= md): 3 Full Width Cards */}
+      <div className="hidden md:grid md:grid-cols-3 gap-4 lg:gap-6">
+        <div className="p-5 lg:p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Purchase Volume</p>
             <h3 className="text-2xl font-black text-slate-900 mt-1 font-mono">
               Rs. {summaryLoading ? '...' : (summary?.totalPurchases || 0).toLocaleString()}
             </h3>
-            <p className="text-[11px] text-slate-400 mt-1">
-              {summary?.totalPurchasesCount || 0} Bills recorded
-            </p>
+            <p className="text-[11px] text-slate-400 mt-1">{summary?.totalPurchasesCount || 0} Bills recorded</p>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100 shadow-xs">
             <ShoppingBag className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="p-5 sm:p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-center justify-between">
+        <div className="p-5 lg:p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Paid Out</p>
             <h3 className="text-2xl font-black text-emerald-600 mt-1 font-mono">
@@ -273,7 +317,7 @@ export default function PurchasesPage() {
           </div>
         </div>
 
-        <div className="p-5 sm:p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-center justify-between">
+        <div className="p-5 lg:p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Supplier Payables</p>
             <h3 className="text-2xl font-black text-rose-600 mt-1 font-mono">
@@ -287,26 +331,40 @@ export default function PurchasesPage() {
         </div>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
-        <div className="relative w-full md:flex-1">
-          <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+      {/* Search & Status Filter Controls */}
+      <div className="space-y-2.5 md:space-y-0 md:flex md:items-center md:justify-between md:gap-3 p-3 sm:p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs">
+        {/* Search Bar */}
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400 pointer-events-none" />
           <input
             type="text"
-            placeholder="Search by bill number or supplier name..."
+            placeholder="Search bill number, supplier..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500"
+            className="w-full pl-9 pr-8 py-2.5 rounded-2xl bg-slate-50 md:bg-white border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
           />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              className="absolute right-3 top-2.5 p-0.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold w-full md:w-auto">
+        {/* Status Filter: 5-Column Grid on Mobile (Zero-Scroll & Zero-Awkward-Wrap), Pill Strip on Desktop */}
+        <div className="grid grid-cols-5 gap-1 w-full md:w-auto md:flex md:items-center md:gap-1.5 text-[10px] sm:text-xs font-bold">
           {(['', 'UNPAID', 'PARTIAL', 'PAID', 'RETURNED'] as const).map((s) => (
             <button
               key={s}
+              type="button"
               onClick={() => setSelectedStatus(s as any)}
-              className={`flex-1 md:flex-none px-3.5 py-1.5 rounded-lg transition-all ${
-                selectedStatus === s ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              className={`py-2 px-1 sm:px-3 sm:py-1.5 rounded-xl text-center transition-all cursor-pointer truncate ${
+                selectedStatus === s
+                  ? 'bg-purple-600 text-white shadow-xs font-black'
+                  : 'bg-slate-50 md:bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
               }`}
             >
               {s === '' ? 'All' : s.charAt(0) + s.slice(1).toLowerCase()}
@@ -376,9 +434,7 @@ export default function PurchasesPage() {
                         >
                           {p.billNumber}
                         </Link>
-                        <p className="text-[10px] text-slate-400 mt-0.5">
-                          {new Date(p.date).toLocaleDateString()}
-                        </p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">{new Date(p.date).toLocaleDateString()}</p>
                       </td>
 
                       <td className="px-5 py-4 text-slate-800 font-semibold border-r border-slate-100">
@@ -397,7 +453,9 @@ export default function PurchasesPage() {
 
                       <td className="px-5 py-4 text-right font-mono space-y-0.5 border-r border-slate-100">
                         <p className="text-emerald-600 text-[11px] font-bold">Paid: Rs. {paid.toLocaleString()}</p>
-                        {due > 0 && <p className="text-rose-600 text-[11px] font-bold">Due: Rs. {due.toLocaleString()}</p>}
+                        {due > 0 && (
+                          <p className="text-rose-600 text-[11px] font-bold">Due: Rs. {due.toLocaleString()}</p>
+                        )}
                       </td>
 
                       <td className="px-4 py-4 text-center border-r border-slate-100">
@@ -406,10 +464,10 @@ export default function PurchasesPage() {
                             p.status === InvoiceStatus.PAID
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                               : p.status === InvoiceStatus.PARTIAL
-                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                              : p.status === InvoiceStatus.RETURNED
-                              ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                              : 'bg-rose-50 text-rose-700 border border-rose-200'
+                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                : p.status === InvoiceStatus.RETURNED
+                                  ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                                  : 'bg-rose-50 text-rose-700 border border-rose-200'
                           }`}
                         >
                           {p.status}
@@ -452,438 +510,478 @@ export default function PurchasesPage() {
 
       {/* CREATE PURCHASE BILL MODAL */}
       {isCreateOpen && (
-        <ModalPortal><div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-          <div className="w-full max-w-5xl bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-h-[95vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="sticky top-0 bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between z-10">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-                  <ShoppingBag className="w-5 h-5 text-blue-400" />
+        <ModalPortal>
+          <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+            <div className="w-full max-w-5xl bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-h-[95vh] overflow-y-auto">
+              {/* Modal Header */}
+              <div className="sticky top-0 bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between z-10">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                    <ShoppingBag className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white">New Purchase Bill</h3>
+                    <p className="text-[11px] text-slate-400">Stock increases & payables update automatically</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-base font-bold text-white">New Purchase Bill</h3>
-                  <p className="text-[11px] text-slate-400">Stock increases & payables update automatically</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                {/* VAT Bill Toggle */}
-                <button
-                  type="button"
-                  onClick={() => form.setValue('isVatBill', !watchIsVatBill)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${
-                    watchIsVatBill
-                      ? 'bg-amber-500/15 border-amber-500/40 text-amber-400'
-                      : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'
-                  }`}
-                >
-                  <Receipt className="w-3.5 h-3.5" />
-                  VAT Bill (13%)
-                </button>
-                <button
-                  onClick={() => { setIsCreateOpen(false); form.setValue('isVatBill', false); }}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            <form onSubmit={form.handleSubmit(handlePurchaseSaveRequest)} className="p-6 space-y-6">
-              {/* Header Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Supplier Party *</label>
-                  <select
-                    {...form.register('partyId')}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+                <div className="flex items-center gap-3">
+                  {/* VAT Bill Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => form.setValue('isVatBill', !watchIsVatBill)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${
+                      watchIsVatBill
+                        ? 'bg-amber-500/15 border-amber-500/40 text-amber-400'
+                        : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'
+                    }`}
                   >
-                    <option value="">Select Supplier</option>
-                    {suppliers.map((s: any) => {
-                      const balLabel = getPartyBalanceDisplay(s.currentBalance, 'SUPPLIER');
-                      return (
-                        <option key={s.id} value={s.id}>
-                          {s.name} {s.phone ? `(${s.phone})` : ''} — {balLabel}
-                        </option>
-                      );
-                    })}
-                  </select>
-                  {form.formState.errors.partyId && (
-                    <p className="text-xs text-rose-400 mt-1 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      {form.formState.errors.partyId.message}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <DatePicker
-                    label="Bill Date"
-                    required
-                    value={form.watch('date')}
-                    onChange={(d) => form.setValue('date', d)}
-                  />
-                  {form.formState.errors.date && (
-                    <p className="text-xs text-rose-400 mt-1 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      {form.formState.errors.date.message}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Bill Ref No. (Optional)</label>
-                  <input
-                    type="text"
-                    {...form.register('billNumber')}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
-                    placeholder="Auto-generated if blank"
-                  />
+                    <Receipt className="w-3.5 h-3.5" />
+                    VAT Bill (13%)
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsCreateOpen(false);
+                      form.setValue('isVatBill', false);
+                    }}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
 
-              {/* Line Items Editor */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Bill Line Items</h4>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setTargetItemRowIdx(fields.length - 1 < 0 ? 0 : fields.length - 1);
-                        setQuickItemData({ name: '', code: '', unit: 'Pcs', purchasePrice: 0, salePrice: 0 });
-                        setIsQuickItemOpen(true);
-                      }}
-                      className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 transition-all"
+              <form onSubmit={form.handleSubmit(handlePurchaseSaveRequest)} className="p-6 space-y-6">
+                {/* Header Fields */}
+                <div className="grid grid-cols-1 md:grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">Supplier Party *</label>
+                    <select
+                      {...form.register('partyId')}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
                     >
-                      <Plus className="w-3.5 h-3.5" /> Quick Create Product
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => append({ itemId: '', quantity: 1, unitPrice: 0, discountPercent: 0, discount: 0, taxAmount: 0 })}
-                      className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 transition-all"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> Add Row
-                    </button>
+                      <option value="">Select Supplier</option>
+                      {suppliers.map((s: any) => {
+                        const balLabel = getPartyBalanceDisplay(s.currentBalance, 'SUPPLIER');
+                        return (
+                          <option key={s.id} value={s.id}>
+                            {s.name} {s.phone ? `(${s.phone})` : ''} — {balLabel}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    {form.formState.errors.partyId && (
+                      <p className="text-xs text-rose-400 mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {form.formState.errors.partyId.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <DatePicker
+                      label="Bill Date"
+                      required
+                      value={form.watch('date')}
+                      onChange={(d) => form.setValue('date', d)}
+                    />
+                    {form.formState.errors.date && (
+                      <p className="text-xs text-rose-400 mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {form.formState.errors.date.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">Bill Ref No. (Optional)</label>
+                    <input
+                      type="text"
+                      {...form.register('billNumber')}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+                      placeholder="Auto-generated if blank"
+                    />
                   </div>
                 </div>
 
-                {/* Table Headers */}
-                <div className="hidden md:grid grid-cols-12 gap-2 px-3 py-2 rounded-lg bg-slate-800/40 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                  <div className="col-span-4">ITEM & AVAILABLE STOCK</div>
-                  <div className="col-span-2">QUANTITY</div>
-                  <div className="col-span-2">COST RATE (Rs.)</div>
-                  <div className="col-span-1">DISC %</div>
-                  <div className="col-span-2 text-right">LINE TOTAL</div>
-                  <div className="col-span-1"></div>
-                </div>
-
-                <div className="space-y-2">
-                  {fields.map((field, idx) => {
-                    const totals = calculateInvoiceTotals(form.watch('items'), watchIsVatBill);
-                    const selItemId = form.watch(`items.${idx}.itemId`);
-                    const selItem = availableItems.find((i: any) => i.id === selItemId);
-
-                    const lineQty = Number(form.watch(`items.${idx}.quantity`) || 0);
-                    const linePrice = Number(form.watch(`items.${idx}.unitPrice`) || 0);
-                    const lineDiscPercent = Number(form.watch(`items.${idx}.discount`) || 0);
-                    const lineSubtotal = lineQty * linePrice;
-                    const lineDiscAmt = (lineSubtotal * lineDiscPercent) / 100;
-                    const computedLineTotal = Math.max(0, lineSubtotal - lineDiscAmt);
-
-                    return (
-                      <div
-                        key={field.id}
-                        className="grid grid-cols-12 gap-2 items-start p-3 rounded-xl bg-slate-800/50 border border-slate-700/60 hover:border-slate-600 transition-all"
+                {/* Line Items Editor */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Bill Line Items</h4>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTargetItemRowIdx(fields.length - 1 < 0 ? 0 : fields.length - 1);
+                          setQuickItemData({ name: '', code: '', unit: 'Pcs', purchasePrice: 0, salePrice: 0 });
+                          setIsQuickItemOpen(true);
+                        }}
+                        className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 transition-all"
                       >
-                        {/* Item Select */}
-                        <div className="col-span-12 md:col-span-4">
-                          <label className="block md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                            Item & Available Stock
-                          </label>
-                          <ItemSearchSelect
-                            items={availableItems}
-                            value={selItemId || ''}
-                            onChange={(id) => {
-                              form.setValue(`items.${idx}.itemId`, id);
-                              onItemSelect(idx, id);
-                            }}
-                            placeholder="Search item…"
-                            priceField="purchasePrice"
-                            onCreateNewItem={(typedName) => {
-                              setTargetItemRowIdx(idx);
-                              setQuickItemData({ name: typedName || '', code: '', unit: 'Pcs', purchasePrice: 0, salePrice: 0 });
-                              setIsQuickItemOpen(true);
-                            }}
-                          />
-                          {selItem && (
-                            <div className="flex items-center gap-2 mt-1.5">
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] text-blue-400 font-semibold">
-                                <Package className="w-2.5 h-2.5" />
-                                Stock: {Number(selItem.currentStock || 0).toLocaleString()} {selItem.unit}
-                              </span>
-                            </div>
-                          )}
-                        </div>
+                        <Plus className="w-3.5 h-3.5" /> Quick Create Product
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          append({
+                            itemId: '',
+                            quantity: 1,
+                            unitPrice: 0,
+                            discountPercent: 0,
+                            discount: 0,
+                            taxAmount: 0,
+                          })
+                        }
+                        className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 transition-all"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Add Row
+                      </button>
+                    </div>
+                  </div>
 
-                        {/* Quantity */}
-                        <div className="col-span-4 md:col-span-2">
-                          <label className="block md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                            Quantity
-                          </label>
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            onKeyDown={onNumericKeyDown}
-                            onFocus={onNumericFocus}
-                            min="0"
-                            placeholder="Qty"
-                            {...form.register(`items.${idx}.quantity`, { valueAsNumber: true, onBlur: onNumericBlur })}
-                            className="w-full px-2.5 py-2 rounded-lg bg-slate-900 border border-slate-600 text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all"
-                          />
-                        </div>
+                  {/* Table Headers */}
+                  <div className="hidden md:grid grid-cols-12 gap-2 px-3 py-2 rounded-lg bg-slate-800/40 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    <div className="col-span-4">ITEM & AVAILABLE STOCK</div>
+                    <div className="col-span-2">QUANTITY</div>
+                    <div className="col-span-2">COST RATE (Rs.)</div>
+                    <div className="col-span-1">DISC %</div>
+                    <div className="col-span-2 text-right">LINE TOTAL</div>
+                    <div className="col-span-1"></div>
+                  </div>
 
-                        {/* Unit Price */}
-                        <div className="col-span-4 md:col-span-2">
-                          <label className="block md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                            Cost Rate (Rs.)
-                          </label>
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            onKeyDown={onNumericKeyDown}
-                            onFocus={onNumericFocus}
-                            min="0"
-                            placeholder="Cost Price"
-                            {...form.register(`items.${idx}.unitPrice`, { valueAsNumber: true, onBlur: onNumericBlur })}
-                            className="w-full px-2.5 py-2 rounded-lg bg-slate-900 border border-slate-600 text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all"
-                          />
-                        </div>
+                  <div className="space-y-2">
+                    {fields.map((field, idx) => {
+                      const totals = calculateInvoiceTotals(form.watch('items'), watchIsVatBill);
+                      const selItemId = form.watch(`items.${idx}.itemId`);
+                      const selItem = availableItems.find((i: any) => i.id === selItemId);
 
-                        {/* Discount % */}
-                        <div className="col-span-4 md:col-span-1">
-                          <label className="block md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                            Disc %
-                          </label>
-                          <div className="relative">
+                      const lineQty = Number(form.watch(`items.${idx}.quantity`) || 0);
+                      const linePrice = Number(form.watch(`items.${idx}.unitPrice`) || 0);
+                      const lineDiscPercent = Number(form.watch(`items.${idx}.discount`) || 0);
+                      const lineSubtotal = lineQty * linePrice;
+                      const lineDiscAmt = (lineSubtotal * lineDiscPercent) / 100;
+                      const computedLineTotal = Math.max(0, lineSubtotal - lineDiscAmt);
+
+                      return (
+                        <div
+                          key={field.id}
+                          className="grid grid-cols-12 gap-2 items-start p-3 rounded-xl bg-slate-800/50 border border-slate-700/60 hover:border-slate-600 transition-all"
+                        >
+                          {/* Item Select */}
+                          <div className="col-span-12 md:col-span-4">
+                            <label className="block md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                              Item & Available Stock
+                            </label>
+                            <ItemSearchSelect
+                              items={availableItems}
+                              value={selItemId || ''}
+                              onChange={(id) => {
+                                form.setValue(`items.${idx}.itemId`, id);
+                                onItemSelect(idx, id);
+                              }}
+                              placeholder="Search item…"
+                              priceField="purchasePrice"
+                              onCreateNewItem={(typedName) => {
+                                setTargetItemRowIdx(idx);
+                                setQuickItemData({
+                                  name: typedName || '',
+                                  code: '',
+                                  unit: 'Pcs',
+                                  purchasePrice: 0,
+                                  salePrice: 0,
+                                });
+                                setIsQuickItemOpen(true);
+                              }}
+                            />
+                            {selItem && (
+                              <div className="flex items-center gap-2 mt-1.5">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] text-blue-400 font-semibold">
+                                  <Package className="w-2.5 h-2.5" />
+                                  Stock: {Number(selItem.currentStock || 0).toLocaleString()} {selItem.unit}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Quantity */}
+                          <div className="col-span-4 md:col-span-2">
+                            <label className="block md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                              Quantity
+                            </label>
                             <input
                               type="text"
                               inputMode="decimal"
                               onKeyDown={onNumericKeyDown}
                               onFocus={onNumericFocus}
                               min="0"
-                              max="100"
-                              placeholder="0"
-                              {...form.register(`items.${idx}.discount`, { valueAsNumber: true, onBlur: onNumericBlur })}
-                              className="w-full pl-2.5 pr-5 py-2 rounded-lg bg-slate-900 border border-slate-600 text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all"
+                              placeholder="Qty"
+                              {...form.register(`items.${idx}.quantity`, {
+                                valueAsNumber: true,
+                                onBlur: onNumericBlur,
+                              })}
+                              className="w-full px-2.5 py-2 rounded-lg bg-slate-900 border border-slate-600 text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all"
                             />
-                            <span className="absolute right-2 top-2 text-slate-500 text-[10px]">%</span>
+                          </div>
+
+                          {/* Unit Price */}
+                          <div className="col-span-4 md:col-span-2">
+                            <label className="block md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                              Cost Rate (Rs.)
+                            </label>
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              onKeyDown={onNumericKeyDown}
+                              onFocus={onNumericFocus}
+                              min="0"
+                              placeholder="Cost Price"
+                              {...form.register(`items.${idx}.unitPrice`, {
+                                valueAsNumber: true,
+                                onBlur: onNumericBlur,
+                              })}
+                              className="w-full px-2.5 py-2 rounded-lg bg-slate-900 border border-slate-600 text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all"
+                            />
+                          </div>
+
+                          {/* Discount % */}
+                          <div className="col-span-4 md:col-span-1">
+                            <label className="block md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                              Disc %
+                            </label>
+                            <div className="relative">
+                              <input
+                                type="text"
+                                inputMode="decimal"
+                                onKeyDown={onNumericKeyDown}
+                                onFocus={onNumericFocus}
+                                min="0"
+                                max="100"
+                                placeholder="0"
+                                {...form.register(`items.${idx}.discount`, {
+                                  valueAsNumber: true,
+                                  onBlur: onNumericBlur,
+                                })}
+                                className="w-full pl-2.5 pr-5 py-2 rounded-lg bg-slate-900 border border-slate-600 text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all"
+                              />
+                              <span className="absolute right-2 top-2 text-slate-500 text-[10px]">%</span>
+                            </div>
+                          </div>
+
+                          {/* Line Total */}
+                          <div className="col-span-8 md:col-span-2 text-left md:text-right font-mono font-bold text-white text-xs pt-1 md:pt-0">
+                            <span className="block md:hidden text-[10px] text-slate-400 font-semibold mb-0.5">
+                              Line Total
+                            </span>
+                            Rs. {formatCurrency(totals.items[idx]?.total ?? computedLineTotal)}
+                          </div>
+
+                          {/* Remove */}
+                          <div className="col-span-4 md:col-span-1 flex items-center justify-end">
+                            {fields.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => remove(idx)}
+                                className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-700 rounded-lg transition-colors flex items-center gap-1 text-xs"
+                                title="Remove row"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span className="md:hidden">Remove</span>
+                              </button>
+                            )}
                           </div>
                         </div>
-
-                        {/* Line Total */}
-                        <div className="col-span-8 md:col-span-2 text-left md:text-right font-mono font-bold text-white text-xs pt-1 md:pt-0">
-                          <span className="block md:hidden text-[10px] text-slate-400 font-semibold mb-0.5">Line Total</span>
-                          Rs. {formatCurrency(totals.items[idx]?.total ?? computedLineTotal)}
-                        </div>
-
-                        {/* Remove */}
-                        <div className="col-span-4 md:col-span-1 flex items-center justify-end">
-                          {fields.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => remove(idx)}
-                              className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-700 rounded-lg transition-colors flex items-center gap-1 text-xs"
-                              title="Remove row"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                              <span className="md:hidden">Remove</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Bill Summary + Payment Section */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-slate-800">
-                {/* Payment Section */}
-                <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-700 space-y-4">
-                  <h4 className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                    <Wallet className="w-4 h-4 text-emerald-400" /> Payment Details
-                  </h4>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">Payment Mode</label>
-                    <select
-                      {...form.register('paymentMode')}
-                      className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-600 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all"
-                    >
-                      <option value={PaymentMode.CASH}>Cash</option>
-                      <option value={PaymentMode.BANK}>Bank Transfer</option>
-                      <option value={PaymentMode.ONLINE}>Mobile Wallet / Online</option>
-                      <option value={PaymentMode.CHEQUE}>Cheque</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">Account</label>
-                    <select
-                      {...form.register('accountId')}
-                      className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-600 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all"
-                    >
-                      <option value="">Default {desiredAccountType.replace('_', ' ')} Account</option>
-                      {filteredAccounts.map((a: any) => (
-                        <option key={a.id} value={a.id}>
-                          {a.bankName || a.accountName} — Rs. {formatCurrency(a.balance)} Available
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">Paid Amount (Rs.)</label>
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      onKeyDown={onNumericKeyDown}
-                      onFocus={onNumericFocus}
-                      min="0"
-                      {...form.register('paidAmount', { valueAsNumber: true, onBlur: onNumericBlur })}
-                      className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all"
-                    />
-                    <p className="text-[10px] text-slate-500 mt-1">
-                      Remaining amount will be recorded as supplier due
-                    </p>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* Totals Summary */}
-                <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2 text-xs">
-                  <div className="flex justify-between text-slate-400">
-                    <span>Subtotal</span>
-                    <span className="font-mono">Rs. {formatCurrency(subTotal)}</span>
-                  </div>
-                  {discount > 0 && (
-                    <div className="flex justify-between text-rose-400">
-                      <span>Total Discount</span>
-                      <span className="font-mono">- Rs. {formatCurrency(discount)}</span>
+                {/* Bill Summary + Payment Section */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-slate-800">
+                  {/* Payment Section */}
+                  <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-700 space-y-4">
+                    <h4 className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                      <Wallet className="w-4 h-4 text-emerald-400" /> Payment Details
+                    </h4>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">Payment Mode</label>
+                      <select
+                        {...form.register('paymentMode')}
+                        className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-600 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all"
+                      >
+                        <option value={PaymentMode.CASH}>Cash</option>
+                        <option value={PaymentMode.BANK}>Bank Transfer</option>
+                        <option value={PaymentMode.ONLINE}>Mobile Wallet / Online</option>
+                        <option value={PaymentMode.CHEQUE}>Cheque</option>
+                      </select>
                     </div>
-                  )}
 
-                  {watchIsVatBill && (
-                    <>
-                      <div className="flex justify-between text-slate-400 pt-1 border-t border-slate-800/60">
-                        <span>Taxable Amount</span>
-                        <span className="font-mono">Rs. {formatCurrency(taxableAmount)}</span>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">Account</label>
+                      <select
+                        {...form.register('accountId')}
+                        className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-600 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all"
+                      >
+                        <option value="">Default {desiredAccountType.replace('_', ' ')} Account</option>
+                        {filteredAccounts.map((a: any) => (
+                          <option key={a.id} value={a.id}>
+                            {a.bankName || a.accountName} — Rs. {formatCurrency(a.balance)} Available
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">Paid Amount (Rs.)</label>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        onKeyDown={onNumericKeyDown}
+                        onFocus={onNumericFocus}
+                        min="0"
+                        {...form.register('paidAmount', { valueAsNumber: true, onBlur: onNumericBlur })}
+                        className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all"
+                      />
+                      <p className="text-[10px] text-slate-500 mt-1">
+                        Remaining amount will be recorded as supplier due
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Totals Summary */}
+                  <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2 text-xs">
+                    <div className="flex justify-between text-slate-400">
+                      <span>Subtotal</span>
+                      <span className="font-mono">Rs. {formatCurrency(subTotal)}</span>
+                    </div>
+                    {discount > 0 && (
+                      <div className="flex justify-between text-rose-400">
+                        <span>Total Discount</span>
+                        <span className="font-mono">- Rs. {formatCurrency(discount)}</span>
                       </div>
-                      <div className="flex justify-between text-blue-400">
-                        <span>VAT (13%)</span>
-                        <span className="font-mono">+ Rs. {formatCurrency(taxAmount)}</span>
-                      </div>
-                    </>
-                  )}
-                  
-                  <div className="flex justify-between text-base font-bold text-white pt-2 border-t border-slate-800">
-                    <span>Grand Total</span>
-                    <span className="font-mono text-blue-400">Rs. {formatCurrency(totalAmount)}</span>
+                    )}
+
+                    {watchIsVatBill && (
+                      <>
+                        <div className="flex justify-between text-slate-400 pt-1 border-t border-slate-800/60">
+                          <span>Taxable Amount</span>
+                          <span className="font-mono">Rs. {formatCurrency(taxableAmount)}</span>
+                        </div>
+                        <div className="flex justify-between text-blue-400">
+                          <span>VAT (13%)</span>
+                          <span className="font-mono">+ Rs. {formatCurrency(taxAmount)}</span>
+                        </div>
+                      </>
+                    )}
+
+                    <div className="flex justify-between text-base font-bold text-white pt-2 border-t border-slate-800">
+                      <span>Grand Total</span>
+                      <span className="font-mono text-blue-400">Rs. {formatCurrency(totalAmount)}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Actions */}
-              <div className="flex justify-end gap-3 pt-2 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => { setIsCreateOpen(false); }}
-                  className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={createPurchase.isPending}
-                  className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 flex items-center gap-2"
-                >
-                  {createPurchase.isPending ? 'Processing Transaction...' : `Save ${watchIsVatBill ? 'VAT ' : ''}Purchase Bill`}
-                </button>
-              </div>
-            </form>
+                {/* Actions */}
+                <div className="flex justify-end gap-3 pt-2 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCreateOpen(false);
+                    }}
+                    className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={createPurchase.isPending}
+                    className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {createPurchase.isPending
+                      ? 'Processing Transaction...'
+                      : `Save ${watchIsVatBill ? 'VAT ' : ''}Purchase Bill`}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div></ModalPortal>
+        </ModalPortal>
       )}
 
       {/* PAY DUE MODAL */}
       {payDueId && (
-        <ModalPortal><div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-          <div className="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
-                  <BanknoteIcon className="w-4 h-4 text-rose-400" />
+        <ModalPortal>
+          <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+            <div className="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
+                    <BanknoteIcon className="w-4 h-4 text-rose-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white">Settle Purchase Due</h3>
+                    <p className="text-[11px] text-slate-400">Outstanding: Rs. {payDueAmount.toLocaleString()}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white">Settle Purchase Due</h3>
-                  <p className="text-[11px] text-slate-400">Outstanding: Rs. {payDueAmount.toLocaleString()}</p>
-                </div>
-              </div>
-              <button onClick={() => setPayDueId(null)} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="p-5 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Amount to Pay (Rs.)</label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  onKeyDown={onNumericKeyDown}
-                                    onFocus={onNumericFocus}
-                                    onBlur={onNumericBlur}
-                                    min="0"
-                  placeholder={`Full due: Rs. ${payDueAmount.toLocaleString()}`}
-                  value={payDueCustomAmount}
-                  onChange={(e) => setPayDueCustomAmount(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500 transition-all"
-                />
-                <p className="text-[10px] text-slate-500 mt-1">Leave blank to pay full outstanding amount</p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Payment Mode</label>
-                <select
-                  value={payDueMode}
-                  onChange={(e) => setPayDueMode(e.target.value as PaymentMode)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500 transition-all"
-                >
-                  <option value={PaymentMode.CASH}>Cash</option>
-                  <option value={PaymentMode.BANK}>Bank Transfer</option>
-                  <option value={PaymentMode.ONLINE}>Mobile Wallet / Online</option>
-                  <option value={PaymentMode.CHEQUE}>Cheque</option>
-                </select>
-              </div>
-
-              <div className="flex gap-2 pt-1">
                 <button
                   onClick={() => setPayDueId(null)}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-all"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
                 >
-                  Cancel
+                  <X className="w-4 h-4" />
                 </button>
-                <button
-                  onClick={handlePayDue}
-                  disabled={payPurchase.isPending}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-lg shadow-rose-600/20 disabled:opacity-50 flex items-center justify-center gap-1.5"
-                >
-                  <BanknoteIcon className="w-3.5 h-3.5" />
-                  {payPurchase.isPending ? 'Processing...' : 'Confirm Payment'}
-                </button>
+              </div>
+
+              <div className="p-5 space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Amount to Pay (Rs.)</label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    onKeyDown={onNumericKeyDown}
+                    onFocus={onNumericFocus}
+                    onBlur={onNumericBlur}
+                    min="0"
+                    placeholder={`Full due: Rs. ${payDueAmount.toLocaleString()}`}
+                    value={payDueCustomAmount}
+                    onChange={(e) => setPayDueCustomAmount(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500 transition-all"
+                  />
+                  <p className="text-[10px] text-slate-500 mt-1">Leave blank to pay full outstanding amount</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Payment Mode</label>
+                  <select
+                    value={payDueMode}
+                    onChange={(e) => setPayDueMode(e.target.value as PaymentMode)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500 transition-all"
+                  >
+                    <option value={PaymentMode.CASH}>Cash</option>
+                    <option value={PaymentMode.BANK}>Bank Transfer</option>
+                    <option value={PaymentMode.ONLINE}>Mobile Wallet / Online</option>
+                    <option value={PaymentMode.CHEQUE}>Cheque</option>
+                  </select>
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={() => setPayDueId(null)}
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handlePayDue}
+                    disabled={payPurchase.isPending}
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-lg shadow-rose-600/20 disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  >
+                    <BanknoteIcon className="w-3.5 h-3.5" />
+                    {payPurchase.isPending ? 'Processing...' : 'Confirm Payment'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div></ModalPortal>
+        </ModalPortal>
       )}
 
       {/* QUICK CREATE PRODUCT MODAL */}
@@ -951,9 +1049,9 @@ export default function PurchasesPage() {
                       type="text"
                       inputMode="decimal"
                       onKeyDown={onNumericKeyDown}
-                                            onFocus={onNumericFocus}
-                                            onBlur={onNumericBlur}
-                                            min="0"
+                      onFocus={onNumericFocus}
+                      onBlur={onNumericBlur}
+                      min="0"
                       value={quickItemData.purchasePrice}
                       onChange={(e) => setQuickItemData({ ...quickItemData, purchasePrice: Number(e.target.value) })}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-emerald-400 font-mono focus:outline-none focus:border-blue-500"
@@ -965,9 +1063,9 @@ export default function PurchasesPage() {
                       type="text"
                       inputMode="decimal"
                       onKeyDown={onNumericKeyDown}
-                                            onFocus={onNumericFocus}
-                                            onBlur={onNumericBlur}
-                                            min="0"
+                      onFocus={onNumericFocus}
+                      onBlur={onNumericBlur}
+                      min="0"
                       value={quickItemData.salePrice}
                       onChange={(e) => setQuickItemData({ ...quickItemData, salePrice: Number(e.target.value) })}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-blue-400 font-mono focus:outline-none focus:border-blue-500"
@@ -1013,7 +1111,11 @@ export default function PurchasesPage() {
         open={!!longPressPurchase}
         onClose={() => setLongPressPurchase(null)}
         title={longPressPurchase?.billNumber || 'Purchase Bill'}
-        subtitle={longPressPurchase ? `${longPressPurchase.party?.name || 'Walk-in'} · Rs. ${Number(longPressPurchase.totalAmount || 0).toLocaleString()}` : ''}
+        subtitle={
+          longPressPurchase
+            ? `${longPressPurchase.party?.name || 'Walk-in'} · Rs. ${Number(longPressPurchase.totalAmount || 0).toLocaleString()}`
+            : ''
+        }
         actions={[
           {
             label: 'View Bill Details',
@@ -1086,17 +1188,25 @@ function MobilePurchaseCard({ purchase: p, onLongPress, onPaySupplier }: MobileP
       {/* Header */}
       <div className="flex items-start justify-between border-b border-slate-100 pb-2.5">
         <div>
-          <Link href={`/transactions/purchases/${p.id}`} className="font-bold text-purple-600 hover:text-purple-700 font-mono text-sm">
+          <Link
+            href={`/transactions/purchases/${p.id}`}
+            className="font-bold text-purple-600 hover:text-purple-700 font-mono text-sm"
+          >
             {p.billNumber}
           </Link>
           <p className="text-[11px] text-slate-400 mt-0.5">{new Date(p.date).toLocaleDateString()}</p>
         </div>
-        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-          p.status === InvoiceStatus.PAID ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-          : p.status === InvoiceStatus.PARTIAL ? 'bg-amber-50 text-amber-700 border border-amber-200'
-          : p.status === InvoiceStatus.RETURNED ? 'bg-purple-50 text-purple-700 border border-purple-200'
-          : 'bg-rose-50 text-rose-700 border border-rose-200'
-        }`}>
+        <span
+          className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+            p.status === InvoiceStatus.PAID
+              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+              : p.status === InvoiceStatus.PARTIAL
+                ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                : p.status === InvoiceStatus.RETURNED
+                  ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                  : 'bg-rose-50 text-rose-700 border border-rose-200'
+          }`}
+        >
           {p.status}
         </span>
       </div>
@@ -1105,12 +1215,16 @@ function MobilePurchaseCard({ purchase: p, onLongPress, onPaySupplier }: MobileP
       <div className="flex justify-between items-center text-xs">
         <div>
           <p className="text-sm font-bold text-slate-800">{p.party?.name || 'Cash / Walk-in Supplier'}</p>
-          <p className="text-[11px] text-slate-400 mt-0.5">{totalQty} {totalQty === 1 ? 'Pc' : 'Pcs'} ({lineCount} {lineCount === 1 ? 'item' : 'items'})</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">
+            {totalQty} {totalQty === 1 ? 'Pc' : 'Pcs'} ({lineCount} {lineCount === 1 ? 'item' : 'items'})
+          </p>
         </div>
         <div className="text-right">
           <p className="font-mono font-bold text-slate-900 text-base">Rs. {total.toLocaleString()}</p>
           {due > 0 ? (
-            <p className="font-mono text-[10px] text-rose-600 font-bold mt-0.5">Payable Due: Rs. {due.toLocaleString()}</p>
+            <p className="font-mono text-[10px] text-rose-600 font-bold mt-0.5">
+              Payable Due: Rs. {due.toLocaleString()}
+            </p>
           ) : (
             <p className="font-mono text-[10px] text-emerald-600 font-bold mt-0.5">Paid In Full</p>
           )}
@@ -1123,7 +1237,10 @@ function MobilePurchaseCard({ purchase: p, onLongPress, onPaySupplier }: MobileP
         <div className="flex items-center gap-1.5">
           {due > 0 && (
             <button
-              onClick={(ev) => { ev.stopPropagation(); onPaySupplier(); }}
+              onClick={(ev) => {
+                ev.stopPropagation();
+                onPaySupplier();
+              }}
               className="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-bold flex items-center gap-1.5 hover:bg-emerald-100"
             >
               <BanknoteIcon className="w-3.5 h-3.5" /> Pay Supplier
@@ -1141,4 +1258,3 @@ function MobilePurchaseCard({ purchase: p, onLongPress, onPaySupplier }: MobileP
     </div>
   );
 }
-

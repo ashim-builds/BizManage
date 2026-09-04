@@ -36,6 +36,7 @@ import {
   Wallet,
   Sparkles,
   Receipt,
+  FileText,
 } from 'lucide-react';
 import { PaymentMode } from '@bizmanage/types';
 
@@ -288,21 +289,92 @@ export default function PurchaseReturnPage() {
         </button>
       </div>
 
-      {/* Summary Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-xs">
-          <p className="text-xs text-slate-500 uppercase font-bold">Total Debit Notes Issued</p>
-          <p className="text-2xl font-bold text-slate-900 font-mono mt-1">{returnsList.length}</p>
+      {/* Summary Stats Cards: 1+2 Layout on Mobile (Hero + 2 Grid), 3-Column on Desktop */}
+      {/* Mobile View (< md) */}
+      <div className="space-y-2 md:hidden">
+        {/* Top Hero: Total Return Value */}
+        <div className="bg-purple-50/80 border border-purple-200/90 rounded-2xl p-3 sm:p-3.5 flex items-center justify-between shadow-2xs">
+          <div className="min-w-0 pr-2">
+            <p className="text-[11px] font-bold text-purple-700 uppercase tracking-wide">Total Return Value</p>
+            <p className="text-base font-black font-mono text-slate-900 mt-0.5 whitespace-nowrap">
+              Rs. {totalReturnAmount.toLocaleString()}
+            </p>
+            <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+              {returnsList.length} Debit notes issued
+            </p>
+          </div>
+          <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 shrink-0">
+            <RotateCcw className="w-4 h-4 stroke-[2.5]" />
+          </div>
         </div>
-        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-xs">
-          <p className="text-xs text-slate-500 uppercase font-bold">Total Return Value</p>
-          <p className="text-2xl font-bold text-purple-600 font-mono mt-1">Rs. {totalReturnAmount.toLocaleString()}</p>
+
+        {/* Breakdown Row (2 Columns): Total Debit Notes + Inventory Deducted */}
+        <div className="grid grid-cols-2 gap-2">
+          {/* Total Notes */}
+          <div className="bg-blue-50/70 border border-blue-200/80 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between shadow-2xs">
+            <div className="min-w-0 pr-1">
+              <p className="text-[11px] font-bold text-blue-700 truncate">Total Notes</p>
+              <p className="text-sm font-black font-mono text-slate-900 mt-0.5 whitespace-nowrap">
+                {returnsList.length}
+              </p>
+              <p className="text-[9px] text-blue-600/80 font-semibold mt-0.5 truncate">Debit Notes</p>
+            </div>
+            <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+              <FileText className="w-4 h-4 stroke-[2.5]" />
+            </div>
+          </div>
+
+          {/* Deducted Items */}
+          <div className="bg-rose-50/70 border border-rose-200/80 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between shadow-2xs">
+            <div className="min-w-0 pr-1">
+              <p className="text-[11px] font-bold text-rose-700 truncate">Stock Deducted</p>
+              <p className="text-sm font-black font-mono text-rose-700 mt-0.5 whitespace-nowrap">
+                {returnsList.reduce((acc, r) => acc + (r.items?.length || 0), 0)}
+              </p>
+              <p className="text-[9px] text-rose-600/80 font-semibold mt-0.5 truncate">Items</p>
+            </div>
+            <div className="w-7 h-7 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+              <ShoppingBag className="w-4 h-4 stroke-[2.5]" />
+            </div>
+          </div>
         </div>
-        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-xs">
-          <p className="text-xs text-slate-500 uppercase font-bold">Inventory Deducted</p>
-          <p className="text-2xl font-bold text-rose-600 font-mono mt-1">
-            {returnsList.reduce((acc, r) => acc + (r.items?.length || 0), 0)} line items
-          </p>
+      </div>
+
+      {/* Desktop View (>= md): 3 Full Width Cards */}
+      <div className="hidden md:grid md:grid-cols-3 gap-4 lg:gap-6">
+        <div className="p-5 lg:p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Debit Notes Issued</p>
+            <h3 className="text-2xl font-black text-slate-900 mt-1 font-mono">{returnsList.length}</h3>
+            <p className="text-[11px] text-slate-400 mt-1">Vendor returns recorded</p>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-xs">
+            <FileText className="w-6 h-6" />
+          </div>
+        </div>
+
+        <div className="p-5 lg:p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Return Value</p>
+            <h3 className="text-2xl font-black text-purple-600 mt-1 font-mono">Rs. {totalReturnAmount.toLocaleString()}</h3>
+            <p className="text-[11px] text-purple-600/80 mt-1 font-medium">Refunds & payable adjustments</p>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100 shadow-xs">
+            <RotateCcw className="w-6 h-6" />
+          </div>
+        </div>
+
+        <div className="p-5 lg:p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Inventory Deducted</p>
+            <h3 className="text-2xl font-black text-rose-600 mt-1 font-mono">
+              {returnsList.reduce((acc, r) => acc + (r.items?.length || 0), 0)} line items
+            </h3>
+            <p className="text-[11px] text-slate-400 mt-1">Deducted from stock</p>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100 shadow-xs">
+            <ShoppingBag className="w-6 h-6" />
+          </div>
         </div>
       </div>
 
