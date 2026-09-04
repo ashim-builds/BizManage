@@ -98,7 +98,7 @@ export default function PurchaseReturnPage() {
 
   const handleSelectPurchase = (purchaseId: string) => {
     setSelectedPurchaseId(purchaseId);
-    form.setValue('purchaseId', purchaseId || undefined);
+    form.setValue('purchaseId', purchaseId || '');
 
     if (!purchaseId) return;
 
@@ -114,7 +114,9 @@ export default function PurchaseReturnPage() {
         itemId: it.itemId,
         quantity: Number(it.quantity) || 1,
         unitPrice: Number(it.unitPrice) || 0,
-        taxRate: Number(it.taxRate) || 0,
+        discountPercent: Number(it.discountPercent) || 0,
+        discount: 0,
+        taxAmount: Number(it.taxAmount) || 0,
       }));
       replace(mappedItems);
     }
@@ -134,23 +136,25 @@ export default function PurchaseReturnPage() {
         itemId: item.id,
         quantity: 1,
         unitPrice: Number(item.purchasePrice || 0),
-        taxRate: 0,
+        discountPercent: 0,
+        discount: 0,
+        taxAmount: 0,
       });
     }
     setSelectedAddItem('');
   };
 
+  const selectedPurchase = purchasesList.find((p: any) => p.id === selectedPurchaseId);
+  const isVatBill = !!(selectedPurchase && Number(selectedPurchase.taxAmount || 0) > 0);
+
   const totals = useMemo(() => {
     const rawItems = watchItems.map((it) => ({
       quantity: Number(it.quantity) || 0,
       unitPrice: Number(it.unitPrice) || 0,
-      taxRate: Number(it.taxRate) || 0,
+      discountPercent: Number(it.discountPercent) || 0,
     }));
-    return calculateInvoiceTotals(rawItems);
-  }, [watchItems]);
-
-  const selectedPurchase = purchasesList.find((p: any) => p.id === selectedPurchaseId);
-  const isVatBill = selectedPurchase && Number(selectedPurchase.taxAmount || 0) > 0;
+    return calculateInvoiceTotals(rawItems, isVatBill);
+  }, [watchItems, isVatBill]);
 
   const handleCreateSubmit = async (data: CreatePurchaseReturnInput) => {
     try {
@@ -583,10 +587,9 @@ export default function PurchaseReturnPage() {
                             className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-purple-500"
                           >
                             <option value={PaymentMode.CASH}>Cash Drawer</option>
-                            <option value={PaymentMode.BANK_TRANSFER}>Bank Transfer</option>
+                            <option value={PaymentMode.BANK}>Bank Account</option>
+                            <option value={PaymentMode.ONLINE}>Online Wallet</option>
                             <option value={PaymentMode.CHEQUE}>Cheque</option>
-                            <option value={PaymentMode.ESEWA}>eSewa</option>
-                            <option value={PaymentMode.KHALTI}>Khalti</option>
                           </select>
                         </div>
                       )}
@@ -604,7 +607,7 @@ export default function PurchaseReturnPage() {
                         <div className="flex justify-between text-blue-700">
                           <span>VAT (13%):</span>
                           <span className="font-mono font-bold">
-                            Rs. {totals.totalTax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            Rs. {totals.taxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                         </div>
                       )}

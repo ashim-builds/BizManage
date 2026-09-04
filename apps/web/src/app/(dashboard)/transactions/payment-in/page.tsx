@@ -3,9 +3,6 @@ import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericIn
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useLongPress } from '@/hooks/useLongPress';
-import { LongPressActionSheet } from '@/components/ui/LongPressActionSheet';
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,13 +10,8 @@ import { createPaymentInSchema, CreatePaymentInInput } from '@bizmanage/validati
 import { PaymentMode } from '@bizmanage/types';
 import { usePaymentsIn, usePaymentsInSummary, useCreatePaymentIn, useVoidPaymentIn } from '@/services/paymentService';
 import { useParties } from '@/services/partyService';
-
 import { useAccounts } from '@/services/accountService';
 import { getPartyBalanceDisplay } from '@/lib/balance';
-import { formatCurrency } from '@/lib/accounting';
-import { LoadingState } from '@/components/common/LoadingState';
-import { ErrorState } from '@/components/common/ErrorState';
-import { EmptyState } from '@/components/common/EmptyState';
 import { ModalPortal } from '@/components/common/ModalPortal';
 import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
 import { SaveConfirmModal } from '@/components/common/SaveConfirmModal';
@@ -31,13 +23,7 @@ import {
   ArrowDownLeft,
   Plus,
   Search,
-  CheckCircle2,
-  Calendar,
-  Wallet,
-  Building2,
-  UserCheck,
   Eye,
-  Ban,
   X,
 } from 'lucide-react';
 
@@ -47,6 +33,7 @@ export default function PaymentInPage() {
   const [selectedMode, setSelectedMode] = useState<PaymentMode | ''>('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [preset, setPreset] = useState<'all' | 'today' | 'week' | 'month' | 'custom'>('all');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSaveConfirmOpen, setIsSaveConfirmOpen] = useState(false);
   const [pendingPaymentData, setPendingPaymentData] = useState<CreatePaymentInInput | null>(null);
@@ -83,7 +70,7 @@ export default function PaymentInPage() {
       partyId: '',
       date: new Date().toISOString().split('T')[0],
       amount: 0,
-      paymentMode: PaymentMode.CASH,
+      mode: PaymentMode.CASH,
     },
   });
 
@@ -106,7 +93,7 @@ export default function PaymentInPage() {
         partyId: '',
         date: new Date().toISOString().split('T')[0],
         amount: 0,
-        paymentMode: PaymentMode.CASH,
+        mode: PaymentMode.CASH,
       });
       toast.success('Payment In recorded successfully');
     } catch (err: any) {
@@ -282,9 +269,11 @@ export default function PaymentInPage() {
           <CustomDateRangePicker
             startDate={startDate}
             endDate={endDate}
-            onApply={(s, e) => {
+            preset={preset}
+            onApply={(s, e, p) => {
               setStartDate(s);
               setEndDate(e);
+              if (p) setPreset(p as any);
             }}
           />
         </div>
@@ -408,7 +397,7 @@ export default function PaymentInPage() {
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Payment Mode</label>
                     <select
-                      {...form.register('paymentMode')}
+                      {...form.register('mode')}
                       className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none"
                     >
                       <option value={PaymentMode.CASH}>Cash</option>
@@ -479,10 +468,9 @@ export default function PaymentInPage() {
         <SaveConfirmModal
           isOpen={true}
           title="Confirm Payment Collection"
-          amount={pendingPaymentData.amount}
-          partyName={selectedParty?.name || 'Customer'}
+          message={`Record collection of Rs. ${pendingPaymentData.amount.toLocaleString()} from ${selectedParty?.name || 'Customer'}?`}
           onConfirm={handleConfirmSave}
-          onCancel={() => setIsSaveConfirmOpen(false)}
+          onClose={() => setIsSaveConfirmOpen(false)}
           isLoading={createPaymentIn.isPending}
         />
       )}
@@ -492,13 +480,13 @@ export default function PaymentInPage() {
         <ConfirmActionModal
           isOpen={true}
           title="Void Payment In Voucher"
-          message="Are you sure you want to void this payment? The customer balance will be restored and money deducted from your account ledger."
-          confirmLabel="Yes, Void Payment"
-          isDestructive={true}
-          isLoading={voidPaymentIn.isPending}
-          errorMessage={voidError}
+          description="Are you sure you want to void this payment? The customer balance will be restored and money deducted from your account ledger."
+          actionText="Yes, Void Payment"
+          variant="danger"
+          isProcessing={voidPaymentIn.isPending}
+          error={voidError}
           onConfirm={handleConfirmVoid}
-          onCancel={() => setVoidingPaymentId(null)}
+          onClose={() => setVoidingPaymentId(null)}
         />
       )}
     </div>

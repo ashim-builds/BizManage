@@ -102,7 +102,7 @@ export default function SalesReturnPage() {
   // When original invoice is selected, autofill items
   const handleSelectSale = (saleId: string) => {
     setSelectedSaleId(saleId);
-    form.setValue('saleId', saleId || undefined);
+    form.setValue('saleId', saleId || '');
 
     if (!saleId) return;
 
@@ -118,7 +118,9 @@ export default function SalesReturnPage() {
         itemId: it.itemId,
         quantity: Number(it.quantity) || 1,
         unitPrice: Number(it.unitPrice) || 0,
-        taxRate: Number(it.taxRate) || 0,
+        discountPercent: Number(it.discountPercent) || 0,
+        discount: 0,
+        taxAmount: Number(it.taxAmount) || 0,
       }));
       replace(mappedItems);
     }
@@ -139,24 +141,26 @@ export default function SalesReturnPage() {
         itemId: item.id,
         quantity: 1,
         unitPrice: Number(item.salePrice || 0),
-        taxRate: 0,
+        discountPercent: 0,
+        discount: 0,
+        taxAmount: 0,
       });
     }
     setSelectedAddItem('');
   };
+
+  const selectedSale = salesList.find((s: any) => s.id === selectedSaleId);
+  const isVatBill = !!(selectedSale && Number(selectedSale.taxAmount || 0) > 0);
 
   // Totals calculations
   const totals = useMemo(() => {
     const rawItems = watchItems.map((it) => ({
       quantity: Number(it.quantity) || 0,
       unitPrice: Number(it.unitPrice) || 0,
-      taxRate: Number(it.taxRate) || 0,
+      discountPercent: Number(it.discountPercent) || 0,
     }));
-    return calculateInvoiceTotals(rawItems);
-  }, [watchItems]);
-
-  const selectedSale = salesList.find((s: any) => s.id === selectedSaleId);
-  const isVatBill = selectedSale && Number(selectedSale.taxAmount || 0) > 0;
+    return calculateInvoiceTotals(rawItems, isVatBill);
+  }, [watchItems, isVatBill]);
 
   const handleCreateSubmit = async (data: CreateSaleReturnInput) => {
     try {
@@ -590,10 +594,9 @@ export default function SalesReturnPage() {
                             className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
                           >
                             <option value={PaymentMode.CASH}>Cash Drawer</option>
-                            <option value={PaymentMode.BANK_TRANSFER}>Bank Transfer</option>
+                            <option value={PaymentMode.BANK}>Bank Account</option>
+                            <option value={PaymentMode.ONLINE}>Online Wallet</option>
                             <option value={PaymentMode.CHEQUE}>Cheque</option>
-                            <option value={PaymentMode.ESEWA}>eSewa</option>
-                            <option value={PaymentMode.KHALTI}>Khalti</option>
                           </select>
                         </div>
                       )}
@@ -611,7 +614,7 @@ export default function SalesReturnPage() {
                         <div className="flex justify-between text-blue-700">
                           <span>VAT (13%):</span>
                           <span className="font-mono font-bold">
-                            Rs. {totals.totalTax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            Rs. {totals.taxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                         </div>
                       )}

@@ -42,6 +42,7 @@ export default function IncomePage() {
   const [selectedMode, setSelectedMode] = useState<PaymentMode | ''>('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [preset, setPreset] = useState<'all' | 'today' | 'week' | 'month' | 'custom'>('all');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [deletingIncomeInfo, setDeletingIncomeInfo] = useState<{ id: string; name: string } | null>(null);
@@ -241,7 +242,7 @@ export default function IncomePage() {
             className="px-3 py-2 rounded-xl text-xs font-medium focus:outline-none"
           >
             <option value="">All Categories</option>
-            {categories?.map((cat) => (
+            {categories?.map((cat: any) => (
               <option key={cat.id} value={cat.name}>
                 {cat.name}
               </option>
@@ -251,9 +252,11 @@ export default function IncomePage() {
           <CustomDateRangePicker
             startDate={startDate}
             endDate={endDate}
-            onApply={(s, e) => {
+            preset={preset}
+            onApply={(s, e, p) => {
               setStartDate(s);
               setEndDate(e);
+              if (p) setPreset(p as any);
             }}
           />
         </div>

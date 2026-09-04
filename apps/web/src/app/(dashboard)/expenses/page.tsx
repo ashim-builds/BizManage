@@ -42,6 +42,7 @@ export default function ExpensesPage() {
   const [selectedMode, setSelectedMode] = useState<PaymentMode | ''>('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [preset, setPreset] = useState<'all' | 'today' | 'week' | 'month' | 'custom'>('all');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [deletingExpenseInfo, setDeletingExpenseInfo] = useState<{ id: string; name: string } | null>(null);
@@ -242,7 +243,7 @@ export default function ExpensesPage() {
             className="px-3 py-2 rounded-xl text-xs font-medium focus:outline-none"
           >
             <option value="">All Categories</option>
-            {categories?.map((cat) => (
+            {categories?.map((cat: any) => (
               <option key={cat.id} value={cat.name}>
                 {cat.name}
               </option>
@@ -252,9 +253,11 @@ export default function ExpensesPage() {
           <CustomDateRangePicker
             startDate={startDate}
             endDate={endDate}
-            onApply={(s, e) => {
+            preset={preset}
+            onApply={(s, e, p) => {
               setStartDate(s);
               setEndDate(e);
+              if (p) setPreset(p as any);
             }}
           />
         </div>
@@ -348,7 +351,7 @@ export default function ExpensesPage() {
                     className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none"
                   >
                     <option value="">-- Choose Category --</option>
-                    {categories?.map((cat) => (
+                    {categories?.map((cat: any) => (
                       <option key={cat.id} value={cat.name}>
                         {cat.name}
                       </option>
@@ -431,7 +434,7 @@ export default function ExpensesPage() {
       <AddCategoryModal
         isOpen={isAddCategoryOpen}
         onClose={() => setIsAddCategoryOpen(false)}
-        type="EXPENSE"
+        type="expense"
       />
 
       {/* Delete Confirmation Modal */}
@@ -439,13 +442,13 @@ export default function ExpensesPage() {
         <ConfirmActionModal
           isOpen={true}
           title="Delete Expense Entry"
-          message={`Are you sure you want to delete "${deletingExpenseInfo.name}"? This action cannot be undone.`}
-          confirmLabel="Yes, Delete Expense"
-          isDestructive={true}
-          isLoading={deleteExpense.isPending}
-          errorMessage={deleteError}
+          description={`Are you sure you want to delete "${deletingExpenseInfo.name}"? This action cannot be undone.`}
+          actionText="Yes, Delete Expense"
+          variant="danger"
+          isProcessing={deleteExpense.isPending}
+          error={deleteError}
           onConfirm={handleConfirmDelete}
-          onCancel={() => setDeletingExpenseInfo(null)}
+          onClose={() => setDeletingExpenseInfo(null)}
         />
       )}
     </div>

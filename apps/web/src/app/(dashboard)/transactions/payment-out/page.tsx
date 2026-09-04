@@ -3,9 +3,6 @@ import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericIn
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useLongPress } from '@/hooks/useLongPress';
-import { LongPressActionSheet } from '@/components/ui/LongPressActionSheet';
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,13 +10,8 @@ import { createPaymentOutSchema, CreatePaymentOutInput } from '@bizmanage/valida
 import { PaymentMode } from '@bizmanage/types';
 import { usePaymentsOut, usePaymentsOutSummary, useCreatePaymentOut, useVoidPaymentOut } from '@/services/paymentService';
 import { useParties } from '@/services/partyService';
-
 import { useAccounts } from '@/services/accountService';
 import { getPartyBalanceDisplay } from '@/lib/balance';
-import { formatCurrency } from '@/lib/accounting';
-import { LoadingState } from '@/components/common/LoadingState';
-import { ErrorState } from '@/components/common/ErrorState';
-import { EmptyState } from '@/components/common/EmptyState';
 import { ModalPortal } from '@/components/common/ModalPortal';
 import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
 import { SaveConfirmModal } from '@/components/common/SaveConfirmModal';
@@ -31,12 +23,7 @@ import {
   ArrowUpRight,
   Plus,
   Search,
-  CheckCircle2,
-  Wallet,
-  Building2,
-  UserCheck,
   Eye,
-  Ban,
   X,
 } from 'lucide-react';
 
@@ -46,6 +33,7 @@ export default function PaymentOutPage() {
   const [selectedMode, setSelectedMode] = useState<PaymentMode | ''>('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [preset, setPreset] = useState<'all' | 'today' | 'week' | 'month' | 'custom'>('all');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSaveConfirmOpen, setIsSaveConfirmOpen] = useState(false);
   const [pendingPaymentData, setPendingPaymentData] = useState<CreatePaymentOutInput | null>(null);
@@ -82,7 +70,7 @@ export default function PaymentOutPage() {
       partyId: '',
       date: new Date().toISOString().split('T')[0],
       amount: 0,
-      paymentMode: PaymentMode.CASH,
+      mode: PaymentMode.CASH,
     },
   });
 
@@ -105,7 +93,7 @@ export default function PaymentOutPage() {
         partyId: '',
         date: new Date().toISOString().split('T')[0],
         amount: 0,
-        paymentMode: PaymentMode.CASH,
+        mode: PaymentMode.CASH,
       });
       toast.success('Payment Out recorded successfully');
     } catch (err: any) {
@@ -281,9 +269,11 @@ export default function PaymentOutPage() {
           <CustomDateRangePicker
             startDate={startDate}
             endDate={endDate}
-            onApply={(s, e) => {
+            preset={preset}
+            onApply={(s, e, p) => {
               setStartDate(s);
               setEndDate(e);
+              if (p) setPreset(p as any);
             }}
           />
         </div>
@@ -407,7 +397,7 @@ export default function PaymentOutPage() {
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Payment Mode</label>
                     <select
-                      {...form.register('paymentMode')}
+                      {...form.register('mode')}
                       className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none"
                     >
                       <option value={PaymentMode.CASH}>Cash</option>
@@ -478,10 +468,9 @@ export default function PaymentOutPage() {
         <SaveConfirmModal
           isOpen={true}
           title="Confirm Supplier Payout"
-          amount={pendingPaymentData.amount}
-          partyName={selectedParty?.name || 'Supplier'}
+          message={`Record payout of Rs. ${pendingPaymentData.amount.toLocaleString()} to ${selectedParty?.name || 'Supplier'}?`}
           onConfirm={handleConfirmSave}
-          onCancel={() => setIsSaveConfirmOpen(false)}
+          onClose={() => setIsSaveConfirmOpen(false)}
           isLoading={createPaymentOut.isPending}
         />
       )}
@@ -491,13 +480,13 @@ export default function PaymentOutPage() {
         <ConfirmActionModal
           isOpen={true}
           title="Void Payment Out Voucher"
-          message="Are you sure you want to void this payout? The supplier payable balance will be increased and money refunded to your account ledger."
-          confirmLabel="Yes, Void Payout"
-          isDestructive={true}
-          isLoading={voidPaymentOut.isPending}
-          errorMessage={voidError}
+          description="Are you sure you want to void this payout? The supplier payable balance will be increased and money refunded to your account ledger."
+          actionText="Yes, Void Payout"
+          variant="danger"
+          isProcessing={voidPaymentOut.isPending}
+          error={voidError}
           onConfirm={handleConfirmVoid}
-          onCancel={() => setVoidingPaymentId(null)}
+          onClose={() => setVoidingPaymentId(null)}
         />
       )}
     </div>
