@@ -856,7 +856,87 @@ function InventoryPageContent() {
   }
 
   return (
-    <div className="space-y-2.5 font-sans pb-4">
+    <div className="space-y-3 font-sans pb-4">
+      {/* 1. TOP SUBTABS HEADER BAR: Products | Services | Category | Units (Compact - No Scroll) */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 p-1.5 sm:px-4 sm:py-2 flex items-center justify-between shadow-2xs gap-2">
+        <div className="grid grid-cols-4 sm:flex items-center gap-1 sm:gap-2 w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={() => setActiveTab('products')}
+            className={`px-1.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 ${
+              activeTab === 'products'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            <Package className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Products</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('services')}
+            className={`px-1.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 ${
+              activeTab === 'services'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            <Wrench className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Services</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('category')}
+            className={`px-1.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 ${
+              activeTab === 'category'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Category</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('units')}
+            className={`px-1.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 ${
+              activeTab === 'units'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            <Scale className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Units</span>
+          </button>
+        </div>
+
+        {/* Quick Import / Export actions */}
+        <div className="hidden sm:flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsImportOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors shadow-2xs cursor-pointer"
+            title="Import Products & Services"
+          >
+            <Upload className="w-3.5 h-3.5 text-slate-500" />
+            <span>Import</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleTriggerExportInventory}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors shadow-2xs cursor-pointer"
+            title="Export Products & Services"
+          >
+            <Download className="w-3.5 h-3.5 text-slate-500" />
+            <span>Export</span>
+          </button>
+        </div>
+      </div>
+
       {/* ========================================================================= */}
       {/* 2. TAB CONTENT 1: PRODUCTS (Master-Detail Split View) */}
       {/* ========================================================================= */}
@@ -864,9 +944,30 @@ function InventoryPageContent() {
         <>
           {/* MOBILE VIEW (< md) - Pixel-perfect match with Image 2 Screen 1 */}
           <div className="block md:hidden space-y-3 pb-24">
-            {/* Top Title */}
-            <div className="flex items-center justify-between">
+            {/* Top Title & Actions */}
+            <div className="flex items-center justify-between gap-2">
               <h1 className="text-xl font-black text-slate-900 tracking-tight">Inventory</h1>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setIsImportOpen(true)}
+                  className="px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold text-xs border border-slate-200 transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
+                  title="Import Products & Services"
+                >
+                  <Upload className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Import</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleTriggerExportInventory}
+                  className="px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold text-xs border border-slate-200 transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
+                  title="Export Products & Services"
+                >
+                  <Download className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Export</span>
+                </button>
+              </div>
             </div>
 
             {/* Search Bar + Square Filter Button */}
@@ -897,58 +998,6 @@ function InventoryPageContent() {
                 title="Filter low stock"
               >
                 <Filter className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Subtabs Strip: Products | Services | Category | Units */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-200 text-[11px] font-bold scrollbar-none">
-              <button
-                type="button"
-                onClick={() => setActiveTab('products')}
-                className={`pb-1.5 px-1.5 flex items-center gap-1 border-b-2 transition-all ${
-                  (activeTab as string) === 'products'
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-slate-500'
-                }`}
-              >
-                <Package className="w-3.5 h-3.5" />
-                <span>Products</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('services')}
-                className={`pb-1.5 px-1.5 flex items-center gap-1 border-b-2 transition-all ${
-                  (activeTab as string) === 'services'
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-slate-500'
-                }`}
-              >
-                <Wrench className="w-3.5 h-3.5" />
-                <span>Services</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('category')}
-                className={`pb-1.5 px-1.5 flex items-center gap-1 border-b-2 transition-all ${
-                  (activeTab as string) === 'category'
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-slate-500'
-                }`}
-              >
-                <Layers className="w-3.5 h-3.5" />
-                <span>Category</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('units')}
-                className={`pb-1.5 px-1.5 flex items-center gap-1 border-b-2 transition-all ${
-                  (activeTab as string) === 'units'
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-slate-500'
-                }`}
-              >
-                <Scale className="w-3.5 h-3.5" />
-                <span>Units</span>
               </button>
             </div>
 

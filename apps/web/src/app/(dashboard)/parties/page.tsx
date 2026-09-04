@@ -378,15 +378,37 @@ export default function PartiesPage() {
         {/* MOBILE VIEW (< md) - Pixel-perfect match with Design Image 1 */}
         {/* ========================================================================= */}
         <div className="block md:hidden space-y-3 pb-24">
-          {/* Top Title & Add Party Button */}
-          <div className="flex items-center justify-between">
+          {/* Top Title & Actions */}
+          <div className="flex items-center justify-between gap-2">
             <h1 className="text-xl font-black text-slate-900 tracking-tight">Parties</h1>
-            <Link
-              href="/parties/new"
-              className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs flex items-center gap-1.5 active:scale-95 transition-all"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[3]" /> Add Party
-            </Link>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setIsImportPartiesOpen(true)}
+                className="px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold text-xs border border-slate-200 transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
+                title="Import Parties from Excel, CSV, or JSON"
+              >
+                <Upload className="w-3.5 h-3.5 text-slate-500" />
+                <span>Import</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleTriggerExportParties}
+                className="px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold text-xs border border-slate-200 transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
+                title="Export Parties to Excel, CSV, or JSON"
+              >
+                <Download className="w-3.5 h-3.5 text-slate-500" />
+                <span>Export</span>
+              </button>
+
+              <Link
+                href="/parties/new"
+                className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs flex items-center gap-1 active:scale-95 transition-all"
+              >
+                <Plus className="w-3.5 h-3.5 stroke-[3]" /> Add
+              </Link>
+            </div>
           </div>
 
           {/* 2-Column Summary Cards: To Receive & To Pay */}
