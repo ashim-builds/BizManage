@@ -1,357 +1,512 @@
 'use client';
-import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericInput';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import React, { useState } from 'react';
 import {
   Building2,
   ArrowLeftRight,
   Plus,
-  Package,
   Boxes,
-  CheckCircle2,
-  Clock,
-  ArrowRight,
-  Search,
-  Filter,
   Warehouse,
   ChevronRight,
   X,
+  Package,
+  Layers,
+  MapPin,
+  Calendar,
+  Clock,
+  ArrowRight,
+  CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
 import { useItems } from '@/services/itemService';
+import {
+  useGodowns,
+  useCreateGodown,
+  useStockTransfers,
+  useExecuteStockTransfer,
+  useGodownStocks,
+  Godown,
+  StockTransferRecord,
+} from '@/services/godownService';
+import { ResponsiveDataTable, Column } from '@/components/common/ResponsiveDataTable';
 import toast from 'react-hot-toast';
 
-interface Godown {
-  id: string;
-  name: string;
-  location: string;
-  contactPerson: string;
-  phone: string;
-  isDefault?: boolean;
-}
-
-interface StockTransfer {
-  id: string;
-  transferNumber: string;
-  date: string;
-  fromGodown: string;
-  toGodown: string;
-  itemName: string;
-  quantity: number;
-  unit: string;
-  notes?: string;
-  createdAt: string;
-}
-
 export default function GodownsPage() {
-  const { data: itemsResponse, isLoading: itemsLoading } = useItems({ limit: 200 });
+  const { data: itemsResponse, isLoading: itemsLoading } = useItems({ limit: 300 });
   const items = itemsResponse?.data || [];
 
-  const [godowns, setGodowns] = useState<Godown[]>([
-    { id: 'g-1', name: 'Main Shop & Counter', location: 'Ground Floor, Main Road', contactPerson: 'Cashier Counter', phone: '9801234567', isDefault: true },
-    { id: 'g-2', name: 'Central Warehouse', location: 'Building B, Industrial Zone', contactPerson: 'Warehouse Manager', phone: '9812345678' },
-    { id: 'g-3', name: 'Godown 2 (Basement)', location: 'Basement Storage Area', contactPerson: 'Inventory In-Charge', phone: '9823456789' },
-  ]);
+  const { data: godownsData, isLoading: godownsLoading } = useGodowns();
+  const godowns = godownsData?.data || [];
 
-  const [transfers, setTransfers] = useState<StockTransfer[]>([
-    {
-      id: 'st-1',
-      transferNumber: 'TRF-1001',
-      date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
-      fromGodown: 'Central Warehouse',
-      toGodown: 'Main Shop & Counter',
-      itemName: 'Wireless Optical Mouse',
-      quantity: 25,
-      unit: 'Pcs',
-      notes: 'Replenishing counter shelf stock',
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-    },
-    {
-      id: 'st-2',
-      transferNumber: 'TRF-1002',
-      date: new Date().toISOString().split('T')[0],
-      fromGodown: 'Godown 2 (Basement)',
-      toGodown: 'Main Shop & Counter',
-      itemName: 'USB-C Fast Charging Cable',
-      quantity: 50,
-      unit: 'Pcs',
-      notes: 'Daily counter refill',
-      createdAt: new Date().toISOString(),
-    },
-  ]);
+  const [page, setPage] = useState(1);
+  const { data: transfersData, isLoading: transfersLoading } = useStockTransfers({ page, limit: 15 });
+  const transfers = transfersData?.data || [];
+  const pagination = transfersData?.pagination;
+
+  // Selected godown to inspect stock
+  const [selectedGodownId, setSelectedGodownId] = useState<string | null>(null);
+  const { data: godownStockData, isLoading: stockLoading } = useGodownStocks(selectedGodownId || undefined);
 
   // Modals state
   const [addGodownOpen, setAddGodownOpen] = useState(false);
   const [transferModalOpen, setTransferModalOpen] = useState(false);
 
-  // Form states
+  // Add Godown Form
   const [newGodownName, setNewGodownName] = useState('');
   const [newGodownLocation, setNewGodownLocation] = useState('');
-  const [newGodownPhone, setNewGodownPhone] = useState('');
+  const [newGodownCapacity, setNewGodownCapacity] = useState('');
+  const [newGodownDefault, setNewGodownDefault] = useState(false);
 
+  // Transfer Form
   const [transferItem, setTransferItem] = useState('');
-  const [transferFrom, setTransferFrom] = useState('Central Warehouse');
-  const [transferTo, setTransferTo] = useState('Main Shop & Counter');
+  const [transferFrom, setTransferFrom] = useState('');
+  const [transferTo, setTransferTo] = useState('');
   const [transferQty, setTransferQty] = useState('1');
   const [transferNotes, setTransferNotes] = useState('');
 
-  // Handle Add Godown
-  const handleCreateGodown = (e: React.FormEvent) => {
+  const createGodownMutation = useCreateGodown();
+  const executeTransferMutation = useExecuteStockTransfer();
+
+  const handleCreateGodown = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newGodownName.trim()) {
-      toast.error('Please enter godown / warehouse name');
+      toast.error('Please enter a godown name');
       return;
     }
-    const created: Godown = {
-      id: `g-${Date.now()}`,
-      name: newGodownName,
-      location: newGodownLocation || 'Primary Premises',
-      contactPerson: 'Manager',
-      phone: newGodownPhone || '',
-    };
-    setGodowns([...godowns, created]);
-    setNewGodownName('');
-    setNewGodownLocation('');
-    setNewGodownPhone('');
-    setAddGodownOpen(false);
-    toast.success(`Godown "${created.name}" created successfully!`);
+
+    try {
+      await createGodownMutation.mutateAsync({
+        name: newGodownName.trim(),
+        location: newGodownLocation.trim() || undefined,
+        capacity: newGodownCapacity.trim() || undefined,
+        isDefault: newGodownDefault,
+      });
+      toast.success(`Godown "${newGodownName}" created!`);
+      setNewGodownName('');
+      setNewGodownLocation('');
+      setNewGodownCapacity('');
+      setNewGodownDefault(false);
+      setAddGodownOpen(false);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to create godown');
+    }
   };
 
-  // Handle Record Stock Transfer
-  const handleRecordTransfer = (e: React.FormEvent) => {
+  const handleTransferStock = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!transferItem) {
-      toast.error('Please select an item to transfer');
+    if (!transferItem || !transferFrom || !transferTo) {
+      toast.error('Please select item and both godowns');
       return;
     }
     if (transferFrom === transferTo) {
-      toast.error('Source and destination godowns cannot be identical');
+      toast.error('Source and destination godowns must be different');
       return;
     }
-    const qtyNum = parseFloat(transferQty);
-    if (isNaN(qtyNum) || qtyNum <= 0) {
-      toast.error('Please enter a valid transfer quantity');
+    const qty = parseFloat(transferQty);
+    if (isNaN(qty) || qty <= 0) {
+      toast.error('Please enter a valid quantity greater than 0');
       return;
     }
 
-    const selectedItemObj = items.find((i: any) => i.id === transferItem);
-    const itemNameStr = selectedItemObj?.name || 'Selected Item';
-    const itemUnitStr = selectedItemObj?.unit || 'Pcs';
-
-    const newTransfer: StockTransfer = {
-      id: `st-${Date.now()}`,
-      transferNumber: `TRF-${Math.floor(1000 + Math.random() * 9000)}`,
-      date: new Date().toISOString().split('T')[0],
-      fromGodown: transferFrom,
-      toGodown: transferTo,
-      itemName: itemNameStr,
-      quantity: qtyNum,
-      unit: itemUnitStr,
-      notes: transferNotes,
-      createdAt: new Date().toISOString(),
-    };
-
-    setTransfers([newTransfer, ...transfers]);
-    setTransferModalOpen(false);
-    setTransferQty('1');
-    setTransferNotes('');
-    toast.success(`Transferred ${qtyNum} ${itemUnitStr} of ${itemNameStr} from ${transferFrom} to ${transferTo}!`);
+    try {
+      await executeTransferMutation.mutateAsync({
+        sourceGodownId: transferFrom,
+        destinationGodownId: transferTo,
+        itemId: transferItem,
+        quantity: qty,
+        notes: transferNotes.trim() || undefined,
+      });
+      toast.success('Stock transfer executed successfully!');
+      setTransferItem('');
+      setTransferQty('1');
+      setTransferNotes('');
+      setTransferModalOpen(false);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Stock transfer failed');
+    }
   };
 
-  return (
-    <div className="space-y-6 font-sans">
-      {/* Top Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800 pb-5">
+  // Transfer history columns
+  const transferColumns: Column<StockTransferRecord>[] = [
+    {
+      key: 'transferNumber',
+      header: 'Transfer #',
+      isPrimaryTitle: true,
+      render: (r) => (
+        <span className="font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100">
+          {r.transferNumber}
+        </span>
+      ),
+    },
+    {
+      key: 'transferDate',
+      header: 'Date',
+      render: (r) => (
+        <span className="text-slate-600">
+          {new Date(r.transferDate).toLocaleDateString(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+          })}
+        </span>
+      ),
+    },
+    {
+      key: 'item',
+      header: 'Item Transferred',
+      render: (r) => (
         <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-red-600/10 border border-red-500/20 text-red-400 flex items-center justify-center">
-              <Building2 className="w-4 h-4" />
-            </div>
-            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-              Manage Godowns & Transfer Stock (गोदाम तथा स्टक स्थानान्तरण)
-            </h1>
-          </div>
-          <p className="text-xs text-zinc-400 mt-1">
-            Track multi-warehouse inventory, godown storage capacities, and inter-godown transfer vouchers.
+          <div className="font-bold text-slate-900">{r.item.name}</div>
+          {r.item.code && <div className="text-[11px] text-slate-400 font-mono">Code: {r.item.code}</div>}
+        </div>
+      ),
+    },
+    {
+      key: 'route',
+      header: 'Route (From -> To)',
+      render: (r) => (
+        <div className="flex items-center gap-1.5 text-xs">
+          <span className="font-semibold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md">
+            {r.sourceGodown.name}
+          </span>
+          <ArrowRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+          <span className="font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+            {r.destinationGodown.name}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'quantity',
+      header: 'Quantity',
+      align: 'right',
+      isStatusBadge: true,
+      render: (r) => (
+        <span className="font-bold font-mono text-slate-900 text-sm">
+          {Number(r.quantity)} {r.item.unit}
+        </span>
+      ),
+    },
+    {
+      key: 'notes',
+      header: 'Notes',
+      mobileHidden: true,
+      render: (r) => (
+        <span className="text-slate-500 italic max-w-xs truncate block">{r.notes || '—'}</span>
+      ),
+    },
+  ];
+
+  return (
+    <div className="max-w-7xl mx-auto space-y-6 px-3 sm:px-6 py-4">
+      {/* ── HEADER & ACTIONS ────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 flex items-center gap-2.5">
+            <Warehouse className="w-6 h-6 text-blue-600" />
+            Godowns & Warehouse Storage
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Manage multi-location inventory, storehouses, and seamless internal stock transfers.
           </p>
         </div>
-
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 flex-wrap">
           <button
+            type="button"
             onClick={() => setAddGodownOpen(true)}
-            className="px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-95"
           >
-            <Plus className="w-4 h-4" />
-            <span>Add Godown</span>
+            <Plus className="w-4 h-4 text-slate-600" />
+            Add Godown
           </button>
-
           <button
-            onClick={() => setTransferModalOpen(true)}
-            className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-lg shadow-red-600/25 transition-all flex items-center gap-1.5 active:scale-95"
+            type="button"
+            onClick={() => {
+              if (godowns.length < 2) {
+                toast.error('You need at least 2 godowns to perform internal stock transfers.');
+                return;
+              }
+              if (godowns[0] && godowns[1]) {
+                setTransferFrom(godowns[0].id);
+                setTransferTo(godowns[1].id);
+              }
+              setTransferModalOpen(true);
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold transition-all shadow-md shadow-blue-600/20 active:scale-95"
           >
             <ArrowLeftRight className="w-4 h-4" />
-            <span>Transfer Stock</span>
+            Transfer Stock
           </button>
         </div>
       </div>
 
-      {/* Godowns Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {godowns.map((g) => (
-          <div
-            key={g.id}
-            className={`p-5 rounded-2xl border transition-all ${
-              g.isDefault
-                ? 'bg-gradient-to-br from-zinc-900 to-zinc-950 border-red-500/40 shadow-md'
-                : 'bg-zinc-900/90 border-zinc-800 hover:border-zinc-700'
-            }`}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-red-600/10 border border-red-500/20 text-red-400 flex items-center justify-center">
-                  <Warehouse className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
-                    {g.name}
-                    {g.isDefault && (
-                      <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-red-600 text-white">
-                        Primary
-                      </span>
-                    )}
-                  </h3>
-                  <p className="text-[11px] text-zinc-400">{g.location}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-xs text-zinc-400">
-              <span>Contact: <strong className="text-white font-medium">{g.contactPerson}</strong></span>
-              <span className="font-mono text-[11px]">{g.phone || 'N/A'}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Transfer History Table */}
-      <div className="p-5 sm:p-6 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-md space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-800">
-          <div>
-            <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-              <ArrowLeftRight className="w-4 h-4 text-red-400" />
-              Stock Transfer Vouchers & Audit Log
-            </h3>
-            <p className="text-xs text-zinc-400 mt-0.5">Recorded inter-godown stock movements.</p>
-          </div>
-
-          <div className="text-xs text-zinc-400">
-            Total Transfers: <strong className="text-white font-mono">{transfers.length}</strong>
-          </div>
+      {/* ── GODOWNS LIST GRID ───────────────────────────────────────────── */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-blue-600" />
+            Active Locations & Warehouses ({godowns.length})
+          </h2>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-zinc-800 text-[10px] uppercase font-bold text-zinc-400">
-                <th className="py-2.5 px-3">Date</th>
-                <th className="py-2.5 px-3">Voucher #</th>
-                <th className="py-2.5 px-3">From Godown</th>
-                <th className="py-2.5 px-3">To Godown</th>
-                <th className="py-2.5 px-3">Item Name</th>
-                <th className="py-2.5 px-3 text-right">Quantity</th>
-                <th className="py-2.5 px-3">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-800/60">
-              {transfers.map((t) => (
-                <tr key={t.id} className="hover:bg-zinc-800/40 transition-colors">
-                  <td className="py-3 px-3 text-zinc-400 whitespace-nowrap">{t.date}</td>
-                  <td className="py-3 px-3 font-mono font-bold text-white">{t.transferNumber}</td>
-                  <td className="py-3 px-3 text-zinc-300 font-medium">{t.fromGodown}</td>
-                  <td className="py-3 px-3 text-emerald-400 font-medium">→ {t.toGodown}</td>
-                  <td className="py-3 px-3 font-bold text-white max-w-[180px] truncate">{t.itemName}</td>
-                  <td className="py-3 px-3 text-right font-mono font-bold text-white whitespace-nowrap">
-                    {t.quantity} {t.unit}
-                  </td>
-                  <td className="py-3 px-3 whitespace-nowrap">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                      <CheckCircle2 className="w-3 h-3" /> Completed
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {godownsLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-36 bg-white rounded-2xl border border-slate-200 animate-pulse" />
+            ))}
+          </div>
+        ) : godowns.length === 0 ? (
+          <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center shadow-xs">
+            <Warehouse className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+            <p className="font-bold text-slate-700 text-sm">No godowns configured yet.</p>
+            <p className="text-xs text-slate-400 mt-1">Create your primary store or warehouse to begin tracking location-based inventory.</p>
+            <button
+              onClick={() => setAddGodownOpen(true)}
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold"
+            >
+              <Plus className="w-4 h-4" /> Create First Godown
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {godowns.map((g) => {
+              const isSelected = selectedGodownId === g.id;
+              return (
+                <div
+                  key={g.id}
+                  onClick={() => setSelectedGodownId(isSelected ? null : g.id)}
+                  className={`bg-white rounded-2xl border p-4 sm:p-5 shadow-xs cursor-pointer transition-all ${
+                    isSelected
+                      ? 'border-blue-500 ring-2 ring-blue-500/20 shadow-md'
+                      : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-slate-900 text-base">{g.name}</h3>
+                        {g.isDefault && (
+                          <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 font-bold px-2 py-0.5 rounded-md uppercase">
+                            Default
+                          </span>
+                        )}
+                      </div>
+                      {g.location && (
+                        <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
+                          <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                          {g.location}
+                        </p>
+                      )}
+                    </div>
+                    <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+                      <Warehouse className="w-5 h-5" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-100 text-xs">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Item Types</span>
+                      <span className="font-mono font-bold text-slate-800 text-sm">{g.totalItemsCount}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Units</span>
+                      <span className="font-mono font-bold text-blue-600 text-sm">{g.totalUnits.toLocaleString()}</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 pt-2 text-[11px] font-bold text-blue-600 flex items-center justify-between">
+                    <span>{isSelected ? 'Viewing Stock Items' : 'Click to View Items'}</span>
+                    <ChevronRight className={`w-4 h-4 transition-transform ${isSelected ? 'rotate-90' : ''}`} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* MODAL: ADD GODOWN */}
+      {/* ── SELECTED GODOWN STOCK BREAKDOWN ─────────────────────────────── */}
+      {selectedGodownId && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4 animate-in fade-in">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Boxes className="w-4 h-4 text-blue-600" />
+                Inventory in: {godownStockData?.godown?.name || 'Selected Godown'}
+              </h3>
+              <p className="text-xs text-slate-500">Live breakdown of individual items stocked at this location</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedGodownId(null)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {stockLoading ? (
+            <div className="h-24 bg-slate-50 rounded-xl animate-pulse" />
+          ) : !godownStockData?.stocks || godownStockData.stocks.length === 0 ? (
+            <div className="text-center py-6 text-xs text-slate-500">
+              No inventory records present in this godown yet. Transfer items in to view balances.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                    <th className="px-3 py-2">Item Name</th>
+                    <th className="px-3 py-2">Code</th>
+                    <th className="px-3 py-2 text-right">In-Godown Qty</th>
+                    <th className="px-3 py-2 text-right">Total Business Stock</th>
+                    <th className="px-3 py-2 text-right">Estimated Value</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
+                  {godownStockData.stocks.map((st) => (
+                    <tr key={st.id} className="hover:bg-slate-50/60">
+                      <td className="px-3 py-2.5 font-bold text-slate-900">{st.itemName}</td>
+                      <td className="px-3 py-2.5 font-mono text-slate-500">{st.itemCode || '—'}</td>
+                      <td className="px-3 py-2.5 text-right font-mono font-bold text-blue-600">
+                        {st.quantity} {st.unit}
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-mono text-slate-600">
+                        {st.totalItemStock} {st.unit}
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-mono font-semibold text-slate-800">
+                        Rs. {st.stockValue.toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── STOCK TRANSFER HISTORY (Responsive Table) ────────────────────── */}
+      <div className="space-y-3">
+        <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+          <Clock className="w-4 h-4 text-blue-600" />
+          Warehouse Transfer History
+        </h2>
+
+        <ResponsiveDataTable
+          columns={transferColumns}
+          data={transfers}
+          keyExtractor={(t) => t.id}
+          isLoading={transfersLoading}
+          emptyTitle="No stock transfers recorded"
+          emptyDescription="When you move items between godowns, complete audit trails will appear here."
+          emptyAction={
+            <button
+              onClick={() => {
+                if (godowns.length < 2) {
+                  toast.error('Add at least 2 godowns to perform transfers.');
+                  return;
+                }
+                setTransferModalOpen(true);
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold"
+            >
+              <ArrowLeftRight className="w-4 h-4" /> Transfer Items Now
+            </button>
+          }
+          pagination={
+            pagination
+              ? {
+                  currentPage: pagination.page,
+                  totalPages: pagination.totalPages,
+                  totalItems: pagination.total,
+                  onPageChange: (p) => setPage(p),
+                }
+              : undefined
+          }
+        />
+      </div>
+
+      {/* ── ADD GODOWN MODAL ────────────────────────────────────────────── */}
       {addGodownOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-md p-6 rounded-3xl bg-zinc-900 border border-zinc-800 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Warehouse className="w-4 h-4 text-red-500" />
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-blue-600" />
                 Add New Godown / Warehouse
               </h3>
               <button
+                type="button"
                 onClick={() => setAddGodownOpen(false)}
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleCreateGodown} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1">
-                  Godown Name <span className="text-red-400">*</span>
-                </label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Godown Name *</label>
                 <input
                   type="text"
-                  placeholder="e.g. Birgunj Regional Godown"
+                  required
+                  placeholder="e.g. Central Warehouse, Basement 1"
                   value={newGodownName}
                   onChange={(e) => setNewGodownName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-red-500"
-                  required
+                  className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1">Location / Address</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Location / Address</label>
                 <input
                   type="text"
-                  placeholder="e.g. Ward 4, Bypass Road"
+                  placeholder="e.g. Industrial Area, Plot 4"
                   value={newGodownLocation}
                   onChange={(e) => setNewGodownLocation(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-red-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1">Contact Phone</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Storage Capacity / Notes</label>
                 <input
-                  type="tel"
-                  placeholder="e.g. 9801234567"
-                  value={newGodownPhone}
-                  onChange={(e) => setNewGodownPhone(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-red-500"
+                  type="text"
+                  placeholder="e.g. 5000 sq ft, Rack 1-10"
+                  value={newGodownCapacity}
+                  onChange={(e) => setNewGodownCapacity(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none"
                 />
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-2">
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="isDefault"
+                  checked={newGodownDefault}
+                  onChange={(e) => setNewGodownDefault(e.target.checked)}
+                  className="rounded text-blue-600"
+                />
+                <label htmlFor="isDefault" className="text-xs font-medium text-slate-700 cursor-pointer">
+                  Set as default storage location
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setAddGodownOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white"
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-lg shadow-red-600/25"
+                  disabled={createGodownMutation.isPending}
+                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 disabled:opacity-50"
                 >
-                  Save Godown
+                  {createGodownMutation.isPending ? 'Creating...' : 'Save Godown'}
                 </button>
               </div>
             </form>
@@ -359,117 +514,115 @@ export default function GodownsPage() {
         </div>
       )}
 
-      {/* MODAL: STOCK TRANSFER VOUCHER */}
+      {/* ── TRANSFER STOCK MODAL ────────────────────────────────────────── */}
       {transferModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-lg p-6 rounded-3xl bg-zinc-900 border border-zinc-800 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <ArrowLeftRight className="w-4 h-4 text-red-500" />
-                Record Stock Transfer (स्टक स्थानान्तरण)
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                <ArrowLeftRight className="w-5 h-5 text-blue-600" />
+                Internal Stock Transfer
               </h3>
               <button
+                type="button"
                 onClick={() => setTransferModalOpen(false)}
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleRecordTransfer} className="space-y-3.5">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1">
-                    From Godown (Source) <span className="text-red-400">*</span>
-                  </label>
-                  <select
-                    value={transferFrom}
-                    onChange={(e) => setTransferFrom(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-white focus:outline-none focus:border-red-500"
-                  >
-                    {godowns.map((g) => (
-                      <option key={g.id} value={g.name}>{g.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1">
-                    To Godown (Destination) <span className="text-red-400">*</span>
-                  </label>
-                  <select
-                    value={transferTo}
-                    onChange={(e) => setTransferTo(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-white focus:outline-none focus:border-red-500"
-                  >
-                    {godowns.map((g) => (
-                      <option key={g.id} value={g.name}>{g.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
+            <form onSubmit={handleTransferStock} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1">
-                  Select Item to Transfer <span className="text-red-400">*</span>
-                </label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Select Item to Transfer *</label>
                 <select
+                  required
                   value={transferItem}
                   onChange={(e) => setTransferItem(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-white focus:outline-none focus:border-red-500"
-                  required
+                  className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none"
                 >
-                  <option value="">-- Choose Item from Stock --</option>
-                  {items.map((i: any) => (
-                    <option key={i.id} value={i.id}>
-                      {i.name} (Stock: {Number(i.currentStock)} {i.unit})
+                  <option value="">-- Choose Product / Item --</option>
+                  {items.map((it: any) => (
+                    <option key={it.id} value={it.id}>
+                      {it.name} (Stock: {Number(it.currentStock)} {it.unit})
                     </option>
                   ))}
                 </select>
               </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">From (Source) *</label>
+                  <select
+                    required
+                    value={transferFrom}
+                    onChange={(e) => setTransferFrom(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none"
+                  >
+                    <option value="">-- Source Godown --</option>
+                    {godowns.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">To (Destination) *</label>
+                  <select
+                    required
+                    value={transferTo}
+                    onChange={(e) => setTransferTo(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none"
+                  >
+                    <option value="">-- Destination Godown --</option>
+                    {godowns.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1">
-                  Transfer Quantity <span className="text-red-400">*</span>
-                </label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Quantity to Move *</label>
                 <input
-                  type="text"
-                  inputMode="decimal"
-                  onKeyDown={onNumericKeyDown}
-                                    onFocus={onNumericFocus}
-                                    onBlur={onNumericBlur}
-                                    min="0.1"
+                  type="number"
+                  step="any"
+                  min="0.001"
+                  required
                   value={transferQty}
                   onChange={(e) => setTransferQty(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-white focus:outline-none focus:border-red-500 font-mono font-bold"
-                  required
+                  className="w-full px-3.5 py-2.5 rounded-xl text-xs font-mono font-bold focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1">Transfer Note / Remark</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Transfer Notes (Optional)</label>
                 <input
                   type="text"
-                  placeholder="e.g. Counter shelf refilling"
+                  placeholder="e.g. Replenishing storefront counter, rack reorganization"
                   value={transferNotes}
                   onChange={(e) => setTransferNotes(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-red-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none"
                 />
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-2">
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setTransferModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white"
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-lg shadow-red-600/25"
+                  disabled={executeTransferMutation.isPending}
+                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 disabled:opacity-50"
                 >
-                  Transfer Stock Now
+                  {executeTransferMutation.isPending ? 'Executing Transfer...' : 'Confirm Transfer'}
                 </button>
               </div>
             </form>

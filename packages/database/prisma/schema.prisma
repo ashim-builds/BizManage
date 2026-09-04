@@ -51,6 +51,8 @@ enum StockMovementType {
   SALE_RETURN
   PURCHASE_RETURN
   ADJUSTMENT
+  TRANSFER
+  MANUFACTURING
 }
 
 enum InvoiceStatus {
@@ -201,6 +203,11 @@ model Business {
   accounts              Account[]
   transactions          Transaction[]
   accountTransfers      AccountTransfer[]
+  godowns               Godown[]
+  godownStocks          GodownStock[]
+  stockTransfers        StockTransfer[]
+  boms                  BillOfMaterial[]
+  productionRuns        ProductionRun[]
   
   subscriptionPackage   SubscriptionPackage? @relation(fields: [subscriptionPackageId], references: [id])
   subscriptions         Subscription[]
@@ -335,6 +342,11 @@ model Item {
   purchaseItems       PurchaseItem[]
   purchaseReturnItems PurchaseReturnItem[]
   stockMovements      StockMovement[]
+  godownStocks        GodownStock[]
+  stockTransfers      StockTransfer[]
+  finishedBoms        BillOfMaterial[]
+  bomComponents       BOMComponent[]
+  productionRuns      ProductionRun[]
   
   // E2EE Metadata
   encryptedDeks       Json?
@@ -863,4 +875,127 @@ model AuditLog {
   @@index([businessId, module])
   @@index([businessId, createdAt])
   @@index([userId, createdAt])
+}
+
+model Godown {
+  id               String          @id @default(uuid())
+  businessId       String
+  name             String
+  location         String?
+  capacity         String?
+  isDefault        Boolean         @default(false)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  business         Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  stocks           GodownStock[]
+  sourceTransfers  StockTransfer[] @relation("SourceGodown")
+  destTransfers    StockTransfer[] @relation("DestinationGodown")
+  boms             BillOfMaterial[]
+  sourceRuns       ProductionRun[] @relation("RunSourceGodown")
+  destRuns         ProductionRun[] @relation("RunDestGodown")
+
+  @@unique([businessId, name])
+  @@index([businessId])
+}
+
+model GodownStock {
+  id         String   @id @default(uuid())
+  businessId String
+  godownId   String
+  itemId     String
+  quantity   Decimal  @default(0) @db.Decimal(12, 3)
+  updatedAt  DateTime @updatedAt
+
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  godown     Godown   @relation(fields: [godownId], references: [id], onDelete: Cascade)
+  item       Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([godownId, itemId])
+  @@index([businessId])
+  @@index([itemId])
+}
+
+model StockTransfer {
+  id                  String   @id @default(uuid())
+  businessId          String
+  transferNumber      String
+  sourceGodownId      String
+  destinationGodownId String
+  itemId              String
+  quantity            Decimal  @db.Decimal(12, 3)
+  transferDate        DateTime @default(now())
+  notes               String?  @db.Text
+  createdAt           DateTime @default(now())
+
+  business            Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  sourceGodown        Godown   @relation("SourceGodown", fields: [sourceGodownId], references: [id], onDelete: Restrict)
+  destinationGodown   Godown   @relation("DestinationGodown", fields: [destinationGodownId], references: [id], onDelete: Restrict)
+  item                Item     @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@index([businessId])
+  @@index([sourceGodownId])
+  @@index([destinationGodownId])
+}
+
+model BillOfMaterial {
+  id               String          @id @default(uuid())
+  businessId       String
+  name             String
+  finishedItemId   String
+  outputQuantity   Decimal         @default(1) @db.Decimal(12, 3)
+  sourceGodownId   String?
+  targetGodownId   String?
+  estimatedCost    Decimal         @default(0) @db.Decimal(12, 2)
+  notes            String?         @db.Text
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  business         Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  finishedItem     Item            @relation(fields: [finishedItemId], references: [id], onDelete: Restrict)
+  defaultGodown    Godown?         @relation(fields: [targetGodownId], references: [id], onDelete: SetNull)
+  components       BOMComponent[]
+  productionRuns   ProductionRun[]
+
+  @@index([businessId])
+  @@index([finishedItemId])
+}
+
+model BOMComponent {
+  id         String         @id @default(uuid())
+  bomId      String
+  itemId     String
+  quantity   Decimal        @db.Decimal(12, 3)
+  unitCost   Decimal        @default(0) @db.Decimal(12, 2)
+
+  bom        BillOfMaterial @relation(fields: [bomId], references: [id], onDelete: Cascade)
+  item       Item           @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@index([bomId])
+  @@index([itemId])
+}
+
+model ProductionRun {
+  id                  String         @id @default(uuid())
+  businessId          String
+  runNumber           String
+  bomId               String
+  finishedItemId      String
+  quantityProduced    Decimal        @db.Decimal(12, 3)
+  sourceGodownId      String?
+  destinationGodownId String?
+  totalCost           Decimal        @default(0) @db.Decimal(12, 2)
+  notes               String?        @db.Text
+  runDate             DateTime       @default(now())
+  createdAt           DateTime       @default(now())
+
+  business            Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  bom                 BillOfMaterial @relation(fields: [bomId], references: [id], onDelete: Restrict)
+  finishedItem        Item           @relation(fields: [finishedItemId], references: [id], onDelete: Restrict)
+  sourceGodown        Godown?        @relation("RunSourceGodown", fields: [sourceGodownId], references: [id], onDelete: SetNull)
+  destinationGodown   Godown?        @relation("RunDestGodown", fields: [destinationGodownId], references: [id], onDelete: SetNull)
+
+  @@index([businessId])
+  @@index([bomId])
+  @@index([finishedItemId])
 }

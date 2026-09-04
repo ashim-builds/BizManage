@@ -25,6 +25,8 @@ import { adminRoutes } from './modules/admin/admin.routes.js';
 import { publicPackageRoutes } from './modules/package/package.routes.js';
 import { auditRoutes } from './modules/audit/audit.routes.js';
 import { storefrontRoutes } from './modules/storefront/storefront.routes.js';
+import { godownRoutes } from './modules/godown/godown.routes.js';
+import { manufacturingRoutes } from './modules/manufacturing/manufacturing.routes.js';
 import { globalPrisma as prisma } from '@bizmanage/database';
 
 const isProduction = env.NODE_ENV === 'production';
@@ -171,6 +173,8 @@ export function buildApp() {
   app.register(publicPackageRoutes, { prefix: '/api/v1/packages' });
   app.register(auditRoutes,    { prefix: '/api/v1/audit-logs' });
   app.register(storefrontRoutes, { prefix: '/api/v1/storefront' });
+  app.register(godownRoutes,   { prefix: '/api/v1/godowns' });
+  app.register(manufacturingRoutes, { prefix: '/api/v1/manufacturing' });
 
   return app;
 }
