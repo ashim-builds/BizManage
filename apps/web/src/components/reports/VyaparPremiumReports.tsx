@@ -25,6 +25,7 @@ interface VyaparReportsProps {
   purchaseRows?: any[];
   partyRows?: any[];
   itemRows?: any[];
+  balanceSheetData?: any;
   businessName?: string;
   businessPan?: string;
 }
@@ -35,24 +36,86 @@ export function VyaparPremiumReports({
   purchaseRows = [],
   partyRows = [],
   itemRows = [],
+  balanceSheetData,
   businessName = 'My Business',
   businessPan = 'N/A',
 }: VyaparReportsProps) {
-  // 1. Balance Sheet Calculations
-  const cashAndBank = 254000;
-  const stockValue = itemRows.reduce((acc, i) => acc + Number(i.currentStock || 0) * Number(i.purchasePrice || 0), 0) || 845000;
-  const sundryDebtors = partyRows
-    .filter((p) => Number(p.currentBalance || 0) > 0)
-    .reduce((acc, p) => acc + Number(p.currentBalance || 0), 0) || 148500;
-  const fixedAssets = 350000;
-  const totalAssets = cashAndBank + stockValue + sundryDebtors + fixedAssets;
+  const [bsLayout, setBsLayout] = useState<'t-shape' | 'vertical'>('t-shape');
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
-  const sundryCreditors = partyRows
-    .filter((p) => Number(p.currentBalance || 0) < 0)
-    .reduce((acc, p) => acc + Math.abs(Number(p.currentBalance || 0)), 0) || 62300;
-  const taxPayable = 28500;
-  const totalLiabilities = sundryCreditors + taxPayable;
-  const ownersEquity = totalAssets - totalLiabilities;
+  const toggleExpand = (sec: string) => {
+    setExpandedSection(expandedSection === sec ? null : sec);
+  };
+
+  // 1. Balance Sheet Live Calculations & Fallbacks
+  const bs = balanceSheetData || {};
+  const cashInHand = bs.assets?.current?.cashInHand ?? 0;
+  const cashAccounts = bs.assets?.current?.cashAccounts || [];
+  const bankAndWallets = bs.assets?.current?.bankAndWallets ?? 0;
+  const bankAccounts = bs.assets?.current?.bankAccounts || [];
+
+  const stockValue =
+    bs.assets?.current?.stockValuation ??
+    (itemRows.reduce((acc, i) => acc + Number(i.currentStock || 0) * Number(i.purchasePrice || 0), 0) || 0);
+
+  const sundryDebtors =
+    bs.assets?.current?.sundryDebtors ??
+    (partyRows
+      .filter((p) => Number(p.balance ?? p.currentBalance ?? 0) > 0)
+      .reduce((acc, p) => acc + Number(p.balance ?? p.currentBalance ?? 0), 0) || 0);
+  const debtorsList = bs.assets?.current?.debtorsList || partyRows.filter((p) => Number(p.balance ?? p.currentBalance ?? 0) > 0);
+
+  const fixedAssets = bs.assets?.fixed?.total ?? 0;
+  const totalAssets = bs.assets?.totalAssets ?? (cashInHand + bankAndWallets + stockValue + sundryDebtors + fixedAssets);
+
+  const sundryCreditors =
+    bs.liabilities?.current?.sundryCreditors ??
+    (partyRows
+      .filter((p) => Number(p.balance ?? p.currentBalance ?? 0) < 0)
+      .reduce((acc, p) => acc + Math.abs(Number(p.balance ?? p.currentBalance ?? 0)), 0) || 0);
+  const creditorsList = bs.liabilities?.current?.creditorsList || partyRows.filter((p) => Number(p.balance ?? p.currentBalance ?? 0) < 0);
+
+  const taxPayable = bs.liabilities?.current?.taxPayable ?? 0;
+  const totalLiabilities = bs.liabilities?.totalLiabilities ?? (sundryCreditors + taxPayable);
+
+  const ownersEquity = bs.equity?.totalEquity ?? (totalAssets - totalLiabilities);
+  const netProfit = bs.equity?.netProfit ?? 0;
+  const ownerCapital = bs.equity?.ownerCapital ?? (ownersEquity - netProfit);
+
+  const ratios = bs.ratios || {
+    currentRatio: totalLiabilities > 0 ? (totalAssets / totalLiabilities).toFixed(2) : 'N/A',
+    quickRatio: totalLiabilities > 0 ? ((totalAssets - stockValue) / totalLiabilities).toFixed(2) : 'N/A',
+    debtToEquity: ownersEquity > 0 ? (totalLiabilities / ownersEquity).toFixed(2) : 'N/A',
+  };
+
+  const handlePrintBalanceSheet = () => {
+    window.print();
+  };
+
+  const handleExportBalanceSheetCsv = () => {
+    const csvRows = [
+      ['BALANCE SHEET (वासलात)', businessName, `PAN: ${businessPan}`, `As On: ${new Date().toLocaleDateString()}`],
+      [],
+      ['ASSETS (सम्पत्ति)', 'AMOUNT (Rs.)', 'LIABILITIES & EQUITY (दायित्व तथा पुँजी)', 'AMOUNT (Rs.)'],
+      ['Cash in Hand', cashInHand, 'Sundry Creditors (Accounts Payable)', sundryCreditors],
+      ['Bank & Digital Wallets', bankAndWallets, 'Duties & Taxes Payable (VAT/PAN)', taxPayable],
+      ['Sundry Debtors (Accounts Receivable)', sundryDebtors, 'Total Current Liabilities', totalLiabilities],
+      ['Inventory / Stock at Cost', stockValue, "Owner's Capital", ownerCapital],
+      ['Fixed Assets', fixedAssets, 'Net Profit / Retained Earnings', netProfit],
+      ['', '', "Total Owner's Equity", ownersEquity],
+      ['TOTAL ASSETS', totalAssets, 'TOTAL LIABILITIES & EQUITY', totalLiabilities + ownersEquity],
+    ];
+
+    const csvContent = csvRows.map((r) => r.map((c) => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Balance_Sheet_${businessName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Balance Sheet exported to CSV successfully!');
+  };
 
   // 2. Tally Export Generation
   const handleExportTallyXml = () => {
@@ -119,98 +182,442 @@ export function VyaparPremiumReports({
       {/* ---------------------------------------------------- */}
       {tab === 'balance-sheet' && (
         <div className="space-y-6">
-          <div className="p-6 rounded-3xl bg-zinc-900 border border-zinc-800 shadow-md">
-            <div className="text-center pb-6 border-b border-zinc-800">
-              <h2 className="text-lg sm:text-xl font-black text-white uppercase tracking-wider">{businessName}</h2>
-              <h3 className="text-sm font-bold text-red-500 mt-1">Balance Sheet (वासलात / स्थिति विवरण)</h3>
-              <p className="text-xs text-zinc-400 mt-0.5">As on {new Date().toLocaleDateString()}</p>
+          {/* Top Control & Ratio Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-zinc-900/80 p-4 rounded-2xl border border-zinc-800">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+                <Scale className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  Balance Sheet / स्थिति विवरण
+                  <span className="text-[10px] font-normal px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" /> Balanced
+                  </span>
+                </h3>
+                <p className="text-xs text-zinc-400">Real-time assets, liabilities, and owner capital statement</p>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-6">
-              {/* ASSETS COLUMN */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-400">Assets (सम्पत्ति)</h4>
-                  <span className="text-[10px] text-zinc-500 font-mono uppercase">Amount (Rs.)</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Layout Switcher */}
+              <div className="flex bg-zinc-800/80 p-1 rounded-xl border border-zinc-700/50 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setBsLayout('t-shape')}
+                  className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
+                    bsLayout === 't-shape' ? 'bg-blue-600 text-white shadow-sm' : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  T-Shape View
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBsLayout('vertical')}
+                  className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
+                    bsLayout === 'vertical' ? 'bg-blue-600 text-white shadow-sm' : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  Vertical View
+                </button>
+              </div>
+
+              {/* Print & CSV Buttons */}
+              <button
+                type="button"
+                onClick={handlePrintBalanceSheet}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-xl border border-zinc-700 transition"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                Print
+              </button>
+              <button
+                type="button"
+                onClick={handleExportBalanceSheetCsv}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 rounded-xl border border-emerald-500/30 transition"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Export CSV
+              </button>
+            </div>
+          </div>
+
+          {/* Key Financial Health Ratios */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="p-3.5 rounded-2xl bg-zinc-900/60 border border-zinc-800/80">
+              <p className="text-[11px] text-zinc-400 font-medium">Working Capital</p>
+              <p className="text-base font-bold text-white font-mono mt-0.5">
+                Rs. {(totalAssets - totalLiabilities).toLocaleString()}
+              </p>
+              <p className="text-[10px] text-emerald-400 mt-0.5">Current Assets - Liabilities</p>
+            </div>
+            <div className="p-3.5 rounded-2xl bg-zinc-900/60 border border-zinc-800/80">
+              <p className="text-[11px] text-zinc-400 font-medium">Current Ratio</p>
+              <p className="text-base font-bold text-white font-mono mt-0.5">
+                {ratios.currentRatio || 'N/A'}{typeof ratios.currentRatio === 'number' || !isNaN(Number(ratios.currentRatio)) ? ' : 1' : ''}
+              </p>
+              <p className="text-[10px] text-zinc-500 mt-0.5">Ideal benchmark: 2.0 : 1</p>
+            </div>
+            <div className="p-3.5 rounded-2xl bg-zinc-900/60 border border-zinc-800/80">
+              <p className="text-[11px] text-zinc-400 font-medium">Quick Ratio (Acid-Test)</p>
+              <p className="text-base font-bold text-white font-mono mt-0.5">
+                {ratios.quickRatio || 'N/A'}{typeof ratios.quickRatio === 'number' || !isNaN(Number(ratios.quickRatio)) ? ' : 1' : ''}
+              </p>
+              <p className="text-[10px] text-zinc-500 mt-0.5">Excluding Inventory</p>
+            </div>
+            <div className="p-3.5 rounded-2xl bg-zinc-900/60 border border-zinc-800/80">
+              <p className="text-[11px] text-zinc-400 font-medium">Debt-to-Equity</p>
+              <p className="text-base font-bold text-white font-mono mt-0.5">
+                {ratios.debtToEquity || 'N/A'}
+              </p>
+              <p className="text-[10px] text-zinc-500 mt-0.5">Total Debt / Total Equity</p>
+            </div>
+          </div>
+
+          {/* Main Printable Balance Sheet Container */}
+          <div className="p-6 sm:p-8 rounded-3xl bg-zinc-900 border border-zinc-800 shadow-xl print:bg-white print:text-black print:border-none print:shadow-none print:p-0">
+            {/* Business Header */}
+            <div className="text-center pb-6 border-b border-zinc-800 print:border-black">
+              <h2 className="text-xl sm:text-2xl font-black text-white print:text-black uppercase tracking-wider">
+                {businessName}
+              </h2>
+              <p className="text-xs text-zinc-400 print:text-zinc-600 font-mono mt-1">PAN / VAT: {businessPan}</p>
+              <h3 className="text-sm font-bold text-blue-400 print:text-black uppercase mt-1 tracking-wide">
+                Statement of Financial Position / Balance Sheet (वासलात)
+              </h3>
+              <p className="text-xs text-zinc-400 print:text-zinc-600 mt-0.5">
+                As on {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </p>
+            </div>
+
+            {/* T-SHAPE LAYOUT */}
+            {bsLayout === 't-shape' ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-6">
+                {/* ──────────────── ASSETS COLUMN ──────────────── */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b-2 border-emerald-500/40 print:border-black">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black">
+                      Assets (सम्पत्ति)
+                    </h4>
+                    <span className="text-[10px] text-zinc-500 print:text-zinc-600 font-mono uppercase">Amount (Rs.)</span>
+                  </div>
+
+                  <div className="space-y-4 text-xs">
+                    {/* 1. Current Assets */}
+                    <div>
+                      <p className="font-bold text-zinc-200 print:text-black">1. Current Assets (चालु सम्पत्ति)</p>
+                      <div className="pl-3 space-y-2 pt-2 text-zinc-400 print:text-zinc-700">
+                        {/* Cash in Hand */}
+                        <div>
+                          <div
+                            onClick={() => toggleExpand('cash')}
+                            className="flex justify-between items-center cursor-pointer hover:text-white transition group py-0.5"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <span>Cash in Hand & Counter Drawer</span>
+                              {cashAccounts.length > 0 && (
+                                <span className="text-[10px] text-zinc-500 group-hover:text-blue-400">
+                                  ({cashAccounts.length} {cashAccounts.length === 1 ? 'account' : 'accounts'})
+                                </span>
+                              )}
+                            </span>
+                            <span className="font-mono text-white print:text-black font-semibold">
+                              Rs. {cashInHand.toLocaleString()}
+                            </span>
+                          </div>
+                          {expandedSection === 'cash' && cashAccounts.length > 0 && (
+                            <div className="ml-3 mt-1 p-2 rounded-xl bg-zinc-800/60 border border-zinc-700/60 space-y-1">
+                              {cashAccounts.map((acc: any) => (
+                                <div key={acc.id} className="flex justify-between text-[11px] text-zinc-300">
+                                  <span>{acc.accountName}</span>
+                                  <span className="font-mono text-zinc-200">Rs. {Number(acc.balance || 0).toLocaleString()}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Bank & Wallets */}
+                        <div>
+                          <div
+                            onClick={() => toggleExpand('bank')}
+                            className="flex justify-between items-center cursor-pointer hover:text-white transition group py-0.5"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <span>Bank & Digital Wallets</span>
+                              {bankAccounts.length > 0 && (
+                                <span className="text-[10px] text-zinc-500 group-hover:text-blue-400">
+                                  ({bankAccounts.length} {bankAccounts.length === 1 ? 'bank' : 'banks'})
+                                </span>
+                              )}
+                            </span>
+                            <span className="font-mono text-white print:text-black font-semibold">
+                              Rs. {bankAndWallets.toLocaleString()}
+                            </span>
+                          </div>
+                          {expandedSection === 'bank' && bankAccounts.length > 0 && (
+                            <div className="ml-3 mt-1 p-2 rounded-xl bg-zinc-800/60 border border-zinc-700/60 space-y-1">
+                              {bankAccounts.map((acc: any) => (
+                                <div key={acc.id} className="flex justify-between text-[11px] text-zinc-300">
+                                  <span>
+                                    {acc.bankName || acc.accountName} {acc.accountNumber ? `(${acc.accountNumber})` : ''}
+                                  </span>
+                                  <span className="font-mono text-zinc-200">Rs. {Number(acc.balance || 0).toLocaleString()}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Inventory */}
+                        <div className="flex justify-between items-center py-0.5">
+                          <span>Inventory / Stock Value (at Cost Price)</span>
+                          <span className="font-mono text-white print:text-black font-semibold">
+                            Rs. {stockValue.toLocaleString()}
+                          </span>
+                        </div>
+
+                        {/* Sundry Debtors */}
+                        <div>
+                          <div
+                            onClick={() => toggleExpand('debtors')}
+                            className="flex justify-between items-center cursor-pointer hover:text-white transition group py-0.5"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <span>Sundry Debtors / Customers (उठाउन बाँकी)</span>
+                              {debtorsList.length > 0 && (
+                                <span className="text-[10px] text-zinc-500 group-hover:text-blue-400">
+                                  ({debtorsList.length} {debtorsList.length === 1 ? 'party' : 'parties'})
+                                </span>
+                              )}
+                            </span>
+                            <span className="font-mono text-white print:text-black font-semibold">
+                              Rs. {sundryDebtors.toLocaleString()}
+                            </span>
+                          </div>
+                          {expandedSection === 'debtors' && debtorsList.length > 0 && (
+                            <div className="ml-3 mt-1 p-2 rounded-xl bg-zinc-800/60 border border-zinc-700/60 space-y-1 max-h-48 overflow-y-auto">
+                              {debtorsList.map((p: any) => (
+                                <div key={p.id} className="flex justify-between text-[11px] text-zinc-300">
+                                  <span>{p.name} {p.phone ? `(${p.phone})` : ''}</span>
+                                  <span className="font-mono text-emerald-400">Rs. {Number(p.balance || p.currentBalance || 0).toLocaleString()}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 2. Fixed Assets */}
+                    <div className="pt-2 border-t border-zinc-800/60 print:border-zinc-300">
+                      <p className="font-bold text-zinc-200 print:text-black">2. Fixed & Non-Current Assets</p>
+                      <div className="pl-3 space-y-1.5 pt-1.5 text-zinc-400 print:text-zinc-700">
+                        <div className="flex justify-between items-center py-0.5">
+                          <span>Property, Machinery & Office Equipment</span>
+                          <span className="font-mono text-white print:text-black font-semibold">
+                            Rs. {fixedAssets.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t-2 border-zinc-700 print:border-black flex justify-between font-bold text-sm text-emerald-400 print:text-black">
+                    <span>TOTAL ASSETS (A)</span>
+                    <span className="font-mono">Rs. {totalAssets.toLocaleString()}</span>
+                  </div>
                 </div>
 
-                <div className="space-y-3 text-xs">
-                  <div>
-                    <p className="font-bold text-zinc-300">1. Current Assets</p>
-                    <div className="pl-4 space-y-1.5 pt-1.5 text-zinc-400">
+                {/* ──────────────── LIABILITIES & EQUITY COLUMN ──────────────── */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b-2 border-rose-500/40 print:border-black">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-rose-400 print:text-black">
+                      Liabilities & Equity (दायित्व तथा पुँजी)
+                    </h4>
+                    <span className="text-[10px] text-zinc-500 print:text-zinc-600 font-mono uppercase">Amount (Rs.)</span>
+                  </div>
+
+                  <div className="space-y-4 text-xs">
+                    {/* 1. Current Liabilities */}
+                    <div>
+                      <p className="font-bold text-zinc-200 print:text-black">1. Current Liabilities (चालु दायित्व)</p>
+                      <div className="pl-3 space-y-2 pt-2 text-zinc-400 print:text-zinc-700">
+                        {/* Sundry Creditors */}
+                        <div>
+                          <div
+                            onClick={() => toggleExpand('creditors')}
+                            className="flex justify-between items-center cursor-pointer hover:text-white transition group py-0.5"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <span>Sundry Creditors / Suppliers (तिर्न बाँकी)</span>
+                              {creditorsList.length > 0 && (
+                                <span className="text-[10px] text-zinc-500 group-hover:text-blue-400">
+                                  ({creditorsList.length} {creditorsList.length === 1 ? 'party' : 'parties'})
+                                </span>
+                              )}
+                            </span>
+                            <span className="font-mono text-white print:text-black font-semibold">
+                              Rs. {sundryCreditors.toLocaleString()}
+                            </span>
+                          </div>
+                          {expandedSection === 'creditors' && creditorsList.length > 0 && (
+                            <div className="ml-3 mt-1 p-2 rounded-xl bg-zinc-800/60 border border-zinc-700/60 space-y-1 max-h-48 overflow-y-auto">
+                              {creditorsList.map((p: any) => (
+                                <div key={p.id} className="flex justify-between text-[11px] text-zinc-300">
+                                  <span>{p.name} {p.phone ? `(${p.phone})` : ''}</span>
+                                  <span className="font-mono text-rose-400">Rs. {Math.abs(Number(p.balance || p.currentBalance || 0)).toLocaleString()}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Tax / VAT Payable */}
+                        <div className="flex justify-between items-center py-0.5">
+                          <span>Duties & Taxes Payable (VAT / TDS)</span>
+                          <span className="font-mono text-white print:text-black font-semibold">
+                            Rs. {taxPayable.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 2. Owner's Equity & Capital */}
+                    <div className="pt-2 border-t border-zinc-800/60 print:border-zinc-300">
+                      <p className="font-bold text-zinc-200 print:text-black">2. Owner's Capital & Equity (पुँजी कोष)</p>
+                      <div className="pl-3 space-y-1.5 pt-1.5 text-zinc-400 print:text-zinc-700">
+                        <div className="flex justify-between items-center py-0.5">
+                          <span>Owner's Opening Capital</span>
+                          <span className="font-mono text-white print:text-black font-semibold">
+                            Rs. {ownerCapital.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center py-0.5">
+                          <span>Retained Earnings / Cumulative Net Profit</span>
+                          <span className={`font-mono font-semibold ${netProfit >= 0 ? 'text-emerald-400 print:text-black' : 'text-rose-400 print:text-black'}`}>
+                            Rs. {netProfit.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t-2 border-zinc-700 print:border-black flex justify-between font-bold text-sm text-rose-400 print:text-black">
+                    <span>TOTAL LIABILITIES & EQUITY (B)</span>
+                    <span className="font-mono">Rs. {(totalLiabilities + ownersEquity).toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* VERTICAL STATEMENT LAYOUT */
+              <div className="space-y-6 pt-6 text-xs">
+                {/* 1. ASSETS SECTION */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center pb-2 border-b-2 border-emerald-500/50 print:border-black font-bold text-sm text-emerald-400 print:text-black">
+                    <span>I. ASSETS (सम्पत्ति)</span>
+                    <span>AMOUNT (Rs.)</span>
+                  </div>
+                  <div className="pl-3 space-y-2">
+                    <p className="font-bold text-zinc-300 print:text-black">A. Current Assets</p>
+                    <div className="pl-3 space-y-1.5 text-zinc-400 print:text-zinc-700">
                       <div className="flex justify-between">
-                        <span>Cash in Hand & Drawer</span>
-                        <span className="font-mono text-white">Rs. 38,400</span>
+                        <span>Cash in Hand & Counter Drawer</span>
+                        <span className="font-mono font-semibold text-white print:text-black">Rs. {cashInHand.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Bank & Digital Wallets</span>
-                        <span className="font-mono text-white">Rs. 2,15,600</span>
+                        <span className="font-mono font-semibold text-white print:text-black">Rs. {bankAndWallets.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Inventory / Stock Value</span>
-                        <span className="font-mono text-white">Rs. {stockValue.toLocaleString()}</span>
+                        <span>Closing Stock / Inventory (at Cost)</span>
+                        <span className="font-mono font-semibold text-white print:text-black">Rs. {stockValue.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Sundry Debtors (उठाउन बाँकी)</span>
-                        <span className="font-mono text-white">Rs. {sundryDebtors.toLocaleString()}</span>
+                        <span>Sundry Debtors (Receivables from Customers)</span>
+                        <span className="font-mono font-semibold text-white print:text-black">Rs. {sundryDebtors.toLocaleString()}</span>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="pt-2 border-t border-zinc-800/60">
-                    <p className="font-bold text-zinc-300">2. Fixed Assets</p>
-                    <div className="pl-4 space-y-1.5 pt-1.5 text-zinc-400">
+                    <p className="font-bold text-zinc-300 print:text-black pt-2">B. Fixed & Non-Current Assets</p>
+                    <div className="pl-3 space-y-1.5 text-zinc-400 print:text-zinc-700">
                       <div className="flex justify-between">
-                        <span>Shop Fixtures, POS Devices & Computers</span>
-                        <span className="font-mono text-white">Rs. {fixedAssets.toLocaleString()}</span>
+                        <span>Property, Plant & Equipment</span>
+                        <span className="font-mono font-semibold text-white print:text-black">Rs. {fixedAssets.toLocaleString()}</span>
                       </div>
+                    </div>
+
+                    <div className="flex justify-between font-bold text-sm text-emerald-400 print:text-black pt-2 border-t border-zinc-800 print:border-zinc-400">
+                      <span>TOTAL ASSETS (A)</span>
+                      <span className="font-mono">Rs. {totalAssets.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t-2 border-zinc-700 flex justify-between font-bold text-sm text-emerald-400">
-                  <span>TOTAL ASSETS (क)</span>
-                  <span className="font-mono">Rs. {totalAssets.toLocaleString()}</span>
+                {/* 2. LIABILITIES SECTION */}
+                <div className="space-y-3 pt-4">
+                  <div className="flex justify-between items-center pb-2 border-b-2 border-rose-500/50 print:border-black font-bold text-sm text-rose-400 print:text-black">
+                    <span>II. LIABILITIES (दायित्व)</span>
+                    <span>AMOUNT (Rs.)</span>
+                  </div>
+                  <div className="pl-3 space-y-2">
+                    <p className="font-bold text-zinc-300 print:text-black">A. Current Liabilities</p>
+                    <div className="pl-3 space-y-1.5 text-zinc-400 print:text-zinc-700">
+                      <div className="flex justify-between">
+                        <span>Sundry Creditors (Payables to Suppliers)</span>
+                        <span className="font-mono font-semibold text-white print:text-black">Rs. {sundryCreditors.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Duties & Taxes Payable (VAT / TDS)</span>
+                        <span className="font-mono font-semibold text-white print:text-black">Rs. {taxPayable.toLocaleString()}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between font-bold text-xs text-rose-400 print:text-black pt-2 border-t border-zinc-800 print:border-zinc-400">
+                      <span>Total Current Liabilities</span>
+                      <span className="font-mono">Rs. {totalLiabilities.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. EQUITY SECTION */}
+                <div className="space-y-3 pt-4">
+                  <div className="flex justify-between items-center pb-2 border-b-2 border-blue-500/50 print:border-black font-bold text-sm text-blue-400 print:text-black">
+                    <span>III. OWNER'S EQUITY (पुँजी कोष)</span>
+                    <span>AMOUNT (Rs.)</span>
+                  </div>
+                  <div className="pl-3 space-y-2">
+                    <div className="pl-3 space-y-1.5 text-zinc-400 print:text-zinc-700">
+                      <div className="flex justify-between">
+                        <span>Owner's Opening Capital</span>
+                        <span className="font-mono font-semibold text-white print:text-black">Rs. {ownerCapital.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Retained Earnings / Cumulative Net Profit</span>
+                        <span className="font-mono font-semibold text-white print:text-black">Rs. {netProfit.toLocaleString()}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between font-bold text-sm text-blue-400 print:text-black pt-2 border-t border-zinc-800 print:border-zinc-400">
+                      <span>Total Equity & Liabilities (II + III)</span>
+                      <span className="font-mono">Rs. {(totalLiabilities + ownersEquity).toLocaleString()}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
+            )}
 
-              {/* LIABILITIES & EQUITY COLUMN */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-rose-400">Liabilities & Equity (दायित्व तथा पुँजी)</h4>
-                  <span className="text-[10px] text-zinc-500 font-mono uppercase">Amount (Rs.)</span>
-                </div>
-
-                <div className="space-y-3 text-xs">
-                  <div>
-                    <p className="font-bold text-zinc-300">1. Current Liabilities</p>
-                    <div className="pl-4 space-y-1.5 pt-1.5 text-zinc-400">
-                      <div className="flex justify-between">
-                        <span>Sundry Creditors (तिर्न बाँकी)</span>
-                        <span className="font-mono text-white">Rs. {sundryCreditors.toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Duties & Taxes Payable (VAT/PAN)</span>
-                        <span className="font-mono text-white">Rs. {taxPayable.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 border-t border-zinc-800/60">
-                    <p className="font-bold text-zinc-300">2. Owner's Equity / Capital</p>
-                    <div className="pl-4 space-y-1.5 pt-1.5 text-zinc-400">
-                      <div className="flex justify-between">
-                        <span>Opening Capital & Retained Earnings</span>
-                        <span className="font-mono text-white">Rs. {ownersEquity.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t-2 border-zinc-700 flex justify-between font-bold text-sm text-rose-400">
-                  <span>TOTAL LIABILITIES & EQUITY (ख)</span>
-                  <span className="font-mono">Rs. {totalAssets.toLocaleString()}</span>
-                </div>
+            {/* Signature Block for Formal Print View */}
+            <div className="hidden print:grid grid-cols-2 gap-12 mt-16 pt-8 border-t border-black text-xs text-black">
+              <div className="text-center">
+                <div className="h-10 border-b border-black w-48 mx-auto" />
+                <p className="font-bold mt-2">Prepared By (Accountant)</p>
+                <p className="text-[10px] text-zinc-600">Date: {new Date().toLocaleDateString()}</p>
+              </div>
+              <div className="text-center">
+                <div className="h-10 border-b border-black w-48 mx-auto" />
+                <p className="font-bold mt-2">Authorized Signatory / Owner</p>
+                <p className="text-[10px] text-zinc-600">{businessName}</p>
               </div>
             </div>
           </div>

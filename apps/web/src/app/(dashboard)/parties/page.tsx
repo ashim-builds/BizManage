@@ -43,6 +43,7 @@ import {
   Phone,
   ArrowDownLeft,
   ArrowUpRight,
+  ArrowLeft,
   Download,
   Upload,
   FileSpreadsheet,
@@ -55,6 +56,7 @@ export default function PartiesPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedType, setSelectedType] = useState<PartyType | ''>('');
   const [selectedPartyId, setSelectedPartyId] = useState<string | null>(null);
+  const [showMobileDetails, setShowMobileDetails] = useState(false);
 
   // Debounce search input to avoid typing interruption and losing focus
   useEffect(() => {
@@ -422,7 +424,7 @@ export default function PartiesPage() {
         {/* Master-Detail Split Container with Independent Smooth Scrolling */}
         <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs flex flex-col md:flex-row overflow-hidden h-[calc(100vh-140px)] max-h-[calc(100vh-140px)]">
           {/* LEFT PANE: Parties Directory & Filters */}
-          <div className="w-full md:w-80 lg:w-88 shrink-0 border-r border-slate-200 flex flex-col bg-white h-full overflow-hidden">
+          <div className={`w-full md:w-80 lg:w-88 shrink-0 border-r border-slate-200 flex flex-col bg-white h-full overflow-hidden ${showMobileDetails ? 'hidden md:flex' : 'flex'}`}>
             {/* Search Input */}
             <div className="p-3 border-b border-slate-100">
               <div className="relative flex items-center">
@@ -522,7 +524,10 @@ export default function PartiesPage() {
                     key={party.id}
                     party={party}
                     isSelected={activePartyInList?.id === party.id}
-                    onSelect={() => setSelectedPartyId(party.id)}
+                    onSelect={() => {
+                      setSelectedPartyId(party.id);
+                      setShowMobileDetails(true);
+                    }}
                     onLongPress={() => setLongPressParty(party)}
                   />
                 ))
@@ -531,9 +536,24 @@ export default function PartiesPage() {
           </div>
 
           {/* RIGHT PANE: Selected Party Details & Transactions */}
-          <div className="flex-1 flex flex-col bg-white overflow-hidden h-full">
+          <div className={`flex-1 flex flex-col bg-white overflow-hidden h-full ${showMobileDetails ? 'flex' : 'hidden md:flex'}`}>
             {activePartyInList ? (
               <>
+                {/* Mobile Back Button */}
+                <div className="md:hidden px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setShowMobileDetails(false)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 shadow-2xs transition active:scale-95 cursor-pointer"
+                  >
+                    <ArrowLeft className="w-4 h-4 text-slate-500" />
+                    <span>Back to Directory</span>
+                  </button>
+                  <span className="text-xs font-bold text-slate-600 truncate max-w-[150px]">
+                    {activePartyInList.name}
+                  </span>
+                </div>
+
                 {/* Header: Party Name, In/Out Balance Block & WhatsApp */}
                 <div className="px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 bg-white">
                   {/* Left: Party Details */}
@@ -1099,6 +1119,7 @@ export default function PartiesPage() {
             onClick: () => {
               if (longPressParty) {
                 setSelectedPartyId(longPressParty.id);
+                setShowMobileDetails(true);
               }
               setLongPressParty(null);
             },

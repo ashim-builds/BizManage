@@ -70,3 +70,14 @@ export function useCashflowStatementReport(params?: any) {
     },
   });
 }
+
+export function useBalanceSheetReport(params?: { asOfDate?: string }) {
+  return useQuery({
+    queryKey: ['reports', 'balance-sheet', params],
+    queryFn: async () => {
+      const res = await api.get('/reports/balance-sheet', { params });
+      return res.data.data;
+    },
+  });
+}
+

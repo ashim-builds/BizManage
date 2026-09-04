@@ -484,4 +484,176 @@ export async function reportRoutes(fastify: FastifyInstance) {
       },
     });
   });
+
+  // ----------------------------------------------------
+  // 8. BALANCE SHEET REPORT API
+  // ----------------------------------------------------
+  fastify.get('/balance-sheet', async (request, reply) => {
+    const businessId = request.tenant!.businessId;
+    const { asOfDate } = request.query as { asOfDate?: string };
+
+    const dateFilter = asOfDate ? { lte: new Date(asOfDate) } : undefined;
+
+    const [
+      accounts,
+      parties,
+      items,
+      salesTaxAgg,
+      purchasesTaxAgg,
+      salesAgg,
+      purchasesAgg,
+      expensesAgg,
+      incomeAgg,
+    ] = await Promise.all([
+      request.db!.account.findMany({
+        where: { businessId },
+        select: { id: true, accountName: true, bankName: true, accountType: true, balance: true, accountNumber: true },
+        orderBy: { accountName: 'asc' },
+      }),
+      request.db!.party.findMany({
+        where: { businessId },
+        select: { id: true, name: true, phone: true, type: true, currentBalance: true },
+        orderBy: { name: 'asc' },
+      }),
+      request.db!.item.findMany({
+        where: { businessId },
+        select: { id: true, name: true, currentStock: true, purchasePrice: true, salePrice: true },
+      }),
+      request.db!.sale.aggregate({
+        where: {
+          businessId,
+          status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.DRAFT] },
+          ...(dateFilter ? { date: dateFilter } : {}),
+        },
+        _sum: { taxAmount: true },
+      }),
+      request.db!.purchase.aggregate({
+        where: {
+          businessId,
+          status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.DRAFT] },
+          ...(dateFilter ? { date: dateFilter } : {}),
+        },
+        _sum: { taxAmount: true },
+      }),
+      request.db!.sale.aggregate({
+        where: {
+          businessId,
+          status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.DRAFT] },
+          ...(dateFilter ? { date: dateFilter } : {}),
+        },
+        _sum: { totalAmount: true, taxAmount: true },
+      }),
+      request.db!.purchase.aggregate({
+        where: {
+          businessId,
+          status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.DRAFT] },
+          ...(dateFilter ? { date: dateFilter } : {}),
+        },
+        _sum: { totalAmount: true, taxAmount: true },
+      }),
+      request.db!.expense.aggregate({
+        where: {
+          businessId,
+          ...(dateFilter ? { date: dateFilter } : {}),
+        },
+        _sum: { amount: true },
+      }),
+      request.db!.income.aggregate({
+        where: {
+          businessId,
+          ...(dateFilter ? { date: dateFilter } : {}),
+        },
+        _sum: { amount: true },
+      }),
+    ]);
+
+    // 1. Current Assets
+    const cashAccounts = accounts.filter((a) => a.accountType === 'CASH');
+    const bankAccounts = accounts.filter((a) => a.accountType === 'BANK' || a.accountType === 'MOBILE_WALLET');
+
+    const cashInHand = cashAccounts.reduce((sum, a) => sum + Number(a.balance || 0), 0);
+    const bankAndWallets = bankAccounts.reduce((sum, a) => sum + Number(a.balance || 0), 0);
+
+    const debtors = parties.filter((p) => Number(p.currentBalance || 0) > 0);
+    const sundryDebtors = debtors.reduce((sum, p) => sum + Number(p.currentBalance || 0), 0);
+
+    const stockValuation = items.reduce(
+      (sum, i) => sum + Math.max(0, Number(i.currentStock || 0)) * Number(i.purchasePrice || 0),
+      0
+    );
+
+    const currentAssets = cashInHand + bankAndWallets + sundryDebtors + stockValuation;
+    const fixedAssets = 0; // Configurable fixed assets
+    const totalAssets = currentAssets + fixedAssets;
+
+    // 2. Current Liabilities
+    const creditors = parties.filter((p) => Number(p.currentBalance || 0) < 0);
+    const sundryCreditors = creditors.reduce((sum, p) => sum + Math.abs(Number(p.currentBalance || 0)), 0);
+
+    const outputVat = Number(salesTaxAgg._sum.taxAmount || 0);
+    const inputVat = Number(purchasesTaxAgg._sum.taxAmount || 0);
+    const taxPayable = Math.max(0, outputVat - inputVat);
+
+    const totalLiabilities = sundryCreditors + taxPayable;
+
+    // 3. Equity & Retained Earnings
+    const netSales = Number(salesAgg._sum.totalAmount || 0) - outputVat;
+    const netPurchases = Number(purchasesAgg._sum.totalAmount || 0) - inputVat;
+    const totalExpenses = Number(expensesAgg._sum.amount || 0);
+    const totalOtherIncome = Number(incomeAgg._sum.amount || 0);
+
+    // Cumulative Net Profit / (Loss) = (Revenue + Income + Ending Stock) - (Purchases + Expenses)
+    const netProfit = (netSales + totalOtherIncome + stockValuation) - (netPurchases + totalExpenses);
+    const ownersEquity = totalAssets - totalLiabilities;
+    const ownerCapital = ownersEquity - netProfit;
+
+    return reply.send({
+      success: true,
+      data: {
+        asOfDate: asOfDate || new Date().toISOString(),
+        assets: {
+          current: {
+            cashInHand,
+            cashAccounts,
+            bankAndWallets,
+            bankAccounts,
+            sundryDebtors,
+            debtorsCount: debtors.length,
+            debtorsList: debtors.slice(0, 50).map((d) => ({ ...d, balance: Number(d.currentBalance || 0) })),
+            stockValuation,
+            itemsCount: items.length,
+            total: currentAssets,
+          },
+          fixed: {
+            total: fixedAssets,
+          },
+          totalAssets,
+        },
+        liabilities: {
+          current: {
+            sundryCreditors,
+            creditorsCount: creditors.length,
+            creditorsList: creditors.slice(0, 50).map((c) => ({ ...c, balance: Math.abs(Number(c.currentBalance || 0)) })),
+            taxPayable,
+            outputVat,
+            inputVat,
+            total: totalLiabilities,
+          },
+          totalLiabilities,
+        },
+        equity: {
+          ownerCapital,
+          netProfit,
+          totalEquity: ownersEquity,
+          totalLiabilitiesAndEquity: totalLiabilities + ownersEquity,
+        },
+        ratios: {
+          currentRatio: totalLiabilities > 0 ? Number((currentAssets / totalLiabilities).toFixed(2)) : null,
+          quickRatio: totalLiabilities > 0 ? Number(((currentAssets - stockValuation) / totalLiabilities).toFixed(2)) : null,
+          debtToEquity: ownersEquity > 0 ? Number((totalLiabilities / ownersEquity).toFixed(2)) : null,
+        },
+      },
+    });
+  });
 }
+

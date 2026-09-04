@@ -10,6 +10,7 @@ import {
   usePartyBalanceReport,
   useInventoryValuationReport,
   useCashflowStatementReport,
+  useBalanceSheetReport,
 } from '@/services/reportService';
 import { useCurrentBusiness } from '@/services/businessService';
 import { LoadingState } from '@/components/common/LoadingState';
@@ -97,6 +98,7 @@ export default function ReportsPage() {
   const partyBalQuery = usePartyBalanceReport({ search });
   const inventoryQuery = useInventoryValuationReport({ search });
   const cashflowQuery = useCashflowStatementReport({ startDate, endDate });
+  const balanceSheetQuery = useBalanceSheetReport({ asOfDate: endDate || undefined });
 
   const { data: business } = useCurrentBusiness();
 
@@ -842,6 +844,7 @@ export default function ReportsPage() {
           purchaseRows={purchaseQuery.data?.rows || []}
           partyRows={partyBalQuery.data?.rows || []}
           itemRows={inventoryQuery.data?.rows || []}
+          balanceSheetData={balanceSheetQuery.data}
           businessName={business?.name}
           businessPan={business?.taxNumber || '-'}
         />
