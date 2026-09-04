@@ -937,71 +937,143 @@ function InventoryPageContent() {
       {/* ========================================================================= */}
       {activeTab === 'products' && (
         <>
-          {/* MOBILE VIEW (< md) - Clean Cards matching screenshot with single click navigation */}
+          {/* MOBILE VIEW (< md) - Pixel-perfect match with Image 2 Screen 1 */}
           <div className="block md:hidden space-y-3 pb-24">
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Search Items & SKU..."
-                value={productSearch}
-                onChange={(e) => setProductSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs transition-all"
-              />
+            {/* Top Title & Add Item Button */}
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl font-black text-slate-900 tracking-tight">Inventory</h1>
+              <Link
+                href="/inventory/new"
+                className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs flex items-center gap-1.5 active:scale-95 transition-all"
+              >
+                <Plus className="w-3.5 h-3.5 stroke-[3]" /> Add Item
+              </Link>
             </div>
 
-            {/* Stock Level Filter Pills (Mobile) */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] font-bold">
+            {/* Search Bar + Square Filter Button */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                  className="w-full pl-9 pr-8 py-2.5 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs transition-all"
+                />
+                {productSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setProductSearch('')}
+                    className="absolute right-3 top-2.5 p-0.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setStockFilter(stockFilter === 'ALL' ? 'LOW' : 'ALL')}
+                className="p-2.5 rounded-2xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 shadow-2xs transition"
+                title="Filter low stock"
+              >
+                <Filter className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Subtabs Strip: Products | Services | Category | Units */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-200 text-xs font-bold scrollbar-none">
+              <button
+                type="button"
+                onClick={() => setActiveTab('products')}
+                className={`pb-2 px-1 flex items-center gap-1.5 border-b-2 transition-all ${
+                  (activeTab as string) === 'products'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-slate-500'
+                }`}
+              >
+                <Package className="w-3.5 h-3.5" />
+                <span>Products</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('services')}
+                className={`pb-2 px-1 flex items-center gap-1.5 border-b-2 transition-all ${
+                  (activeTab as string) === 'services'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-slate-500'
+                }`}
+              >
+                <Wrench className="w-3.5 h-3.5" />
+                <span>Services</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('category')}
+                className={`pb-2 px-1 flex items-center gap-1.5 border-b-2 transition-all ${
+                  (activeTab as string) === 'category'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-slate-500'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>Category</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('units')}
+                className={`pb-2 px-1 flex items-center gap-1.5 border-b-2 transition-all ${
+                  (activeTab as string) === 'units'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-slate-500'
+                }`}
+              >
+                <Scale className="w-3.5 h-3.5" />
+                <span>Units</span>
+              </button>
+            </div>
+
+            {/* Stock Level Filter Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs font-bold scrollbar-none">
               <button
                 type="button"
                 onClick={() => setStockFilter('ALL')}
-                className={`px-3 py-1.5 rounded-xl transition-all shrink-0 cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-full transition-all shrink-0 cursor-pointer ${
                   stockFilter === 'ALL'
-                    ? 'bg-slate-900 text-white shadow-2xs'
+                    ? 'bg-slate-100 text-slate-900 border border-slate-300 shadow-2xs font-black'
                     : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                 }`}
               >
-                All Items ({products.length})
+                All ({products.length})
               </button>
               <button
                 type="button"
                 onClick={() => setStockFilter('LOW')}
-                className={`px-3 py-1.5 rounded-xl transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3.5 py-1.5 rounded-full transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
                   stockFilter === 'LOW'
-                    ? 'bg-amber-600 text-white shadow-2xs'
+                    ? 'bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs font-black'
                     : 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
                 }`}
               >
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                <span>Low Stock</span>
-                {lowStockCount > 0 && (
-                  <span className={`px-1.5 py-0.2 rounded-full text-[9px] ${stockFilter === 'LOW' ? 'bg-white/25 text-white' : 'bg-amber-200 text-amber-900'}`}>
-                    {lowStockCount}
-                  </span>
-                )}
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                <span>Low Stock ({lowStockCount})</span>
               </button>
               <button
                 type="button"
                 onClick={() => setStockFilter('OUT_OF_STOCK')}
-                className={`px-3 py-1.5 rounded-xl transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3.5 py-1.5 rounded-full transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
                   stockFilter === 'OUT_OF_STOCK'
-                    ? 'bg-rose-600 text-white shadow-2xs'
+                    ? 'bg-rose-100 text-rose-900 border border-rose-300 shadow-2xs font-black'
                     : 'bg-rose-50 text-rose-800 border border-rose-200 hover:bg-rose-100'
                 }`}
               >
-                <span>Out of Stock</span>
-                {outOfStockCount > 0 && (
-                  <span className={`px-1.5 py-0.2 rounded-full text-[9px] ${stockFilter === 'OUT_OF_STOCK' ? 'bg-white/25 text-white' : 'bg-rose-200 text-rose-900'}`}>
-                    {outOfStockCount}
-                  </span>
-                )}
+                <span>Out ({outOfStockCount})</span>
               </button>
             </div>
 
-            {/* Products List Cards */}
+            {/* Products List Card Container (Image 2 Screen 1) */}
             {filteredProducts.length === 0 ? (
-              <div className="p-8 text-center bg-white rounded-3xl border border-slate-200/80 shadow-xs space-y-3">
+              <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 shadow-xs space-y-3">
                 <Package className="w-10 h-10 text-slate-300 mx-auto" />
                 <p className="text-xs text-slate-500 font-medium">
                   {stockFilter === 'LOW'
@@ -1028,14 +1100,16 @@ function InventoryPageContent() {
                 )}
               </div>
             ) : (
-              <div className="space-y-3">
-                {filteredProducts.map((p) => {
+              <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 shadow-xs overflow-hidden">
+                {filteredProducts.map((p, idx) => {
                   const stock = Number(p.currentStock || 0);
+                  const isFirstActive = idx === 0;
                   return (
                     <MobileItemCard
                       key={p.id}
                       item={p}
                       stock={stock}
+                      isFirstActive={isFirstActive}
                       onClick={() => router.push(`/inventory/${p.id}`)}
                       onLongPress={() => setLongPressItem(p)}
                     />
@@ -1043,15 +1117,6 @@ function InventoryPageContent() {
                 })}
               </div>
             )}
-
-            {/* Floating Red Add New Item Pill Button */}
-            <Link
-              href="/inventory/new"
-              className="fixed bottom-28 left-1/2 -translate-x-1/2 md:hidden z-40 inline-flex items-center gap-2 px-7 py-3 rounded-full bg-[#FF0033] hover:bg-[#E6002E] text-white font-bold text-xs sm:text-sm shadow-xl shadow-red-600/30 active:scale-95 transition-all whitespace-nowrap"
-            >
-              <Package className="w-4 h-4 stroke-[2.5]" />
-              <span>Add New Item</span>
-            </Link>
           </div>
 
           {/* DESKTOP SPLIT VIEW (>= md) */}
@@ -3357,49 +3422,43 @@ function InventoryPageContent() {
 interface MobileItemCardProps {
   item: any;
   stock: number;
+  isFirstActive?: boolean;
   onClick: () => void;
   onLongPress: () => void;
 }
 
-function MobileItemCard({ item, stock, onClick, onLongPress }: MobileItemCardProps) {
+function MobileItemCard({ item, stock, isFirstActive, onClick, onLongPress }: MobileItemCardProps) {
   const longPressHandlers = useLongPress(onLongPress, { delay: 600 });
+  const isOut = stock <= 0;
+  const isLow = stock > 0 && stock <= Number(item.minStockAlert || 0);
 
   return (
     <div
       {...longPressHandlers}
       onClick={onClick}
-      className="p-4 bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md active:scale-[0.99] transition-all cursor-pointer space-y-2.5 select-none"
+      className={`px-4 py-3.5 flex items-center justify-between cursor-pointer transition-colors active:bg-slate-50 select-none ${
+        isFirstActive ? 'border-l-4 border-blue-600 bg-blue-50/20' : ''
+      }`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <h3 className="text-sm font-bold text-slate-900 leading-snug">{item.name}</h3>
-        {item.code && (
-          <span className="text-[10px] text-slate-400 font-mono shrink-0">SKU: {item.code}</span>
-        )}
+      {/* Left: Item Name */}
+      <div className="min-w-0 pr-2">
+        <h3 className="text-xs font-bold text-slate-900 truncate">{item.name}</h3>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 text-left pt-1">
-        <div>
-          <span className="text-[11px] text-slate-400 block font-medium">Sale Price</span>
-          <span className="text-xs sm:text-sm font-bold text-slate-900 font-mono">
-            Rs {Number(item.salePrice || 0).toFixed(2)}
-          </span>
-        </div>
-        <div>
-          <span className="text-[11px] text-slate-400 block font-medium">Purchase Price</span>
-          <span className="text-xs sm:text-sm font-bold text-slate-900 font-mono">
-            Rs {Number(item.purchasePrice || 0).toFixed(2)}
-          </span>
-        </div>
-        <div>
-          <span className="text-[11px] text-slate-400 block font-medium">Stock</span>
-          <span
-            className={`text-xs sm:text-sm font-bold font-mono ${
-              stock < 0 ? 'text-rose-500' : stock === 0 ? 'text-slate-600' : 'text-emerald-600'
-            }`}
-          >
-            {stock.toFixed(1)}
-          </span>
-        </div>
+      {/* Right: Quantity Badge + Chevron */}
+      <div className="flex items-center gap-2 shrink-0">
+        <span
+          className={`text-xs font-mono font-bold ${
+            isOut
+              ? 'text-rose-600'
+              : isLow
+              ? 'text-amber-600'
+              : 'text-emerald-600'
+          }`}
+        >
+          {stock} {item.unit || 'Pcs'}
+        </span>
+        <span className="text-slate-400 text-xs font-bold">›</span>
       </div>
     </div>
   );

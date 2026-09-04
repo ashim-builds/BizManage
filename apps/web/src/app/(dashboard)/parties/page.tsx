@@ -373,295 +373,567 @@ export default function PartiesPage() {
       {/* ========================================================================= */}
       {/* 1. ON-SCREEN UI (Hidden during print) */}
       {/* ========================================================================= */}
-      <div className="space-y-3 font-sans pb-4 print:hidden">
-        {/* Top Header & Summary Stats */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          {/* Left Title */}
-          <div className="flex items-center gap-3">
-            <h1 className="text-lg font-black text-slate-900 tracking-tight">Parties Directory</h1>
-            {/* Quick Receivables / Payables Stats */}
-            <div className="hidden sm:flex items-center gap-2 text-xs">
-              <span className="px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200/80 font-semibold">
-                To Receive: <strong className="font-mono">Rs. {(summary?.totalReceivable || 0).toLocaleString()}</strong>
-              </span>
-              <span className="px-2.5 py-1 rounded-xl bg-rose-50 text-rose-700 border border-rose-200/80 font-semibold">
-                To Pay: <strong className="font-mono">Rs. {(summary?.totalPayable || 0).toLocaleString()}</strong>
-              </span>
-            </div>
-          </div>
-
-          {/* Right Actions */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setIsImportPartiesOpen(true)}
-              className="px-3.5 py-1.5 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold text-xs border border-slate-200 transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
-              title="Import Parties from Excel, CSV, or JSON"
-            >
-              <Upload className="w-3.5 h-3.5 text-slate-500" />
-              <span>Import</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleTriggerExportParties}
-              className="px-3.5 py-1.5 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold text-xs border border-slate-200 transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
-              title="Export Parties to Excel, CSV, or JSON"
-            >
-              <Download className="w-3.5 h-3.5 text-slate-500" />
-              <span>Export</span>
-            </button>
-
+      <div className="font-sans pb-4 print:hidden">
+        {/* ========================================================================= */}
+        {/* MOBILE VIEW (< md) - Pixel-perfect match with Design Image 1 */}
+        {/* ========================================================================= */}
+        <div className="block md:hidden space-y-3 pb-24">
+          {/* Top Title & Add Party Button */}
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-black text-slate-900 tracking-tight">Parties</h1>
             <Link
               href="/parties/new"
-              className="px-4 py-1.5 rounded-full bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-xs flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs flex items-center gap-1.5 active:scale-95 transition-all"
             >
               <Plus className="w-3.5 h-3.5 stroke-[3]" /> Add Party
             </Link>
           </div>
+
+          {/* 2-Column Summary Cards: To Receive & To Pay */}
+          <div className="grid grid-cols-2 gap-2.5">
+            {/* To Receive Card */}
+            <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-3 flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold text-emerald-700">To Receive</p>
+                <p className="text-sm font-black font-mono text-slate-900 mt-0.5">
+                  Rs. {(summary?.totalReceivable || 0).toLocaleString()}
+                </p>
+              </div>
+              <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                <ArrowDownLeft className="w-4 h-4 stroke-[2.5]" />
+              </div>
+            </div>
+
+            {/* To Pay Card */}
+            <div className="bg-rose-50/70 border border-rose-200/80 rounded-2xl p-3 flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold text-rose-700">To Pay</p>
+                <p className="text-sm font-black font-mono text-slate-900 mt-0.5">
+                  Rs. {(summary?.totalPayable || 0).toLocaleString()}
+                </p>
+              </div>
+              <div className="w-7 h-7 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+                <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
+              </div>
+            </div>
+          </div>
+
+          {/* Search Bar + Square Filter Button */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search party by name, phone, PAN..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-8 py-2.5 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs transition-all"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  className="absolute right-3 top-2.5 p-0.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedCategory(selectedCategory ? '' : (categories?.[0]?.id || ''))}
+              className="p-2.5 rounded-2xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 shadow-2xs transition"
+              title="Filter by category"
+            >
+              <Filter className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Horizontal Filter Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs font-bold scrollbar-none">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedType('');
+                setSelectedCategory('');
+              }}
+              className={`px-3.5 py-1.5 rounded-full transition-all shrink-0 cursor-pointer ${
+                selectedType === '' && !selectedCategory
+                  ? 'bg-blue-50 text-blue-600 border border-blue-200 shadow-2xs'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              All
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedType(PartyType.CUSTOMER)}
+              className={`px-3.5 py-1.5 rounded-full transition-all shrink-0 cursor-pointer ${
+                selectedType === PartyType.CUSTOMER
+                  ? 'bg-blue-50 text-blue-600 border border-blue-200 shadow-2xs'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              Customers
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedType(PartyType.SUPPLIER)}
+              className={`px-3.5 py-1.5 rounded-full transition-all shrink-0 cursor-pointer ${
+                selectedType === PartyType.SUPPLIER
+                  ? 'bg-blue-50 text-blue-600 border border-blue-200 shadow-2xs'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              Suppliers
+            </button>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 text-xs font-bold focus:outline-none cursor-pointer shrink-0"
+            >
+              <option value="">Categories</option>
+              {categories?.map((c: any) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Parties List Card */}
+          <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 shadow-xs overflow-hidden">
+            {parties.length === 0 ? (
+              <div className="p-8 text-center space-y-3">
+                <p className="text-xs text-slate-400">No parties found.</p>
+                <Link
+                  href="/parties/new"
+                  className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-blue-600 text-white font-bold text-xs"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add Party
+                </Link>
+              </div>
+            ) : (
+              parties.map((party) => {
+                const bal = Number(party.currentBalance || 0);
+                const isSelected = activePartyInList?.id === party.id;
+                return (
+                  <div
+                    key={party.id}
+                    onClick={() => setSelectedPartyId(party.id)}
+                    className={`px-3.5 py-3 flex items-center justify-between cursor-pointer transition-colors active:bg-slate-50 ${
+                      isSelected ? 'border-l-4 border-blue-600 bg-blue-50/20' : ''
+                    }`}
+                  >
+                    {/* Left Details */}
+                    <div className="min-w-0 pr-2">
+                      <p className="text-xs font-bold text-slate-900 truncate">{party.name}</p>
+                      <div className="flex items-center gap-1 text-[11px] text-slate-500 mt-0.5">
+                        {party.phone ? (
+                          <>
+                            <Phone className="w-3 h-3 text-slate-400" />
+                            <span className="font-mono">{party.phone}</span>
+                          </>
+                        ) : (
+                          <span className="text-slate-400">N/A</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right Amount & Status */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span
+                        className={`text-xs font-mono font-bold ${
+                          bal > 0
+                            ? 'text-emerald-600'
+                            : bal < 0
+                            ? 'text-rose-600'
+                            : 'text-slate-600'
+                        }`}
+                      >
+                        Rs. {Math.abs(bal).toLocaleString()}
+                      </span>
+
+                      {bal < 0 ? (
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-rose-50 text-rose-600 uppercase border border-rose-200">
+                          OUT
+                        </span>
+                      ) : bal > 0 ? (
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-50 text-emerald-600 uppercase border border-emerald-200">
+                          IN
+                        </span>
+                      ) : (
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-500">
+                          -
+                        </span>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLongPressParty(party);
+                        }}
+                        className="p-1 rounded-md text-slate-400 hover:text-slate-700"
+                      >
+                        <span className="text-sm font-bold leading-none">⋮</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Selected Party Transactions Card */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                Transactions {activePartyInList ? `(${activePartyInList.name})` : ''}
+              </h3>
+              {transactions.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowMobileDetails(true)}
+                  className="text-xs font-bold text-blue-600 hover:text-blue-700"
+                >
+                  View All
+                </button>
+              )}
+            </div>
+
+            {transactions.length === 0 ? (
+              <div className="py-6 flex flex-col items-center justify-center text-center space-y-2">
+                <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                  <Receipt className="w-6 h-6" />
+                </div>
+                <p className="text-xs font-bold text-slate-900">No Transactions to show</p>
+                <p className="text-[11px] text-slate-400">You haven't added any transactions yet.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {transactions.slice(0, 3).map((t) => (
+                  <div key={t.id} className="py-2.5 flex items-center justify-between text-xs">
+                    <div>
+                      <p className="font-bold text-slate-900">{t.type}</p>
+                      <p className="text-[10px] text-slate-400 font-mono">
+                        {t.number} · {t.date ? new Date(t.date).toLocaleDateString() : '-'}
+                      </p>
+                    </div>
+                    <div className="text-right font-mono font-bold">
+                      <span className={t.flow === 'in' ? 'text-emerald-600' : 'text-rose-600'}>
+                        {t.flow === 'in' ? '+' : '-'} Rs. {t.total.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 14 Days Free Trial Banner */}
+          <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-3.5 shadow-2xs space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-slate-900 text-amber-400 flex items-center justify-center text-xs shadow-xs">
+                  👑
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-900">14 days Free Trial left</p>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                All Free
+              </span>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden">
+              <div className="h-full bg-emerald-500 rounded-full w-[80%]" />
+            </div>
+
+            <div className="flex items-center justify-between pt-1 text-xs font-bold text-slate-800">
+              <span className="flex items-center gap-1">
+                ⭐ Get BizManage Premium
+              </span>
+              <span>→</span>
+            </div>
+          </div>
         </div>
 
-        {/* Master-Detail Split Container with Independent Smooth Scrolling */}
-        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs flex flex-col md:flex-row overflow-hidden h-[calc(100vh-140px)] max-h-[calc(100vh-140px)]">
-          {/* LEFT PANE: Parties Directory & Filters */}
-          <div className={`w-full md:w-80 lg:w-88 shrink-0 border-r border-slate-200 flex flex-col bg-white h-full overflow-hidden ${showMobileDetails ? 'hidden md:flex' : 'flex'}`}>
-            {/* Search Input */}
-            <div className="p-3 border-b border-slate-100">
-              <div className="relative flex items-center">
-                <Search className="w-3.5 h-3.5 absolute left-3.5 text-slate-400 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="Search Party Name, phone, PAN..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-8 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
-                />
-                {search && (
+        {/* ========================================================================= */}
+        {/* DESKTOP VIEW (md+) - Split View Layout */}
+        {/* ========================================================================= */}
+        <div className="hidden md:block space-y-3">
+          {/* Top Header & Summary Stats */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* Left Title */}
+            <div className="flex items-center gap-3">
+              <h1 className="text-lg font-black text-slate-900 tracking-tight">Parties Directory</h1>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200/80 font-semibold">
+                  To Receive: <strong className="font-mono">Rs. {(summary?.totalReceivable || 0).toLocaleString()}</strong>
+                </span>
+                <span className="px-2.5 py-1 rounded-xl bg-rose-50 text-rose-700 border border-rose-200/80 font-semibold">
+                  To Pay: <strong className="font-mono">Rs. {(summary?.totalPayable || 0).toLocaleString()}</strong>
+                </span>
+              </div>
+            </div>
+
+            {/* Right Actions */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsImportPartiesOpen(true)}
+                className="px-3.5 py-1.5 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold text-xs border border-slate-200 transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                title="Import Parties from Excel, CSV, or JSON"
+              >
+                <Upload className="w-3.5 h-3.5 text-slate-500" />
+                <span>Import</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleTriggerExportParties}
+                className="px-3.5 py-1.5 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold text-xs border border-slate-200 transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                title="Export Parties to Excel, CSV, or JSON"
+              >
+                <Download className="w-3.5 h-3.5 text-slate-500" />
+                <span>Export</span>
+              </button>
+
+              <Link
+                href="/parties/new"
+                className="px-4 py-1.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5 stroke-[3]" /> Add Party
+              </Link>
+            </div>
+          </div>
+
+          {/* Master-Detail Split Container with Independent Smooth Scrolling */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs flex flex-col md:flex-row overflow-hidden h-[calc(100vh-140px)] max-h-[calc(100vh-140px)]">
+            {/* LEFT PANE: Parties Directory & Filters */}
+            <div className="w-full md:w-80 lg:w-88 shrink-0 border-r border-slate-200 flex flex-col bg-white h-full overflow-hidden">
+              {/* Search Input */}
+              <div className="p-3 border-b border-slate-100">
+                <div className="relative flex items-center">
+                  <Search className="w-3.5 h-3.5 absolute left-3.5 text-slate-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Search Party Name, phone, PAN..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full pl-9 pr-8 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
+                  />
+                  {search && (
+                    <button
+                      type="button"
+                      onClick={() => setSearch('')}
+                      className="absolute right-2.5 p-0.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 cursor-pointer"
+                      title="Clear search"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Type & Category Filter Strip */}
+              <div className="px-3 py-2 border-b border-slate-100 flex items-center gap-1.5 bg-slate-50/50">
+                <div className="flex items-center p-0.5 rounded-lg bg-slate-200/70 text-[10px] font-bold">
                   <button
                     type="button"
-                    onClick={() => setSearch('')}
-                    className="absolute right-2.5 p-0.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 cursor-pointer"
-                    title="Clear search"
+                    onClick={() => setSelectedType('')}
+                    className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                      selectedType === '' ? 'bg-white text-slate-900 shadow-2xs font-black' : 'text-slate-600'
+                    }`}
                   >
-                    <X className="w-3 h-3" />
+                    All
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedType(PartyType.CUSTOMER)}
+                    className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                      selectedType === PartyType.CUSTOMER ? 'bg-blue-600 text-white shadow-2xs font-black' : 'text-slate-600'
+                    }`}
+                  >
+                    Customers
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedType(PartyType.SUPPLIER)}
+                    className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                      selectedType === PartyType.SUPPLIER ? 'bg-blue-600 text-white shadow-2xs font-black' : 'text-slate-600'
+                    }`}
+                  >
+                    Suppliers
+                  </button>
+                </div>
+
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="flex-1 px-2 py-1 rounded-lg border border-slate-200 bg-white text-[10px] font-semibold text-slate-700 focus:outline-none cursor-pointer"
+                >
+                  <option value="">Categories</option>
+                  {categories?.map((c: any) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Header: Party Name & Amount */}
+              <div className="px-4 py-2 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between text-[11px] font-bold text-slate-600 select-none">
+                <div className="flex items-center gap-1.5">
+                  <span>Party Name</span>
+                  <Filter className="w-3 h-3 text-red-500 fill-red-500" />
+                </div>
+                <span>Amount / Balance</span>
+              </div>
+
+              {/* Party List Rows */}
+              <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
+                {parties.length === 0 ? (
+                  <div className="p-8 text-center space-y-3">
+                    <p className="text-xs text-slate-400">No parties found.</p>
+                    <Link
+                      href="/parties/new"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 font-bold text-xs hover:bg-blue-100 transition-colors"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Create Party
+                    </Link>
+                  </div>
+                ) : (
+                  parties.map((party) => (
+                    <PartyRowItem
+                      key={party.id}
+                      party={party}
+                      isSelected={activePartyInList?.id === party.id}
+                      onSelect={() => {
+                        setSelectedPartyId(party.id);
+                        setShowMobileDetails(true);
+                      }}
+                      onLongPress={() => setLongPressParty(party)}
+                    />
+                  ))
                 )}
               </div>
             </div>
 
-            {/* Type & Category Filter Strip */}
-            <div className="px-3 py-2 border-b border-slate-100 flex items-center gap-1.5 bg-slate-50/50">
-              {/* Type Pills */}
-              <div className="flex items-center p-0.5 rounded-lg bg-slate-200/70 text-[10px] font-bold">
-                <button
-                  type="button"
-                  onClick={() => setSelectedType('')}
-                  className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
-                    selectedType === '' ? 'bg-white text-slate-900 shadow-2xs font-black' : 'text-slate-600'
-                  }`}
-                >
-                  All
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedType(PartyType.CUSTOMER)}
-                  className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
-                    selectedType === PartyType.CUSTOMER ? 'bg-blue-600 text-white shadow-2xs font-black' : 'text-slate-600'
-                  }`}
-                >
-                  Customers
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedType(PartyType.SUPPLIER)}
-                  className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
-                    selectedType === PartyType.SUPPLIER ? 'bg-blue-600 text-white shadow-2xs font-black' : 'text-slate-600'
-                  }`}
-                >
-                  Suppliers
-                </button>
-              </div>
-
-              {/* Category Dropdown */}
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="flex-1 px-2 py-1 rounded-lg border border-slate-200 bg-white text-[10px] font-semibold text-slate-700 focus:outline-none cursor-pointer"
-              >
-                <option value="">Categories</option>
-                {categories?.map((c: any) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Header: Party Name & Amount */}
-            <div className="px-4 py-2 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between text-[11px] font-bold text-slate-600 select-none">
-              <div className="flex items-center gap-1.5">
-                <span>Party Name</span>
-                <Filter className="w-3 h-3 text-red-500 fill-red-500" />
-              </div>
-              <span>Amount / Balance</span>
-            </div>
-
-            {/* Party List Rows */}
-            <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
-              {parties.length === 0 ? (
-                <div className="p-8 text-center space-y-3">
-                  <p className="text-xs text-slate-400">No parties found.</p>
-                  <Link
-                    href="/parties/new"
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 font-bold text-xs hover:bg-blue-100 transition-colors"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Create Party
-                  </Link>
-                </div>
-              ) : (
-                parties.map((party) => (
-                  <PartyRowItem
-                    key={party.id}
-                    party={party}
-                    isSelected={activePartyInList?.id === party.id}
-                    onSelect={() => {
-                      setSelectedPartyId(party.id);
-                      setShowMobileDetails(true);
-                    }}
-                    onLongPress={() => setLongPressParty(party)}
-                  />
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* RIGHT PANE: Selected Party Details & Transactions */}
-          <div className={`flex-1 flex flex-col bg-white overflow-hidden h-full ${showMobileDetails ? 'flex' : 'hidden md:flex'}`}>
-            {activePartyInList ? (
-              <>
-                {/* Mobile Back Button */}
-                <div className="md:hidden px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={() => setShowMobileDetails(false)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 shadow-2xs transition active:scale-95 cursor-pointer"
-                  >
-                    <ArrowLeft className="w-4 h-4 text-slate-500" />
-                    <span>Back to Directory</span>
-                  </button>
-                  <span className="text-xs font-bold text-slate-600 truncate max-w-[150px]">
-                    {activePartyInList.name}
-                  </span>
-                </div>
-
-                {/* Header: Party Name, In/Out Balance Block & WhatsApp */}
-                <div className="px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 bg-white">
-                  {/* Left: Party Details */}
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-base sm:text-lg font-bold text-slate-900">
-                        {activePartyInList.name}
-                      </h2>
-                      <button
-                        type="button"
-                        onClick={() => openEditModal(activePartyInList)}
-                        className="p-1 rounded-md text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors cursor-pointer"
-                        title="Edit Party Details"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeletingPartyInfo({ id: activePartyInList.id, name: activePartyInList.name })}
-                        className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer ml-1"
-                        title="Delete Party"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-1">
-                      {activePartyInList.phone ? (
-                        <span className="flex items-center gap-1 font-mono">
-                          <Phone className="w-3 h-3 text-slate-400" /> {activePartyInList.phone}
-                        </span>
-                      ) : (
-                        <span>No phone</span>
-                      )}
-                      {activePartyInList.taxNumber && (
-                        <span className="font-mono">PAN: {activePartyInList.taxNumber}</span>
-                      )}
-                      {activePartyInList.category && (
-                        <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-semibold text-[10px]">
-                          {activePartyInList.category.name}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Right: Party Balance Block & WhatsApp Button */}
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
-                        Net Party Balance
-                      </span>
-                      <div className="flex items-center justify-end gap-1.5 mt-0.5">
-                        <span
-                          className={`text-base font-black font-mono ${
-                            currentBal > 0
-                              ? 'text-emerald-600'
-                              : currentBal < 0
-                              ? 'text-rose-600'
-                              : 'text-slate-700'
-                          }`}
+            {/* RIGHT PANE: Selected Party Details & Transactions */}
+            <div className="flex-1 flex flex-col bg-white overflow-hidden h-full">
+              {activePartyInList ? (
+                <>
+                  {/* Header: Party Name, In/Out Balance Block & WhatsApp */}
+                  <div className="px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 bg-white">
+                    {/* Left: Party Details */}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                          {activePartyInList.name}
+                        </h2>
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(activePartyInList)}
+                          className="p-1 rounded-md text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors cursor-pointer"
+                          title="Edit Party Details"
                         >
-                          Rs. {Math.abs(currentBal).toLocaleString()}
-                        </span>
-
-                        {/* In vs Out Badge */}
-                        <span
-                          className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider flex items-center gap-1 ${
-                            currentBal > 0
-                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                              : currentBal < 0
-                              ? 'bg-rose-100 text-rose-800 border border-rose-300'
-                              : 'bg-slate-100 text-slate-600 border border-slate-200'
-                          }`}
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeletingPartyInfo({ id: activePartyInList.id, name: activePartyInList.name })}
+                          className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer ml-1"
+                          title="Delete Party"
                         >
-                          {currentBal > 0 ? (
-                            <>
-                              <ArrowDownLeft className="w-3 h-3 text-emerald-600" /> In (To Receive)
-                            </>
-                          ) : currentBal < 0 ? (
-                            <>
-                              <ArrowUpRight className="w-3 h-3 text-rose-600" /> Out (To Pay)
-                            </>
-                          ) : (
-                            'Settled'
-                          )}
-                        </span>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-1">
+                        {activePartyInList.phone ? (
+                          <span className="flex items-center gap-1 font-mono">
+                            <Phone className="w-3 h-3 text-slate-400" /> {activePartyInList.phone}
+                          </span>
+                        ) : (
+                          <span>No phone</span>
+                        )}
+                        {activePartyInList.taxNumber && (
+                          <span className="font-mono">PAN: {activePartyInList.taxNumber}</span>
+                        )}
+                        {activePartyInList.category && (
+                          <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-semibold text-[10px]">
+                            {activePartyInList.category.name}
+                          </span>
+                        )}
                       </div>
                     </div>
 
-                    {/* WhatsApp Action */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!activePartyInList.phone) {
-                          toast.error('Please add a phone number for this party first.');
-                          openEditModal(activePartyInList);
-                        } else {
+                    {/* Right: Party Balance Block & WhatsApp Button */}
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
+                          Net Party Balance
+                        </span>
+                        <div className="flex items-center justify-end gap-1.5 mt-0.5">
+                          <span
+                            className={`text-base font-black font-mono ${
+                              currentBal > 0
+                                ? 'text-emerald-600'
+                                : currentBal < 0
+                                ? 'text-rose-600'
+                                : 'text-slate-700'
+                            }`}
+                          >
+                            Rs. {Math.abs(currentBal).toLocaleString()}
+                          </span>
+
+                          {/* In vs Out Badge */}
+                          <span
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider flex items-center gap-1 ${
+                              currentBal > 0
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                : currentBal < 0
+                                ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                                : 'bg-slate-100 text-slate-600 border border-slate-200'
+                            }`}
+                          >
+                            {currentBal > 0 ? (
+                              <>
+                                <ArrowDownLeft className="w-3 h-3 text-emerald-600" /> In (To Receive)
+                              </>
+                            ) : currentBal < 0 ? (
+                              <>
+                                <ArrowUpRight className="w-3 h-3 text-rose-600" /> Out (To Pay)
+                              </>
+                            ) : (
+                              'Settled'
+                            )}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* WhatsApp Action */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!activePartyInList.phone) {
+                            toast.error('This party does not have a phone number saved.');
+                            return;
+                          }
                           setIsWhatsAppOpen(true);
-                        }
-                      }}
-                      className="px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                      title="Send WhatsApp Statement / Reminder"
-                    >
-                      <MessageSquare className="w-4 h-4 text-emerald-600" />
-                      <span className="hidden sm:inline">WhatsApp</span>
-                    </button>
+                        }}
+                        className="p-2 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-bold shadow-2xs"
+                        title="Send WhatsApp Reminder"
+                      >
+                        <MessageSquare className="w-4 h-4 text-emerald-600" />
+                        <span className="hidden sm:inline">WhatsApp</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
 
                 {/* Transactions Bar (Print & Export) */}
                 <div className="px-6 py-2.5 border-b border-slate-100 flex items-center justify-between bg-white">
@@ -785,6 +1057,8 @@ export default function PartiesPage() {
             )}
           </div>
         </div>
+      </div>
+    </div>
 
         {/* Edit Party Modal */}
         {editingParty && (
@@ -993,7 +1267,6 @@ export default function PartiesPage() {
             confirmText="Yes, Save Changes"
           />
         )}
-      </div>
 
       {/* ========================================================================= */}
       {/* 2. FORMAL A4 PRINTABLE STATEMENT / LEDGER (Visible ONLY during print) */}

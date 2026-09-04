@@ -31,6 +31,7 @@ import {
   ImagePlus,
   X,
   ChevronRight,
+  Check,
 } from 'lucide-react';
 
 const SERVICE_DEFAULT_UNITS = [
@@ -316,11 +317,10 @@ export default function AddItemPage() {
         </div>
       </div>
 
-      {/* ── STEP INDICATOR (DESKTOP) ── */}
-      <div className="hidden md:block px-6 pt-5 pb-2">
-        <div className="flex items-center gap-0">
+      {/* ── STEP INDICATOR (Mobile & Desktop - Pixel match Image 2 Screen 4) ── */}
+      <div className="px-4 sm:px-6 pt-4 pb-2 overflow-x-auto scrollbar-none">
+        <div className="flex items-center gap-0 min-w-[320px]">
           {visibleSteps.map((step, idx) => {
-            const StepIcon = step.icon;
             const stepNum = step.id;
             const isActive = currentStep === stepNum;
             const isDone = currentStep > stepNum || (createType === ItemType.SERVICE && stepNum === 3 && currentStep > 3);
@@ -334,26 +334,26 @@ export default function AddItemPage() {
                   onClick={() => {
                     if (isDone || isActive) setCurrentStep(stepNum);
                   }}
-                  className={`flex flex-col items-center gap-1.5 cursor-pointer group flex-1 transition-all`}
+                  className={`flex flex-col items-center gap-1 cursor-pointer group flex-1 transition-all`}
                 >
-                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all shadow-sm border-2 ${
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all shadow-2xs border ${
                     isDone
                       ? 'bg-blue-600 border-blue-600 text-white'
                       : isActive
-                      ? 'bg-white border-blue-500 text-blue-600 shadow-blue-100'
+                      ? 'bg-blue-600 border-blue-600 text-white shadow-blue-200'
                       : 'bg-white border-slate-200 text-slate-400'
                   }`}>
                     {isDone ? (
-                      <CheckCircle2 className="w-4.5 h-4.5" />
+                      <Check className="w-3.5 h-3.5 stroke-[3]" />
                     ) : (
-                      <StepIcon className="w-4 h-4" />
+                      <span>{stepNum}</span>
                     )}
                   </div>
                   <div className="text-center">
-                    <p className={`text-[11px] font-bold leading-none ${isActive ? 'text-blue-600' : isDone ? 'text-blue-500' : 'text-slate-400'}`}>
+                    <p className={`text-[11px] font-bold leading-none ${isActive ? 'text-blue-600' : isDone ? 'text-slate-800' : 'text-slate-400'}`}>
                       {step.label}
                     </p>
-                    <p className={`text-[10px] leading-none mt-0.5 hidden sm:block ${isActive ? 'text-slate-600' : 'text-slate-400'}`}>
+                    <p className="text-[9px] text-slate-400 leading-tight mt-0.5 line-clamp-1 max-w-[70px]">
                       {step.description}
                     </p>
                   </div>
@@ -361,7 +361,7 @@ export default function AddItemPage() {
 
                 {/* Connector line */}
                 {!isLast && (
-                  <div className={`h-0.5 flex-1 rounded-full mx-1 transition-all ${isDone ? 'bg-blue-400' : 'bg-slate-200'}`} />
+                  <div className={`h-0.5 flex-1 rounded-full mx-1 transition-all ${isDone ? 'bg-blue-600' : 'bg-slate-200'}`} />
                 )}
               </div>
             );
@@ -839,23 +839,36 @@ export default function AddItemPage() {
         )}
       </form>
 
-      {/* ── MOBILE STICKY BOTTOM BAR (Elevated z-50) ── */}
-      <div className="fixed md:hidden bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200/90 p-2.5 px-3 pb-4 shadow-2xl flex items-center justify-between gap-2">
-        <button
-          type="button"
-          onClick={handleAttemptClose}
-          className="flex-1 py-3 px-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-extrabold active:scale-95 transition-all text-center border border-slate-200"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          onClick={handleSubmit((data) => handleSaveRequest(data, false))}
-          disabled={createItem.isPending}
-          className="flex-1 py-3 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black shadow-lg shadow-blue-600/30 active:scale-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
-        >
-          <Save className="w-4 h-4" /> {createItem.isPending ? 'Saving...' : createType === ItemType.SERVICE ? 'Save Service' : 'Save Product'}
-        </button>
+      {/* ── MOBILE STICKY BOTTOM BAR (Pixel match Image 2 Screen 4) ── */}
+      <div className="fixed md:hidden bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200/90 p-3 pb-5 shadow-2xl">
+        {currentStep === (createType === ItemType.SERVICE ? 3 : 4) ? (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleAttemptClose}
+              className="flex-1 py-3 px-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-extrabold active:scale-95 transition-all text-center border border-slate-200"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit((data) => handleSaveRequest(data, false))}
+              disabled={createItem.isPending}
+              className="flex-1 py-3 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black shadow-lg shadow-blue-600/30 active:scale-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+            >
+              <Save className="w-4 h-4" /> {createItem.isPending ? 'Saving...' : createType === ItemType.SERVICE ? 'Save Service' : 'Save Product'}
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={handleNextStep}
+            className="w-full py-3.5 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-black shadow-lg shadow-blue-600/30 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>Continue</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* ── DESKTOP BOTTOM NAVIGATION BAR ── */}

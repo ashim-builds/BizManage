@@ -585,18 +585,46 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
       <main className={`flex-1 min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col pb-20 lg:pb-0 print:pl-0 print:bg-white print:min-h-0 print:pb-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-[60px]' : 'lg:pl-64'}`}>
         {/* Header Bar */}
         <header className="h-16 border-b border-slate-200 px-3 sm:px-6 flex items-center justify-between sticky top-0 bg-white backdrop-blur-md z-30 print:hidden gap-2 shadow-xs">
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            <div className="min-w-0 truncate pl-1 lg:pl-0">
+          {/* Mobile View: Hamburger + Logo (< lg) */}
+          <div className="flex items-center gap-2.5 lg:hidden">
+            <button
+              type="button"
+              onClick={() => setMobileOpen(true)}
+              className="p-1.5 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+              title="Open Navigation Drawer"
+            >
+              <Menu className="w-5 h-5 stroke-[2.2]" />
+            </button>
+
+            <Link href="/dashboard" className="flex items-center gap-1.5 shrink-0">
+              <div className="w-7 h-7 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-xs">
+                <Building2 className="w-4 h-4" />
+              </div>
+              <div className="leading-none">
+                <span className="text-sm font-black text-slate-900 tracking-tight">
+                  Biz<span className="text-blue-600">Manage</span>
+                </span>
+                <span className="block text-[8px] font-bold text-slate-400 tracking-wider uppercase">
+                  MANAGE. TRACK. GROW.
+                </span>
+              </div>
+            </Link>
+          </div>
+
+          {/* Desktop View: Breadcrumbs (>= lg) */}
+          <div className="hidden lg:flex items-center gap-4 min-w-0">
+            <div className="min-w-0 truncate">
               <Breadcrumbs />
             </div>
           </div>
 
+          {/* Desktop View: Global Search (>= md) */}
           <div className="flex-1 max-w-xl mx-4 hidden md:flex justify-center">
             <GlobalSearch />
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
-
+          {/* Header Right Actions */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             {/* Dynamic Notifications Dropdown */}
             <NotificationCenter
               activeBusinessId={activeBusinessId}
@@ -604,16 +632,33 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
               setReadNotifIds={setReadNotifIds}
             />
 
-            {/* User Dropdown Menu */}
-            <div className="relative" ref={userMenuRef}>
+            {/* Mobile Business Pill (< lg) */}
+            <div className="lg:hidden relative" ref={userMenuRef}>
+              <button
+                type="button"
+                onClick={() => setUserMenuOpen((prev) => !prev)}
+                className="flex items-center gap-1.5 p-1 pl-1.5 pr-2 rounded-full border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-all shadow-2xs cursor-pointer"
+              >
+                <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center font-black text-[9px] text-white shrink-0">
+                  {(currentBiz?.name || 'RB').substring(0, 2).toUpperCase()}
+                </div>
+                <span className="text-[11px] font-bold text-slate-800 max-w-[85px] sm:max-w-[120px] truncate">
+                  {currentBiz?.name || 'RB Hardware'}
+                </span>
+                <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
+              </button>
+            </div>
+
+            {/* Desktop User Dropdown Menu (>= lg) */}
+            <div className="hidden lg:block relative" ref={userMenuRef}>
               <button
                 onClick={() => setUserMenuOpen((prev) => !prev)}
-                className="flex items-center gap-2 p-1.5 pl-2 pr-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all shadow-xs"
+                className="flex items-center gap-2 p-1.5 pl-2 pr-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all shadow-xs cursor-pointer"
               >
                 <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center font-bold text-[10px] text-white shrink-0">
                   {(user?.name || 'U').substring(0, 2).toUpperCase()}
                 </div>
-                <span className="text-xs font-semibold text-slate-800 hidden sm:inline max-w-[120px] truncate">
+                <span className="text-xs font-semibold text-slate-800 max-w-[120px] truncate">
                   {user?.name || 'Account'}
                 </span>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />

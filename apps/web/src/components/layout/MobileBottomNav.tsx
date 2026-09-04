@@ -5,15 +5,17 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Home,
-  Receipt,
+  Users,
+  Package,
+  ArrowLeftRight,
+  MoreHorizontal,
   Plus,
+  Receipt,
   ShoppingBag,
   Menu,
   X,
   ChevronRight,
   Crown,
-  Users,
-  Package,
   Zap,
   ArrowDownLeft,
   ArrowUpRight,
@@ -55,14 +57,14 @@ export function MobileBottomNav({ onQuickEntry }: MobileBottomNavProps) {
     return null;
   }
 
-  const isMoreActive = !['/dashboard', '/parties', '/inventory'].includes(pathname || '');
+  const isMoreActive = !['/dashboard', '/parties', '/inventory', '/transactions'].includes(pathname || '');
 
   const navItems = [
-    { name: 'Home', href: '/dashboard', icon: Home, active: pathname === '/dashboard' },
+    { name: 'Home', href: '/dashboard', icon: Home, active: pathname === '/dashboard' || pathname === '/' },
     { name: 'Parties', href: '/parties', icon: Users, active: pathname?.startsWith('/parties') },
-    { name: '+ Add', action: onQuickEntry, icon: Plus, isAction: true },
     { name: 'Items', href: '/inventory', icon: Package, active: pathname?.startsWith('/inventory') },
-    { name: 'More', action: () => setMoreMenuOpen(true), icon: Menu, active: isMoreActive || moreMenuOpen },
+    { name: 'Transactions', href: '/transactions', icon: ArrowLeftRight, active: pathname?.startsWith('/transactions') },
+    { name: 'More', action: () => setMoreMenuOpen(true), icon: MoreHorizontal, active: isMoreActive || moreMenuOpen },
   ];
 
   // Comprehensive categorized feature grid for full-screen "More" menu
@@ -142,32 +144,17 @@ export function MobileBottomNav({ onQuickEntry }: MobileBottomNavProps) {
         <div className="flex items-center justify-around px-2 pt-2 pb-0.5">
           {navItems.map((item, idx) => {
             const Icon = item.icon;
-            if (item.isAction) {
-              return (
-                <button
-                  key={idx}
-                  onClick={item.action}
-                  className="flex flex-col items-center justify-center gap-0.5 min-w-[56px]"
-                  title="Quick Entry"
-                >
-                  <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-white shadow-md shadow-red-600/30 hover:bg-red-500 active:scale-95 transition-transform">
-                    <Icon className="w-5 h-5 text-white stroke-[2.5]" />
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-800">Quick</span>
-                </button>
-              );
-            }
             if (item.action) {
               return (
                 <button
                   key={idx}
                   onClick={item.action}
-                  className={`flex flex-col items-center justify-center gap-1 min-w-[56px] py-1 active:scale-95 transition-all ${
-                    item.active ? 'text-slate-900 font-bold' : 'text-slate-400 hover:text-slate-700'
+                  className={`flex flex-col items-center justify-center gap-1 min-w-[56px] py-1 active:scale-95 transition-all cursor-pointer ${
+                    item.active ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${item.active ? 'text-slate-900 stroke-[2.5]' : 'text-slate-400'}`} />
-                  <span className={`text-[10px] ${item.active ? 'font-bold text-slate-900' : 'font-medium text-slate-500'}`}>
+                  <Icon className={`w-5 h-5 ${item.active ? 'text-blue-600 stroke-[2.2]' : 'text-slate-400 stroke-[1.8]'}`} />
+                  <span className={`text-[10px] ${item.active ? 'font-bold text-blue-600' : 'font-medium text-slate-500'}`}>
                     {item.name}
                   </span>
                 </button>
@@ -178,11 +165,11 @@ export function MobileBottomNav({ onQuickEntry }: MobileBottomNavProps) {
                 key={idx}
                 href={item.href!}
                 className={`flex flex-col items-center justify-center gap-1 min-w-[56px] py-1 active:scale-95 transition-all ${
-                  item.active ? 'text-slate-900 font-bold' : 'text-slate-400 hover:text-slate-700'
+                  item.active ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${item.active ? 'text-slate-900 stroke-[2.5]' : 'text-slate-400'}`} />
-                <span className={`text-[10px] ${item.active ? 'font-bold text-slate-900' : 'font-medium text-slate-500'}`}>
+                <Icon className={`w-5 h-5 ${item.active ? 'text-blue-600 stroke-[2.2]' : 'text-slate-400 stroke-[1.8]'}`} />
+                <span className={`text-[10px] ${item.active ? 'font-bold text-blue-600' : 'font-medium text-slate-500'}`}>
                   {item.name}
                 </span>
               </Link>
