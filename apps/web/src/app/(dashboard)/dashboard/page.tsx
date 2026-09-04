@@ -98,12 +98,12 @@ export default function ExecutiveDashboardPage() {
         </div>
       </div>
 
-      {/* 3. TIME RANGE FILTER PILLS STRIP */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-white border border-slate-200/90 shadow-2xs text-xs shrink-0">
+      {/* 3. TIME RANGE FILTER PILLS STRIP (Responsive Wrap - No Scroll) */}
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        <div className="inline-flex flex-wrap items-center gap-1 p-1 rounded-xl sm:rounded-2xl bg-white border border-slate-200/90 shadow-2xs text-[11px] sm:text-xs">
           <button
             onClick={() => setPresetRange('all')}
-            className={`px-3.5 py-1.5 rounded-xl font-bold transition-all whitespace-nowrap cursor-pointer ${
+            className={`px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl font-bold transition-all whitespace-nowrap cursor-pointer ${
               preset === 'all' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -111,7 +111,7 @@ export default function ExecutiveDashboardPage() {
           </button>
           <button
             onClick={() => setPresetRange('today')}
-            className={`px-3.5 py-1.5 rounded-xl font-bold transition-all whitespace-nowrap cursor-pointer ${
+            className={`px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl font-bold transition-all whitespace-nowrap cursor-pointer ${
               preset === 'today' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -119,7 +119,7 @@ export default function ExecutiveDashboardPage() {
           </button>
           <button
             onClick={() => setPresetRange('week')}
-            className={`px-3.5 py-1.5 rounded-xl font-bold transition-all whitespace-nowrap cursor-pointer ${
+            className={`px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl font-bold transition-all whitespace-nowrap cursor-pointer ${
               preset === 'week' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -127,7 +127,7 @@ export default function ExecutiveDashboardPage() {
           </button>
           <button
             onClick={() => setPresetRange('month')}
-            className={`px-3.5 py-1.5 rounded-xl font-bold transition-all whitespace-nowrap cursor-pointer ${
+            className={`px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl font-bold transition-all whitespace-nowrap cursor-pointer ${
               preset === 'month' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
             }`}
           >

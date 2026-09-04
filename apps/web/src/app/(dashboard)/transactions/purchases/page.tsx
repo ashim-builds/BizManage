@@ -1081,7 +1081,7 @@ function MobilePurchaseCard({ purchase: p, onLongPress, onPaySupplier }: MobileP
   return (
     <div
       {...longPressHandlers}
-      className="p-4 bg-white border border-slate-200/90 rounded-2xl flex flex-col gap-3 shadow-xs select-none active:scale-[0.99] transition-transform"
+      className="p-4 bg-white border border-slate-200/90 rounded-2xl flex flex-col gap-3 shadow-xs select-text active:scale-[0.99] transition-transform"
     >
       {/* Header */}
       <div className="flex items-start justify-between border-b border-slate-100 pb-2.5">

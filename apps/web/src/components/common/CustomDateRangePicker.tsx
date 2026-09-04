@@ -197,7 +197,7 @@ export function CustomDateRangePicker({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-xs font-semibold transition-all shadow-xs shrink-0 ${
+        className={`inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl border text-[11px] sm:text-xs font-semibold transition-all shadow-xs shrink-0 ${
           isCustomActive
             ? 'bg-blue-600 text-white border-blue-500 shadow-sm'
             : 'bg-white text-slate-800 border-slate-200 hover:bg-slate-50 hover:border-slate-300'

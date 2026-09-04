@@ -449,15 +449,15 @@ export default function PartiesPage() {
             </button>
           </div>
 
-          {/* Horizontal Filter Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs font-bold scrollbar-none">
+          {/* Horizontal Filter Pills (Compact on Mobile) */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] sm:text-xs font-bold scrollbar-none">
             <button
               type="button"
               onClick={() => {
                 setSelectedType('');
                 setSelectedCategory('');
               }}
-              className={`px-3.5 py-1.5 rounded-full transition-all shrink-0 cursor-pointer ${
+              className={`px-2.5 py-1 rounded-full transition-all shrink-0 cursor-pointer ${
                 selectedType === '' && !selectedCategory
                   ? 'bg-blue-50 text-blue-600 border border-blue-200 shadow-2xs'
                   : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
@@ -468,7 +468,7 @@ export default function PartiesPage() {
             <button
               type="button"
               onClick={() => setSelectedType(PartyType.CUSTOMER)}
-              className={`px-3.5 py-1.5 rounded-full transition-all shrink-0 cursor-pointer ${
+              className={`px-2.5 py-1 rounded-full transition-all shrink-0 cursor-pointer ${
                 selectedType === PartyType.CUSTOMER
                   ? 'bg-blue-50 text-blue-600 border border-blue-200 shadow-2xs'
                   : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
@@ -479,7 +479,7 @@ export default function PartiesPage() {
             <button
               type="button"
               onClick={() => setSelectedType(PartyType.SUPPLIER)}
-              className={`px-3.5 py-1.5 rounded-full transition-all shrink-0 cursor-pointer ${
+              className={`px-2.5 py-1 rounded-full transition-all shrink-0 cursor-pointer ${
                 selectedType === PartyType.SUPPLIER
                   ? 'bg-blue-50 text-blue-600 border border-blue-200 shadow-2xs'
                   : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
@@ -490,7 +490,7 @@ export default function PartiesPage() {
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 text-xs font-bold focus:outline-none cursor-pointer shrink-0"
+              className="px-2.5 py-1 rounded-full bg-white border border-slate-200 text-slate-600 text-[11px] sm:text-xs font-bold focus:outline-none cursor-pointer shrink-0"
             >
               <option value="">Categories</option>
               {categories?.map((c: any) => (
@@ -629,35 +629,6 @@ export default function PartiesPage() {
                 ))}
               </div>
             )}
-          </div>
-
-          {/* 14 Days Free Trial Banner */}
-          <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-3.5 shadow-2xs space-y-2.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-slate-900 text-amber-400 flex items-center justify-center text-xs shadow-xs">
-                  👑
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-900">14 days Free Trial left</p>
-                </div>
-              </div>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                All Free
-              </span>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden">
-              <div className="h-full bg-emerald-500 rounded-full w-[80%]" />
-            </div>
-
-            <div className="flex items-center justify-between pt-1 text-xs font-bold text-slate-800">
-              <span className="flex items-center gap-1">
-                ⭐ Get BizManage Premium
-              </span>
-              <span>→</span>
-            </div>
           </div>
         </div>
 
@@ -1458,7 +1429,7 @@ function PartyRowItem({ party, isSelected, onSelect, onLongPress }: PartyRowItem
     <div
       {...longPressHandlers}
       onClick={onSelect}
-      className={`px-4 py-3 flex items-center justify-between cursor-pointer transition-colors select-none active:scale-[0.99] ${
+      className={`px-4 py-3 flex items-center justify-between cursor-pointer transition-colors select-text active:scale-[0.99] ${
         isSelected
           ? 'bg-sky-50/90 text-blue-900 font-bold border-l-4 border-blue-600'
           : 'hover:bg-slate-50/80 text-slate-800'

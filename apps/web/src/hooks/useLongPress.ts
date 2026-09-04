@@ -82,8 +82,10 @@ export function useLongPress(
       move(t.clientX, t.clientY);
     },
     onContextMenu: (e) => {
-      // Prevent native context-menu on long-press; we show our own.
-      e.preventDefault();
+      // Only suppress context-menu if a long-press action was actually triggered
+      if (firedRef.current) {
+        e.preventDefault();
+      }
     },
   };
 }

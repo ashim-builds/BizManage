@@ -585,17 +585,8 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
       <main className={`flex-1 min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col pb-20 lg:pb-0 print:pl-0 print:bg-white print:min-h-0 print:pb-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-[60px]' : 'lg:pl-64'}`}>
         {/* Header Bar */}
         <header className="h-16 border-b border-slate-200 px-3 sm:px-6 flex items-center justify-between sticky top-0 bg-white backdrop-blur-md z-30 print:hidden gap-2 shadow-xs">
-          {/* Mobile View: Hamburger + Logo (< lg) */}
-          <div className="flex items-center gap-2.5 lg:hidden">
-            <button
-              type="button"
-              onClick={() => setMobileOpen(true)}
-              className="p-1.5 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-              title="Open Navigation Drawer"
-            >
-              <Menu className="w-5 h-5 stroke-[2.2]" />
-            </button>
-
+          {/* Mobile View: Logo (< lg) */}
+          <div className="flex items-center gap-2 lg:hidden">
             <Link href="/dashboard" className="flex items-center gap-1.5 shrink-0">
               <div className="w-7 h-7 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-xs">
                 <Building2 className="w-4 h-4" />

@@ -206,7 +206,9 @@ function InventoryPageContent() {
 
   // Custom units and conversions persisted in localStorage
   const [customUnits, setCustomUnits] = useState<{ fullname: string; shortname: string }[]>([]);
-  const [unitConversions, setUnitConversions] = useState<{ baseUnit: string; secondaryUnit: string; rate: number }[]>([]);
+  const [unitConversions, setUnitConversions] = useState<{ baseUnit: string; secondaryUnit: string; rate: number }[]>(
+    []
+  );
 
   // Load custom units & conversions from localStorage
   useEffect(() => {
@@ -239,12 +241,7 @@ function InventoryPageContent() {
   // Queries
   const { data: summary } = useItemsSummary();
   const { data: categories = [], refetch: refetchCategories } = useItemCategories();
-  const {
-    data: itemsResponse,
-    isLoading: itemsLoading,
-    isError,
-    refetch: refetchItems,
-  } = useItems({ limit: 1000 });
+  const { data: itemsResponse, isLoading: itemsLoading, isError, refetch: refetchItems } = useItems({ limit: 1000 });
 
   const rawItems: any[] = itemsResponse?.data || [];
 
@@ -342,17 +339,13 @@ function InventoryPageContent() {
   const filteredUnits = useMemo(() => {
     if (!unitSearch.trim()) return allUnits;
     const q = unitSearch.toLowerCase();
-    return allUnits.filter(
-      (u) => u.fullname.toLowerCase().includes(q) || u.shortname.toLowerCase().includes(q)
-    );
+    return allUnits.filter((u) => u.fullname.toLowerCase().includes(q) || u.shortname.toLowerCase().includes(q));
   }, [allUnits, unitSearch]);
 
   // Categories list with item counts
   const categoryDirectory = useMemo(() => {
     const uncategorizedCount = rawItems.filter((i) => !i.categoryId).length;
-    const list: any[] = [
-      { id: 'none', name: 'Items not in any Category', count: uncategorizedCount },
-    ];
+    const list: any[] = [{ id: 'none', name: 'Items not in any Category', count: uncategorizedCount }];
     categories.forEach((cat: any) => {
       const count = rawItems.filter((i) => i.categoryId === cat.id).length;
       list.push({ id: cat.id, name: cat.name, count });
@@ -392,7 +385,14 @@ function InventoryPageContent() {
       const qty = Number(si.quantity || 0);
       const price = Number(si.unitPrice || 0);
       const total = Number(si.total || qty * price);
-      const saleStatus = si.sale?.status === 'PAID' ? 'PAID' : (si.sale?.status === 'PARTIAL' ? 'PARTIAL' : (si.sale?.status === 'UNPAID' ? 'UNPAID' : 'PAID'));
+      const saleStatus =
+        si.sale?.status === 'PAID'
+          ? 'PAID'
+          : si.sale?.status === 'PARTIAL'
+            ? 'PARTIAL'
+            : si.sale?.status === 'UNPAID'
+              ? 'UNPAID'
+              : 'PAID';
       list.push({
         id: si.id,
         category: 'SELL',
@@ -437,7 +437,14 @@ function InventoryPageContent() {
       const qty = Number(pi.quantity || 0);
       const price = Number(pi.unitPrice || 0);
       const total = Number(pi.total || qty * price);
-      const purStatus = pi.purchase?.status === 'PAID' ? 'PAID' : (pi.purchase?.status === 'PARTIAL' ? 'PARTIAL' : (pi.purchase?.status === 'UNPAID' ? 'UNPAID' : 'PAID'));
+      const purStatus =
+        pi.purchase?.status === 'PAID'
+          ? 'PAID'
+          : pi.purchase?.status === 'PARTIAL'
+            ? 'PARTIAL'
+            : pi.purchase?.status === 'UNPAID'
+              ? 'UNPAID'
+              : 'PAID';
       list.push({
         id: pi.id,
         category: 'BUY',
@@ -502,7 +509,8 @@ function InventoryPageContent() {
 
     // Fallback: If no Opening Stock movement was logged, but item has openingStock or currentStock
     const hasOpeningStock = list.some((t) => t.type === 'Opening Stock');
-    const initialQty = Number(activeItem.openingStock || 0) || (list.length === 0 ? Number(activeItem.currentStock || 0) : 0);
+    const initialQty =
+      Number(activeItem.openingStock || 0) || (list.length === 0 ? Number(activeItem.currentStock || 0) : 0);
     if (!hasOpeningStock && initialQty > 0) {
       const price = Number(activeItem.purchasePrice || activeItem.salePrice || 0);
       list.push({
@@ -534,10 +542,7 @@ function InventoryPageContent() {
     if (!txSearch.trim()) return filtered;
     const q = txSearch.toLowerCase();
     return filtered.filter(
-      (t) =>
-        t.type.toLowerCase().includes(q) ||
-        t.ref.toLowerCase().includes(q) ||
-        t.name.toLowerCase().includes(q)
+      (t) => t.type.toLowerCase().includes(q) || t.ref.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)
     );
   }, [activeItem, activeItemDetails, txSearch, txTypeFilter]);
 
@@ -852,86 +857,6 @@ function InventoryPageContent() {
 
   return (
     <div className="space-y-2.5 font-sans pb-4">
-      {/* 1. TOP TABS HEADER (Vyapar ERP: PRODUCTS | SERVICES | CATEGORY | UNITS) */}
-      <div className="border-b border-slate-200 bg-white -mx-3 sm:-mx-6 -mt-3 sm:-mt-6 px-3 sm:px-6 pt-1 flex items-center justify-between shadow-2xs gap-2">
-        <div className="flex items-center gap-2 sm:gap-6 overflow-x-auto scrollbar-none py-1">
-          <button
-            type="button"
-            onClick={() => setActiveTab('products')}
-            className={`pb-2.5 pt-2 px-2 text-xs sm:text-sm font-black tracking-wide transition-all border-b-2 cursor-pointer flex items-center gap-1.5 shrink-0 min-w-max ${
-              activeTab === 'products'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Package className="w-4 h-4 shrink-0" />
-            <span>PRODUCTS</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('services')}
-            className={`pb-2.5 pt-2 px-2 text-xs sm:text-sm font-black tracking-wide transition-all border-b-2 cursor-pointer flex items-center gap-1.5 shrink-0 min-w-max ${
-              activeTab === 'services'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Wrench className="w-4 h-4 shrink-0" />
-            <span>SERVICES</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('category')}
-            className={`pb-2.5 pt-2 px-2 text-xs sm:text-sm font-black tracking-wide transition-all border-b-2 cursor-pointer flex items-center gap-1.5 shrink-0 min-w-max ${
-              activeTab === 'category'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Layers className="w-4 h-4 shrink-0" />
-            <span>CATEGORY</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('units')}
-            className={`pb-2.5 pt-2 px-2 text-xs sm:text-sm font-black tracking-wide transition-all border-b-2 cursor-pointer flex items-center gap-1.5 shrink-0 min-w-max ${
-              activeTab === 'units'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Scale className="w-4 h-4 shrink-0" />
-            <span>UNITS</span>
-          </button>
-        </div>
-
-        {/* Quick actions on right */}
-        <div className="flex items-center gap-2 pb-2">
-          <button
-            type="button"
-            onClick={() => setIsImportOpen(true)}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors shadow-2xs cursor-pointer"
-            title="Import Products & Services (Excel, CSV, or JSON)"
-          >
-            <Upload className="w-3.5 h-3.5 text-slate-500" />
-            <span>Import</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleTriggerExportInventory}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors shadow-2xs cursor-pointer"
-            title="Export Products & Services (Excel, CSV, or JSON)"
-          >
-            <Download className="w-3.5 h-3.5 text-slate-500" />
-            <span>Export</span>
-          </button>
-        </div>
-      </div>
-
       {/* ========================================================================= */}
       {/* 2. TAB CONTENT 1: PRODUCTS (Master-Detail Split View) */}
       {/* ========================================================================= */}
@@ -939,15 +864,9 @@ function InventoryPageContent() {
         <>
           {/* MOBILE VIEW (< md) - Pixel-perfect match with Image 2 Screen 1 */}
           <div className="block md:hidden space-y-3 pb-24">
-            {/* Top Title & Add Item Button */}
+            {/* Top Title */}
             <div className="flex items-center justify-between">
               <h1 className="text-xl font-black text-slate-900 tracking-tight">Inventory</h1>
-              <Link
-                href="/inventory/new"
-                className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs flex items-center gap-1.5 active:scale-95 transition-all"
-              >
-                <Plus className="w-3.5 h-3.5 stroke-[3]" /> Add Item
-              </Link>
             </div>
 
             {/* Search Bar + Square Filter Button */}
@@ -982,11 +901,11 @@ function InventoryPageContent() {
             </div>
 
             {/* Subtabs Strip: Products | Services | Category | Units */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-200 text-xs font-bold scrollbar-none">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-200 text-[11px] font-bold scrollbar-none">
               <button
                 type="button"
                 onClick={() => setActiveTab('products')}
-                className={`pb-2 px-1 flex items-center gap-1.5 border-b-2 transition-all ${
+                className={`pb-1.5 px-1.5 flex items-center gap-1 border-b-2 transition-all ${
                   (activeTab as string) === 'products'
                     ? 'border-blue-600 text-blue-600'
                     : 'border-transparent text-slate-500'
@@ -998,7 +917,7 @@ function InventoryPageContent() {
               <button
                 type="button"
                 onClick={() => setActiveTab('services')}
-                className={`pb-2 px-1 flex items-center gap-1.5 border-b-2 transition-all ${
+                className={`pb-1.5 px-1.5 flex items-center gap-1 border-b-2 transition-all ${
                   (activeTab as string) === 'services'
                     ? 'border-blue-600 text-blue-600'
                     : 'border-transparent text-slate-500'
@@ -1010,7 +929,7 @@ function InventoryPageContent() {
               <button
                 type="button"
                 onClick={() => setActiveTab('category')}
-                className={`pb-2 px-1 flex items-center gap-1.5 border-b-2 transition-all ${
+                className={`pb-1.5 px-1.5 flex items-center gap-1 border-b-2 transition-all ${
                   (activeTab as string) === 'category'
                     ? 'border-blue-600 text-blue-600'
                     : 'border-transparent text-slate-500'
@@ -1022,7 +941,7 @@ function InventoryPageContent() {
               <button
                 type="button"
                 onClick={() => setActiveTab('units')}
-                className={`pb-2 px-1 flex items-center gap-1.5 border-b-2 transition-all ${
+                className={`pb-1.5 px-1.5 flex items-center gap-1 border-b-2 transition-all ${
                   (activeTab as string) === 'units'
                     ? 'border-blue-600 text-blue-600'
                     : 'border-transparent text-slate-500'
@@ -1033,12 +952,12 @@ function InventoryPageContent() {
               </button>
             </div>
 
-            {/* Stock Level Filter Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs font-bold scrollbar-none">
+            {/* Stock Level Filter Pills (Compact) */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[10px] sm:text-xs font-bold scrollbar-none">
               <button
                 type="button"
                 onClick={() => setStockFilter('ALL')}
-                className={`px-3.5 py-1.5 rounded-full transition-all shrink-0 cursor-pointer ${
+                className={`px-2.5 py-1 rounded-full transition-all shrink-0 cursor-pointer ${
                   stockFilter === 'ALL'
                     ? 'bg-slate-100 text-slate-900 border border-slate-300 shadow-2xs font-black'
                     : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
@@ -1049,19 +968,19 @@ function InventoryPageContent() {
               <button
                 type="button"
                 onClick={() => setStockFilter('LOW')}
-                className={`px-3.5 py-1.5 rounded-full transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                className={`px-2.5 py-1 rounded-full transition-all shrink-0 cursor-pointer flex items-center gap-1 ${
                   stockFilter === 'LOW'
                     ? 'bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs font-black'
                     : 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
                 }`}
               >
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                <AlertTriangle className="w-3 h-3 text-amber-600" />
                 <span>Low Stock ({lowStockCount})</span>
               </button>
               <button
                 type="button"
                 onClick={() => setStockFilter('OUT_OF_STOCK')}
-                className={`px-3.5 py-1.5 rounded-full transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                className={`px-2.5 py-1 rounded-full transition-all shrink-0 cursor-pointer flex items-center gap-1 ${
                   stockFilter === 'OUT_OF_STOCK'
                     ? 'bg-rose-100 text-rose-900 border border-rose-300 shadow-2xs font-black'
                     : 'bg-rose-50 text-rose-800 border border-rose-200 hover:bg-rose-100'
@@ -1071,7 +990,7 @@ function InventoryPageContent() {
               </button>
             </div>
 
-            {/* Products List Card Container (Image 2 Screen 1) */}
+            {/* Products List Cards */}
             {filteredProducts.length === 0 ? (
               <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 shadow-xs space-y-3">
                 <Package className="w-10 h-10 text-slate-300 mx-auto" />
@@ -1079,8 +998,8 @@ function InventoryPageContent() {
                   {stockFilter === 'LOW'
                     ? 'No low stock items found. All items are well stocked!'
                     : stockFilter === 'OUT_OF_STOCK'
-                    ? 'No out of stock items found.'
-                    : 'No items found.'}
+                      ? 'No out of stock items found.'
+                      : 'No items found.'}
                 </p>
                 {stockFilter !== 'ALL' ? (
                   <button
@@ -1100,16 +1019,14 @@ function InventoryPageContent() {
                 )}
               </div>
             ) : (
-              <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 shadow-xs overflow-hidden">
-                {filteredProducts.map((p, idx) => {
+              <div className="space-y-2.5">
+                {filteredProducts.map((p) => {
                   const stock = Number(p.currentStock || 0);
-                  const isFirstActive = idx === 0;
                   return (
                     <MobileItemCard
                       key={p.id}
                       item={p}
                       stock={stock}
-                      isFirstActive={isFirstActive}
                       onClick={() => router.push(`/inventory/${p.id}`)}
                       onLongPress={() => setLongPressItem(p)}
                     />
@@ -1117,6 +1034,17 @@ function InventoryPageContent() {
                 })}
               </div>
             )}
+
+            {/* Floating Bottom Center Add Item Button (Red) */}
+            <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-30 lg:hidden pointer-events-auto">
+              <Link
+                href="/inventory/new"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-red-600 hover:bg-red-700 active:scale-95 text-white font-black text-xs shadow-lg shadow-red-600/40 border border-red-500/40 transition-all cursor-pointer whitespace-nowrap"
+              >
+                <Plus className="w-4 h-4 stroke-[3]" />
+                <span>Add Item</span>
+              </Link>
+            </div>
           </div>
 
           {/* DESKTOP SPLIT VIEW (>= md) */}
@@ -1227,9 +1155,7 @@ function InventoryPageContent() {
                           </span>
                           <div className="flex items-center gap-2 mt-0.5">
                             {p.code && (
-                              <span className="text-[10px] text-slate-400 font-mono block">
-                                SKU: {p.code}
-                              </span>
+                              <span className="text-[10px] text-slate-400 font-mono block">SKU: {p.code}</span>
                             )}
                             <span className="text-[10px] text-slate-500 font-bold md:hidden">
                               Rs. {Number(p.salePrice || 0).toFixed(0)}
@@ -1241,11 +1167,7 @@ function InventoryPageContent() {
                           <div className="flex flex-col items-end">
                             <span
                               className={`text-xs font-mono font-black ${
-                                stock < 0
-                                  ? 'text-rose-600'
-                                  : stock > 0
-                                  ? 'text-emerald-600'
-                                  : 'text-slate-500'
+                                stock < 0 ? 'text-rose-600' : stock > 0 ? 'text-emerald-600' : 'text-slate-500'
                               }`}
                             >
                               {stock}
@@ -1274,364 +1196,358 @@ function InventoryPageContent() {
               </div>
             </div>
 
-          {/* Right Main Pane: Product Details & Transactions */}
-          <div className="flex-1 flex flex-col bg-white overflow-hidden h-full">
-            {activeItem ? (
-              <>
-                {/* Header: Item Name, Shortcut link & Blue Adjust Item Button */}
-                <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-white">
-                  <div className="flex items-center gap-2.5">
-                    <h2 className="text-base sm:text-lg font-bold text-slate-900 uppercase tracking-tight">
-                      {activeItem.name}
-                    </h2>
+            {/* Right Main Pane: Product Details & Transactions */}
+            <div className="flex-1 flex flex-col bg-white overflow-hidden h-full">
+              {activeItem ? (
+                <>
+                  {/* Header: Item Name, Shortcut link & Blue Adjust Item Button */}
+                  <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-white">
+                    <div className="flex items-center gap-2.5">
+                      <h2 className="text-base sm:text-lg font-bold text-slate-900 uppercase tracking-tight">
+                        {activeItem.name}
+                      </h2>
+                      <button
+                        type="button"
+                        onClick={() => openEditModal(activeItem)}
+                        className="p-1 rounded-md text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                        title="Edit Item"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeletingItemInfo({ id: activeItem.id, name: activeItem.name })}
+                        className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                        title="Delete Item"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {/* Vyapar Blue Adjust Item Button */}
                     <button
                       type="button"
-                      onClick={() => openEditModal(activeItem)}
-                      className="p-1 rounded-md text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
-                      title="Edit Item"
+                      onClick={() => openAdjustModal(activeItem)}
+                      className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
                     >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDeletingItemInfo({ id: activeItem.id, name: activeItem.name })}
-                      className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                      title="Delete Item"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Sliders className="w-3.5 h-3.5" />
+                      <span>ADJUST ITEM</span>
                     </button>
                   </div>
 
-                  {/* Vyapar Blue Adjust Item Button */}
-                  <button
-                    type="button"
-                    onClick={() => openAdjustModal(activeItem)}
-                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
-                  >
-                    <Sliders className="w-3.5 h-3.5" />
-                    <span>ADJUST ITEM</span>
-                  </button>
-                </div>
-
-                {/* Pricing & Stock Valuation Bar (from Screenshot) */}
-                <div className="px-6 py-3 border-b border-slate-100 bg-slate-50/50 flex flex-wrap items-center justify-between gap-4 text-xs select-none">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-slate-500">SALE PRICE:</span>
-                      <span className="font-mono font-bold text-emerald-600">
-                        Rs. {Number(activeItem.salePrice || 0).toFixed(2)}
-                      </span>
-                    </div>
-                    {Number(activeItem.wholesalePrice || 0) > 0 && (
+                  {/* Pricing & Stock Valuation Bar (from Screenshot) */}
+                  <div className="px-6 py-3 border-b border-slate-100 bg-slate-50/50 flex flex-wrap items-center justify-between gap-4 text-xs select-none">
+                    <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-purple-600">WHOLESALE:</span>
-                        <span className="font-mono font-bold text-purple-700">
-                          Rs. {Number(activeItem.wholesalePrice || 0).toFixed(2)}
+                        <span className="font-semibold text-slate-500">SALE PRICE:</span>
+                        <span className="font-mono font-bold text-emerald-600">
+                          Rs. {Number(activeItem.salePrice || 0).toFixed(2)}
                         </span>
                       </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-slate-500">PURCHASE PRICE:</span>
-                      {showCost ? (
-                        <span className="font-mono font-bold text-slate-700">
-                          Rs. {Number(activeItem.purchasePrice || 0).toFixed(2)}
-                        </span>
-                      ) : (
-                        <span className="font-mono text-slate-400">••••••</span>
+                      {Number(activeItem.wholesalePrice || 0) > 0 && (
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-purple-600">WHOLESALE:</span>
+                          <span className="font-mono font-bold text-purple-700">
+                            Rs. {Number(activeItem.wholesalePrice || 0).toFixed(2)}
+                          </span>
+                        </div>
                       )}
-                      <button
-                        type="button"
-                        onClick={() => setShowCost(!showCost)}
-                        className="text-slate-400 hover:text-slate-600 cursor-pointer"
-                        title={showCost ? 'Hide purchase price' : 'Show purchase price'}
-                      >
-                        {showCost ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="text-right space-y-1">
-                    <div className="flex items-center justify-end gap-2">
-                      <span className="font-semibold text-slate-500">STOCK QUANTITY:</span>
-                      <span
-                        className={`font-mono font-bold ${
-                          Number(activeItem.currentStock || 0) < 0
-                            ? 'text-rose-600'
-                            : 'text-emerald-600'
-                        }`}
-                      >
-                        {Number(activeItem.currentStock || 0)} {activeItem.unit || 'Pcs'}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-end gap-2">
-                      <span className="font-semibold text-slate-500">STOCK VALUE:</span>
-                      <span className="font-mono font-bold text-emerald-600">
-                        Rs.{' '}
-                        {(
-                          Number(activeItem.currentStock || 0) *
-                          Number(activeItem.purchasePrice || activeItem.salePrice || 0)
-                        ).toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Transactions Bar with Buy/Sell Filter Tabs, Search & Export */}
-                <div className="px-6 py-2.5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between bg-white gap-2">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <div className="flex items-center gap-1.5">
-                      <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                        TRANSACTIONS
-                      </h3>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded-full font-bold">
-                        {transactions.length}
-                      </span>
-                    </div>
-
-                    {/* Quick Filter Segment: All | Buy | Sell | Stock */}
-                    <div className="flex p-0.5 bg-slate-100/90 rounded-xl text-[11px] font-semibold">
-                      <button
-                        type="button"
-                        onClick={() => setTxTypeFilter('ALL')}
-                        className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                          txTypeFilter === 'ALL'
-                            ? 'bg-white text-slate-900 font-bold shadow-2xs'
-                            : 'text-slate-500 hover:text-slate-800'
-                        }`}
-                      >
-                        All
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setTxTypeFilter('BUY')}
-                        className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
-                          txTypeFilter === 'BUY'
-                            ? 'bg-white text-blue-700 font-bold shadow-2xs'
-                            : 'text-slate-500 hover:text-slate-800'
-                        }`}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                        <span>Buy (Purchases)</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setTxTypeFilter('SELL')}
-                        className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
-                          txTypeFilter === 'SELL'
-                            ? 'bg-white text-emerald-700 font-bold shadow-2xs'
-                            : 'text-slate-500 hover:text-slate-800'
-                        }`}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        <span>Sell (Sales)</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setTxTypeFilter('STOCK')}
-                        className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
-                          txTypeFilter === 'STOCK'
-                            ? 'bg-white text-slate-700 font-bold shadow-2xs'
-                            : 'text-slate-500 hover:text-slate-800'
-                        }`}
-                      >
-                        <span>Stock</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <div className="relative">
-                      <Search className="w-3 h-3 absolute left-2.5 top-2 text-slate-400" />
-                      <input
-                        type="text"
-                        placeholder="Search invoice, party, type..."
-                        value={txSearch}
-                        onChange={(e) => setTxSearch(e.target.value)}
-                        className="pl-7 pr-2.5 py-1 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none w-44 sm:w-56"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleTriggerExportTransactions}
-                      className="p-1.5 rounded-xl text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer border border-emerald-100"
-                      title="Export Transactions (Excel / JSON)"
-                    >
-                      <FileSpreadsheet className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Transactions Table */}
-                <div className="flex-1 overflow-auto flex flex-col bg-white">
-                  {transactions.length === 0 ? (
-                    <div className="flex-1 flex flex-col items-center justify-center p-12 text-center my-auto">
-                      <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-2 text-slate-400">
-                        <Receipt className="w-8 h-8" />
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-slate-500">PURCHASE PRICE:</span>
+                        {showCost ? (
+                          <span className="font-mono font-bold text-slate-700">
+                            Rs. {Number(activeItem.purchasePrice || 0).toFixed(2)}
+                          </span>
+                        ) : (
+                          <span className="font-mono text-slate-400">••••••</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setShowCost(!showCost)}
+                          className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                          title={showCost ? 'Hide purchase price' : 'Show purchase price'}
+                        >
+                          {showCost ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
                       </div>
-                      <h4 className="text-sm font-bold text-slate-800">No Transactions Found</h4>
-                      <p className="text-xs text-slate-400 mt-1">
-                        Buy (Purchases), Sell (Sales), and Stock entries for this item will appear here.
-                      </p>
                     </div>
-                  ) : (
-                    <table className="w-full text-left text-xs border-collapse min-w-[860px]">
-                      <thead className="bg-slate-50/90 text-slate-600 font-bold border-b border-slate-200 sticky top-0 z-10 select-none">
-                        <tr>
-                          <th className="px-4 py-2.5 border-r border-slate-200 w-[140px]">
-                            <div className="flex items-center gap-1">
-                              <span>TYPE</span>
-                              <Filter className="w-2.5 h-2.5 text-slate-400" />
-                            </div>
-                          </th>
-                          <th className="px-4 py-2.5 border-r border-slate-200 w-[120px]">
-                            <div className="flex items-center gap-1">
-                              <span>INVOICE / REF</span>
-                              <Filter className="w-2.5 h-2.5 text-slate-400" />
-                            </div>
-                          </th>
-                          <th className="px-4 py-2.5 border-r border-slate-200 min-w-[170px]">
-                            <div className="flex items-center gap-1">
-                              <span>PARTY NAME</span>
-                              <Filter className="w-2.5 h-2.5 text-slate-400" />
-                            </div>
-                          </th>
-                          <th className="px-4 py-2.5 border-r border-slate-200 w-[110px]">
-                            <div className="flex items-center gap-1">
-                              <span>DATE</span>
-                              <Filter className="w-2.5 h-2.5 text-slate-400" />
-                            </div>
-                          </th>
-                          <th className="px-4 py-2.5 border-r border-slate-200 w-[100px] text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              <span>STATUS</span>
-                              <Filter className="w-2.5 h-2.5 text-slate-400" />
-                            </div>
-                          </th>
-                          <th className="px-4 py-2.5 border-r border-slate-200 w-[110px] text-right">
-                            QUANTITY
-                          </th>
-                          <th className="px-4 py-2.5 border-r border-slate-200 w-[120px] text-right">
-                            RATE
-                          </th>
-                          <th className="px-4 py-2.5 w-[140px] text-right">
-                            TOTAL AMOUNT
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200">
-                        {transactions.map((tx: any) => (
-                          <tr key={tx.id} className="hover:bg-slate-50/70 transition-colors">
-                            {/* Transaction Type Badge */}
-                            <td className="px-4 py-2.5 border-r border-slate-200">
-                              {tx.type === 'Sale (Sell)' ? (
-                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                  <span>Sale (Sell)</span>
-                                </span>
-                              ) : tx.type === 'Purchase (Buy)' ? (
-                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 inline-flex items-center gap-1">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                                  <span>Purchase (Buy)</span>
-                                </span>
-                              ) : tx.type === 'Sale Return' ? (
-                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200 inline-flex items-center gap-1">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-                                  <span>Sale Return</span>
-                                </span>
-                              ) : tx.type === 'Purchase Return' ? (
-                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 inline-flex items-center gap-1">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                                  <span>Purchase Return</span>
-                                </span>
-                              ) : tx.type === 'Opening Stock' ? (
-                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 inline-flex items-center gap-1">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
-                                  <span>Opening Stock</span>
-                                </span>
-                              ) : (
-                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 inline-flex items-center gap-1">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                                  <span>Adjustment</span>
-                                </span>
-                              )}
-                            </td>
 
-                            {/* Invoice / Reference Number */}
-                            <td className="px-4 py-2.5 border-r border-slate-200 font-mono font-semibold text-slate-700 whitespace-nowrap">
-                              {tx.ref}
-                            </td>
+                    <div className="text-right space-y-1">
+                      <div className="flex items-center justify-end gap-2">
+                        <span className="font-semibold text-slate-500">STOCK QUANTITY:</span>
+                        <span
+                          className={`font-mono font-bold ${
+                            Number(activeItem.currentStock || 0) < 0 ? 'text-rose-600' : 'text-emerald-600'
+                          }`}
+                        >
+                          {Number(activeItem.currentStock || 0)} {activeItem.unit || 'Pcs'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-end gap-2">
+                        <span className="font-semibold text-slate-500">STOCK VALUE:</span>
+                        <span className="font-mono font-bold text-emerald-600">
+                          Rs.{' '}
+                          {(
+                            Number(activeItem.currentStock || 0) *
+                            Number(activeItem.purchasePrice || activeItem.salePrice || 0)
+                          ).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
 
-                            {/* Party Name */}
-                            <td className="px-4 py-2.5 border-r border-slate-200 font-medium text-slate-900">
-                              {tx.name}
-                            </td>
+                  {/* Transactions Bar with Buy/Sell Filter Tabs, Search & Export */}
+                  <div className="px-6 py-2.5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between bg-white gap-2">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <div className="flex items-center gap-1.5">
+                        <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">TRANSACTIONS</h3>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded-full font-bold">
+                          {transactions.length}
+                        </span>
+                      </div>
 
-                            {/* Date */}
-                            <td className="px-4 py-2.5 border-r border-slate-200 text-slate-600 font-mono text-[11px] whitespace-nowrap">
-                              {tx.date ? new Date(tx.date).toLocaleDateString() : '-'}
-                            </td>
+                      {/* Quick Filter Segment: All | Buy | Sell | Stock */}
+                      <div className="flex p-0.5 bg-slate-100/90 rounded-xl text-[11px] font-semibold">
+                        <button
+                          type="button"
+                          onClick={() => setTxTypeFilter('ALL')}
+                          className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                            txTypeFilter === 'ALL'
+                              ? 'bg-white text-slate-900 font-bold shadow-2xs'
+                              : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          All
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTxTypeFilter('BUY')}
+                          className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                            txTypeFilter === 'BUY'
+                              ? 'bg-white text-blue-700 font-bold shadow-2xs'
+                              : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                          <span>Buy (Purchases)</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTxTypeFilter('SELL')}
+                          className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                            txTypeFilter === 'SELL'
+                              ? 'bg-white text-emerald-700 font-bold shadow-2xs'
+                              : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          <span>Sell (Sales)</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTxTypeFilter('STOCK')}
+                          className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                            txTypeFilter === 'STOCK'
+                              ? 'bg-white text-slate-700 font-bold shadow-2xs'
+                              : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          <span>Stock</span>
+                        </button>
+                      </div>
+                    </div>
 
-                            {/* Status: Paid or Unpaid / Partial / Recorded */}
-                            <td className="px-4 py-2.5 border-r border-slate-200 text-center whitespace-nowrap">
-                              {tx.status === 'PAID' || tx.status === 'Paid' || tx.status === 'COMPLETED' ? (
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-300 inline-block">
-                                  Paid
-                                </span>
-                              ) : tx.status === 'UNPAID' || tx.status === 'Unpaid' ? (
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-300 inline-block">
-                                  Unpaid
-                                </span>
-                              ) : tx.status === 'PARTIAL' || tx.status === 'Partial' ? (
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-300 inline-block">
-                                  Partial
-                                </span>
-                              ) : tx.status === 'Returned' ? (
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-300 inline-block">
-                                  Returned
-                                </span>
-                              ) : (
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 inline-block">
-                                  {tx.status || 'Recorded'}
-                                </span>
-                              )}
-                            </td>
+                    <div className="flex items-center gap-2">
+                      <div className="relative">
+                        <Search className="w-3 h-3 absolute left-2.5 top-2 text-slate-400" />
+                        <input
+                          type="text"
+                          placeholder="Search invoice, party, type..."
+                          value={txSearch}
+                          onChange={(e) => setTxSearch(e.target.value)}
+                          className="pl-7 pr-2.5 py-1 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none w-44 sm:w-56"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleTriggerExportTransactions}
+                        className="p-1.5 rounded-xl text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer border border-emerald-100"
+                        title="Export Transactions (Excel / JSON)"
+                      >
+                        <FileSpreadsheet className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
 
-                            {/* Quantity (with In / Out direction styling) */}
-                            <td className="px-4 py-2.5 border-r border-slate-200 text-right font-mono font-bold whitespace-nowrap">
-                              {tx.flow === 'in' ? (
-                                <span className="text-emerald-600">+{tx.quantity} {activeItem.unit || ''}</span>
-                              ) : (
-                                <span className="text-rose-600">-{tx.quantity} {activeItem.unit || ''}</span>
-                              )}
-                            </td>
-
-                            {/* Price / Rate */}
-                            <td className="px-4 py-2.5 border-r border-slate-200 text-right font-mono text-slate-700 whitespace-nowrap">
-                              Rs. {Number(tx.price || 0).toFixed(2)}
-                            </td>
-
-                            {/* Total Amount */}
-                            <td className="px-4 py-2.5 text-right font-mono font-bold text-slate-900 whitespace-nowrap">
-                              Rs. {Number(tx.total || 0).toFixed(2)}
-                            </td>
+                  {/* Transactions Table */}
+                  <div className="flex-1 overflow-auto flex flex-col bg-white">
+                    {transactions.length === 0 ? (
+                      <div className="flex-1 flex flex-col items-center justify-center p-12 text-center my-auto">
+                        <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-2 text-slate-400">
+                          <Receipt className="w-8 h-8" />
+                        </div>
+                        <h4 className="text-sm font-bold text-slate-800">No Transactions Found</h4>
+                        <p className="text-xs text-slate-400 mt-1">
+                          Buy (Purchases), Sell (Sales), and Stock entries for this item will appear here.
+                        </p>
+                      </div>
+                    ) : (
+                      <table className="w-full text-left text-xs border-collapse min-w-[860px]">
+                        <thead className="bg-slate-50/90 text-slate-600 font-bold border-b border-slate-200 sticky top-0 z-10 select-none">
+                          <tr>
+                            <th className="px-4 py-2.5 border-r border-slate-200 w-[140px]">
+                              <div className="flex items-center gap-1">
+                                <span>TYPE</span>
+                                <Filter className="w-2.5 h-2.5 text-slate-400" />
+                              </div>
+                            </th>
+                            <th className="px-4 py-2.5 border-r border-slate-200 w-[120px]">
+                              <div className="flex items-center gap-1">
+                                <span>INVOICE / REF</span>
+                                <Filter className="w-2.5 h-2.5 text-slate-400" />
+                              </div>
+                            </th>
+                            <th className="px-4 py-2.5 border-r border-slate-200 min-w-[170px]">
+                              <div className="flex items-center gap-1">
+                                <span>PARTY NAME</span>
+                                <Filter className="w-2.5 h-2.5 text-slate-400" />
+                              </div>
+                            </th>
+                            <th className="px-4 py-2.5 border-r border-slate-200 w-[110px]">
+                              <div className="flex items-center gap-1">
+                                <span>DATE</span>
+                                <Filter className="w-2.5 h-2.5 text-slate-400" />
+                              </div>
+                            </th>
+                            <th className="px-4 py-2.5 border-r border-slate-200 w-[100px] text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <span>STATUS</span>
+                                <Filter className="w-2.5 h-2.5 text-slate-400" />
+                              </div>
+                            </th>
+                            <th className="px-4 py-2.5 border-r border-slate-200 w-[110px] text-right">QUANTITY</th>
+                            <th className="px-4 py-2.5 border-r border-slate-200 w-[120px] text-right">RATE</th>
+                            <th className="px-4 py-2.5 w-[140px] text-right">TOTAL AMOUNT</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
+                        </thead>
+                        <tbody className="divide-y divide-slate-200">
+                          {transactions.map((tx: any) => (
+                            <tr key={tx.id} className="hover:bg-slate-50/70 transition-colors">
+                              {/* Transaction Type Badge */}
+                              <td className="px-4 py-2.5 border-r border-slate-200">
+                                {tx.type === 'Sale (Sell)' ? (
+                                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                    <span>Sale (Sell)</span>
+                                  </span>
+                                ) : tx.type === 'Purchase (Buy)' ? (
+                                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 inline-flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                    <span>Purchase (Buy)</span>
+                                  </span>
+                                ) : tx.type === 'Sale Return' ? (
+                                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200 inline-flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                                    <span>Sale Return</span>
+                                  </span>
+                                ) : tx.type === 'Purchase Return' ? (
+                                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 inline-flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                    <span>Purchase Return</span>
+                                  </span>
+                                ) : tx.type === 'Opening Stock' ? (
+                                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 inline-flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
+                                    <span>Opening Stock</span>
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 inline-flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                                    <span>Adjustment</span>
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* Invoice / Reference Number */}
+                              <td className="px-4 py-2.5 border-r border-slate-200 font-mono font-semibold text-slate-700 whitespace-nowrap">
+                                {tx.ref}
+                              </td>
+
+                              {/* Party Name */}
+                              <td className="px-4 py-2.5 border-r border-slate-200 font-medium text-slate-900">
+                                {tx.name}
+                              </td>
+
+                              {/* Date */}
+                              <td className="px-4 py-2.5 border-r border-slate-200 text-slate-600 font-mono text-[11px] whitespace-nowrap">
+                                {tx.date ? new Date(tx.date).toLocaleDateString() : '-'}
+                              </td>
+
+                              {/* Status: Paid or Unpaid / Partial / Recorded */}
+                              <td className="px-4 py-2.5 border-r border-slate-200 text-center whitespace-nowrap">
+                                {tx.status === 'PAID' || tx.status === 'Paid' || tx.status === 'COMPLETED' ? (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-300 inline-block">
+                                    Paid
+                                  </span>
+                                ) : tx.status === 'UNPAID' || tx.status === 'Unpaid' ? (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-300 inline-block">
+                                    Unpaid
+                                  </span>
+                                ) : tx.status === 'PARTIAL' || tx.status === 'Partial' ? (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-300 inline-block">
+                                    Partial
+                                  </span>
+                                ) : tx.status === 'Returned' ? (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-300 inline-block">
+                                    Returned
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 inline-block">
+                                    {tx.status || 'Recorded'}
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* Quantity (with In / Out direction styling) */}
+                              <td className="px-4 py-2.5 border-r border-slate-200 text-right font-mono font-bold whitespace-nowrap">
+                                {tx.flow === 'in' ? (
+                                  <span className="text-emerald-600">
+                                    +{tx.quantity} {activeItem.unit || ''}
+                                  </span>
+                                ) : (
+                                  <span className="text-rose-600">
+                                    -{tx.quantity} {activeItem.unit || ''}
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* Price / Rate */}
+                              <td className="px-4 py-2.5 border-r border-slate-200 text-right font-mono text-slate-700 whitespace-nowrap">
+                                Rs. {Number(tx.price || 0).toFixed(2)}
+                              </td>
+
+                              {/* Total Amount */}
+                              <td className="px-4 py-2.5 text-right font-mono font-bold text-slate-900 whitespace-nowrap">
+                                Rs. {Number(tx.total || 0).toFixed(2)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
+                  <Package className="w-12 h-12 text-slate-300 mb-2" />
+                  <h3 className="text-sm font-bold text-slate-800">No Product Selected</h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Select a product from the directory or create a new one.
+                  </p>
                 </div>
-              </>
-            ) : (
-              <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
-                <Package className="w-12 h-12 text-slate-300 mb-2" />
-                <h3 className="text-sm font-bold text-slate-800">No Product Selected</h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  Select a product from the directory or create a new one.
-                </p>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
         </>
       )}
 
@@ -1743,14 +1659,8 @@ function InventoryPageContent() {
                         }`}
                       >
                         <div className="min-w-0 pr-2">
-                          <span className="text-xs truncate block font-medium group-hover:text-blue-600">
-                            {s.name}
-                          </span>
-                          {s.code && (
-                            <span className="text-[10px] text-slate-400 font-mono block">
-                              SAC: {s.code}
-                            </span>
-                          )}
+                          <span className="text-xs truncate block font-medium group-hover:text-blue-600">{s.name}</span>
+                          {s.code && <span className="text-[10px] text-slate-400 font-mono block">SAC: {s.code}</span>}
                         </div>
                         <div className="text-right shrink-0 flex items-center gap-2">
                           <span className="text-xs font-mono font-bold text-emerald-600">
@@ -1773,128 +1683,141 @@ function InventoryPageContent() {
                   </div>
                 </div>
 
-              <div className="flex-1 p-6 overflow-y-auto">
-                {activeItem ? (
-                  <div className="space-y-5">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h2 className="text-lg font-bold text-slate-900">{activeItem.name}</h2>
-                          {activeItem.code && (
-                            <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md font-medium">
-                              SAC: {activeItem.code}
-                            </span>
-                          )}
+                <div className="flex-1 p-6 overflow-y-auto">
+                  {activeItem ? (
+                    <div className="space-y-5">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h2 className="text-lg font-bold text-slate-900">{activeItem.name}</h2>
+                            {activeItem.code && (
+                              <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md font-medium">
+                                SAC: {activeItem.code}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1">
+                            Billing Rate:{' '}
+                            <strong className="text-slate-900 font-mono">
+                              Rs. {Number(activeItem.salePrice || 0).toFixed(2)}
+                            </strong>{' '}
+                            per {activeItem.unit || 'Hrs'}
+                          </p>
                         </div>
-                        <p className="text-xs text-slate-500 mt-1">
-                          Billing Rate: <strong className="text-slate-900 font-mono">Rs. {Number(activeItem.salePrice || 0).toFixed(2)}</strong> per {activeItem.unit || 'Hrs'}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => openEditModal(activeItem)}
-                          className="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 shadow-2xs flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                          <span>Edit Service</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeletingItemInfo({ id: activeItem.id, name: activeItem.name })}
-                          className="px-3.5 py-1.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 text-xs font-bold hover:bg-rose-100 cursor-pointer flex items-center gap-1.5"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Delete</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Quick Metric Cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
-                        <span className="text-[10px] uppercase font-bold text-slate-400 block">Service Charge</span>
-                        <span className="text-base font-mono font-bold text-emerald-600 mt-0.5 block">
-                          Rs. {Number(activeItem.salePrice || 0).toFixed(2)}
-                        </span>
-                        <span className="text-[10px] text-slate-400">per {activeItem.unit || 'Hrs'}</span>
-                      </div>
-                      <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
-                        <span className="text-[10px] uppercase font-bold text-slate-400 block">Category</span>
-                        <span className="text-sm font-bold text-slate-800 mt-1 block truncate">
-                          {activeItem.category?.name || 'Uncategorized'}
-                        </span>
-                      </div>
-                      <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
-                        <span className="text-[10px] uppercase font-bold text-slate-400 block">SAC / Code</span>
-                        <span className="text-sm font-mono font-bold text-slate-800 mt-1 block">
-                          {activeItem.code || '-'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {activeItem.storeDescription && (
-                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs">
-                        <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Scope & Description</span>
-                        <p className="text-slate-700 leading-relaxed">{activeItem.storeDescription}</p>
-                      </div>
-                    )}
-
-                    {/* Service Sales History */}
-                    <div className="pt-2">
-                      <div className="flex items-center justify-between pb-2 border-b border-slate-200 mb-3">
                         <div className="flex items-center gap-2">
-                          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                            SERVICE BILLING & SALES HISTORY
-                          </h3>
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded-full font-bold">
-                            {transactions.length}
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(activeItem)}
+                            className="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                            <span>Edit Service</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeletingItemInfo({ id: activeItem.id, name: activeItem.name })}
+                            className="px-3.5 py-1.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 text-xs font-bold hover:bg-rose-100 cursor-pointer flex items-center gap-1.5"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Quick Metric Cards */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+                          <span className="text-[10px] uppercase font-bold text-slate-400 block">Service Charge</span>
+                          <span className="text-base font-mono font-bold text-emerald-600 mt-0.5 block">
+                            Rs. {Number(activeItem.salePrice || 0).toFixed(2)}
+                          </span>
+                          <span className="text-[10px] text-slate-400">per {activeItem.unit || 'Hrs'}</span>
+                        </div>
+                        <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+                          <span className="text-[10px] uppercase font-bold text-slate-400 block">Category</span>
+                          <span className="text-sm font-bold text-slate-800 mt-1 block truncate">
+                            {activeItem.category?.name || 'Uncategorized'}
+                          </span>
+                        </div>
+                        <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+                          <span className="text-[10px] uppercase font-bold text-slate-400 block">SAC / Code</span>
+                          <span className="text-sm font-mono font-bold text-slate-800 mt-1 block">
+                            {activeItem.code || '-'}
                           </span>
                         </div>
                       </div>
 
-                      {transactions.length === 0 ? (
-                        <div className="p-8 text-center bg-slate-50/60 rounded-2xl border border-dashed border-slate-200">
-                          <Receipt className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                          <p className="text-xs font-semibold text-slate-700">No Sales Recorded Yet</p>
-                          <p className="text-[11px] text-slate-400 mt-0.5">Invoices that bill this service will appear here automatically.</p>
-                        </div>
-                      ) : (
-                        <div className="border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100 shadow-2xs">
-                          <div className="grid grid-cols-12 px-4 py-2 bg-slate-50/80 text-[11px] font-bold text-slate-500">
-                            <span className="col-span-2">TYPE</span>
-                            <span className="col-span-3">INVOICE #</span>
-                            <span className="col-span-3">CUSTOMER</span>
-                            <span className="col-span-2">DATE</span>
-                            <span className="col-span-2 text-right">TOTAL</span>
-                          </div>
-                          {transactions.map((tx: any) => (
-                            <div key={tx.id} className="grid grid-cols-12 px-4 py-2.5 text-xs items-center hover:bg-slate-50 transition-colors">
-                              <span className="col-span-2">
-                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                  <span>Sale</span>
-                                </span>
-                              </span>
-                              <span className="col-span-3 font-mono font-semibold text-slate-700 truncate pr-2">{tx.ref}</span>
-                              <span className="col-span-3 truncate text-slate-800 font-medium pr-2">{tx.name}</span>
-                              <span className="col-span-2 text-slate-500 font-mono text-[11px]">
-                                {tx.date ? new Date(tx.date).toLocaleDateString() : '-'}
-                              </span>
-                              <span className="col-span-2 text-right font-mono font-bold text-slate-900">
-                                Rs. {tx.total.toFixed(2)}
-                              </span>
-                            </div>
-                          ))}
+                      {activeItem.storeDescription && (
+                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs">
+                          <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                            Scope & Description
+                          </span>
+                          <p className="text-slate-700 leading-relaxed">{activeItem.storeDescription}</p>
                         </div>
                       )}
+
+                      {/* Service Sales History */}
+                      <div className="pt-2">
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-200 mb-3">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                              SERVICE BILLING & SALES HISTORY
+                            </h3>
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded-full font-bold">
+                              {transactions.length}
+                            </span>
+                          </div>
+                        </div>
+
+                        {transactions.length === 0 ? (
+                          <div className="p-8 text-center bg-slate-50/60 rounded-2xl border border-dashed border-slate-200">
+                            <Receipt className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                            <p className="text-xs font-semibold text-slate-700">No Sales Recorded Yet</p>
+                            <p className="text-[11px] text-slate-400 mt-0.5">
+                              Invoices that bill this service will appear here automatically.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100 shadow-2xs">
+                            <div className="grid grid-cols-12 px-4 py-2 bg-slate-50/80 text-[11px] font-bold text-slate-500">
+                              <span className="col-span-2">TYPE</span>
+                              <span className="col-span-3">INVOICE #</span>
+                              <span className="col-span-3">CUSTOMER</span>
+                              <span className="col-span-2">DATE</span>
+                              <span className="col-span-2 text-right">TOTAL</span>
+                            </div>
+                            {transactions.map((tx: any) => (
+                              <div
+                                key={tx.id}
+                                className="grid grid-cols-12 px-4 py-2.5 text-xs items-center hover:bg-slate-50 transition-colors"
+                              >
+                                <span className="col-span-2">
+                                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                    <span>Sale</span>
+                                  </span>
+                                </span>
+                                <span className="col-span-3 font-mono font-semibold text-slate-700 truncate pr-2">
+                                  {tx.ref}
+                                </span>
+                                <span className="col-span-3 truncate text-slate-800 font-medium pr-2">{tx.name}</span>
+                                <span className="col-span-2 text-slate-500 font-mono text-[11px]">
+                                  {tx.date ? new Date(tx.date).toLocaleDateString() : '-'}
+                                </span>
+                                <span className="col-span-2 text-right font-mono font-bold text-slate-900">
+                                  Rs. {tx.total.toFixed(2)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ) : null}
+                  ) : null}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
         </>
       )}
 
@@ -1940,7 +1863,9 @@ function InventoryPageContent() {
                     key={cat.id}
                     onClick={() => setSelectedCategoryId(cat.id)}
                     className={`px-4 py-3 flex items-center justify-between cursor-pointer transition-colors ${
-                      isSelected ? 'bg-sky-50 text-blue-900 font-bold border-l-4 border-blue-600' : 'hover:bg-slate-50 text-slate-800'
+                      isSelected
+                        ? 'bg-sky-50 text-blue-900 font-bold border-l-4 border-blue-600'
+                        : 'hover:bg-slate-50 text-slate-800'
                     }`}
                   >
                     <span className="text-xs truncate">{cat.name}</span>
@@ -1961,9 +1886,7 @@ function InventoryPageContent() {
                     ? 'ITEMS NOT IN ANY CATEGORY'
                     : categories.find((c: any) => c.id === selectedCategoryId)?.name || 'CATEGORY'}
                 </h2>
-                <span className="text-xs text-slate-500 font-mono">
-                  {selectedCategoryItems.length} item(s)
-                </span>
+                <span className="text-xs text-slate-500 font-mono">{selectedCategoryItems.length} item(s)</span>
               </div>
 
               <button
@@ -1994,19 +1917,16 @@ function InventoryPageContent() {
               </div>
 
               {selectedCategoryItems.length === 0 ? (
-                <div className="p-8 text-center text-xs text-slate-400">
-                  No items in this category.
-                </div>
+                <div className="p-8 text-center text-xs text-slate-400">No items in this category.</div>
               ) : (
                 <div className="divide-y divide-slate-100">
                   {selectedCategoryItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="grid grid-cols-5 px-6 py-3 text-xs hover:bg-slate-50/60 items-center"
-                    >
+                    <div key={item.id} className="grid grid-cols-5 px-6 py-3 text-xs hover:bg-slate-50/60 items-center">
                       <div className="col-span-2 font-medium text-slate-800 truncate pr-2">
                         {item.name}
-                        {item.code && <span className="text-[10px] text-slate-400 font-mono ml-2">SKU: {item.code}</span>}
+                        {item.code && (
+                          <span className="text-[10px] text-slate-400 font-mono ml-2">SKU: {item.code}</span>
+                        )}
                       </div>
                       <div
                         className={`text-right font-mono font-bold ${
@@ -2017,10 +1937,9 @@ function InventoryPageContent() {
                       </div>
                       <div className="text-right font-mono text-emerald-600 font-bold">
                         Rs.{' '}
-                        {(
-                          Number(item.currentStock || 0) *
-                          Number(item.purchasePrice || item.salePrice || 0)
-                        ).toFixed(2)}
+                        {(Number(item.currentStock || 0) * Number(item.purchasePrice || item.salePrice || 0)).toFixed(
+                          2
+                        )}
                       </div>
                       <div className="text-right">
                         {item.categoryId && (
@@ -2098,7 +2017,9 @@ function InventoryPageContent() {
                     key={u.fullname}
                     onClick={() => setSelectedUnitName(u.fullname)}
                     className={`px-4 py-3 flex items-center justify-between cursor-pointer transition-colors ${
-                      isSelected ? 'bg-sky-50 text-blue-900 font-bold border-l-4 border-blue-600' : 'hover:bg-slate-50 text-slate-800'
+                      isSelected
+                        ? 'bg-sky-50 text-blue-900 font-bold border-l-4 border-blue-600'
+                        : 'hover:bg-slate-50 text-slate-800'
                     }`}
                   >
                     <span className="text-xs font-semibold">{u.fullname}</span>
@@ -2113,9 +2034,7 @@ function InventoryPageContent() {
           <div className="flex-1 flex flex-col bg-white overflow-hidden h-full">
             <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
               <div>
-                <h2 className="text-base font-bold text-slate-900 uppercase tracking-tight">
-                  {selectedUnitName}
-                </h2>
+                <h2 className="text-base font-bold text-slate-900 uppercase tracking-tight">{selectedUnitName}</h2>
                 <p className="text-xs text-slate-500">Unit of Measurement & Conversion rules</p>
               </div>
 
@@ -2144,7 +2063,10 @@ function InventoryPageContent() {
               ) : (
                 <div className="divide-y divide-slate-100 p-6">
                   {selectedUnitConversions.map((conv, idx) => (
-                    <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs flex justify-between items-center">
+                    <div
+                      key={idx}
+                      className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs flex justify-between items-center"
+                    >
                       <span className="font-bold text-slate-800">
                         1 {conv.baseUnit} = {conv.rate} {conv.secondaryUnit}
                       </span>
@@ -2233,11 +2155,7 @@ function InventoryPageContent() {
                         : 'bg-blue-50 text-blue-600 border border-blue-200'
                     }`}
                   >
-                    {createType === ItemType.SERVICE ? (
-                      <Wrench className="w-5 h-5" />
-                    ) : (
-                      <Package className="w-5 h-5" />
-                    )}
+                    {createType === ItemType.SERVICE ? <Wrench className="w-5 h-5" /> : <Package className="w-5 h-5" />}
                   </div>
                   <div>
                     <h3 className="text-lg font-black text-slate-900">
@@ -2265,9 +2183,7 @@ function InventoryPageContent() {
                 {createType === ItemType.SERVICE ? (
                   <>
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Service Name *
-                      </label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Service Name *</label>
                       <input
                         type="text"
                         {...createForm.register('name')}
@@ -2275,17 +2191,13 @@ function InventoryPageContent() {
                         className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-medium focus:bg-white focus:border-amber-500 focus:outline-none"
                       />
                       {createForm.formState.errors.name && (
-                        <p className="text-xs text-rose-600 mt-1">
-                          {createForm.formState.errors.name.message}
-                        </p>
+                        <p className="text-xs text-rose-600 mt-1">{createForm.formState.errors.name.message}</p>
                       )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                          SAC / Service Code
-                        </label>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">SAC / Service Code</label>
                         <input
                           type="text"
                           {...createForm.register('code')}
@@ -2294,9 +2206,7 @@ function InventoryPageContent() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                          Billing Unit
-                        </label>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Billing Unit</label>
                         <select
                           {...createForm.register('unit')}
                           className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none"
@@ -2321,13 +2231,9 @@ function InventoryPageContent() {
 
                     {/* Service Charge / Rate ONLY (NO Purchase Price!) */}
                     <div className="p-3.5 bg-amber-50/60 border border-amber-200/80 rounded-2xl space-y-1">
-                      <label className="block text-xs font-bold text-slate-800">
-                        Service Charge / Rate (Rs.) *
-                      </label>
+                      <label className="block text-xs font-bold text-slate-800">Service Charge / Rate (Rs.) *</label>
                       <div className="relative">
-                        <span className="absolute left-3.5 top-2 text-xs font-bold text-slate-400 font-mono">
-                          Rs.
-                        </span>
+                        <span className="absolute left-3.5 top-2 text-xs font-bold text-slate-400 font-mono">Rs.</span>
                         <input
                           type="text"
                           inputMode="decimal"
@@ -2383,9 +2289,7 @@ function InventoryPageContent() {
                   /* ----------------- PRODUCT FORM ----------------- */
                   <>
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Product Name *
-                      </label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Product Name *</label>
                       <input
                         type="text"
                         {...createForm.register('name')}
@@ -2393,17 +2297,13 @@ function InventoryPageContent() {
                         className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-medium focus:bg-white focus:border-blue-500 focus:outline-none"
                       />
                       {createForm.formState.errors.name && (
-                        <p className="text-xs text-rose-600 mt-1">
-                          {createForm.formState.errors.name.message}
-                        </p>
+                        <p className="text-xs text-rose-600 mt-1">{createForm.formState.errors.name.message}</p>
                       )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                          SKU / Item Code
-                        </label>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">SKU / Item Code</label>
                         <input
                           type="text"
                           {...createForm.register('code')}
@@ -2428,9 +2328,7 @@ function InventoryPageContent() {
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                          Sale Price (Rs.) *
-                        </label>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Sale Price (Rs.) *</label>
                         <input
                           type="text"
                           inputMode="decimal"
@@ -2442,9 +2340,7 @@ function InventoryPageContent() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                          Purchase Price (Rs.)
-                        </label>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Purchase Price (Rs.)</label>
                         <input
                           type="text"
                           inputMode="decimal"
@@ -2459,9 +2355,7 @@ function InventoryPageContent() {
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                          Opening Stock
-                        </label>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Opening Stock</label>
                         <input
                           type="text"
                           inputMode="decimal"
@@ -2473,9 +2367,7 @@ function InventoryPageContent() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                          Min Stock Alert
-                        </label>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Min Stock Alert</label>
                         <input
                           type="text"
                           inputMode="decimal"
@@ -2540,8 +2432,8 @@ function InventoryPageContent() {
                       {createItem.isPending
                         ? 'Saving...'
                         : createType === ItemType.SERVICE
-                        ? 'Save Service'
-                        : 'Save Product'}
+                          ? 'Save Service'
+                          : 'Save Product'}
                     </span>
                   </button>
                 </div>
@@ -2556,7 +2448,13 @@ function InventoryPageContent() {
         <ModalPortal>
           <div
             className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[120] flex items-center justify-center p-4 font-sans"
-            onClick={() => promptDiscardConfirmation(() => setEditingItem(null), 'Discard edits?', 'Are you sure you want to exit without saving changes?')}
+            onClick={() =>
+              promptDiscardConfirmation(
+                () => setEditingItem(null),
+                'Discard edits?',
+                'Are you sure you want to exit without saving changes?'
+              )
+            }
           >
             <div
               onClick={(e) => e.stopPropagation()}
@@ -2566,9 +2464,7 @@ function InventoryPageContent() {
                 <div className="flex items-center gap-2.5">
                   <div
                     className={`w-8 h-8 rounded-xl flex items-center justify-center ${
-                      editingItem.type === ItemType.SERVICE
-                        ? 'bg-amber-50 text-amber-600'
-                        : 'bg-blue-50 text-blue-600'
+                      editingItem.type === ItemType.SERVICE ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'
                     }`}
                   >
                     {editingItem.type === ItemType.SERVICE ? (
@@ -2579,9 +2475,7 @@ function InventoryPageContent() {
                   </div>
                   <div>
                     <h3 className="text-base font-black text-slate-900">
-                      {editingItem.type === ItemType.SERVICE
-                        ? 'Edit Service Details'
-                        : 'Edit Product Details'}
+                      {editingItem.type === ItemType.SERVICE ? 'Edit Service Details' : 'Edit Product Details'}
                     </h3>
                     <p className="text-[11px] text-slate-500">
                       {editingItem.type === ItemType.SERVICE
@@ -2592,7 +2486,13 @@ function InventoryPageContent() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => promptDiscardConfirmation(() => setEditingItem(null), 'Discard edits?', 'Are you sure you want to exit without saving changes?')}
+                  onClick={() =>
+                    promptDiscardConfirmation(
+                      () => setEditingItem(null),
+                      'Discard edits?',
+                      'Are you sure you want to exit without saving changes?'
+                    )
+                  }
                   className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
                 >
                   <X className="w-4 h-4" />
@@ -2604,9 +2504,7 @@ function InventoryPageContent() {
                 {editingItem.type === ItemType.SERVICE ? (
                   <>
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Service Name *
-                      </label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Service Name *</label>
                       <input
                         type="text"
                         {...editForm.register('name')}
@@ -2616,9 +2514,7 @@ function InventoryPageContent() {
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                          SAC / Service Code
-                        </label>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">SAC / Service Code</label>
                         <input
                           type="text"
                           {...editForm.register('code')}
@@ -2627,9 +2523,7 @@ function InventoryPageContent() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                          Billing Unit
-                        </label>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Billing Unit</label>
                         <select
                           {...editForm.register('unit')}
                           className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none"
@@ -2654,13 +2548,9 @@ function InventoryPageContent() {
 
                     {/* Service Charge / Rate ONLY (NO Purchase Price!) */}
                     <div className="p-3.5 bg-amber-50/60 border border-amber-200/80 rounded-2xl space-y-1">
-                      <label className="block text-xs font-bold text-slate-800">
-                        Service Charge / Rate (Rs.) *
-                      </label>
+                      <label className="block text-xs font-bold text-slate-800">Service Charge / Rate (Rs.) *</label>
                       <div className="relative">
-                        <span className="absolute left-3.5 top-2 text-xs font-bold text-slate-400 font-mono">
-                          Rs.
-                        </span>
+                        <span className="absolute left-3.5 top-2 text-xs font-bold text-slate-400 font-mono">Rs.</span>
                         <input
                           type="text"
                           inputMode="decimal"
@@ -2716,9 +2606,7 @@ function InventoryPageContent() {
                   /* ----------------- PRODUCT EDIT FORM ----------------- */
                   <>
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Product Name *
-                      </label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Product Name *</label>
                       <input
                         type="text"
                         {...editForm.register('name')}
@@ -2728,9 +2616,7 @@ function InventoryPageContent() {
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                          SKU / Item Code
-                        </label>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">SKU / Item Code</label>
                         <input
                           type="text"
                           {...editForm.register('code')}
@@ -2754,9 +2640,7 @@ function InventoryPageContent() {
 
                     <div className="grid grid-cols-3 gap-3">
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                          Sale Price (Rs.)
-                        </label>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Sale Price (Rs.)</label>
                         <input
                           type="text"
                           inputMode="decimal"
@@ -2767,9 +2651,7 @@ function InventoryPageContent() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                          Wholesale Price (Rs.)
-                        </label>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Wholesale Price (Rs.)</label>
                         <input
                           type="text"
                           inputMode="decimal"
@@ -2781,9 +2663,7 @@ function InventoryPageContent() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                          Purchase Price (Rs.)
-                        </label>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Purchase Price (Rs.)</label>
                         <input
                           type="text"
                           inputMode="decimal"
@@ -2811,9 +2691,7 @@ function InventoryPageContent() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                          Min Stock Alert
-                        </label>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Min Stock Alert</label>
                         <input
                           type="text"
                           inputMode="decimal"
@@ -2830,7 +2708,13 @@ function InventoryPageContent() {
                 <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
                   <button
                     type="button"
-                    onClick={() => promptDiscardConfirmation(() => setEditingItem(null), 'Discard edits?', 'Are you sure you want to exit without saving changes?')}
+                    onClick={() =>
+                      promptDiscardConfirmation(
+                        () => setEditingItem(null),
+                        'Discard edits?',
+                        'Are you sure you want to exit without saving changes?'
+                      )
+                    }
                     className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 cursor-pointer"
                   >
                     Cancel
@@ -2853,8 +2737,8 @@ function InventoryPageContent() {
                       {updateItem.isPending
                         ? 'Saving...'
                         : editingItem.type === ItemType.SERVICE
-                        ? 'Update Service'
-                        : 'Save Changes'}
+                          ? 'Update Service'
+                          : 'Save Changes'}
                     </span>
                   </button>
                 </div>
@@ -2869,7 +2753,13 @@ function InventoryPageContent() {
         <ModalPortal>
           <div
             className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[120] flex items-center justify-center p-4 font-sans"
-            onClick={() => promptDiscardConfirmation(() => setAdjustingItem(null), 'Cancel stock adjustment?', 'Are you sure you want to exit without adjusting stock?')}
+            onClick={() =>
+              promptDiscardConfirmation(
+                () => setAdjustingItem(null),
+                'Cancel stock adjustment?',
+                'Are you sure you want to exit without adjusting stock?'
+              )
+            }
           >
             <div
               onClick={(e) => e.stopPropagation()}
@@ -2885,7 +2775,13 @@ function InventoryPageContent() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => promptDiscardConfirmation(() => setAdjustingItem(null), 'Cancel stock adjustment?', 'Are you sure you want to exit without adjusting stock?')}
+                  onClick={() =>
+                    promptDiscardConfirmation(
+                      () => setAdjustingItem(null),
+                      'Cancel stock adjustment?',
+                      'Are you sure you want to exit without adjusting stock?'
+                    )
+                  }
                   className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
                 >
                   <X className="w-4 h-4" />
@@ -2910,13 +2806,8 @@ function InventoryPageContent() {
                           : 'bg-white border-slate-200 text-slate-600'
                       }`}
                     >
-                      <input
-                        type="radio"
-                        value="ADD"
-                        {...adjustForm.register('adjustmentType')}
-                        className="sr-only"
-                      />
-                      + Add Stock (In)
+                      <input type="radio" value="ADD" {...adjustForm.register('adjustmentType')} className="sr-only" />+
+                      Add Stock (In)
                     </label>
                     <label
                       className={`p-2.5 rounded-xl border text-center text-xs font-bold cursor-pointer transition-all ${
@@ -2962,7 +2853,13 @@ function InventoryPageContent() {
                 <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
                   <button
                     type="button"
-                    onClick={() => promptDiscardConfirmation(() => setAdjustingItem(null), 'Cancel stock adjustment?', 'Are you sure you want to exit without adjusting stock?')}
+                    onClick={() =>
+                      promptDiscardConfirmation(
+                        () => setAdjustingItem(null),
+                        'Cancel stock adjustment?',
+                        'Are you sure you want to exit without adjusting stock?'
+                      )
+                    }
                     className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 cursor-pointer"
                   >
                     Cancel
@@ -3081,9 +2978,9 @@ function InventoryPageContent() {
                       type="text"
                       inputMode="decimal"
                       onKeyDown={onNumericKeyDown}
-                                            onFocus={onNumericFocus}
-                                            onBlur={onNumericBlur}
-                                            min="0.001"
+                      onFocus={onNumericFocus}
+                      onBlur={onNumericBlur}
+                      min="0.001"
                       value={convRate}
                       onChange={(e) => setConvRate(Number(e.target.value))}
                       className="w-24 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono font-bold"
@@ -3143,9 +3040,7 @@ function InventoryPageContent() {
                     <FolderInput className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="text-base font-black text-slate-900">
-                      Move Items to Category
-                    </h3>
+                    <h3 className="text-base font-black text-slate-900">Move Items to Category</h3>
                     <p className="text-xs text-slate-500">
                       Target:{' '}
                       <span className="font-bold text-blue-600">
@@ -3180,7 +3075,8 @@ function InventoryPageContent() {
 
                 <div className="flex justify-between items-center px-1 text-xs text-slate-500">
                   <span>
-                    Selected: <strong className="text-slate-900 font-mono">{selectedItemIdsForMove.size}</strong> item(s)
+                    Selected: <strong className="text-slate-900 font-mono">{selectedItemIdsForMove.size}</strong>{' '}
+                    item(s)
                   </span>
                   <button
                     type="button"
@@ -3190,7 +3086,8 @@ function InventoryPageContent() {
                         const q = moveSearchQuery.toLowerCase();
                         return p.name.toLowerCase().includes(q) || (p.code && p.code.toLowerCase().includes(q));
                       });
-                      const allSelected = visibleProducts.length > 0 && visibleProducts.every((p) => selectedItemIdsForMove.has(p.id));
+                      const allSelected =
+                        visibleProducts.length > 0 && visibleProducts.every((p) => selectedItemIdsForMove.has(p.id));
                       const next = new Set(selectedItemIdsForMove);
                       if (allSelected) {
                         visibleProducts.forEach((p) => next.delete(p.id));
@@ -3217,9 +3114,7 @@ function InventoryPageContent() {
                   .map((p) => {
                     const isChecked = selectedItemIdsForMove.has(p.id);
                     const isAlreadyInCat =
-                      selectedCategoryId === 'none'
-                        ? !p.categoryId
-                        : p.categoryId === selectedCategoryId;
+                      selectedCategoryId === 'none' ? !p.categoryId : p.categoryId === selectedCategoryId;
 
                     return (
                       <div
@@ -3246,9 +3141,7 @@ function InventoryPageContent() {
                             <span className="font-semibold text-slate-900 block truncate">{p.name}</span>
                             <div className="flex items-center gap-2 text-[10px] text-slate-400">
                               {p.code && <span className="font-mono">SKU: {p.code}</span>}
-                              <span>
-                                Cat: {p.category?.name || 'Uncategorized'}
-                              </span>
+                              <span>Cat: {p.category?.name || 'Uncategorized'}</span>
                             </div>
                           </div>
                         </div>
@@ -3347,7 +3240,13 @@ function InventoryPageContent() {
       {/* Import Inventory Modal */}
       <ImportInventoryModal
         isOpen={isImportOpen}
-        onClose={() => promptDiscardConfirmation(() => setIsImportOpen(false), 'Close import wizard?', 'Are you sure you want to cancel the import process?')}
+        onClose={() =>
+          promptDiscardConfirmation(
+            () => setIsImportOpen(false),
+            'Close import wizard?',
+            'Are you sure you want to cancel the import process?'
+          )
+        }
         existingItems={rawItems}
         onSuccess={() => {
           refetchItems();
@@ -3397,7 +3296,13 @@ function InventoryPageContent() {
         open={!!longPressItem}
         onClose={() => setLongPressItem(null)}
         title={longPressItem?.name}
-        subtitle={longPressItem?.code ? `SKU/SAC: ${longPressItem.code}` : longPressItem?.type === 'SERVICE' ? 'Service' : 'Product'}
+        subtitle={
+          longPressItem?.code
+            ? `SKU/SAC: ${longPressItem.code}`
+            : longPressItem?.type === 'SERVICE'
+              ? 'Service'
+              : 'Product'
+        }
         onView={() => {
           if (longPressItem) router.push(`/inventory/${longPressItem.id}`);
           setLongPressItem(null);
@@ -3422,12 +3327,11 @@ function InventoryPageContent() {
 interface MobileItemCardProps {
   item: any;
   stock: number;
-  isFirstActive?: boolean;
   onClick: () => void;
   onLongPress: () => void;
 }
 
-function MobileItemCard({ item, stock, isFirstActive, onClick, onLongPress }: MobileItemCardProps) {
+function MobileItemCard({ item, stock, onClick, onLongPress }: MobileItemCardProps) {
   const longPressHandlers = useLongPress(onLongPress, { delay: 600 });
   const isOut = stock <= 0;
   const isLow = stock > 0 && stock <= Number(item.minStockAlert || 0);
@@ -3436,29 +3340,36 @@ function MobileItemCard({ item, stock, isFirstActive, onClick, onLongPress }: Mo
     <div
       {...longPressHandlers}
       onClick={onClick}
-      className={`px-4 py-3.5 flex items-center justify-between cursor-pointer transition-colors active:bg-slate-50 select-none ${
-        isFirstActive ? 'border-l-4 border-blue-600 bg-blue-50/20' : ''
-      }`}
+      className="p-3.5 bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md active:scale-[0.99] transition-all cursor-pointer space-y-2 select-text"
     >
-      {/* Left: Item Name */}
-      <div className="min-w-0 pr-2">
-        <h3 className="text-xs font-bold text-slate-900 truncate">{item.name}</h3>
+      <div className="flex items-start justify-between gap-2">
+        <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">{item.name}</h3>
+        {item.code && <span className="text-[10px] text-slate-400 font-mono shrink-0">SKU: {item.code}</span>}
       </div>
 
-      {/* Right: Quantity Badge + Chevron */}
-      <div className="flex items-center gap-2 shrink-0">
-        <span
-          className={`text-xs font-mono font-bold ${
-            isOut
-              ? 'text-rose-600'
-              : isLow
-              ? 'text-amber-600'
-              : 'text-emerald-600'
-          }`}
-        >
-          {stock} {item.unit || 'Pcs'}
-        </span>
-        <span className="text-slate-400 text-xs font-bold">›</span>
+      <div className="grid grid-cols-3 gap-2 text-left pt-1 border-t border-slate-100">
+        <div>
+          <span className="text-[10px] text-slate-400 block font-medium">Sale Price</span>
+          <span className="text-xs font-bold text-slate-900 font-mono">
+            Rs {Number(item.salePrice || 0).toFixed(2)}
+          </span>
+        </div>
+        <div>
+          <span className="text-[10px] text-slate-400 block font-medium">Purchase Price</span>
+          <span className="text-xs font-bold text-slate-900 font-mono">
+            Rs {Number(item.purchasePrice || 0).toFixed(2)}
+          </span>
+        </div>
+        <div>
+          <span className="text-[10px] text-slate-400 block font-medium">Stock</span>
+          <span
+            className={`text-xs font-bold font-mono ${
+              isOut ? 'text-rose-600' : isLow ? 'text-amber-600' : 'text-emerald-600'
+            }`}
+          >
+            {stock} {item.unit || 'Pcs'}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -3477,13 +3388,11 @@ function MobileServiceCard({ item, onClick, onLongPress }: MobileServiceCardProp
     <div
       {...longPressHandlers}
       onClick={onClick}
-      className="p-4 bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md active:scale-[0.99] transition-all cursor-pointer space-y-2.5 select-none"
+      className="p-4 bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md active:scale-[0.99] transition-all cursor-pointer space-y-2.5 select-text"
     >
       <div className="flex items-start justify-between gap-2">
         <h3 className="text-sm font-bold text-slate-900 leading-snug">{item.name}</h3>
-        {item.code && (
-          <span className="text-[10px] text-slate-400 font-mono shrink-0">SAC: {item.code}</span>
-        )}
+        {item.code && <span className="text-[10px] text-slate-400 font-mono shrink-0">SAC: {item.code}</span>}
       </div>
 
       <div className="grid grid-cols-2 gap-2 text-left pt-1">
@@ -3495,9 +3404,7 @@ function MobileServiceCard({ item, onClick, onLongPress }: MobileServiceCardProp
         </div>
         <div>
           <span className="text-[11px] text-slate-400 block font-medium">Unit</span>
-          <span className="text-xs sm:text-sm font-bold text-slate-700 font-mono">
-            {item.unit || 'Hrs'}
-          </span>
+          <span className="text-xs sm:text-sm font-bold text-slate-700 font-mono">{item.unit || 'Hrs'}</span>
         </div>
       </div>
     </div>

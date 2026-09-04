@@ -48,23 +48,21 @@ export function MobileBottomNav({ onQuickEntry }: MobileBottomNavProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Hide global navigation on full-screen editor & new transaction pages so page action bars are visible
-  const isFullScreenEditor = 
-    pathname?.endsWith('/new') || 
-    pathname?.includes('/transactions/pos') || 
-    pathname?.endsWith('/edit');
+  const isFullScreenEditor =
+    pathname?.endsWith('/new') || pathname?.includes('/transactions/pos') || pathname?.endsWith('/edit');
 
   if (isFullScreenEditor) {
     return null;
   }
 
-  const isMoreActive = !['/dashboard', '/parties', '/inventory', '/transactions'].includes(pathname || '');
+  const isMoreActive = !['/dashboard', '/parties', '/inventory'].includes(pathname || '');
 
   const navItems = [
     { name: 'Home', href: '/dashboard', icon: Home, active: pathname === '/dashboard' || pathname === '/' },
     { name: 'Parties', href: '/parties', icon: Users, active: pathname?.startsWith('/parties') },
+    { name: '+ Add', action: onQuickEntry, icon: Plus, isAction: true },
     { name: 'Items', href: '/inventory', icon: Package, active: pathname?.startsWith('/inventory') },
-    { name: 'Transactions', href: '/transactions', icon: ArrowLeftRight, active: pathname?.startsWith('/transactions') },
-    { name: 'More', action: () => setMoreMenuOpen(true), icon: MoreHorizontal, active: isMoreActive || moreMenuOpen },
+    { name: 'More', action: () => setMoreMenuOpen(true), icon: Menu, active: isMoreActive || moreMenuOpen },
   ];
 
   // Comprehensive categorized feature grid for full-screen "More" menu
@@ -74,17 +72,42 @@ export function MobileBottomNav({ onQuickEntry }: MobileBottomNavProps) {
       items: [
         { name: 'Sale Invoices', href: '/transactions/sales', icon: Receipt, color: 'text-red-600 bg-red-50' },
         { name: 'POS Quick Billing', href: '/transactions/pos', icon: Zap, color: 'text-amber-600 bg-amber-50' },
-        { name: 'Payment In', href: '/transactions/payment-in', icon: ArrowDownLeft, color: 'text-emerald-600 bg-emerald-50' },
-        { name: 'Sale Return', href: '/transactions/sales-return', icon: RotateCcw, color: 'text-slate-600 bg-slate-100' },
+        {
+          name: 'Payment In',
+          href: '/transactions/payment-in',
+          icon: ArrowDownLeft,
+          color: 'text-emerald-600 bg-emerald-50',
+        },
+        {
+          name: 'Sale Return',
+          href: '/transactions/sales-return',
+          icon: RotateCcw,
+          color: 'text-slate-600 bg-slate-100',
+        },
       ],
     },
     {
       title: 'Purchases & Expenses',
       items: [
-        { name: 'Purchase Bills', href: '/transactions/purchases', icon: ShoppingBag, color: 'text-blue-600 bg-blue-50' },
-        { name: 'Payment Out', href: '/transactions/payment-out', icon: ArrowUpRight, color: 'text-rose-600 bg-rose-50' },
+        {
+          name: 'Purchase Bills',
+          href: '/transactions/purchases',
+          icon: ShoppingBag,
+          color: 'text-blue-600 bg-blue-50',
+        },
+        {
+          name: 'Payment Out',
+          href: '/transactions/payment-out',
+          icon: ArrowUpRight,
+          color: 'text-rose-600 bg-rose-50',
+        },
         { name: 'Expenses', href: '/expenses', icon: TrendingDown, color: 'text-orange-600 bg-orange-50' },
-        { name: 'Purchase Return', href: '/transactions/purchase-return', icon: RotateCcw, color: 'text-slate-600 bg-slate-100' },
+        {
+          name: 'Purchase Return',
+          href: '/transactions/purchase-return',
+          icon: RotateCcw,
+          color: 'text-slate-600 bg-slate-100',
+        },
       ],
     },
     {
@@ -92,7 +115,12 @@ export function MobileBottomNav({ onQuickEntry }: MobileBottomNavProps) {
       items: [
         { name: 'Stock & Items', href: '/inventory', icon: Package, color: 'text-indigo-600 bg-indigo-50' },
         { name: 'Godowns & Transfer', href: '/inventory/godowns', icon: Building2, color: 'text-cyan-600 bg-cyan-50' },
-        { name: 'Barcode Printing', href: '/inventory/labels', icon: ScanBarcode, color: 'text-violet-600 bg-violet-50' },
+        {
+          name: 'Barcode Printing',
+          href: '/inventory/labels',
+          icon: ScanBarcode,
+          color: 'text-violet-600 bg-violet-50',
+        },
         { name: 'Manufacturing (BOM)', href: '/manufacturing', icon: Boxes, color: 'text-amber-700 bg-amber-50' },
       ],
     },
@@ -128,9 +156,7 @@ export function MobileBottomNav({ onQuickEntry }: MobileBottomNavProps) {
   const filteredCategories = featureCategories
     .map((cat) => ({
       ...cat,
-      items: cat.items.filter((item) =>
-        item.name.toLowerCase().includes(searchTerm.toLowerCase())
-      ),
+      items: cat.items.filter((item) => item.name.toLowerCase().includes(searchTerm.toLowerCase())),
     }))
     .filter((cat) => cat.items.length > 0);
 
@@ -144,17 +170,33 @@ export function MobileBottomNav({ onQuickEntry }: MobileBottomNavProps) {
         <div className="flex items-center justify-around px-2 pt-2 pb-0.5">
           {navItems.map((item, idx) => {
             const Icon = item.icon;
+            if (item.isAction) {
+              return (
+                <button
+                  key={idx}
+                  onClick={item.action}
+                  className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] cursor-pointer"
+                  title="Quick Entry"
+                >
+                  <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-white shadow-md shadow-red-600/30 hover:bg-red-500 active:scale-95 transition-transform">
+                    <Icon className="w-5 h-5 text-white stroke-[2.5]" />
+                  </div>
+                </button>
+              );
+            }
             if (item.action) {
               return (
                 <button
                   key={idx}
                   onClick={item.action}
                   className={`flex flex-col items-center justify-center gap-1 min-w-[56px] py-1 active:scale-95 transition-all cursor-pointer ${
-                    item.active ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
+                    item.active ? 'text-slate-900 font-bold' : 'text-slate-400 hover:text-slate-700'
                   }`}
                 >
-                  <Icon className={`w-5 h-5 ${item.active ? 'text-blue-600 stroke-[2.2]' : 'text-slate-400 stroke-[1.8]'}`} />
-                  <span className={`text-[10px] ${item.active ? 'font-bold text-blue-600' : 'font-medium text-slate-500'}`}>
+                  <Icon className={`w-4 h-4 ${item.active ? 'text-slate-900 stroke-[2.5]' : 'text-slate-400'}`} />
+                  <span
+                    className={`text-[10px] ${item.active ? 'font-bold text-slate-900' : 'font-medium text-slate-500'}`}
+                  >
                     {item.name}
                   </span>
                 </button>
@@ -165,11 +207,13 @@ export function MobileBottomNav({ onQuickEntry }: MobileBottomNavProps) {
                 key={idx}
                 href={item.href!}
                 className={`flex flex-col items-center justify-center gap-1 min-w-[56px] py-1 active:scale-95 transition-all ${
-                  item.active ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
+                  item.active ? 'text-slate-900 font-bold' : 'text-slate-400 hover:text-slate-700'
                 }`}
               >
-                <Icon className={`w-5 h-5 ${item.active ? 'text-blue-600 stroke-[2.2]' : 'text-slate-400 stroke-[1.8]'}`} />
-                <span className={`text-[10px] ${item.active ? 'font-bold text-blue-600' : 'font-medium text-slate-500'}`}>
+                <Icon className={`w-4 h-4 ${item.active ? 'text-slate-900 stroke-[2.5]' : 'text-slate-400'}`} />
+                <span
+                  className={`text-[10px] ${item.active ? 'font-bold text-slate-900' : 'font-medium text-slate-500'}`}
+                >
                   {item.name}
                 </span>
               </Link>
@@ -226,9 +270,7 @@ export function MobileBottomNav({ onQuickEntry }: MobileBottomNavProps) {
           >
             {filteredCategories.map((category, cIdx) => (
               <div key={cIdx} className="space-y-2">
-                <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 px-1">
-                  {category.title}
-                </h3>
+                <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 px-1">{category.title}</h3>
 
                 <div className="grid grid-cols-2 gap-2.5">
                   {category.items.map((item, iIdx) => {
@@ -246,9 +288,7 @@ export function MobileBottomNav({ onQuickEntry }: MobileBottomNavProps) {
                         <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${item.color}`}>
                           <ItemIcon className="w-4 h-4" />
                         </div>
-                        <span className="text-xs font-bold text-slate-800 text-left leading-snug">
-                          {item.name}
-                        </span>
+                        <span className="text-xs font-bold text-slate-800 text-left leading-snug">{item.name}</span>
                       </Link>
                     );
                   })}

@@ -210,11 +210,11 @@ export default function ItemDetailsPage({ params }: { params: { id: string } }) 
         </h3>
 
         {/* Filter Tabs: All | Buy (Purchases) | Sell (Sales) | Stock */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs font-bold scrollbar-none">
+        <div className="flex items-center gap-1 overflow-x-auto pb-1 text-[10px] sm:text-xs font-bold scrollbar-none">
           <button
             type="button"
             onClick={() => setTxFilter('ALL')}
-            className={`px-3.5 py-1.5 rounded-full transition-all shrink-0 cursor-pointer ${
+            className={`px-2.5 py-1 rounded-full transition-all shrink-0 cursor-pointer ${
               txFilter === 'ALL'
                 ? 'bg-blue-50 text-blue-600 border border-blue-200 shadow-2xs'
                 : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
@@ -225,7 +225,7 @@ export default function ItemDetailsPage({ params }: { params: { id: string } }) 
           <button
             type="button"
             onClick={() => setTxFilter('BUY')}
-            className={`px-3.5 py-1.5 rounded-full transition-all shrink-0 cursor-pointer ${
+            className={`px-2.5 py-1 rounded-full transition-all shrink-0 cursor-pointer ${
               txFilter === 'BUY'
                 ? 'bg-blue-50 text-blue-600 border border-blue-200 shadow-2xs'
                 : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
@@ -236,7 +236,7 @@ export default function ItemDetailsPage({ params }: { params: { id: string } }) 
           <button
             type="button"
             onClick={() => setTxFilter('SELL')}
-            className={`px-3.5 py-1.5 rounded-full transition-all shrink-0 cursor-pointer ${
+            className={`px-2.5 py-1 rounded-full transition-all shrink-0 cursor-pointer ${
               txFilter === 'SELL'
                 ? 'bg-blue-50 text-blue-600 border border-blue-200 shadow-2xs'
                 : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
@@ -247,7 +247,7 @@ export default function ItemDetailsPage({ params }: { params: { id: string } }) 
           <button
             type="button"
             onClick={() => setTxFilter('STOCK')}
-            className={`px-3.5 py-1.5 rounded-full transition-all shrink-0 cursor-pointer ${
+            className={`px-2.5 py-1 rounded-full transition-all shrink-0 cursor-pointer ${
               txFilter === 'STOCK'
                 ? 'bg-blue-50 text-blue-600 border border-blue-200 shadow-2xs'
                 : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'

@@ -1137,7 +1137,7 @@ function MobileSaleCard({ sale: s, onLongPress, onPay }: MobileSaleCardProps) {
   return (
     <div
       {...longPressHandlers}
-      className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-3 select-none"
+      className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-3 select-text"
     >
       {/* Top Row */}
       <div className="flex items-center justify-between">
