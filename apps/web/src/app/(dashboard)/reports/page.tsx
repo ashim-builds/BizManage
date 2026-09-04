@@ -152,6 +152,9 @@ export default function ReportsPage() {
   const balanceSheetQuery = useBalanceSheetReport({ asOfDate: endDate || undefined });
   const { data: business } = useCurrentBusiness();
 
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportRows, setExportRows] = useState<any[]>([]);
+
   const handlePrint = () => {
     window.print();
   };
@@ -171,24 +174,22 @@ export default function ReportsPage() {
       return;
     }
 
-    ExportConfirmModal.show({
-      title: `Export ${activeTab.toUpperCase().replace('-', ' ')} Data`,
-      message: `Export ${rows.length} rows to Excel / CSV or JSON format.`,
-      recordCount: rows.length,
-      defaultFormat: 'csv',
-      onConfirm: (format) => {
-        const dateStr = new Date().toISOString().split('T')[0];
-        if (format === 'csv') {
-          const keys = Object.keys(rows[0] || {});
-          const headers = keys.map((k) => k.replace(/([A-Z])/g, ' $1').toUpperCase());
-          const csvRows = rows.map((r) => keys.map((k) => r[k]));
-          downloadCsv(`report_${activeTab}_${dateStr}.csv`, headers, csvRows);
-        } else {
-          downloadJson(`report_${activeTab}_${dateStr}.json`, rows);
-        }
-        toast.success(`Exported ${rows.length} records to ${format.toUpperCase()}!`);
-      },
-    });
+    setExportRows(rows);
+    setIsExportModalOpen(true);
+  };
+
+  const handleConfirmExport = (format: 'csv' | 'json') => {
+    const dateStr = new Date().toISOString().split('T')[0];
+    if (format === 'csv') {
+      const keys = Object.keys(exportRows[0] || {});
+      const headers = keys.map((k) => k.replace(/([A-Z])/g, ' $1').toUpperCase());
+      const csvRows = exportRows.map((r) => keys.map((k) => r[k]));
+      downloadCsv(`report_${activeTab}_${dateStr}.csv`, headers, csvRows);
+    } else {
+      downloadJson(`report_${activeTab}_${dateStr}.json`, exportRows);
+    }
+    toast.success(`Exported ${exportRows.length} records to ${format.toUpperCase()}!`);
+    setIsExportModalOpen(false);
   };
 
   const activeQuery =
@@ -762,7 +763,7 @@ export default function ReportsPage() {
 
       {/* 8. IRD ANNEX 5 VAT SALES BOOK */}
       {activeTab === 'annex5-sales' && (
-        <VatSalesBookAnnex5 salesInvoices={salesQuery.data?.invoices || []} />
+        <VatSalesBookAnnex5 sales={salesQuery.data?.invoices || []} />
       )}
 
       {/* 9. IRD ANNEX 6 VAT PURCHASE BOOK */}
@@ -772,7 +773,7 @@ export default function ReportsPage() {
 
       {/* 10. CUSTOMER AGING REPORT */}
       {activeTab === 'customer-aging' && (
-        <CustomerAgingReport parties={partyBalQuery.data?.parties || []} />
+        <CustomerAgingReport partyBalances={partyBalQuery.data?.parties || []} />
       )}
 
       {/* 11. VYAPAR PREMIUM REPORTS (Balance Sheet, Billwise P&L, Partywise P&L, Tally Export, Batch) */}
@@ -793,6 +794,16 @@ export default function ReportsPage() {
           businessPan={business?.taxNumber || 'N/A'}
         />
       )}
+
+      {/* Export Confirmation Modal */}
+      <ExportConfirmModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        title={`Export ${activeTab.toUpperCase().replace('-', ' ')} Data`}
+        description={`Export ${exportRows.length} rows to Excel / CSV or JSON format.`}
+        recordCount={exportRows.length}
+        onConfirm={handleConfirmExport}
+      />
     </div>
   );
 }

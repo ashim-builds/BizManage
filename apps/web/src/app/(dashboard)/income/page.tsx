@@ -350,7 +350,7 @@ export default function IncomePage() {
                     className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none"
                   >
                     <option value="">-- Choose Category --</option>
-                    {categories?.map((cat) => (
+                    {categories?.map((cat: any) => (
                       <option key={cat.id} value={cat.name}>
                         {cat.name}
                       </option>
@@ -433,7 +433,7 @@ export default function IncomePage() {
       <AddCategoryModal
         isOpen={isAddCategoryOpen}
         onClose={() => setIsAddCategoryOpen(false)}
-        type="INCOME"
+        type="income"
       />
 
       {/* Delete Confirmation Modal */}
@@ -441,13 +441,13 @@ export default function IncomePage() {
         <ConfirmActionModal
           isOpen={true}
           title="Delete Income Entry"
-          message={`Are you sure you want to delete "${deletingIncomeInfo.name}"? This action cannot be undone.`}
-          confirmLabel="Yes, Delete Income"
-          isDestructive={true}
-          isLoading={deleteIncome.isPending}
-          errorMessage={deleteError}
+          description={`Are you sure you want to delete "${deletingIncomeInfo.name}"? This action cannot be undone.`}
+          actionText="Yes, Delete Income"
+          variant="danger"
+          isProcessing={deleteIncome.isPending}
+          error={deleteError}
           onConfirm={handleConfirmDelete}
-          onCancel={() => setDeletingIncomeInfo(null)}
+          onClose={() => setDeletingIncomeInfo(null)}
         />
       )}
     </div>
