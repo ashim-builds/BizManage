@@ -243,6 +243,10 @@ model BusinessSetting {
   purchaseReturnPrefix String   @default("DN-")
   lowStockAlert        Boolean  @default(true)
   
+  taxRegistrationType  String   @default("PAN")
+  showTaxOnBills       Boolean  @default(true)
+  termsAndConditions   String?  @db.Text
+  
   // Storefront Settings
   enableStorefront     Boolean  @default(false)
   storeSlug            String?  @unique

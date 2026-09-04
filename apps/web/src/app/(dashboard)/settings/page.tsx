@@ -119,6 +119,10 @@ function SettingsPageContent() {
     business?.taxNumber
   );
 
+  const [taxRegistrationType, setTaxRegistrationType] = useState<'PAN' | 'VAT'>('PAN');
+  const [showTaxOnBills, setShowTaxOnBills] = useState<boolean>(true);
+  const [termsAndConditions, setTermsAndConditions] = useState<string>('');
+
   useEffect(() => {
     if (business) {
       setName(business.name || '');
@@ -130,6 +134,9 @@ function SettingsPageContent() {
       if (business.settings) {
         setEnableTax(business.settings.enableTax ?? false);
         setTaxRate(business.settings.taxRate ?? 13);
+        setTaxRegistrationType(((business.settings as any).taxRegistrationType as 'PAN' | 'VAT') || 'PAN');
+        setShowTaxOnBills((business.settings as any).showTaxOnBills ?? true);
+        setTermsAndConditions((business.settings as any).termsAndConditions || '');
       }
     }
   }, [business]);
@@ -142,6 +149,7 @@ function SettingsPageContent() {
     return true;
   });
   const [enableTax, setEnableTax] = useState(false);
+  const [taxRate, setTaxRate] = useState<number | string>(13);
 
   const rawFeatures = business?.subscriptionPackage?.features;
   const userFeatures = typeof rawFeatures === 'string' ? JSON.parse(rawFeatures) : (rawFeatures || []);
@@ -156,7 +164,6 @@ function SettingsPageContent() {
     pkgName.includes('standard') ||
     pkgName.includes('starter') ||
     userFeatures.some((f: string) => f.toLowerCase().includes('logo') || f.toLowerCase().includes('branding'));
-  const [taxRate, setTaxRate] = useState(13);
   const [profileSuccess, setProfileSuccess] = useState('');
   const [profileError, setProfileError] = useState('');
 
@@ -274,8 +281,9 @@ function SettingsPageContent() {
     setProfileSuccess('');
     setProfileError('');
     try {
-      const isProfileCompleted = Boolean(name && address && phone && taxNumber);
-      await updateBusiness.mutateAsync({ name, phone, email, address, taxNumber, currency: 'NPR', logoUrl, profileCompleted: isProfileCompleted });
+      const cleanTaxNumber = taxNumber ? taxNumber.trim() : '';
+      const isProfileCompleted = Boolean(name && address && phone && cleanTaxNumber);
+      await updateBusiness.mutateAsync({ name, phone, email, address, taxNumber: cleanTaxNumber, currency: 'NPR', logoUrl, profileCompleted: isProfileCompleted });
       await updateSettings.mutateAsync({
         invoicePrefix: 'INV-',
         purchasePrefix: 'PUR-',
@@ -285,11 +293,14 @@ function SettingsPageContent() {
         enableTax,
         taxRate: Number(taxRate) || 0,
         lowStockAlert: true,
+        taxRegistrationType,
+        showTaxOnBills,
+        termsAndConditions: termsAndConditions.trim(),
       });
       if (typeof window !== 'undefined') {
         localStorage.removeItem('bizmanage_profile_completed'); // cleanup old item
       }
-      setProfileSuccess('Business profile & logo saved successfully!');
+      setProfileSuccess('Business profile & invoice settings saved successfully!');
     } catch (err: any) {
       setProfileError(err.response?.data?.error?.message || 'Failed to update settings.');
     }
@@ -669,15 +680,77 @@ function SettingsPageContent() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">PAN / VAT Registration Number</label>
-                    <input
-                      type="text"
-                      value={taxNumber}
-                      onChange={(e) => setTaxNumber(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono font-bold text-xs focus:outline-none focus:border-blue-500"
-                      placeholder="e.g. 601928374"
-                    />
+                  {/* Dynamic PAN / VAT Registration Settings */}
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold text-slate-800">Business Tax Registration</label>
+                      <span className="text-[10px] text-slate-500 font-medium">Applied to all printable bills</span>
+                    </div>
+
+                    {/* Tax Registration Type (PAN vs VAT) */}
+                    <div>
+                      <span className="block text-[11px] font-bold text-slate-600 mb-1.5">Tax Registration Type</span>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setTaxRegistrationType('PAN')}
+                          className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border ${
+                            taxRegistrationType === 'PAN'
+                              ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                              : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                          }`}
+                        >
+                          <span className={`w-2.5 h-2.5 rounded-full border-2 ${taxRegistrationType === 'PAN' ? 'bg-white border-white' : 'border-slate-400'}`} />
+                          PAN
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTaxRegistrationType('VAT')}
+                          className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border ${
+                            taxRegistrationType === 'VAT'
+                              ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                              : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                          }`}
+                        >
+                          <span className={`w-2.5 h-2.5 rounded-full border-2 ${taxRegistrationType === 'VAT' ? 'bg-white border-white' : 'border-slate-400'}`} />
+                          VAT
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Registration Number */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                        {taxRegistrationType} Registration Number
+                      </label>
+                      <input
+                        type="text"
+                        value={taxNumber}
+                        onChange={(e) => setTaxNumber(e.target.value)}
+                        className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono font-bold text-xs focus:outline-none focus:border-slate-800"
+                        placeholder={`e.g. 601928374`}
+                      />
+                    </div>
+
+                    {/* Show on Bills Toggle */}
+                    <div className="pt-2 border-t border-slate-200/80">
+                      <label className="flex items-center gap-2.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={showTaxOnBills}
+                          onChange={(e) => setShowTaxOnBills(e.target.checked)}
+                          className="w-4 h-4 rounded text-slate-900 border-slate-300 focus:ring-slate-900 cursor-pointer"
+                        />
+                        <span className="text-xs font-bold text-slate-700 select-none">
+                          Show {taxRegistrationType} number on bills and printable documents
+                        </span>
+                      </label>
+                      <p className="text-[10px] text-slate-400 mt-0.5 ml-6.5">
+                        {showTaxOnBills && taxNumber.trim()
+                          ? `Will display as "${taxRegistrationType}: ${taxNumber.trim()}" on all invoices.`
+                          : 'Registration number will be completely hidden from bills.'}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -720,17 +793,34 @@ function SettingsPageContent() {
                     </div>
                   </div>
 
+                  {/* Standard Terms & Conditions for Invoices */}
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                    <label className="block text-xs font-bold text-slate-800">
+                      Default Terms & Conditions / Notes for Bills
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={termsAndConditions}
+                      onChange={(e) => setTermsAndConditions(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-slate-800 resize-none"
+                      placeholder="e.g. 1. Goods once sold will not be taken back without original bill.&#10;2. Interest @18% p.a. charged on overdue bills."
+                    />
+                    <p className="text-[10px] text-slate-400">
+                      Printed at the footer of all sales invoices and credit notes.
+                    </p>
+                  </div>
+
                   {/* Document Prefixes */}
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
                     <label className="block text-xs font-bold text-slate-800">Standard Document Prefixes</label>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div className="p-2.5 rounded-xl bg-white border border-slate-200">
                         <span className="text-[10px] font-semibold text-slate-500 block">Sales Invoices</span>
-                        <span className="font-mono font-black text-blue-600 text-sm">INV-</span>
+                        <span className="font-mono font-black text-slate-900 text-sm">INV-</span>
                       </div>
                       <div className="p-2.5 rounded-xl bg-white border border-slate-200">
                         <span className="text-[10px] font-semibold text-slate-500 block">Purchase Bills</span>
-                        <span className="font-mono font-black text-purple-600 text-sm">PUR-</span>
+                        <span className="font-mono font-black text-slate-900 text-sm">PUR-</span>
                       </div>
                     </div>
                   </div>

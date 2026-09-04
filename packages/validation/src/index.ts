@@ -59,6 +59,9 @@ export const updateBusinessSettingsSchema = z.object({
   saleReturnPrefix: z.string().min(1).default('CN-'),
   purchaseReturnPrefix: z.string().min(1).default('DN-'),
   lowStockAlert: z.boolean().default(true),
+  taxRegistrationType: z.enum(['PAN', 'VAT']).default('PAN'),
+  showTaxOnBills: z.boolean().default(true),
+  termsAndConditions: z.string().optional().nullable(),
 });
 
 // Category Schemas

@@ -828,35 +828,30 @@ function POSThermalReceiptModal({
             font-family: 'Courier New', Courier, monospace !important;
           }
         }
-      `}</style>
-
-      <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[100] flex items-center justify-center p-4 overflow-y-auto font-sans">
-        <div className="w-full max-w-lg bg-slate-900 border border-emerald-500/30 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4 my-8">
+      `}</style><div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[100] flex items-center justify-center p-4 overflow-y-auto font-sans">
+        <div className="w-full max-w-lg bg-white border border-slate-300 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4 my-8 text-slate-900">
           {/* Header */}
-          <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-3 gap-2">
+          <div className="flex flex-wrap items-center justify-between border-b border-slate-200 pb-3 gap-2">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20 shadow-inner">
+              <div className="w-10 h-10 rounded-2xl bg-slate-100 text-slate-900 flex items-center justify-center border border-slate-300 shadow-inner">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                   POS Bill Receipt
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 text-[10px] font-extrabold border border-emerald-500/25">
-                    SUCCESS
-                  </span>
                 </h3>
-                <p className="text-[11px] text-slate-400 font-mono">Invoice #{sale.voucherNo}</p>
+                <p className="text-[11px] text-slate-500 font-mono">Invoice #{sale.voucherNo}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               {/* Paper Roll Width Switcher */}
-              <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-[10px] font-bold text-slate-400">
+              <div className="flex items-center bg-slate-50 p-1 rounded-xl border border-slate-200 text-[10px] font-bold text-slate-700">
                 <button
                   type="button"
                   onClick={() => setPaperWidth('80mm')}
-                  className={`px-2 py-1 rounded-lg transition-all ${
-                    paperWidth === '80mm' ? 'bg-emerald-500 text-slate-950 font-extrabold shadow' : 'hover:text-white'
+                  className={`px-2 py-1 rounded-lg transition-all cursor-pointer ${
+                    paperWidth === '80mm' ? 'bg-slate-900 text-white font-extrabold shadow' : 'hover:bg-slate-200'
                   }`}
                 >
                   80mm Roll
@@ -864,35 +859,41 @@ function POSThermalReceiptModal({
                 <button
                   type="button"
                   onClick={() => setPaperWidth('58mm')}
-                  className={`px-2 py-1 rounded-lg transition-all ${
-                    paperWidth === '58mm' ? 'bg-emerald-500 text-slate-950 font-extrabold shadow' : 'hover:text-white'
+                  className={`px-2 py-1 rounded-lg transition-all cursor-pointer ${
+                    paperWidth === '58mm' ? 'bg-slate-900 text-white font-extrabold shadow' : 'hover:bg-slate-200'
                   }`}
                 >
                   58mm Mini
                 </button>
               </div>
 
-              <button onClick={onClose} className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+              <button onClick={onClose} className="p-1.5 rounded-xl text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
           </div>
 
           {/* Authentic POS Thermal Paper Roll Preview */}
-          <div className="bg-slate-950/95 p-4 sm:p-6 rounded-2xl border border-slate-800 flex justify-center items-start max-h-[520px] min-h-[320px] overflow-y-auto shadow-inner">
+          <div className="bg-slate-100 p-4 sm:p-6 rounded-2xl border border-slate-200 flex justify-center items-start max-h-[520px] min-h-[320px] overflow-y-auto shadow-inner">
             <div
               id="thermal-printable-area"
-              className={`bg-white text-slate-950 font-mono text-[11px] p-4 sm:p-5 shadow-2xl border border-slate-300 space-y-3 transition-all rounded-md w-full h-fit min-h-max shrink-0 select-text ${
+              className={`bg-white text-slate-950 font-mono text-[11px] p-4 sm:p-5 shadow-md border border-slate-300 space-y-3 transition-all rounded-none w-full h-fit min-h-max shrink-0 select-text ${
                 paperWidth === '80mm' ? 'max-w-[320px]' : 'max-w-[250px]'
               }`}
             >
               {/* Receipt Store Header */}
               <div className="text-center space-y-0.5 border-b border-dashed border-slate-400 pb-2.5">
                 <h2 className="text-base font-black uppercase tracking-tight text-slate-900">{business?.name || 'BizManage Store'}</h2>
-                <p className="text-[10px] text-slate-700 leading-tight">{business?.address || 'Main Road, Kathmandu, Nepal'}</p>
-                {business?.panNo && <p className="text-[10px] text-slate-700">PAN/VAT: {business.panNo}</p>}
+                {business?.address && <p className="text-[10px] text-slate-700 leading-tight">{business.address}</p>}
+                {(() => {
+                  const showTax = business?.settings?.showTaxOnBills !== false;
+                  const taxNumber = (business?.taxNumber || business?.panNo)?.trim();
+                  const taxType = (business?.settings?.taxRegistrationType || 'PAN').toUpperCase();
+                  if (!showTax || !taxNumber) return null;
+                  return <p className="text-[10px] text-slate-900 font-bold">{taxType}: {taxNumber}</p>;
+                })()}
                 {business?.phone && <p className="text-[10px] text-slate-700">Tel: {business.phone}</p>}
-                <p className="text-[9px] text-slate-500 pt-0.5 font-bold uppercase">RETAIL TAX INVOICE</p>
+                <p className="text-[9px] text-slate-700 pt-0.5 font-bold uppercase">RETAIL TAX INVOICE</p>
               </div>
 
               {/* Bill Details */}

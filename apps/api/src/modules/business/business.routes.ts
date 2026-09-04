@@ -288,6 +288,9 @@ export async function businessRoutes(fastify: FastifyInstance) {
         saleReturnPrefix: body.saleReturnPrefix,
         purchaseReturnPrefix: body.purchaseReturnPrefix,
         lowStockAlert: body.lowStockAlert,
+        taxRegistrationType: body.taxRegistrationType,
+        showTaxOnBills: body.showTaxOnBills,
+        termsAndConditions: body.termsAndConditions,
       },
       update: {
         enableTax: body.enableTax,
@@ -298,6 +301,9 @@ export async function businessRoutes(fastify: FastifyInstance) {
         saleReturnPrefix: body.saleReturnPrefix,
         purchaseReturnPrefix: body.purchaseReturnPrefix,
         lowStockAlert: body.lowStockAlert,
+        taxRegistrationType: body.taxRegistrationType,
+        showTaxOnBills: body.showTaxOnBills,
+        termsAndConditions: body.termsAndConditions,
       },
     });
 
