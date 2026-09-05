@@ -641,9 +641,6 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
                 <span className="text-base font-black tracking-tight text-slate-900 leading-none">
                   Biz<span className="text-blue-600">Manage</span>
                 </span>
-                <span className="text-[8px] font-extrabold tracking-wider text-slate-400 uppercase mt-0.5 leading-none">
-                  MANAGE. TRACK. GROW.
-                </span>
               </div>
             </Link>
           </div>

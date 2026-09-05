@@ -478,7 +478,7 @@ export default function GodownsPage() {
                   placeholder="e.g. Central Warehouse, Basement 1"
                   value={newGodownName}
                   onChange={(e) => setNewGodownName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 shadow-2xs transition-all"
                 />
               </div>
 
@@ -489,7 +489,7 @@ export default function GodownsPage() {
                   placeholder="e.g. Industrial Area, Plot 4"
                   value={newGodownLocation}
                   onChange={(e) => setNewGodownLocation(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 shadow-2xs transition-all"
                 />
               </div>
 
@@ -500,7 +500,7 @@ export default function GodownsPage() {
                   placeholder="e.g. 5000 sq ft, Rack 1-10"
                   value={newGodownCapacity}
                   onChange={(e) => setNewGodownCapacity(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 shadow-2xs transition-all"
                 />
               </div>
 
@@ -510,7 +510,7 @@ export default function GodownsPage() {
                   id="isDefault"
                   checked={newGodownDefault}
                   onChange={(e) => setNewGodownDefault(e.target.checked)}
-                  className="rounded text-blue-600"
+                  className="rounded text-blue-600 focus:ring-blue-500"
                 />
                 <label htmlFor="isDefault" className="text-xs font-medium text-slate-700 cursor-pointer">
                   Set as default storage location
@@ -563,7 +563,7 @@ export default function GodownsPage() {
                   required
                   value={transferItem}
                   onChange={(e) => setTransferItem(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 shadow-2xs transition-all"
                 >
                   <option value="">-- Choose Product / Item --</option>
                   {items.map((it: any) => (
@@ -581,7 +581,7 @@ export default function GodownsPage() {
                     required
                     value={transferFrom}
                     onChange={(e) => setTransferFrom(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 shadow-2xs transition-all"
                   >
                     <option value="">-- Source Godown --</option>
                     {godowns.map((g) => (
@@ -597,7 +597,7 @@ export default function GodownsPage() {
                     required
                     value={transferTo}
                     onChange={(e) => setTransferTo(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 shadow-2xs transition-all"
                   >
                     <option value="">-- Destination Godown --</option>
                     {godowns.map((g) => (
@@ -618,7 +618,7 @@ export default function GodownsPage() {
                   required
                   value={transferQty}
                   onChange={(e) => setTransferQty(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl text-xs font-mono font-bold focus:outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs font-mono font-bold focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 shadow-2xs transition-all"
                 />
               </div>
 
@@ -629,7 +629,7 @@ export default function GodownsPage() {
                   placeholder="e.g. Replenishing storefront counter, rack reorganization"
                   value={transferNotes}
                   onChange={(e) => setTransferNotes(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 shadow-2xs transition-all"
                 />
               </div>
 

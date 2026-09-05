@@ -163,7 +163,7 @@ function SyncBackupContent() {
       </div>
 
       {/* Submenu Navigation */}
-      <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-slate-100 border border-slate-200 text-xs font-semibold overflow-x-auto">
+      <div className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-2xl bg-slate-100 border border-slate-200 text-xs font-semibold">
         <button
           onClick={() => handleTabChange('sync-share')}
           className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 whitespace-nowrap ${
