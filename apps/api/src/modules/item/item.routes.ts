@@ -435,7 +435,7 @@ export async function itemRoutes(fastify: FastifyInstance) {
   });
 
   // ----------------------------------------------------
-  // BULK CREATE ITEMS (Transaction-Safe with Category Creation)
+  // BULK CREATE ITEMS (High-Performance Batch Import)
   // ----------------------------------------------------
   fastify.post('/bulk', async (request, reply) => {
     if (!request.tenant!.features.includes('INVENTORY_TRACKING')) {
@@ -451,82 +451,135 @@ export async function itemRoutes(fastify: FastifyInstance) {
     });
 
     const body = bulkSchema.parse(request.body);
+    const businessId = request.tenant!.businessId;
 
-    const result = await request.db!.$transaction(async (tx) => {
-      let createdCount = 0;
+    if (body.items.length === 0) {
+      return reply.status(200).send({
+        success: true,
+        data: { createdCount: 0 },
+      });
+    }
 
-      for (const itemInput of body.items) {
-        let categoryId = itemInput.categoryId;
+    // 1. Pre-fetch and cache all existing categories for this tenant
+    const existingCategories = await request.db!.itemCategory.findMany({
+      where: { businessId },
+      select: { id: true, name: true },
+    });
 
-        // Resolve categoryName if categoryId is not provided
-        if (!categoryId && itemInput.categoryName && itemInput.categoryName.trim()) {
-          const catName = itemInput.categoryName.trim();
-          let category = await tx.itemCategory.findFirst({
-            where: {
-              businessId: request.tenant!.businessId,
-              name: { equals: catName },
-            },
-          });
+    const categoryMap = new Map<string, string>();
+    for (const cat of existingCategories) {
+      categoryMap.set(cat.name.toLowerCase().trim(), cat.id);
+    }
 
-          if (!category) {
-            category = await tx.itemCategory.create({
-              data: {
-                businessId: request.tenant!.businessId,
-                name: catName,
-              },
-            });
-          }
-          categoryId = category.id;
+    // 2. Identify distinct missing categories and create them upfront
+    const missingCategoryNames = new Set<string>();
+    for (const item of body.items) {
+      if (!item.categoryId && item.categoryName && item.categoryName.trim()) {
+        const norm = item.categoryName.trim().toLowerCase();
+        if (!categoryMap.has(norm)) {
+          missingCategoryNames.add(item.categoryName.trim());
         }
+      }
+    }
 
-        const newItem = await tx.item.create({
-          data: {
-            businessId: request.tenant!.businessId,
-            name: itemInput.name,
-            code: itemInput.code || null,
-            type: itemInput.type,
-            categoryId: categoryId || null,
-            unit: itemInput.unit || 'Pcs',
-            salePrice: itemInput.salePrice ?? 0,
-            wholesalePrice: itemInput.wholesalePrice ?? 0,
-            purchasePrice: itemInput.purchasePrice ?? 0,
-            minStockAlert: itemInput.minStockAlert ?? 0,
-            openingStock: itemInput.openingStock ?? 0,
-            currentStock: itemInput.openingStock ?? 0,
-            imageUrl: itemInput.imageUrl || null,
-            storeDescription: itemInput.storeDescription || null,
-            // E2EE Metadata
-            encryptedDeks: itemInput.encryptedDeks ? itemInput.encryptedDeks : Prisma.JsonNull,
-            iv: itemInput.iv || null,
-            encPurchasePrice: itemInput.encPurchasePrice || null,
-            encSalePrice: itemInput.encSalePrice || null,
-            encWholesalePrice: itemInput.encWholesalePrice || null,
-            hmacName: itemInput.hmacName || null,
-            hmacCode: itemInput.hmacCode || null,
+    for (const catName of missingCategoryNames) {
+      const norm = catName.toLowerCase();
+      if (!categoryMap.has(norm)) {
+        const createdCat = await request.db!.itemCategory.upsert({
+          where: {
+            businessId_name: {
+              businessId,
+              name: catName,
+            },
+          },
+          update: {},
+          create: {
+            businessId,
+            name: catName,
           },
         });
+        categoryMap.set(norm, createdCat.id);
+      }
+    }
 
-        if (itemInput.type === ItemType.PRODUCT && itemInput.openingStock !== 0) {
-          await tx.stockMovement.create({
-            data: {
-              businessId: request.tenant!.businessId,
-              itemId: newItem.id,
-              type: StockMovementType.INITIAL,
-              quantity: itemInput.openingStock,
-              reference: 'Initial opening stock entry (bulk import)',
-            },
-          });
-        }
+    // 3. Prepare items and stock movements with pre-generated UUIDs
+    const itemsToCreate: any[] = [];
+    const stockMovementsToCreate: any[] = [];
 
-        createdCount++;
+    for (const itemInput of body.items) {
+      let categoryId = itemInput.categoryId;
+      if (!categoryId && itemInput.categoryName && itemInput.categoryName.trim()) {
+        categoryId = categoryMap.get(itemInput.categoryName.trim().toLowerCase()) || null;
       }
 
-      return { createdCount };
-    }, { maxWait: 15000, timeout: 30000 });
+      const itemId = crypto.randomUUID();
+      const openingStock = Number(itemInput.openingStock ?? 0);
+
+      itemsToCreate.push({
+        id: itemId,
+        businessId,
+        name: itemInput.name,
+        code: itemInput.code || null,
+        type: itemInput.type,
+        categoryId: categoryId || null,
+        unit: itemInput.unit || 'Pcs',
+        salePrice: new Prisma.Decimal(itemInput.salePrice ?? 0),
+        wholesalePrice: new Prisma.Decimal(itemInput.wholesalePrice ?? 0),
+        purchasePrice: new Prisma.Decimal(itemInput.purchasePrice ?? 0),
+        minStockAlert: new Prisma.Decimal(itemInput.minStockAlert ?? 0),
+        openingStock: new Prisma.Decimal(openingStock),
+        currentStock: new Prisma.Decimal(openingStock),
+        imageUrl: itemInput.imageUrl || null,
+        storeDescription: itemInput.storeDescription || null,
+        // E2EE Metadata
+        encryptedDeks: itemInput.encryptedDeks ? itemInput.encryptedDeks : Prisma.JsonNull,
+        iv: itemInput.iv || null,
+        encPurchasePrice: itemInput.encPurchasePrice || null,
+        encSalePrice: itemInput.encSalePrice || null,
+        encWholesalePrice: itemInput.encWholesalePrice || null,
+        hmacName: itemInput.hmacName || null,
+        hmacCode: itemInput.hmacCode || null,
+      });
+
+      if (itemInput.type === ItemType.PRODUCT && openingStock !== 0) {
+        stockMovementsToCreate.push({
+          id: crypto.randomUUID(),
+          businessId,
+          itemId,
+          type: StockMovementType.INITIAL,
+          quantity: new Prisma.Decimal(openingStock),
+          reference: 'Initial opening stock entry (bulk import)',
+        });
+      }
+    }
+
+    // 4. Batch insert in manageable chunks (e.g. 200 items per batch)
+    const CHUNK_SIZE = 200;
+    let createdCount = 0;
+
+    for (let i = 0; i < itemsToCreate.length; i += CHUNK_SIZE) {
+      const itemChunk = itemsToCreate.slice(i, i + CHUNK_SIZE);
+      const itemIdsChunk = new Set(itemChunk.map((it) => it.id));
+      const smChunk = stockMovementsToCreate.filter((sm) => itemIdsChunk.has(sm.itemId));
+
+      await request.db!.$transaction(async (tx) => {
+        await tx.item.createMany({
+          data: itemChunk,
+        });
+
+        if (smChunk.length > 0) {
+          await tx.stockMovement.createMany({
+            data: smChunk,
+          });
+        }
+      }, { maxWait: 15000, timeout: 30000 });
+
+      createdCount += itemChunk.length;
+    }
 
     return reply.status(201).send({
       success: true,
-      data: result,
+      data: { createdCount },
     });
   });
 

@@ -75,6 +75,7 @@ export function ImportPartiesModal({
   const importPartiesMutation = useImportParties();
   const [importProgress, setImportProgress] = useState(0);
   const [importError, setImportError] = useState('');
+  const [importStatusText, setImportStatusText] = useState('');
 
   if (!isOpen) return null;
 
@@ -363,21 +364,37 @@ export function ImportPartiesModal({
     setStep('preview');
   };
 
-  // 4. Submit Bulk Import
+  // 4. Submit Bulk Import with Chunking
   const handleExecuteImport = async () => {
-    if (validationResult.validParties.length === 0) {
+    const totalParties = validationResult.validParties.length;
+    if (totalParties === 0) {
       alert('No valid party records to import.');
       return;
     }
 
     setStep('importing');
-    setImportProgress(10);
+    setImportProgress(5);
     setImportError('');
+    setImportStatusText(`Preparing ${totalParties} parties for upload...`);
+
+    const BATCH_SIZE = 100;
+    const totalBatches = Math.ceil(totalParties / BATCH_SIZE);
 
     try {
-      setImportProgress(50);
-      await importPartiesMutation.mutateAsync(validationResult.validParties);
+      for (let b = 0; b < totalBatches; b++) {
+        const start = b * BATCH_SIZE;
+        const end = Math.min(start + BATCH_SIZE, totalParties);
+        const batch = validationResult.validParties.slice(start, end);
+
+        setImportStatusText(`Importing batch ${b + 1} of ${totalBatches} (${start + 1}–${end} of ${totalParties} parties)...`);
+        await importPartiesMutation.mutateAsync(batch);
+
+        const progressPercent = Math.min(95, Math.round(((b + 1) / totalBatches) * 100));
+        setImportProgress(progressPercent);
+      }
+
       setImportProgress(100);
+      setImportStatusText('All parties imported successfully!');
       setStep('success');
       if (onSuccess) onSuccess();
     } catch (err: any) {
@@ -668,15 +685,23 @@ export function ImportPartiesModal({
 
             {/* STEP 4: Importing */}
             {step === 'importing' && (
-              <div className="py-12 text-center space-y-3">
-                <Loader2 className="w-10 h-10 animate-spin text-blue-600 mx-auto" />
-                <h4 className="text-sm font-bold text-slate-800">Importing Parties...</h4>
-                <div className="w-48 bg-slate-100 rounded-full h-2 mx-auto overflow-hidden">
+              <div className="py-12 flex flex-col items-center justify-center text-center gap-4">
+                <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+                <div>
+                  <p className="text-sm font-bold text-slate-900">
+                    {importStatusText || 'Importing parties in high-speed batches...'}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Registering party directory and ledger opening balances.
+                  </p>
+                </div>
+                <div className="w-72 bg-slate-100 rounded-full h-2.5 overflow-hidden mt-1 border border-slate-200">
                   <div
-                    className="bg-blue-600 h-full transition-all duration-300"
+                    className="bg-blue-600 h-full transition-all duration-300 rounded-full"
                     style={{ width: `${importProgress}%` }}
                   />
                 </div>
+                <span className="text-xs font-mono font-bold text-blue-600">{importProgress}% Completed</span>
               </div>
             )}
 

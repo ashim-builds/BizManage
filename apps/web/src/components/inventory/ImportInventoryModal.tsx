@@ -73,6 +73,7 @@ export function ImportInventoryModal({ isOpen, onClose, existingItems }: ImportI
   const bulkCreate = useBulkCreateItems();
   const [importProgress, setImportProgress] = useState(0);
   const [importError, setImportError] = useState('');
+  const [importStatusText, setImportStatusText] = useState('');
 
   if (!isOpen) return null;
 
@@ -414,21 +415,37 @@ export function ImportInventoryModal({ isOpen, onClose, existingItems }: ImportI
     setStep('preview');
   };
 
-  // 4. Run Batch Import Request
+  // 4. Run Batch Import Request with Chunking
   const handleImport = async () => {
-    if (validationResult.validItems.length === 0) return;
+    const totalItems = validationResult.validItems.length;
+    if (totalItems === 0) return;
     setImportError('');
     setStep('importing');
-    setImportProgress(10);
+    setImportProgress(5);
+    setImportStatusText(`Preparing ${totalItems} items for secure upload...`);
+
+    const BATCH_SIZE = 100;
+    const totalBatches = Math.ceil(totalItems / BATCH_SIZE);
 
     try {
-      setImportProgress(40);
-      await bulkCreate.mutateAsync(validationResult.validItems);
+      for (let b = 0; b < totalBatches; b++) {
+        const start = b * BATCH_SIZE;
+        const end = Math.min(start + BATCH_SIZE, totalItems);
+        const batch = validationResult.validItems.slice(start, end);
+
+        setImportStatusText(`Importing batch ${b + 1} of ${totalBatches} (${start + 1}–${end} of ${totalItems} items)...`);
+        await bulkCreate.mutateAsync(batch);
+
+        const progressPercent = Math.min(95, Math.round(((b + 1) / totalBatches) * 100));
+        setImportProgress(progressPercent);
+      }
+
       setImportProgress(100);
+      setImportStatusText('All items imported successfully!');
       setStep('success');
     } catch (err: any) {
       console.error(err);
-      setImportError(err.response?.data?.error?.message || 'Failed to import inventory items. Check your server logs.');
+      setImportError(err.response?.data?.error?.message || 'Failed to import inventory items. Check your server logs or network.');
       setStep('preview');
     }
   };
@@ -838,15 +855,20 @@ export function ImportInventoryModal({ isOpen, onClose, existingItems }: ImportI
               <div className="py-12 flex flex-col items-center justify-center text-center gap-4">
                 <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
                 <div>
-                  <p className="text-sm font-bold text-slate-900">Encrypting and uploading inventory...</p>
-                  <p className="text-xs text-slate-500 mt-1">Computing E2EE ciphertexts and saving batch transaction safely.</p>
+                  <p className="text-sm font-bold text-slate-900">
+                    {importStatusText || 'Uploading inventory in high-speed batches...'}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Processing batches with automated category mapping & stock ledger initialization.
+                  </p>
                 </div>
-                <div className="w-64 h-2 bg-slate-100 rounded-full overflow-hidden mt-2 border border-slate-200">
+                <div className="w-72 bg-slate-100 rounded-full h-2.5 overflow-hidden mt-1 border border-slate-200">
                   <div
-                    className="h-full bg-blue-600 transition-all duration-300"
+                    className="h-full bg-blue-600 transition-all duration-300 rounded-full"
                     style={{ width: `${importProgress}%` }}
-                  ></div>
+                  />
                 </div>
+                <span className="text-xs font-mono font-bold text-blue-600">{importProgress}% Completed</span>
               </div>
             )}
 

@@ -50,5 +50,4 @@ deployment_guide.md
 saas_business_plan.md
 
 # Database backups
-neon_export/
-import-backup-mysql.cjs
+item.json

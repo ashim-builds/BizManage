@@ -3,12 +3,13 @@ import { requireBusinessTenant } from '../../middleware/auth.js';
 import { partySchema, itemSchema } from '@bizmanage/validation';
 import { PartyType, ItemType, Prisma, globalPrisma } from '@bizmanage/database';
 import { z } from 'zod';
+import crypto from 'crypto';
 
 export async function utilityRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', requireBusinessTenant);
 
   // ----------------------------------------------------
-  // 1. IMPORT PARTIES (Validate & Transaction Import)
+  // 1. IMPORT PARTIES (Validate & Batch Import)
   // ----------------------------------------------------
   fastify.post('/import-parties', async (request, reply) => {
     let rows = (request.body as any)?.rows;
@@ -62,44 +63,48 @@ export async function utilityRoutes(fastify: FastifyInstance) {
       });
     }
 
-    // Insert valid records in a single transaction
-    const createdParties = await request.db!.$transaction(async (tx) => {
-      const results = [];
-      for (const rec of validRecords) {
-        let initialBal = new Prisma.Decimal(rec.openingBalance || 0);
-        if (rec.openingBalanceType === 'PAYABLE') {
-          initialBal = initialBal.negated();
-        }
-
-        const party = await tx.party.create({
-          data: {
-            businessId: request.tenant!.businessId,
-            name: rec.name,
-            type: rec.type,
-            phone: rec.phone,
-            email: rec.email,
-            address: rec.address,
-            taxNumber: rec.taxNumber,
-            openingBalance: initialBal,
-            currentBalance: initialBal,
-          },
-        });
-        results.push(party);
+    const businessId = request.tenant!.businessId;
+    const partiesToCreate = validRecords.map((rec) => {
+      let initialBal = new Prisma.Decimal(rec.openingBalance || 0);
+      if (rec.openingBalanceType === 'PAYABLE') {
+        initialBal = initialBal.negated();
       }
-      return results;
-    }, { maxWait: 10000, timeout: 20000 });
+      return {
+        id: crypto.randomUUID(),
+        businessId,
+        name: rec.name,
+        type: rec.type,
+        phone: rec.phone,
+        email: rec.email,
+        address: rec.address,
+        taxNumber: rec.taxNumber,
+        openingBalance: initialBal,
+        currentBalance: initialBal,
+      };
+    });
+
+    const CHUNK_SIZE = 200;
+    let createdCount = 0;
+
+    for (let i = 0; i < partiesToCreate.length; i += CHUNK_SIZE) {
+      const chunk = partiesToCreate.slice(i, i + CHUNK_SIZE);
+      await request.db!.party.createMany({
+        data: chunk,
+      });
+      createdCount += chunk.length;
+    }
 
     return reply.status(201).send({
       success: true,
       data: {
-        importedCount: createdParties.length,
+        importedCount: createdCount,
         errors,
       },
     });
   });
 
   // ----------------------------------------------------
-  // 2. IMPORT ITEMS (Validate & Transaction Import)
+  // 2. IMPORT ITEMS (Validate & Batch Import)
   // ----------------------------------------------------
   fastify.post('/import-items', async (request, reply) => {
     let rows = (request.body as any)?.rows;
@@ -153,35 +158,39 @@ export async function utilityRoutes(fastify: FastifyInstance) {
       });
     }
 
-    // Insert valid records in a single transaction
-    const createdItems = await request.db!.$transaction(async (tx) => {
-      const results = [];
-      for (const rec of validRecords) {
-        const stock = new Prisma.Decimal(rec.openingStock || 0);
+    const businessId = request.tenant!.businessId;
+    const itemsToCreate = validRecords.map((rec) => {
+      const stock = new Prisma.Decimal(rec.openingStock || 0);
+      return {
+        id: crypto.randomUUID(),
+        businessId,
+        name: rec.name,
+        code: rec.code,
+        type: rec.type,
+        unit: rec.unit,
+        salePrice: new Prisma.Decimal(rec.salePrice || 0),
+        purchasePrice: new Prisma.Decimal(rec.purchasePrice || 0),
+        minStockAlert: new Prisma.Decimal(rec.minStockAlert || 0),
+        openingStock: stock,
+        currentStock: stock,
+      };
+    });
 
-        const item = await tx.item.create({
-          data: {
-            businessId: request.tenant!.businessId,
-            name: rec.name,
-            code: rec.code,
-            type: rec.type,
-            unit: rec.unit,
-            salePrice: new Prisma.Decimal(rec.salePrice || 0),
-            purchasePrice: new Prisma.Decimal(rec.purchasePrice || 0),
-            minStockAlert: new Prisma.Decimal(rec.minStockAlert || 0),
-            openingStock: stock,
-            currentStock: stock,
-          },
-        });
-        results.push(item);
-      }
-      return results;
-    }, { maxWait: 10000, timeout: 20000 });
+    const CHUNK_SIZE = 200;
+    let createdCount = 0;
+
+    for (let i = 0; i < itemsToCreate.length; i += CHUNK_SIZE) {
+      const chunk = itemsToCreate.slice(i, i + CHUNK_SIZE);
+      await request.db!.item.createMany({
+        data: chunk,
+      });
+      createdCount += chunk.length;
+    }
 
     return reply.status(201).send({
       success: true,
       data: {
-        importedCount: createdItems.length,
+        importedCount: createdCount,
         errors,
       },
     });
