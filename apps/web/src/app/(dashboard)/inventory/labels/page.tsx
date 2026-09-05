@@ -3,18 +3,7 @@ import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericIn
 
 import { useState } from 'react';
 import Link from 'next/link';
-import {
-  Printer,
-  ScanBarcode,
-  Plus,
-  Trash2,
-  Check,
-  Copy,
-  Settings2,
-  Package,
-  Layers,
-  Sparkles,
-} from 'lucide-react';
+import { Printer, ScanBarcode, Plus, Trash2, Check, Copy, Settings2, Package, Layers, Sparkles } from 'lucide-react';
 import { useItems } from '@/services/itemService';
 import { useAuth } from '@/providers/AuthProvider';
 import toast from 'react-hot-toast';
@@ -82,9 +71,7 @@ export default function BarcodeLabelPage() {
   };
 
   // Generate flattened array of labels to render
-  const flatLabels = selectedItems.flatMap((item) =>
-    Array.from({ length: item.copies }, () => item)
-  );
+  const flatLabels = selectedItems.flatMap((item) => Array.from({ length: item.copies }, () => item));
 
   const handlePrint = () => {
     if (flatLabels.length === 0) {
@@ -103,7 +90,7 @@ export default function BarcodeLabelPage() {
             <div className="w-8 h-8 rounded-xl bg-red-600/10 border border-red-500/20 text-red-400 flex items-center justify-center">
               <Printer className="w-4 h-4" />
             </div>
-            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-black text-black tracking-tight">
               Custom Barcode & Label Sticker Printing
             </h1>
           </div>
@@ -152,7 +139,9 @@ export default function BarcodeLabelPage() {
               <label className="block text-[11px] font-semibold text-zinc-400 mb-1">Stickers Count</label>
               <div className="flex items-center gap-2">
                 <input
-                  type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                  type="text"
+                  inputMode="decimal"
+                  onKeyDown={onNumericKeyDown}
                   onFocus={onNumericFocus}
                   onBlur={onNumericBlur}
                   min="1"
@@ -329,8 +318,8 @@ export default function BarcodeLabelPage() {
                 labelFormat === 'thermal'
                   ? 'grid-cols-1 max-w-[240px] mx-auto'
                   : labelFormat === 'a4-65'
-                  ? 'grid-cols-5 gap-1.5'
-                  : 'grid-cols-3 gap-3'
+                    ? 'grid-cols-5 gap-1.5'
+                    : 'grid-cols-3 gap-3'
               }`}
             >
               {flatLabels.map((item, idx) => (
@@ -381,16 +370,10 @@ export default function BarcodeLabelPage() {
                     </svg>
                   </div>
 
-                  {showBarcodeText && (
-                    <p className="text-[9px] font-mono tracking-widest text-zinc-700">
-                      {item.code}
-                    </p>
-                  )}
+                  {showBarcodeText && <p className="text-[9px] font-mono tracking-widest text-zinc-700">{item.code}</p>}
 
                   {showPrice && (
-                    <p className="text-xs font-black text-black font-mono mt-0.5">
-                      MRP Rs. {item.price.toFixed(2)}
-                    </p>
+                    <p className="text-xs font-black text-black font-mono mt-0.5">MRP Rs. {item.price.toFixed(2)}</p>
                   )}
                 </div>
               ))}

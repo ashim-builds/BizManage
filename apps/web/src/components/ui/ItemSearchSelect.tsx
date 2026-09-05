@@ -191,9 +191,9 @@ export function ItemSearchSelect({
   const stockColor = (item: SelectableItem) => {
     const stock = Number(item.currentStock ?? 0);
     const min = Number(item.minStockAlert ?? 0);
-    if (stock <= 0) return 'text-rose-500 bg-rose-50 border-rose-200';
-    if (stock <= min) return 'text-amber-500 bg-amber-50 border-amber-200';
-    return 'text-emerald-600 bg-emerald-50 border-emerald-200';
+    if (stock <= 0) return 'text-rose-800 bg-rose-50 border-rose-200 font-bold';
+    if (stock <= min) return 'text-amber-900 bg-amber-50 border-amber-300 font-bold';
+    return 'text-emerald-800 bg-emerald-50 border-emerald-200 font-bold';
   };
 
   const handleCameraScan = (scannedText: string) => {
@@ -225,7 +225,7 @@ export function ItemSearchSelect({
           'bg-white border transition-all shadow-xs',
           'focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500',
           open ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-slate-300 hover:border-slate-400',
-          selectedItem ? 'text-slate-900' : 'text-slate-500',
+          selectedItem ? 'text-slate-900' : 'text-slate-600',
         ].join(' ')}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -238,17 +238,17 @@ export function ItemSearchSelect({
                 {selectedItem.name}
               </span>
               {selectedItem.code && (
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold border border-slate-300">
                   {selectedItem.code}
                 </span>
               )}
-              <span className="text-slate-500 font-normal text-[11px] flex-shrink-0">
+              <span className="text-slate-600 font-medium text-[11px] flex-shrink-0">
                 · {selectedItem.unit}
               </span>
             </div>
           ) : (
-            <div className="flex items-center gap-2 text-slate-400 min-w-0">
-              <QrCode className="w-3.5 h-3.5 flex-shrink-0 text-slate-400" />
+            <div className="flex items-center gap-2 text-slate-500 min-w-0 font-medium">
+              <QrCode className="w-3.5 h-3.5 flex-shrink-0 text-slate-500" />
               <span className="break-words text-xs">{placeholder}</span>
             </div>
           )}

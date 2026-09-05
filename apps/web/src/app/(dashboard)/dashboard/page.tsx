@@ -173,11 +173,11 @@ export default function ExecutiveDashboardPage() {
             <h3 className="text-2xl sm:text-3xl font-black text-slate-900 font-mono tracking-tight">
               Rs. {(metrics.toReceive || 0).toLocaleString()}
             </h3>
-            <p className="text-[11px] text-slate-400 leading-tight">
+            <p className="text-[11px] text-slate-600 leading-tight font-medium">
               {metrics.toReceive ? 'Outstanding payments due from customers' : "You don't have any receivables as of now."}
             </p>
           </div>
-          <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-lg group-hover:scale-105 transition-transform shrink-0">
+          <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-lg group-hover:scale-105 transition-transform shrink-0 border border-emerald-200">
             ↓
           </div>
         </Link>
@@ -194,11 +194,11 @@ export default function ExecutiveDashboardPage() {
             <h3 className="text-2xl sm:text-3xl font-black text-slate-900 font-mono tracking-tight">
               Rs. {(metrics.toGive || 0).toLocaleString()}
             </h3>
-            <p className="text-[11px] text-slate-400 leading-tight">
+            <p className="text-[11px] text-slate-600 leading-tight font-medium">
               {metrics.toGive ? 'Bills & credit owed to suppliers' : 'Bills & credit owed to suppliers'}
             </p>
           </div>
-          <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-lg group-hover:scale-105 transition-transform shrink-0">
+          <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-800 flex items-center justify-center font-bold text-lg group-hover:scale-105 transition-transform shrink-0 border border-rose-200">
             ↑
           </div>
         </Link>
@@ -323,19 +323,19 @@ export default function ExecutiveDashboardPage() {
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 border-t border-slate-100 text-xs">
             <div>
-              <span className="block text-[10px] uppercase font-bold text-slate-400">TOTAL SALES</span>
+              <span className="block text-[10px] uppercase font-bold text-slate-600">TOTAL SALES</span>
               <strong className="text-slate-900 font-mono">Rs. {(metrics.totalSales || 0).toLocaleString()}</strong>
             </div>
             <div>
-              <span className="block text-[10px] uppercase font-bold text-slate-400">GROSS MARGIN</span>
+              <span className="block text-[10px] uppercase font-bold text-slate-600">GROSS MARGIN</span>
               <strong className="text-slate-900 font-mono">Rs. {(metrics.salesMargin || 0).toLocaleString()}</strong>
             </div>
             <div>
-              <span className="block text-[10px] uppercase font-bold text-slate-400">TOTAL EXPENSES</span>
+              <span className="block text-[10px] uppercase font-bold text-slate-600">TOTAL EXPENSES</span>
               <strong className="text-slate-900 font-mono">Rs. {(metrics.totalExpenses || 0).toLocaleString()}</strong>
             </div>
             <div>
-              <span className="block text-[10px] uppercase font-bold text-slate-400">TODAY'S MARGIN</span>
+              <span className="block text-[10px] uppercase font-bold text-slate-600">TODAY'S MARGIN</span>
               <strong className="text-slate-900 font-mono">Rs. {todayMargin.toLocaleString()}</strong>
             </div>
           </div>
@@ -345,7 +345,7 @@ export default function ExecutiveDashboardPage() {
       {/* 7. MOST USED REPORTS (4-CARD GRID MATCHING MOCKUP) */}
       <div className="space-y-2">
         <div className="flex items-center justify-between px-1">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">MOST USED REPORTS</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600">MOST USED REPORTS</h4>
           <Link href="/reports" className="text-xs font-bold text-slate-700 hover:text-slate-900 flex items-center gap-0.5">
             <span>View All</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -357,40 +357,40 @@ export default function ExecutiveDashboardPage() {
             href="/reports"
             className="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:border-slate-300 flex flex-col items-center justify-center text-center gap-2 group transition-all"
           >
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
               <FileText className="w-5 h-5" />
             </div>
-            <span className="text-xs font-bold text-slate-800">Sale Report</span>
+            <span className="text-xs font-bold text-slate-900">Sale Report</span>
           </Link>
 
           <Link
             href="/transactions"
             className="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:border-slate-300 flex flex-col items-center justify-center text-center gap-2 group transition-all"
           >
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
               <ArrowLeftRight className="w-5 h-5" />
             </div>
-            <span className="text-xs font-bold text-slate-800">All Transactions</span>
+            <span className="text-xs font-bold text-slate-900">All Transactions</span>
           </Link>
 
           <Link
             href="/reports"
             className="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:border-slate-300 flex flex-col items-center justify-center text-center gap-2 group transition-all"
           >
-            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center">
               <BookOpen className="w-5 h-5" />
             </div>
-            <span className="text-xs font-bold text-slate-800">Daybook Report</span>
+            <span className="text-xs font-bold text-slate-900">Daybook Report</span>
           </Link>
 
           <Link
             href="/reports?tab=party-balance"
             className="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:border-slate-300 flex flex-col items-center justify-center text-center gap-2 group transition-all"
           >
-            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
               <Users className="w-5 h-5" />
             </div>
-            <span className="text-xs font-bold text-slate-800">Party Statement</span>
+            <span className="text-xs font-bold text-slate-900">Party Statement</span>
           </Link>
         </div>
       </div>
@@ -398,7 +398,7 @@ export default function ExecutiveDashboardPage() {
       {/* 8. RECENT TRANSACTIONS LIST (MATCHING MOCKUP) */}
       <div className="space-y-2">
         <div className="flex items-center justify-between px-1">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">RECENT TRANSACTIONS</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600">RECENT TRANSACTIONS</h4>
           <Link href="/transactions" className="text-xs font-bold text-slate-700 hover:text-slate-900 flex items-center gap-0.5">
             <span>View All</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -418,7 +418,7 @@ export default function ExecutiveDashboardPage() {
                   className="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs flex items-center justify-between gap-3 hover:border-slate-300 transition-all"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-200">
                       <Banknote className="w-5 h-5" />
                     </div>
                     <div className="min-w-0">
@@ -426,10 +426,10 @@ export default function ExecutiveDashboardPage() {
                         {tx.description || `Transaction ${tx.referenceNumber || ''}`}
                       </p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 text-[10px] font-medium truncate max-w-[100px]">
+                        <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 font-semibold text-[10px] truncate max-w-[100px]">
                           {tx.account?.accountName || 'Cash In Hand'}
                         </span>
-                        <span className="text-[10px] text-slate-400 font-mono">
+                        <span className="text-[10px] text-slate-600 font-mono font-medium">
                           {formattedDate} • {formattedTime}
                         </span>
                       </div>
@@ -437,21 +437,21 @@ export default function ExecutiveDashboardPage() {
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <span className={`text-xs sm:text-sm font-mono font-bold ${isTxIn ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    <span className={`text-xs sm:text-sm font-mono font-bold ${isTxIn ? 'text-emerald-700' : 'text-rose-700'}`}>
                       {isTxIn ? '+' : '-'} Rs. {Number(tx.amount || 0).toLocaleString()}
                     </span>
-                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                    <ChevronRight className="w-4 h-4 text-slate-500" />
                   </div>
                 </div>
               );
             })
           ) : (
             <div className="p-8 rounded-2xl bg-white border border-slate-200/90 text-center space-y-1">
-              <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-2">
+              <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center mx-auto mb-2">
                 <Receipt className="w-5 h-5" />
               </div>
-              <p className="text-xs font-bold text-slate-800">No Transactions to show</p>
-              <p className="text-[11px] text-slate-400">You haven't added any transactions yet.</p>
+              <p className="text-xs font-bold text-slate-900">No Transactions to show</p>
+              <p className="text-[11px] text-slate-600 font-medium">You haven't added any transactions yet.</p>
             </div>
           )}
         </div>
@@ -460,7 +460,7 @@ export default function ExecutiveDashboardPage() {
       {/* 9. LOW STOCK ALERTS LIST (MATCHING MOCKUP) */}
       <div className="space-y-2">
         <div className="flex items-center justify-between px-1">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">LOW STOCK ALERTS</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600">LOW STOCK ALERTS</h4>
           <Link href="/inventory?filter=low_stock" className="text-xs font-bold text-slate-700 hover:text-slate-900 flex items-center gap-0.5">
             <span>View All</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -480,21 +480,21 @@ export default function ExecutiveDashboardPage() {
                   className="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs flex items-center justify-between gap-3 hover:border-slate-300 transition-all group"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 shrink-0 font-bold text-xs">
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600 shrink-0 font-bold text-xs">
                       {item.imageUrl ? (
                         <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover rounded-xl" />
                       ) : (
-                        <Package className="w-5 h-5 text-slate-400" />
+                        <Package className="w-5 h-5 text-slate-500" />
                       )}
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-slate-900 truncate group-hover:text-blue-600 transition-colors">
                         {item.name}
                       </p>
-                      <p className="text-[10px] text-slate-400 font-mono mt-0.5 flex items-center gap-1.5">
-                        <span>{item.code || 'SKU-N/A'}</span>
+                      <p className="text-[10px] text-slate-600 font-mono mt-0.5 flex items-center gap-1.5">
+                        <span className="font-semibold">{item.code || 'SKU-N/A'}</span>
                         <span>•</span>
-                        <span className={isZero ? 'text-rose-600 font-bold' : 'text-amber-600 font-bold'}>
+                        <span className={isZero ? 'text-rose-700 font-bold' : 'text-amber-800 font-bold'}>
                           {isZero ? 'Out of Stock' : `Min: ${Number(item.minStockAlert || 1)}`}
                         </span>
                       </p>
@@ -505,22 +505,22 @@ export default function ExecutiveDashboardPage() {
                     <span
                       className={`px-2.5 py-0.5 rounded-full text-xs font-mono font-bold ${
                         isZero
-                          ? 'bg-rose-50 text-rose-600 border border-rose-200'
-                          : 'bg-amber-50 text-amber-700 border border-amber-200'
+                          ? 'bg-rose-50 text-rose-800 border border-rose-200'
+                          : 'bg-amber-50 text-amber-900 border border-amber-300'
                       }`}
                     >
                       {stock} {item.unit || 'Pcs'}
                     </span>
-                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                    <ChevronRight className="w-4 h-4 text-slate-500" />
                   </div>
                 </Link>
               );
             })
           ) : (
             <div className="p-6 rounded-2xl bg-white border border-slate-200/90 text-center space-y-1">
-              <CheckCircle2 className="w-6 h-6 text-emerald-500 mx-auto mb-1" />
-              <p className="text-xs font-bold text-slate-800">All Stock Levels Healthy</p>
-              <p className="text-[11px] text-slate-400">No items currently below minimum stock threshold.</p>
+              <CheckCircle2 className="w-6 h-6 text-emerald-600 mx-auto mb-1" />
+              <p className="text-xs font-bold text-slate-900">All Stock Levels Healthy</p>
+              <p className="text-[11px] text-slate-600 font-medium">No items currently below minimum stock threshold.</p>
             </div>
           )}
         </div>

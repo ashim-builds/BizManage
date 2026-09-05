@@ -131,7 +131,7 @@ function RegisterForm() {
 
         <div className="flex items-center gap-3 mb-6">
           <div className="flex-1 h-px bg-slate-800"></div>
-          <span className="text-xs text-slate-500 font-medium">OR</span>
+          <span className="text-xs text-slate-400 font-medium">OR</span>
           <div className="flex-1 h-px bg-slate-800"></div>
         </div>
 
@@ -145,7 +145,7 @@ function RegisterForm() {
                   e.target.value = e.target.value.replace(/[0-9]/g, '');
                 },
               })}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="e.g. Ramesh Shrestha"
             />
             {errors.name && <p className="text-[10px] text-red-400 mt-1">{errors.name.message}</p>}
@@ -156,7 +156,7 @@ function RegisterForm() {
             <input
               type="email"
               {...register('email')}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="owner@business.com"
             />
             {errors.email && <p className="text-[10px] text-red-400 mt-1">{errors.email.message}</p>}
@@ -168,7 +168,7 @@ function RegisterForm() {
               <input
                 type="text"
                 {...register('businessName')}
-                className="w-full px-3.5 py-2.5 pl-9 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full px-3.5 py-2.5 pl-9 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 placeholder="e.g. Kathmandu Traders & Supplies"
               />
               <Building2 className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -182,13 +182,13 @@ function RegisterForm() {
               <input
                 type={showPassword ? 'text' : 'password'}
                 {...register('password')}
-                className="w-full px-3.5 py-2.5 pr-10 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full px-3.5 py-2.5 pr-10 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 placeholder="Min. 8 characters (1 upper, 1 lower, 1 number, 1 special)"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-white transition-colors cursor-pointer"
                 title={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -201,7 +201,7 @@ function RegisterForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-600/25 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-600/25 transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
               {loading ? 'Creating Account & Workspace...' : 'Register & Create Account'} <ArrowRight className="w-4 h-4" />
             </button>
@@ -209,7 +209,7 @@ function RegisterForm() {
         </form>
 
         <div className="mt-6 pt-4 border-t border-slate-800/80 text-center">
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-300">
             Already registered?{' '}
             <Link href="/login" className="text-blue-400 hover:underline font-semibold">
               Sign In to Workspace

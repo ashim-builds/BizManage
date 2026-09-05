@@ -4,25 +4,25 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
+    --background: 210 40% 98%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 347 77% 50%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 214 32% 91%;
     --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215 16% 40%;
     --accent: 210 40% 96%;
     --accent-foreground: 222 47% 11%;
     --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 347 77% 50%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214 32% 88%;
+    --input: 214 32% 88%;
+    --ring: 221 83% 53%;
     --radius: 0.75rem;
   }
 }
@@ -31,7 +31,7 @@
   * {
     @apply border-border;
     scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 transparent;
+    scrollbar-color: #94a3b8 transparent;
   }
 
   html, body {
@@ -48,12 +48,12 @@
   }
 
   body {
-    @apply bg-[#F4F6F9] text-slate-900 font-sans antialiased selection:bg-red-500 selection:text-white;
+    @apply bg-[#F8FAFC] text-slate-900 font-sans antialiased selection:bg-blue-600 selection:text-white;
     -webkit-user-select: text;
     user-select: text;
   }
 
-  /* Ensure copy-paste and text selection is always functional across all input and content fields */
+  /* Ensure copy-paste and text selection is functional across input and content fields */
   input,
   textarea,
   [contenteditable="true"],
@@ -72,181 +72,47 @@
     user-select: text;
   }
 
-  /* =========================================================
-     LIGHT THEME BUSINESS ERP CONTRAST AUTOMATION
-  ========================================================= */
-  main .bg-zinc-900,
-  main .bg-slate-900,
-  main .bg-zinc-950,
-  main .bg-slate-950,
-  main .bg-zinc-900\/90,
-  main .bg-zinc-950\/60,
-  main .bg-slate-900\/90,
-  main .bg-zinc-900\/80,
-  main .bg-slate-900\/80,
-  main .bg-zinc-900\/50,
-  main .bg-slate-900\/50 {
-    background-color: #ffffff !important;
-    color: #0f172a !important;
-    border-color: #e2e8f0 !important;
+  /* Form Controls Base Contrast */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+  select,
+  textarea {
+    color: #0f172a;
+    background-color: #ffffff;
+    border-color: #cbd5e1;
   }
 
-  main .border-zinc-800,
-  main .border-slate-800,
-  main .border-zinc-800\/60,
-  main .border-slate-800\/60,
-  main .border-zinc-800\/80,
-  main .border-slate-800\/80,
-  main .border-zinc-700,
-  main .border-slate-700 {
-    border-color: #e2e8f0 !important;
+  input::placeholder,
+  textarea::placeholder {
+    color: #64748b !important;
+    opacity: 1;
   }
 
-  /* Headings & general titles contrast */
-  main h1:not(.btn-text):not(.text-colored),
-  main h2:not(.btn-text):not(.text-colored),
-  main h3:not(.btn-text):not(.text-colored),
-  main h4:not(.btn-text):not(.text-colored) {
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: #2563eb !important;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2) !important;
+  }
+
+  /* Accessible Table Defaults */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead th {
+    background-color: #f8fafc;
+    color: #334155;
+    font-weight: 700;
+  }
+
+  tbody td {
     color: #0f172a;
   }
 
-  /* Safe text contrast in cards & tables */
-  main .bg-white .text-white,
-  main .bg-slate-50 .text-white,
-  main .bg-slate-100 .text-white,
-  main td.text-white,
-  main th.text-white,
-  main p.text-white,
-  main span.text-white:not([class*="bg-"]):not([class*="badge"]) {
-    color: #0f172a !important;
-  }
-
-  /* Muted text styling */
-  main .text-zinc-400,
-  main .text-slate-400,
-  main .text-zinc-300,
-  main .text-slate-300 {
-    color: #64748b !important;
-  }
-
-  main .text-zinc-500,
-  main .text-slate-500 {
-    color: #64748b !important;
-  }
-
-  /* Divide borders */
-  main .divide-zinc-800,
-  main .divide-slate-800,
-  main .divide-zinc-800\/60,
-  main .divide-slate-800\/60,
-  main .divide-zinc-800\/80 {
-    border-color: #f1f5f9 !important;
-  }
-
-  /* Table styling */
-  main thead,
-  main thead tr,
-  main thead th {
-    background-color: #f8fafc !important;
-    color: #475569 !important;
-    font-weight: 700 !important;
-  }
-
-  main tbody tr {
-    border-bottom: 1px solid #f1f5f9 !important;
-  }
-
-  main tbody tr:hover {
-    background-color: #f8fafc !important;
-  }
-
-  main tbody td {
-    color: #1e293b !important;
-  }
-
-  /* Inputs & Form Controls */
-  main input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
-  main select,
-  main textarea {
-    background-color: #ffffff !important;
-    color: #0f172a !important;
-    border: 1px solid #cbd5e1 !important;
-  }
-
-  main input:focus,
-  main select:focus,
-  main textarea:focus {
-    border-color: #3b82f6 !important;
-    background-color: #ffffff !important;
-  }
-
-  main input::placeholder,
-  main textarea::placeholder {
-    color: #94a3b8 !important;
-  }
-
-  /* Primary & Colored Action Buttons & Badges (keep their white text!) */
-  .bg-red-500,
-  .bg-red-600,
-  .bg-red-700,
-  .bg-blue-500,
-  .bg-blue-600,
-  .bg-blue-700,
-  .bg-indigo-500,
-  .bg-indigo-600,
-  .bg-indigo-700,
-  .bg-emerald-500,
-  .bg-emerald-600,
-  .bg-emerald-700,
-  .bg-rose-500,
-  .bg-rose-600,
-  .bg-rose-700,
-  .bg-amber-500,
-  .bg-amber-600,
-  .bg-purple-500,
-  .bg-purple-600,
-  .bg-violet-600,
-  button.bg-blue-600,
-  button.bg-red-600,
-  button.bg-emerald-600,
-  button.bg-indigo-600,
-  a.bg-blue-600,
-  a.bg-red-600,
-  a.bg-indigo-600,
-  main .bg-red-600,
-  main .bg-red-500,
-  main .bg-blue-600,
-  main .bg-blue-500,
-  main .bg-indigo-600,
-  main .bg-indigo-500,
-  main .bg-emerald-600,
-  main .bg-rose-600,
-  main a.bg-red-600,
-  main a.bg-blue-600,
-  main a.bg-indigo-600,
-  main button.bg-red-600,
-  main button.bg-blue-600,
-  main button.bg-indigo-600,
-  main button.bg-emerald-600 {
-    color: #ffffff !important;
-  }
-
-  .bg-red-600 *,
-  .bg-red-500 *,
-  .bg-blue-600 *,
-  .bg-blue-500 *,
-  .bg-indigo-600 *,
-  .bg-indigo-500 *,
-  .bg-emerald-600 *,
-  .bg-rose-600 *,
-  main button.bg-red-600 *,
-  main button.bg-blue-600 *,
-  main button.bg-indigo-600 *,
-  main button.bg-emerald-600 *,
-  main a.bg-red-600 *,
-  main a.bg-blue-600 *,
-  main a.bg-indigo-600 * {
-    color: #ffffff !important;
+  tbody tr:hover {
+    background-color: #f8fafc;
   }
 }
 
@@ -276,7 +142,7 @@ input[type="datetime-local"] {
 input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
   filter: none;
-  opacity: 0.7;
+  opacity: 0.8;
   transition: opacity 0.2s ease;
 }
 
@@ -299,7 +165,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   body,
   main {
     background: #ffffff !important;
-    color: #0f172a !important;
+    color: #000000 !important;
     padding: 0 !important;
     margin: 0 !important;
   }

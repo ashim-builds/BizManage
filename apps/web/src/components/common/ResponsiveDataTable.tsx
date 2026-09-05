@@ -90,7 +90,7 @@ export function ResponsiveDataTable<T>({
         <div className="w-full overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-700 font-extrabold uppercase tracking-wider text-[11px]">
                 {columns.map((col) => (
                   <th
                     key={col.key}
@@ -107,7 +107,7 @@ export function ResponsiveDataTable<T>({
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
+            <tbody className="divide-y divide-slate-100 font-medium text-slate-900">
               {data.map((item, index) => {
                 const rowKey = keyExtractor(item, index);
                 return (
@@ -115,7 +115,7 @@ export function ResponsiveDataTable<T>({
                     key={rowKey}
                     onClick={() => onRowClick && onRowClick(item)}
                     className={`transition-colors ${
-                      onRowClick ? 'cursor-pointer hover:bg-slate-50/80' : 'hover:bg-slate-50/40'
+                      onRowClick ? 'cursor-pointer hover:bg-slate-50' : 'hover:bg-slate-50/60'
                     }`}
                   >
                     {columns.map((col) => (
@@ -201,10 +201,10 @@ export function ResponsiveDataTable<T>({
                 <div className="grid grid-cols-2 gap-2.5 pt-3 text-xs">
                   {detailCols.map((col) => (
                     <div key={col.key} className={col.align === 'right' ? 'text-right' : 'text-left'}>
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+                      <span className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-0.5">
                         {col.header}
                       </span>
-                      <span className="font-semibold text-slate-800 break-words">
+                      <span className="font-bold text-slate-900 break-words">
                         {col.render ? col.render(item, index) : (item as any)[col.key] ?? '—'}
                       </span>
                     </div>
@@ -231,7 +231,7 @@ export function ResponsiveDataTable<T>({
                     {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                   </button>
                   {isExpanded && (
-                    <div className="mt-2 pt-2 border-t border-slate-100 text-xs text-slate-600 animate-in fade-in">
+                    <div className="mt-2 pt-2 border-t border-slate-100 text-xs text-slate-700 animate-in fade-in">
                       {renderMobileCardExtra(item)}
                     </div>
                   )}
@@ -245,11 +245,11 @@ export function ResponsiveDataTable<T>({
       {/* ── PAGINATION CONTROLS ────────────────────────────────────────────── */}
       {pagination && pagination.totalPages > 1 && (
         <div className="flex items-center justify-between bg-white px-4 py-3 rounded-2xl border border-slate-200 shadow-xs text-xs">
-          <div className="text-slate-500 font-medium">
-            Page <span className="font-bold text-slate-800">{pagination.currentPage}</span> of{' '}
-            <span className="font-bold text-slate-800">{pagination.totalPages}</span>
+          <div className="text-slate-600 font-medium">
+            Page <span className="font-bold text-slate-900">{pagination.currentPage}</span> of{' '}
+            <span className="font-bold text-slate-900">{pagination.totalPages}</span>
             {pagination.totalItems !== undefined && (
-              <span className="hidden sm:inline ml-1">({pagination.totalItems} total)</span>
+              <span className="hidden sm:inline ml-1 font-semibold text-slate-500">({pagination.totalItems} total)</span>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -257,7 +257,7 @@ export function ResponsiveDataTable<T>({
               type="button"
               disabled={pagination.currentPage <= 1}
               onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-semibold transition-all"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-300 text-slate-800 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed font-bold transition-all"
             >
               <ChevronLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Previous</span>
@@ -266,7 +266,7 @@ export function ResponsiveDataTable<T>({
               type="button"
               disabled={pagination.currentPage >= pagination.totalPages}
               onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-semibold transition-all"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-300 text-slate-800 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed font-bold transition-all"
             >
               <span className="hidden sm:inline">Next</span>
               <ChevronRight className="w-4 h-4" />

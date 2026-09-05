@@ -140,7 +140,7 @@ function LoginForm() {
 
         <div className="flex items-center gap-3 mb-6">
           <div className="flex-1 h-px bg-slate-800"></div>
-          <span className="text-xs text-slate-500 font-medium">OR</span>
+          <span className="text-xs text-slate-400 font-medium">OR</span>
           <div className="flex-1 h-px bg-slate-800"></div>
         </div>
 
@@ -150,7 +150,7 @@ function LoginForm() {
             <input
               type="email"
               {...register('email')}
-              className="w-full px-4 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="admin@business.com"
             />
             {errors.email && <p className="text-xs text-red-400 mt-1">{errors.email.message}</p>}
@@ -162,13 +162,13 @@ function LoginForm() {
               <input
                 type={showPassword ? 'text' : 'password'}
                 {...register('password')}
-                className="w-full px-4 py-2.5 pr-11 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2.5 pr-11 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="••••••••"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-white transition-colors cursor-pointer"
                 title={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -180,19 +180,19 @@ function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 px-4 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-lg shadow-blue-600/25 transition-all disabled:opacity-50"
+            className="w-full py-3 px-4 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-lg shadow-blue-600/25 transition-all disabled:opacity-50 cursor-pointer"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
-        <div className="mt-6 text-center space-y-2 text-sm text-slate-400">
-          <Link href="/forgot-password" className="text-slate-400 hover:text-white transition-colors block text-xs">
+        <div className="mt-6 text-center space-y-2 text-sm text-slate-300">
+          <Link href="/forgot-password" className="text-slate-300 hover:text-white transition-colors block text-xs">
             Forgot your password?
           </Link>
           <p>
             Don't have an account?{' '}
-            <Link href="/register" className="text-blue-400 hover:underline font-medium">
+            <Link href="/register" className="text-blue-400 hover:underline font-semibold">
               Register Business
             </Link>
           </p>

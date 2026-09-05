@@ -588,7 +588,7 @@ function SettingsPageContent() {
                 <p className="text-xs font-black uppercase text-white truncate">
                   {SETTINGS_SECTIONS.find((s) => s.id === activeTab)?.shortLabel || 'Settings'}
                 </p>
-                <p className="text-[10px] text-slate-400 truncate">
+                <p className="text-[10px] text-slate-300 truncate">
                   {SETTINGS_SECTIONS.find((s) => s.id === activeTab)?.description || ''}
                 </p>
               </div>
@@ -601,7 +601,7 @@ function SettingsPageContent() {
             >
               <SlidersHorizontal className="w-3.5 h-3.5 text-blue-400" />
               <span>All ({SETTINGS_SECTIONS.length})</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
+              <ChevronDown className="w-3 h-3 text-slate-300" />
             </button>
           </div>
 
@@ -618,7 +618,7 @@ function SettingsPageContent() {
                   className={`py-1.5 px-1 rounded-xl text-center transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
                     isActive
                       ? 'bg-blue-600 text-white font-bold shadow-xs'
-                      : 'bg-slate-800/70 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-700/50'
+                      : 'bg-slate-800/70 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60'
                   }`}
                   title={sec.label}
                 >
@@ -639,7 +639,7 @@ function SettingsPageContent() {
             <span className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
               <Settings className="w-4 h-4 text-blue-400" /> Settings
             </span>
-            <span className="text-[10px] font-bold text-slate-400 bg-slate-800/90 px-2 py-0.5 rounded-md border border-slate-700/60">
+            <span className="text-[10px] font-bold text-slate-300 bg-slate-800/90 px-2 py-0.5 rounded-md border border-slate-700/60">
               {SETTINGS_SECTIONS.length} Sections
             </span>
           </div>
@@ -657,7 +657,7 @@ function SettingsPageContent() {
                   className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wide text-left transition-all flex items-center gap-2.5 cursor-pointer ${
                     isActive
                       ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
                   }`}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
@@ -675,7 +675,7 @@ function SettingsPageContent() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold text-white truncate">{business?.name || 'BizManage'}</p>
-                <p className="text-[10px] text-slate-400 truncate">{business?.subscriptionPackage?.name || 'Free Tier'}</p>
+                <p className="text-[10px] text-slate-300 truncate">{business?.subscriptionPackage?.name || 'Free Tier'}</p>
               </div>
             </div>
           </div>
@@ -820,7 +820,7 @@ function SettingsPageContent() {
                           Show {taxRegistrationType} number on bills and printable documents
                         </span>
                       </label>
-                      <p className="text-[10px] text-slate-400 mt-0.5 ml-6.5">
+                      <p className="text-[10px] text-slate-600 font-medium mt-0.5 ml-6.5">
                         {showTaxOnBills && taxNumber.trim()
                           ? `Will display as "${taxRegistrationType}: ${taxNumber.trim()}" on all invoices.`
                           : 'Registration number will be completely hidden from bills.'}
@@ -852,7 +852,7 @@ function SettingsPageContent() {
                           </button>
                         </div>
                       ) : (
-                        <div className="w-16 h-16 rounded-xl bg-white border border-dashed border-slate-300 flex items-center justify-center text-slate-400 font-bold text-xs">
+                        <div className="w-16 h-16 rounded-xl bg-white border border-dashed border-slate-300 flex items-center justify-center text-slate-500 font-bold text-xs">
                           No Logo
                         </div>
                       )}
@@ -861,9 +861,9 @@ function SettingsPageContent() {
                           type="file"
                           accept="image/*"
                           onChange={handleLogoUpload}
-                          className="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                          className="block w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
                         />
-                        <p className="text-[10px] text-slate-400 mt-1">Square image (PNG/JPG).</p>
+                        <p className="text-[10px] text-slate-600 font-medium mt-1">Square image (PNG/JPG).</p>
                       </div>
                     </div>
                   </div>
@@ -880,7 +880,7 @@ function SettingsPageContent() {
                       className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-slate-800 resize-none"
                       placeholder="e.g. 1. Goods once sold will not be taken back without original bill.&#10;2. Interest @18% p.a. charged on overdue bills."
                     />
-                    <p className="text-[10px] text-slate-400">
+                    <p className="text-[10px] text-slate-600 font-medium">
                       Printed at the footer of all sales invoices and credit notes.
                     </p>
                   </div>
@@ -1048,7 +1048,7 @@ function SettingsPageContent() {
                               </span>
                             )}
                           </div>
-                          <p className="text-[11px] text-slate-400 font-mono">
+                          <p className="text-[11px] text-slate-600 font-mono font-medium">
                             {session.browser || 'Web'} • {session.ipAddress || 'Local IP'}
                           </p>
                         </div>
@@ -1057,7 +1057,7 @@ function SettingsPageContent() {
                       {!session.isCurrent && (
                         <button
                           onClick={() => deleteSession.mutateAsync(session.id)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                           title="Revoke session"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -1345,7 +1345,7 @@ function SettingsPageContent() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-black text-slate-900 truncate">{sec.label}</p>
-                          <p className="text-[11px] text-slate-400 truncate">{sec.description}</p>
+                          <p className="text-[11px] text-slate-600 font-medium truncate">{sec.description}</p>
                         </div>
                       </div>
                       {isSelected && <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 ml-2" />}

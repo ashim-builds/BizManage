@@ -395,11 +395,11 @@ export function NotificationCenter({
                           >
                             {item.title}
                           </p>
-                          <span className="text-[10px] font-medium text-slate-400 shrink-0">
+                          <span className="text-[10px] font-semibold text-slate-500 shrink-0">
                             {relativeTime}
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-600 mt-1 leading-relaxed line-clamp-2">
+                        <p className="text-[11px] text-slate-700 mt-1 leading-relaxed line-clamp-2">
                           {item.message}
                         </p>
                       </Link>
@@ -410,8 +410,8 @@ export function NotificationCenter({
                           onClick={(e) => toggleSingleRead(e, item)}
                           className={`p-1 rounded-lg transition-all ${
                             isRead
-                              ? 'text-slate-400 hover:text-slate-700 hover:bg-slate-100 opacity-0 group-hover:opacity-100'
-                              : 'text-blue-600 hover:bg-blue-50'
+                              ? 'text-slate-500 hover:text-slate-800 hover:bg-slate-200 opacity-0 group-hover:opacity-100'
+                              : 'text-blue-700 hover:bg-blue-100'
                           }`}
                           title={isRead ? 'Mark as unread' : 'Mark as read'}
                         >
@@ -426,11 +426,11 @@ export function NotificationCenter({
 
             {/* Footer */}
             {notifications.length > 0 && (
-              <div className="px-4 py-2.5 border-t border-slate-200 bg-slate-50 shrink-0 flex items-center justify-between text-[11px] text-slate-500">
+              <div className="px-4 py-2.5 border-t border-slate-200 bg-slate-50 shrink-0 flex items-center justify-between text-[11px] text-slate-600 font-medium">
                 <span>{notifications.length} total notification{notifications.length > 1 ? 's' : ''}</span>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="text-slate-600 hover:text-slate-900 font-medium transition-colors"
+                  className="text-slate-700 hover:text-slate-950 font-bold transition-colors"
                 >
                   Close panel
                 </button>

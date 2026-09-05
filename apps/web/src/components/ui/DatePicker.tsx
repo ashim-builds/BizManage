@@ -326,7 +326,7 @@ export function DatePicker({
             {normalizedValue ? (
               <span className="text-xs font-bold text-slate-900 font-mono tracking-tight">{displayFormatted}</span>
             ) : (
-              <span className="text-xs text-slate-400 font-normal">{placeholder}</span>
+              <span className="text-xs text-slate-500 font-medium">{placeholder}</span>
             )}
           </div>
         </div>
@@ -337,14 +337,14 @@ export function DatePicker({
               role="button"
               tabIndex={0}
               onClick={handleClear}
-              className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+              className="p-1 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
               title="Clear date"
             >
               <X className="w-3 h-3" />
             </div>
           )}
           <ChevronDown
-            className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180 text-blue-600' : 'group-hover:text-slate-600'}`}
+            className={`w-3.5 h-3.5 text-slate-500 transition-transform duration-200 ${isOpen ? 'rotate-180 text-blue-600' : 'group-hover:text-slate-700'}`}
           />
         </div>
       </button>
