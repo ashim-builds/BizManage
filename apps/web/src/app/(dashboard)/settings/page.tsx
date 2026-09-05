@@ -225,7 +225,14 @@ function SettingsPageContent() {
   const rawFeatures = business?.subscriptionPackage?.features;
   const userFeatures = typeof rawFeatures === 'string' ? JSON.parse(rawFeatures) : (rawFeatures || []);
   const pkgName = (business?.subscriptionPackage?.name || '').toLowerCase();
+  const createdAt = business?.createdAt ? new Date(business.createdAt) : new Date();
+  const trialEndsAt = (business as any)?.trialEndsAt
+    ? new Date((business as any).trialEndsAt)
+    : new Date(createdAt.getTime() + 14 * 24 * 60 * 60 * 1000);
+  const isTrialActive = new Date() < trialEndsAt;
+
   const canCustomBranding =
+    isTrialActive ||
     !business?.subscriptionPackage ||
     userFeatures.length === 0 ||
     userFeatures.includes('CUSTOM_BRANDING') ||

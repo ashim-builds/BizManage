@@ -239,11 +239,20 @@ export async function businessRoutes(fastify: FastifyInstance) {
         
         // If they are actually changing or setting the logo to a real image
         if (newLogoUrl && newLogoUrl !== currentLogoUrl) {
-          const rawFeatures = currentBiz?.subscriptionPackage?.features;
-          const userFeatures = typeof rawFeatures === 'string' ? JSON.parse(rawFeatures) : (rawFeatures || []);
-          
-          if (!userFeatures.includes('CUSTOM_BRANDING')) {
-            throw new AppError('Custom branding requires a Pro plan. Please upgrade your subscription.', 403, 'FEATURE_LOCKED');
+          const now = new Date();
+          const createdAt = currentBiz?.createdAt ? new Date(currentBiz.createdAt) : now;
+          const trialEndsAt = (currentBiz as any)?.trialEndsAt 
+            ? new Date((currentBiz as any).trialEndsAt) 
+            : new Date(createdAt.getTime() + 14 * 24 * 60 * 60 * 1000);
+          const isTrialActive = now < trialEndsAt;
+
+          if (!isTrialActive) {
+            const rawFeatures = currentBiz?.subscriptionPackage?.features;
+            const userFeatures = typeof rawFeatures === 'string' ? JSON.parse(rawFeatures) : (rawFeatures || []);
+            
+            if (!userFeatures.includes('CUSTOM_BRANDING') && !userFeatures.includes('CUSTOM_LOGO')) {
+              throw new AppError('Custom branding requires a Pro plan. Please upgrade your subscription.', 403, 'FEATURE_LOCKED');
+            }
           }
         }
       }
