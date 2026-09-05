@@ -129,6 +129,12 @@ function InventoryPageContent() {
   // Search & Filtering
   const [productSearch, setProductSearch] = useState('');
   const [stockFilter, setStockFilter] = useState<'ALL' | 'LOW' | 'OUT_OF_STOCK' | 'IN_STOCK'>('ALL');
+  const [isProductFilterOpen, setIsProductFilterOpen] = useState(false);
+  const [productCategoryFilter, setProductCategoryFilter] = useState('');
+  const [productDateFrom, setProductDateFrom] = useState('');
+  const [productDateTo, setProductDateTo] = useState('');
+  const [productSort, setProductSort] = useState<'name' | 'quantity' | 'price' | 'createdAt'>('name');
+  const [productSortOrder, setProductSortOrder] = useState<'asc' | 'desc'>('asc');
   const [serviceSearch, setServiceSearch] = useState('');
   const [categorySearch, setCategorySearch] = useState('');
   const [unitSearch, setUnitSearch] = useState('');
@@ -291,6 +297,11 @@ function InventoryPageContent() {
     search: debouncedProductSearch.trim() || undefined,
     status: stockFilter === 'ALL' ? undefined : stockFilter,
     type: ItemType.PRODUCT,
+    categoryId: productCategoryFilter || undefined,
+    dateFrom: productDateFrom || undefined,
+    dateTo: productDateTo || undefined,
+    sort: productSort,
+    order: productSortOrder,
     limit: 25,
   });
 
@@ -1057,9 +1068,9 @@ function InventoryPageContent() {
               </div>
               <button
                 type="button"
-                onClick={() => setStockFilter(stockFilter === 'ALL' ? 'LOW' : 'ALL')}
+                onClick={() => setIsProductFilterOpen((open) => !open)}
                 className="p-2.5 rounded-2xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 shadow-2xs transition"
-                title="Filter low stock"
+                title="Filter products"
               >
                 <Filter className="w-4 h-4" />
               </button>
@@ -1102,6 +1113,81 @@ function InventoryPageContent() {
                 <span>Out ({outOfStockCount})</span>
               </button>
             </div>
+
+            {isProductFilterOpen && (
+              <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                <label className="text-[10px] font-bold text-slate-600">
+                  CATEGORY
+                  <select
+                    value={productCategoryFilter}
+                    onChange={(e) => setProductCategoryFilter(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">All categories</option>
+                    {categories.map((category: any) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="text-[10px] font-bold text-slate-600">
+                  SORT BY
+                  <select
+                    value={productSort}
+                    onChange={(e) => setProductSort(e.target.value as typeof productSort)}
+                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="name">Name</option>
+                    <option value="quantity">Quantity</option>
+                    <option value="price">Sale price</option>
+                    <option value="createdAt">Created date</option>
+                  </select>
+                </label>
+                <label className="text-[10px] font-bold text-slate-600">
+                  FROM DATE
+                  <input
+                    type="date"
+                    value={productDateFrom}
+                    onChange={(e) => setProductDateFrom(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </label>
+                <label className="text-[10px] font-bold text-slate-600">
+                  TO DATE
+                  <input
+                    type="date"
+                    value={productDateTo}
+                    onChange={(e) => setProductDateTo(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </label>
+                <label className="col-span-2 text-[10px] font-bold text-slate-600">
+                  ORDER
+                  <select
+                    value={productSortOrder}
+                    onChange={(e) => setProductSortOrder(e.target.value as typeof productSortOrder)}
+                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="asc">Ascending</option>
+                    <option value="desc">Descending</option>
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProductCategoryFilter('');
+                    setProductDateFrom('');
+                    setProductDateTo('');
+                    setProductSort('name');
+                    setProductSortOrder('asc');
+                  }}
+                  className="col-span-2 py-1.5 text-xs font-bold text-blue-600 hover:text-blue-700"
+                >
+                  Clear filters
+                </button>
+              </div>
+            )}
 
             {/* Products List Cards */}
             {filteredProducts.length === 0 ? (
@@ -1206,6 +1292,19 @@ function InventoryPageContent() {
                   />
                 </div>
 
+                <button
+                  type="button"
+                  onClick={() => setIsProductFilterOpen((open) => !open)}
+                  className={`p-1.5 rounded-lg border transition ${
+                    isProductFilterOpen
+                      ? 'border-blue-200 bg-blue-50 text-blue-600'
+                      : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
+                  }`}
+                  title="Filter products"
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                </button>
+
                 {/* Vyapar Orange Add Item Button (Full Screen) */}
                 <Link
                   href="/inventory/new"
@@ -1215,6 +1314,79 @@ function InventoryPageContent() {
                   <span>Add Item</span>
                 </Link>
               </div>
+
+              {isProductFilterOpen && (
+                <div className="grid grid-cols-2 gap-2 px-3 py-2.5 border-b border-slate-100 bg-slate-50">
+                  <label className="text-[9px] font-bold text-slate-600">
+                    CATEGORY
+                    <select
+                      value={productCategoryFilter}
+                      onChange={(e) => setProductCategoryFilter(e.target.value)}
+                      className="mt-1 w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[11px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      <option value="">All categories</option>
+                      {categories.map((category: any) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="text-[9px] font-bold text-slate-600">
+                    SORT BY
+                    <select
+                      value={productSort}
+                      onChange={(e) => setProductSort(e.target.value as typeof productSort)}
+                      className="mt-1 w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[11px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      <option value="name">Name</option>
+                      <option value="quantity">Quantity</option>
+                      <option value="price">Sale price</option>
+                      <option value="createdAt">Created date</option>
+                    </select>
+                  </label>
+                  <label className="text-[9px] font-bold text-slate-600">
+                    FROM
+                    <input
+                      type="date"
+                      value={productDateFrom}
+                      onChange={(e) => setProductDateFrom(e.target.value)}
+                      className="mt-1 w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[11px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </label>
+                  <label className="text-[9px] font-bold text-slate-600">
+                    TO
+                    <input
+                      type="date"
+                      value={productDateTo}
+                      onChange={(e) => setProductDateTo(e.target.value)}
+                      className="mt-1 w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[11px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </label>
+                  <select
+                    value={productSortOrder}
+                    onChange={(e) => setProductSortOrder(e.target.value as typeof productSortOrder)}
+                    aria-label="Sort order"
+                    className="rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[11px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  >
+                    <option value="asc">Ascending</option>
+                    <option value="desc">Descending</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProductCategoryFilter('');
+                      setProductDateFrom('');
+                      setProductDateTo('');
+                      setProductSort('name');
+                      setProductSortOrder('asc');
+                    }}
+                    className="text-[11px] font-bold text-blue-600 hover:text-blue-700"
+                  >
+                    Clear filters
+                  </button>
+                </div>
+              )}
 
               {/* Stock Filter Pills (Desktop) */}
               <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5 overflow-x-auto bg-slate-50/60 text-[10px] font-bold">
