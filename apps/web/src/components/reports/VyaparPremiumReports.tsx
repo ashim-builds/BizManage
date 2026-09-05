@@ -16,6 +16,8 @@ import {
   TrendingDown,
   ArrowRight,
   ExternalLink,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -176,49 +178,49 @@ export function VyaparPremiumReports({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* ---------------------------------------------------- */}
       {/* 1. BALANCE SHEET VIEW */}
       {/* ---------------------------------------------------- */}
       {tab === 'balance-sheet' && (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Top Control & Ratio Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-zinc-900/80 p-4 rounded-2xl border border-zinc-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+              <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 shrink-0">
                 <Scale className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                   Balance Sheet / स्थिति विवरण
-                  <span className="text-[10px] font-normal px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3" /> Balanced
                   </span>
                 </h3>
-                <p className="text-xs text-zinc-400">Real-time assets, liabilities, and owner capital statement</p>
+                <p className="text-xs text-slate-500">Real-time assets, liabilities, and owner capital statement</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
               {/* Layout Switcher */}
-              <div className="flex bg-zinc-800/80 p-1 rounded-xl border border-zinc-700/50 text-xs">
+              <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
                 <button
                   type="button"
                   onClick={() => setBsLayout('t-shape')}
                   className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                    bsLayout === 't-shape' ? 'bg-blue-600 text-white shadow-sm' : 'text-zinc-400 hover:text-white'
+                    bsLayout === 't-shape' ? 'bg-white text-blue-600 font-bold shadow-sm' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  T-Shape View
+                  T-Shape
                 </button>
                 <button
                   type="button"
                   onClick={() => setBsLayout('vertical')}
                   className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                    bsLayout === 'vertical' ? 'bg-blue-600 text-white shadow-sm' : 'text-zinc-400 hover:text-white'
+                    bsLayout === 'vertical' ? 'bg-white text-blue-600 font-bold shadow-sm' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Vertical View
+                  Vertical
                 </button>
               </div>
 
@@ -226,7 +228,7 @@ export function VyaparPremiumReports({
               <button
                 type="button"
                 onClick={handlePrintBalanceSheet}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-xl border border-zinc-700 transition"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border border-slate-300 transition"
               >
                 <Printer className="w-3.5 h-3.5" />
                 Print
@@ -234,7 +236,7 @@ export function VyaparPremiumReports({
               <button
                 type="button"
                 onClick={handleExportBalanceSheetCsv}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 rounded-xl border border-emerald-500/30 transition"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl border border-emerald-200 transition"
               >
                 <Download className="w-3.5 h-3.5" />
                 Export CSV
@@ -242,95 +244,95 @@ export function VyaparPremiumReports({
             </div>
           </div>
 
-          {/* Key Financial Health Ratios */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="p-3.5 rounded-2xl bg-zinc-900/60 border border-zinc-800/80">
-              <p className="text-[11px] text-zinc-400 font-medium">Working Capital</p>
-              <p className="text-base font-bold text-white font-mono mt-0.5">
+          {/* Key Financial Health Ratios (Compact Responsive Grid) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+            <div className="p-3 sm:p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+              <p className="text-[11px] text-slate-500 font-medium truncate">Working Capital</p>
+              <p className="text-sm sm:text-base font-bold text-slate-900 font-mono mt-0.5">
                 Rs. {(totalAssets - totalLiabilities).toLocaleString()}
               </p>
-              <p className="text-[10px] text-emerald-400 mt-0.5">Current Assets - Liabilities</p>
+              <p className="text-[10px] text-emerald-600 mt-0.5">Current Assets - Liab.</p>
             </div>
-            <div className="p-3.5 rounded-2xl bg-zinc-900/60 border border-zinc-800/80">
-              <p className="text-[11px] text-zinc-400 font-medium">Current Ratio</p>
-              <p className="text-base font-bold text-white font-mono mt-0.5">
+            <div className="p-3 sm:p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+              <p className="text-[11px] text-slate-500 font-medium truncate">Current Ratio</p>
+              <p className="text-sm sm:text-base font-bold text-slate-900 font-mono mt-0.5">
                 {ratios.currentRatio || 'N/A'}{typeof ratios.currentRatio === 'number' || !isNaN(Number(ratios.currentRatio)) ? ' : 1' : ''}
               </p>
-              <p className="text-[10px] text-zinc-500 mt-0.5">Ideal benchmark: 2.0 : 1</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">Benchmark: 2.0 : 1</p>
             </div>
-            <div className="p-3.5 rounded-2xl bg-zinc-900/60 border border-zinc-800/80">
-              <p className="text-[11px] text-zinc-400 font-medium">Quick Ratio (Acid-Test)</p>
-              <p className="text-base font-bold text-white font-mono mt-0.5">
+            <div className="p-3 sm:p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+              <p className="text-[11px] text-slate-500 font-medium truncate">Quick Ratio</p>
+              <p className="text-sm sm:text-base font-bold text-slate-900 font-mono mt-0.5">
                 {ratios.quickRatio || 'N/A'}{typeof ratios.quickRatio === 'number' || !isNaN(Number(ratios.quickRatio)) ? ' : 1' : ''}
               </p>
-              <p className="text-[10px] text-zinc-500 mt-0.5">Excluding Inventory</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">Excl. Inventory</p>
             </div>
-            <div className="p-3.5 rounded-2xl bg-zinc-900/60 border border-zinc-800/80">
-              <p className="text-[11px] text-zinc-400 font-medium">Debt-to-Equity</p>
-              <p className="text-base font-bold text-white font-mono mt-0.5">
+            <div className="p-3 sm:p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+              <p className="text-[11px] text-slate-500 font-medium truncate">Debt-to-Equity</p>
+              <p className="text-sm sm:text-base font-bold text-slate-900 font-mono mt-0.5">
                 {ratios.debtToEquity || 'N/A'}
               </p>
-              <p className="text-[10px] text-zinc-500 mt-0.5">Total Debt / Total Equity</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">Total Debt / Equity</p>
             </div>
           </div>
 
           {/* Main Printable Balance Sheet Container */}
-          <div className="p-6 sm:p-8 rounded-3xl bg-zinc-900 border border-zinc-800 shadow-xl print:bg-white print:text-black print:border-none print:shadow-none print:p-0">
+          <div className="p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-sm print:bg-white print:text-black print:border-none print:shadow-none print:p-0">
             {/* Business Header */}
-            <div className="text-center pb-6 border-b border-zinc-800 print:border-black">
-              <h2 className="text-xl sm:text-2xl font-black text-white print:text-black uppercase tracking-wider">
+            <div className="text-center pb-5 border-b border-slate-200 print:border-black">
+              <h2 className="text-lg sm:text-2xl font-black text-slate-900 print:text-black uppercase tracking-wider">
                 {businessName}
               </h2>
-              <p className="text-xs text-zinc-400 print:text-zinc-600 font-mono mt-1">PAN / VAT: {businessPan}</p>
-              <h3 className="text-sm font-bold text-blue-400 print:text-black uppercase mt-1 tracking-wide">
+              <p className="text-xs text-slate-500 print:text-zinc-600 font-mono mt-1">PAN / VAT: {businessPan}</p>
+              <h3 className="text-sm font-bold text-blue-600 print:text-black uppercase mt-1 tracking-wide">
                 Statement of Financial Position / Balance Sheet (वासलात)
               </h3>
-              <p className="text-xs text-zinc-400 print:text-zinc-600 mt-0.5">
+              <p className="text-xs text-slate-400 print:text-zinc-600 mt-0.5">
                 As on {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
               </p>
             </div>
 
             {/* T-SHAPE LAYOUT */}
             {bsLayout === 't-shape' ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 pt-6">
                 {/* ──────────────── ASSETS COLUMN ──────────────── */}
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between pb-2 border-b-2 border-emerald-500/40 print:border-black">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black">
+                  <div className="flex items-center justify-between pb-2 border-b-2 border-emerald-500 print:border-black">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-700 print:text-black">
                       Assets (सम्पत्ति)
                     </h4>
-                    <span className="text-[10px] text-zinc-500 print:text-zinc-600 font-mono uppercase">Amount (Rs.)</span>
+                    <span className="text-[10px] text-slate-400 print:text-zinc-600 font-mono uppercase">Amount (Rs.)</span>
                   </div>
 
                   <div className="space-y-4 text-xs">
                     {/* 1. Current Assets */}
                     <div>
-                      <p className="font-bold text-zinc-200 print:text-black">1. Current Assets (चालु सम्पत्ति)</p>
-                      <div className="pl-3 space-y-2 pt-2 text-zinc-400 print:text-zinc-700">
+                      <p className="font-bold text-slate-800 print:text-black">1. Current Assets (चालु सम्पत्ति)</p>
+                      <div className="pl-2 sm:pl-3 space-y-2 pt-2 text-slate-600 print:text-zinc-700">
                         {/* Cash in Hand */}
                         <div>
                           <div
                             onClick={() => toggleExpand('cash')}
-                            className="flex justify-between items-center cursor-pointer hover:text-white transition group py-0.5"
+                            className="flex justify-between items-center cursor-pointer hover:text-blue-600 transition group py-1 border-b border-slate-100"
                           >
                             <span className="flex items-center gap-1.5">
-                              <span>Cash in Hand & Counter Drawer</span>
+                              <span>Cash in Hand & Drawer</span>
                               {cashAccounts.length > 0 && (
-                                <span className="text-[10px] text-zinc-500 group-hover:text-blue-400">
-                                  ({cashAccounts.length} {cashAccounts.length === 1 ? 'account' : 'accounts'})
+                                <span className="text-[10px] text-slate-400 group-hover:text-blue-500">
+                                  ({cashAccounts.length})
                                 </span>
                               )}
                             </span>
-                            <span className="font-mono text-white print:text-black font-semibold">
+                            <span className="font-mono text-slate-900 font-bold">
                               Rs. {cashInHand.toLocaleString()}
                             </span>
                           </div>
                           {expandedSection === 'cash' && cashAccounts.length > 0 && (
-                            <div className="ml-3 mt-1 p-2 rounded-xl bg-zinc-800/60 border border-zinc-700/60 space-y-1">
+                            <div className="ml-2 mt-1 p-2 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
                               {cashAccounts.map((acc: any) => (
-                                <div key={acc.id} className="flex justify-between text-[11px] text-zinc-300">
+                                <div key={acc.id} className="flex justify-between text-[11px] text-slate-600">
                                   <span>{acc.accountName}</span>
-                                  <span className="font-mono text-zinc-200">Rs. {Number(acc.balance || 0).toLocaleString()}</span>
+                                  <span className="font-mono text-slate-900 font-semibold">Rs. {Number(acc.balance || 0).toLocaleString()}</span>
                                 </div>
                               ))}
                             </div>
@@ -341,28 +343,28 @@ export function VyaparPremiumReports({
                         <div>
                           <div
                             onClick={() => toggleExpand('bank')}
-                            className="flex justify-between items-center cursor-pointer hover:text-white transition group py-0.5"
+                            className="flex justify-between items-center cursor-pointer hover:text-blue-600 transition group py-1 border-b border-slate-100"
                           >
                             <span className="flex items-center gap-1.5">
                               <span>Bank & Digital Wallets</span>
                               {bankAccounts.length > 0 && (
-                                <span className="text-[10px] text-zinc-500 group-hover:text-blue-400">
-                                  ({bankAccounts.length} {bankAccounts.length === 1 ? 'bank' : 'banks'})
+                                <span className="text-[10px] text-slate-400 group-hover:text-blue-500">
+                                  ({bankAccounts.length})
                                 </span>
                               )}
                             </span>
-                            <span className="font-mono text-white print:text-black font-semibold">
+                            <span className="font-mono text-slate-900 font-bold">
                               Rs. {bankAndWallets.toLocaleString()}
                             </span>
                           </div>
                           {expandedSection === 'bank' && bankAccounts.length > 0 && (
-                            <div className="ml-3 mt-1 p-2 rounded-xl bg-zinc-800/60 border border-zinc-700/60 space-y-1">
+                            <div className="ml-2 mt-1 p-2 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
                               {bankAccounts.map((acc: any) => (
-                                <div key={acc.id} className="flex justify-between text-[11px] text-zinc-300">
+                                <div key={acc.id} className="flex justify-between text-[11px] text-slate-600">
                                   <span>
                                     {acc.bankName || acc.accountName} {acc.accountNumber ? `(${acc.accountNumber})` : ''}
                                   </span>
-                                  <span className="font-mono text-zinc-200">Rs. {Number(acc.balance || 0).toLocaleString()}</span>
+                                  <span className="font-mono text-slate-900 font-semibold">Rs. {Number(acc.balance || 0).toLocaleString()}</span>
                                 </div>
                               ))}
                             </div>
@@ -370,9 +372,9 @@ export function VyaparPremiumReports({
                         </div>
 
                         {/* Inventory */}
-                        <div className="flex justify-between items-center py-0.5">
-                          <span>Inventory / Stock Value (at Cost Price)</span>
-                          <span className="font-mono text-white print:text-black font-semibold">
+                        <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                          <span>Inventory / Stock (Cost Price)</span>
+                          <span className="font-mono text-slate-900 font-bold">
                             Rs. {stockValue.toLocaleString()}
                           </span>
                         </div>
@@ -381,26 +383,26 @@ export function VyaparPremiumReports({
                         <div>
                           <div
                             onClick={() => toggleExpand('debtors')}
-                            className="flex justify-between items-center cursor-pointer hover:text-white transition group py-0.5"
+                            className="flex justify-between items-center cursor-pointer hover:text-blue-600 transition group py-1 border-b border-slate-100"
                           >
                             <span className="flex items-center gap-1.5">
                               <span>Sundry Debtors / Customers (उठाउन बाँकी)</span>
                               {debtorsList.length > 0 && (
-                                <span className="text-[10px] text-zinc-500 group-hover:text-blue-400">
-                                  ({debtorsList.length} {debtorsList.length === 1 ? 'party' : 'parties'})
+                                <span className="text-[10px] text-slate-400 group-hover:text-blue-500">
+                                  ({debtorsList.length})
                                 </span>
                               )}
                             </span>
-                            <span className="font-mono text-white print:text-black font-semibold">
+                            <span className="font-mono text-slate-900 font-bold">
                               Rs. {sundryDebtors.toLocaleString()}
                             </span>
                           </div>
                           {expandedSection === 'debtors' && debtorsList.length > 0 && (
-                            <div className="ml-3 mt-1 p-2 rounded-xl bg-zinc-800/60 border border-zinc-700/60 space-y-1 max-h-48 overflow-y-auto">
+                            <div className="ml-2 mt-1 p-2 rounded-xl bg-slate-50 border border-slate-200 space-y-1 max-h-48 overflow-y-auto">
                               {debtorsList.map((p: any) => (
-                                <div key={p.id} className="flex justify-between text-[11px] text-zinc-300">
+                                <div key={p.id} className="flex justify-between text-[11px] text-slate-600">
                                   <span>{p.name} {p.phone ? `(${p.phone})` : ''}</span>
-                                  <span className="font-mono text-emerald-400">Rs. {Number(p.balance || p.currentBalance || 0).toLocaleString()}</span>
+                                  <span className="font-mono text-emerald-700 font-semibold">Rs. {Number(p.balance || p.currentBalance || 0).toLocaleString()}</span>
                                 </div>
                               ))}
                             </div>
@@ -410,12 +412,12 @@ export function VyaparPremiumReports({
                     </div>
 
                     {/* 2. Fixed Assets */}
-                    <div className="pt-2 border-t border-zinc-800/60 print:border-zinc-300">
-                      <p className="font-bold text-zinc-200 print:text-black">2. Fixed & Non-Current Assets</p>
-                      <div className="pl-3 space-y-1.5 pt-1.5 text-zinc-400 print:text-zinc-700">
-                        <div className="flex justify-between items-center py-0.5">
-                          <span>Property, Machinery & Office Equipment</span>
-                          <span className="font-mono text-white print:text-black font-semibold">
+                    <div className="pt-2 border-t border-slate-200">
+                      <p className="font-bold text-slate-800 print:text-black">2. Fixed Assets</p>
+                      <div className="pl-2 sm:pl-3 space-y-1.5 pt-1.5 text-slate-600 print:text-zinc-700">
+                        <div className="flex justify-between items-center py-1">
+                          <span>Property & Equipment</span>
+                          <span className="font-mono text-slate-900 font-bold">
                             Rs. {fixedAssets.toLocaleString()}
                           </span>
                         </div>
@@ -423,7 +425,7 @@ export function VyaparPremiumReports({
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t-2 border-zinc-700 print:border-black flex justify-between font-bold text-sm text-emerald-400 print:text-black">
+                  <div className="pt-3 border-t-2 border-slate-300 print:border-black flex justify-between font-bold text-sm text-emerald-700 print:text-black">
                     <span>TOTAL ASSETS (A)</span>
                     <span className="font-mono">Rs. {totalAssets.toLocaleString()}</span>
                   </div>
@@ -431,42 +433,42 @@ export function VyaparPremiumReports({
 
                 {/* ──────────────── LIABILITIES & EQUITY COLUMN ──────────────── */}
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between pb-2 border-b-2 border-rose-500/40 print:border-black">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-rose-400 print:text-black">
+                  <div className="flex items-center justify-between pb-2 border-b-2 border-rose-500 print:border-black">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-rose-700 print:text-black">
                       Liabilities & Equity (दायित्व तथा पुँजी)
                     </h4>
-                    <span className="text-[10px] text-zinc-500 print:text-zinc-600 font-mono uppercase">Amount (Rs.)</span>
+                    <span className="text-[10px] text-slate-400 print:text-zinc-600 font-mono uppercase">Amount (Rs.)</span>
                   </div>
 
                   <div className="space-y-4 text-xs">
                     {/* 1. Current Liabilities */}
                     <div>
-                      <p className="font-bold text-zinc-200 print:text-black">1. Current Liabilities (चालु दायित्व)</p>
-                      <div className="pl-3 space-y-2 pt-2 text-zinc-400 print:text-zinc-700">
+                      <p className="font-bold text-slate-800 print:text-black">1. Current Liabilities (चालु दायित्व)</p>
+                      <div className="pl-2 sm:pl-3 space-y-2 pt-2 text-slate-600 print:text-zinc-700">
                         {/* Sundry Creditors */}
                         <div>
                           <div
                             onClick={() => toggleExpand('creditors')}
-                            className="flex justify-between items-center cursor-pointer hover:text-white transition group py-0.5"
+                            className="flex justify-between items-center cursor-pointer hover:text-blue-600 transition group py-1 border-b border-slate-100"
                           >
                             <span className="flex items-center gap-1.5">
                               <span>Sundry Creditors / Suppliers (तिर्न बाँकी)</span>
                               {creditorsList.length > 0 && (
-                                <span className="text-[10px] text-zinc-500 group-hover:text-blue-400">
-                                  ({creditorsList.length} {creditorsList.length === 1 ? 'party' : 'parties'})
+                                <span className="text-[10px] text-slate-400 group-hover:text-blue-500">
+                                  ({creditorsList.length})
                                 </span>
                               )}
                             </span>
-                            <span className="font-mono text-white print:text-black font-semibold">
+                            <span className="font-mono text-slate-900 font-bold">
                               Rs. {sundryCreditors.toLocaleString()}
                             </span>
                           </div>
                           {expandedSection === 'creditors' && creditorsList.length > 0 && (
-                            <div className="ml-3 mt-1 p-2 rounded-xl bg-zinc-800/60 border border-zinc-700/60 space-y-1 max-h-48 overflow-y-auto">
+                            <div className="ml-2 mt-1 p-2 rounded-xl bg-slate-50 border border-slate-200 space-y-1 max-h-48 overflow-y-auto">
                               {creditorsList.map((p: any) => (
-                                <div key={p.id} className="flex justify-between text-[11px] text-zinc-300">
+                                <div key={p.id} className="flex justify-between text-[11px] text-slate-600">
                                   <span>{p.name} {p.phone ? `(${p.phone})` : ''}</span>
-                                  <span className="font-mono text-rose-400">Rs. {Math.abs(Number(p.balance || p.currentBalance || 0)).toLocaleString()}</span>
+                                  <span className="font-mono text-rose-600 font-semibold">Rs. {Math.abs(Number(p.balance || p.currentBalance || 0)).toLocaleString()}</span>
                                 </div>
                               ))}
                             </div>
@@ -474,9 +476,9 @@ export function VyaparPremiumReports({
                         </div>
 
                         {/* Tax / VAT Payable */}
-                        <div className="flex justify-between items-center py-0.5">
-                          <span>Duties & Taxes Payable (VAT / TDS)</span>
-                          <span className="font-mono text-white print:text-black font-semibold">
+                        <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                          <span>Duties & Taxes Payable (VAT/TDS)</span>
+                          <span className="font-mono text-slate-900 font-bold">
                             Rs. {taxPayable.toLocaleString()}
                           </span>
                         </div>
@@ -484,18 +486,18 @@ export function VyaparPremiumReports({
                     </div>
 
                     {/* 2. Owner's Equity & Capital */}
-                    <div className="pt-2 border-t border-zinc-800/60 print:border-zinc-300">
-                      <p className="font-bold text-zinc-200 print:text-black">2. Owner's Capital & Equity (पुँजी कोष)</p>
-                      <div className="pl-3 space-y-1.5 pt-1.5 text-zinc-400 print:text-zinc-700">
-                        <div className="flex justify-between items-center py-0.5">
-                          <span>Owner's Opening Capital</span>
-                          <span className="font-mono text-white print:text-black font-semibold">
+                    <div className="pt-2 border-t border-slate-200">
+                      <p className="font-bold text-slate-800 print:text-black">2. Owner's Capital & Equity (पुँजी कोष)</p>
+                      <div className="pl-2 sm:pl-3 space-y-1.5 pt-1.5 text-slate-600 print:text-zinc-700">
+                        <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                          <span>Owner's Capital</span>
+                          <span className="font-mono text-slate-900 font-bold">
                             Rs. {ownerCapital.toLocaleString()}
                           </span>
                         </div>
-                        <div className="flex justify-between items-center py-0.5">
-                          <span>Retained Earnings / Cumulative Net Profit</span>
-                          <span className={`font-mono font-semibold ${netProfit >= 0 ? 'text-emerald-400 print:text-black' : 'text-rose-400 print:text-black'}`}>
+                        <div className="flex justify-between items-center py-1">
+                          <span>Retained Earnings / Net Profit</span>
+                          <span className={`font-mono font-bold ${netProfit >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
                             Rs. {netProfit.toLocaleString()}
                           </span>
                         </div>
@@ -503,7 +505,7 @@ export function VyaparPremiumReports({
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t-2 border-zinc-700 print:border-black flex justify-between font-bold text-sm text-rose-400 print:text-black">
+                  <div className="pt-3 border-t-2 border-slate-300 print:border-black flex justify-between font-bold text-sm text-rose-700 print:text-black">
                     <span>TOTAL LIABILITIES & EQUITY (B)</span>
                     <span className="font-mono">Rs. {(totalLiabilities + ownersEquity).toLocaleString()}</span>
                   </div>
@@ -514,40 +516,40 @@ export function VyaparPremiumReports({
               <div className="space-y-6 pt-6 text-xs">
                 {/* 1. ASSETS SECTION */}
                 <div className="space-y-3">
-                  <div className="flex justify-between items-center pb-2 border-b-2 border-emerald-500/50 print:border-black font-bold text-sm text-emerald-400 print:text-black">
+                  <div className="flex justify-between items-center pb-2 border-b-2 border-emerald-500 print:border-black font-bold text-sm text-emerald-700 print:text-black">
                     <span>I. ASSETS (सम्पत्ति)</span>
                     <span>AMOUNT (Rs.)</span>
                   </div>
-                  <div className="pl-3 space-y-2">
-                    <p className="font-bold text-zinc-300 print:text-black">A. Current Assets</p>
-                    <div className="pl-3 space-y-1.5 text-zinc-400 print:text-zinc-700">
-                      <div className="flex justify-between">
-                        <span>Cash in Hand & Counter Drawer</span>
-                        <span className="font-mono font-semibold text-white print:text-black">Rs. {cashInHand.toLocaleString()}</span>
+                  <div className="pl-2 sm:pl-3 space-y-2">
+                    <p className="font-bold text-slate-800 print:text-black">A. Current Assets</p>
+                    <div className="pl-2 sm:pl-3 space-y-1.5 text-slate-600 print:text-zinc-700">
+                      <div className="flex justify-between py-0.5">
+                        <span>Cash in Hand</span>
+                        <span className="font-mono font-bold text-slate-900">Rs. {cashInHand.toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between">
+                      <div className="flex justify-between py-0.5">
                         <span>Bank & Digital Wallets</span>
-                        <span className="font-mono font-semibold text-white print:text-black">Rs. {bankAndWallets.toLocaleString()}</span>
+                        <span className="font-mono font-bold text-slate-900">Rs. {bankAndWallets.toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span>Closing Stock / Inventory (at Cost)</span>
-                        <span className="font-mono font-semibold text-white print:text-black">Rs. {stockValue.toLocaleString()}</span>
+                      <div className="flex justify-between py-0.5">
+                        <span>Closing Stock (at Cost)</span>
+                        <span className="font-mono font-bold text-slate-900">Rs. {stockValue.toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span>Sundry Debtors (Receivables from Customers)</span>
-                        <span className="font-mono font-semibold text-white print:text-black">Rs. {sundryDebtors.toLocaleString()}</span>
-                      </div>
-                    </div>
-
-                    <p className="font-bold text-zinc-300 print:text-black pt-2">B. Fixed & Non-Current Assets</p>
-                    <div className="pl-3 space-y-1.5 text-zinc-400 print:text-zinc-700">
-                      <div className="flex justify-between">
-                        <span>Property, Plant & Equipment</span>
-                        <span className="font-mono font-semibold text-white print:text-black">Rs. {fixedAssets.toLocaleString()}</span>
+                      <div className="flex justify-between py-0.5">
+                        <span>Sundry Debtors (Receivables)</span>
+                        <span className="font-mono font-bold text-slate-900">Rs. {sundryDebtors.toLocaleString()}</span>
                       </div>
                     </div>
 
-                    <div className="flex justify-between font-bold text-sm text-emerald-400 print:text-black pt-2 border-t border-zinc-800 print:border-zinc-400">
+                    <p className="font-bold text-slate-800 print:text-black pt-2">B. Fixed Assets</p>
+                    <div className="pl-2 sm:pl-3 space-y-1.5 text-slate-600 print:text-zinc-700">
+                      <div className="flex justify-between py-0.5">
+                        <span>Property & Equipment</span>
+                        <span className="font-mono font-bold text-slate-900">Rs. {fixedAssets.toLocaleString()}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between font-bold text-sm text-emerald-700 print:text-black pt-2 border-t border-slate-200">
                       <span>TOTAL ASSETS (A)</span>
                       <span className="font-mono">Rs. {totalAssets.toLocaleString()}</span>
                     </div>
@@ -556,24 +558,24 @@ export function VyaparPremiumReports({
 
                 {/* 2. LIABILITIES SECTION */}
                 <div className="space-y-3 pt-4">
-                  <div className="flex justify-between items-center pb-2 border-b-2 border-rose-500/50 print:border-black font-bold text-sm text-rose-400 print:text-black">
+                  <div className="flex justify-between items-center pb-2 border-b-2 border-rose-500 print:border-black font-bold text-sm text-rose-700 print:text-black">
                     <span>II. LIABILITIES (दायित्व)</span>
                     <span>AMOUNT (Rs.)</span>
                   </div>
-                  <div className="pl-3 space-y-2">
-                    <p className="font-bold text-zinc-300 print:text-black">A. Current Liabilities</p>
-                    <div className="pl-3 space-y-1.5 text-zinc-400 print:text-zinc-700">
-                      <div className="flex justify-between">
-                        <span>Sundry Creditors (Payables to Suppliers)</span>
-                        <span className="font-mono font-semibold text-white print:text-black">Rs. {sundryCreditors.toLocaleString()}</span>
+                  <div className="pl-2 sm:pl-3 space-y-2">
+                    <p className="font-bold text-slate-800 print:text-black">A. Current Liabilities</p>
+                    <div className="pl-2 sm:pl-3 space-y-1.5 text-slate-600 print:text-zinc-700">
+                      <div className="flex justify-between py-0.5">
+                        <span>Sundry Creditors (Payables)</span>
+                        <span className="font-mono font-bold text-slate-900">Rs. {sundryCreditors.toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span>Duties & Taxes Payable (VAT / TDS)</span>
-                        <span className="font-mono font-semibold text-white print:text-black">Rs. {taxPayable.toLocaleString()}</span>
+                      <div className="flex justify-between py-0.5">
+                        <span>Duties & Taxes Payable</span>
+                        <span className="font-mono font-bold text-slate-900">Rs. {taxPayable.toLocaleString()}</span>
                       </div>
                     </div>
 
-                    <div className="flex justify-between font-bold text-xs text-rose-400 print:text-black pt-2 border-t border-zinc-800 print:border-zinc-400">
+                    <div className="flex justify-between font-bold text-xs text-rose-700 print:text-black pt-2 border-t border-slate-200">
                       <span>Total Current Liabilities</span>
                       <span className="font-mono">Rs. {totalLiabilities.toLocaleString()}</span>
                     </div>
@@ -582,23 +584,23 @@ export function VyaparPremiumReports({
 
                 {/* 3. EQUITY SECTION */}
                 <div className="space-y-3 pt-4">
-                  <div className="flex justify-between items-center pb-2 border-b-2 border-blue-500/50 print:border-black font-bold text-sm text-blue-400 print:text-black">
+                  <div className="flex justify-between items-center pb-2 border-b-2 border-blue-500 print:border-black font-bold text-sm text-blue-700 print:text-black">
                     <span>III. OWNER'S EQUITY (पुँजी कोष)</span>
                     <span>AMOUNT (Rs.)</span>
                   </div>
-                  <div className="pl-3 space-y-2">
-                    <div className="pl-3 space-y-1.5 text-zinc-400 print:text-zinc-700">
-                      <div className="flex justify-between">
+                  <div className="pl-2 sm:pl-3 space-y-2">
+                    <div className="pl-2 sm:pl-3 space-y-1.5 text-slate-600 print:text-zinc-700">
+                      <div className="flex justify-between py-0.5">
                         <span>Owner's Opening Capital</span>
-                        <span className="font-mono font-semibold text-white print:text-black">Rs. {ownerCapital.toLocaleString()}</span>
+                        <span className="font-mono font-bold text-slate-900">Rs. {ownerCapital.toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span>Retained Earnings / Cumulative Net Profit</span>
-                        <span className="font-mono font-semibold text-white print:text-black">Rs. {netProfit.toLocaleString()}</span>
+                      <div className="flex justify-between py-0.5">
+                        <span>Retained Earnings / Net Profit</span>
+                        <span className="font-mono font-bold text-slate-900">Rs. {netProfit.toLocaleString()}</span>
                       </div>
                     </div>
 
-                    <div className="flex justify-between font-bold text-sm text-blue-400 print:text-black pt-2 border-t border-zinc-800 print:border-zinc-400">
+                    <div className="flex justify-between font-bold text-sm text-blue-700 print:text-black pt-2 border-t border-slate-200">
                       <span>Total Equity & Liabilities (II + III)</span>
                       <span className="font-mono">Rs. {(totalLiabilities + ownersEquity).toLocaleString()}</span>
                     </div>
@@ -628,31 +630,32 @@ export function VyaparPremiumReports({
       {/* 2. BILL-WISE PROFIT & LOSS REPORT */}
       {/* ---------------------------------------------------- */}
       {tab === 'billwise-pnl' && (
-        <div className="p-5 sm:p-6 rounded-3xl bg-zinc-900 border border-zinc-800 shadow-md space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+        <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-sm space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div>
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Receipt className="w-4 h-4 text-emerald-400" />
-                Bill-wise Profit & Loss Report (बिल अनुसार नाफा/नोक्सान)
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Receipt className="w-4 h-4 text-emerald-600" />
+                Bill-wise Profit & Loss Report
               </h3>
-              <p className="text-xs text-zinc-400 mt-0.5">Calculates gross margin for every individual sale invoice.</p>
+              <p className="text-xs text-slate-500 mt-0.5">Gross margin for every individual sale invoice.</p>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-zinc-800 text-[10px] uppercase font-bold text-zinc-400">
+                <tr className="border-b border-slate-200 text-[10px] uppercase font-bold text-slate-500 bg-slate-50">
                   <th className="py-2.5 px-3">Date</th>
                   <th className="py-2.5 px-3">Invoice #</th>
                   <th className="py-2.5 px-3">Customer / Party</th>
                   <th className="py-2.5 px-3 text-right">Sale Amount</th>
-                  <th className="py-2.5 px-3 text-right">Estimated Cost (COGS)</th>
+                  <th className="py-2.5 px-3 text-right">Estimated Cost</th>
                   <th className="py-2.5 px-3 text-right">Gross Profit</th>
                   <th className="py-2.5 px-3 text-right">Margin %</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/60 font-mono">
+              <tbody className="divide-y divide-slate-100 font-mono">
                 {salesRows.length ? (
                   salesRows.map((sale: any) => {
                     const saleTotal = Number(sale.totalAmount || 0);
@@ -661,24 +664,69 @@ export function VyaparPremiumReports({
                     const marginPct = saleTotal > 0 ? (profit / saleTotal) * 100 : 0;
 
                     return (
-                      <tr key={sale.id} className="hover:bg-zinc-800/40">
-                        <td className="py-3 px-3 text-zinc-400 font-sans">{new Date(sale.date).toLocaleDateString()}</td>
-                        <td className="py-3 px-3 font-bold text-white">{sale.invoiceNumber}</td>
-                        <td className="py-3 px-3 font-sans text-zinc-200">{sale.party?.name || 'Cash Customer'}</td>
-                        <td className="py-3 px-3 text-right font-bold text-white">Rs. {saleTotal.toLocaleString()}</td>
-                        <td className="py-3 px-3 text-right text-zinc-400">Rs. {estimatedCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                        <td className="py-3 px-3 text-right font-bold text-emerald-400">Rs. {profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                        <td className="py-3 px-3 text-right text-emerald-400 font-bold">{marginPct.toFixed(1)}%</td>
+                      <tr key={sale.id} className="hover:bg-slate-50/80">
+                        <td className="py-3 px-3 text-slate-500 font-sans">{new Date(sale.date).toLocaleDateString()}</td>
+                        <td className="py-3 px-3 font-bold text-slate-900">{sale.invoiceNumber}</td>
+                        <td className="py-3 px-3 font-sans text-slate-700">{sale.party?.name || 'Cash Customer'}</td>
+                        <td className="py-3 px-3 text-right font-bold text-slate-900">Rs. {saleTotal.toLocaleString()}</td>
+                        <td className="py-3 px-3 text-right text-slate-500">Rs. {estimatedCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                        <td className="py-3 px-3 text-right font-bold text-emerald-600">Rs. {profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                        <td className="py-3 px-3 text-right text-emerald-600 font-bold">{marginPct.toFixed(1)}%</td>
                       </tr>
                     );
                   })
                 ) : (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-zinc-500">No sale bills found for this period.</td>
+                    <td colSpan={7} className="py-8 text-center text-slate-400">No sale bills found for this period.</td>
                   </tr>
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Responsive Cards */}
+          <div className="grid gap-2.5 md:hidden">
+            {salesRows.length ? (
+              salesRows.map((sale: any) => {
+                const saleTotal = Number(sale.totalAmount || 0);
+                const estimatedCost = saleTotal * 0.72;
+                const profit = saleTotal - estimatedCost;
+                const marginPct = saleTotal > 0 ? (profit / saleTotal) * 100 : 0;
+
+                return (
+                  <div key={sale.id} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-bold text-slate-900">{sale.invoiceNumber}</span>
+                        <p className="text-[11px] text-slate-500">{sale.party?.name || 'Cash Customer'}</p>
+                      </div>
+                      <span className="text-xs font-mono font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                        {marginPct.toFixed(1)}% margin
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 text-center pt-2 border-t border-slate-200 text-xs">
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-medium">Sale</p>
+                        <p className="font-mono font-bold text-slate-900">Rs. {saleTotal.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-medium">Cost</p>
+                        <p className="font-mono font-medium text-slate-600">Rs. {estimatedCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-emerald-600 font-medium">Profit</p>
+                        <p className="font-mono font-bold text-emerald-600">Rs. {profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="p-8 text-center text-slate-400 bg-slate-50 rounded-2xl border border-slate-200">
+                No sale bills found.
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -687,50 +735,89 @@ export function VyaparPremiumReports({
       {/* 3. PARTY-WISE PROFIT & LOSS REPORT */}
       {/* ---------------------------------------------------- */}
       {tab === 'partywise-pnl' && (
-        <div className="p-5 sm:p-6 rounded-3xl bg-zinc-900 border border-zinc-800 shadow-md space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+        <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-sm space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div>
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Users className="w-4 h-4 text-blue-400" />
-                Party-wise Profit & Loss Report (पार्टी अनुसार नाफा/नोक्सान)
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Users className="w-4 h-4 text-blue-600" />
+                Party-wise Profit & Loss Report
               </h3>
-              <p className="text-xs text-zinc-400 mt-0.5">Customer-by-customer profitability matrix.</p>
+              <p className="text-xs text-slate-500 mt-0.5">Customer-by-customer profitability matrix.</p>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-zinc-800 text-[10px] uppercase font-bold text-zinc-400">
+                <tr className="border-b border-slate-200 text-[10px] uppercase font-bold text-slate-500 bg-slate-50">
                   <th className="py-2.5 px-3">Party Name</th>
                   <th className="py-2.5 px-3">Mobile Phone</th>
                   <th className="py-2.5 px-3 text-right">Total Invoiced</th>
                   <th className="py-2.5 px-3 text-right">Profit Contribution</th>
-                  <th className="py-2.5 px-3 text-right">Average Margin %</th>
+                  <th className="py-2.5 px-3 text-right">Avg Margin %</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/60 font-mono">
+              <tbody className="divide-y divide-slate-100 font-mono">
                 {partyRows.length ? (
                   partyRows.map((party: any) => {
                     const invoiced = Math.abs(Number(party.currentBalance || 15000)) * 2.5;
                     const profit = invoiced * 0.28;
                     return (
-                      <tr key={party.id} className="hover:bg-zinc-800/40">
-                        <td className="py-3 px-3 font-sans font-bold text-white">{party.name}</td>
-                        <td className="py-3 px-3 text-zinc-400">{party.phone || 'N/A'}</td>
-                        <td className="py-3 px-3 text-right font-bold text-white">Rs. {invoiced.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                        <td className="py-3 px-3 text-right font-bold text-emerald-400">Rs. {profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                        <td className="py-3 px-3 text-right text-emerald-400 font-bold">28.0%</td>
+                      <tr key={party.id} className="hover:bg-slate-50/80">
+                        <td className="py-3 px-3 font-sans font-bold text-slate-900">{party.name}</td>
+                        <td className="py-3 px-3 text-slate-500">{party.phone || 'N/A'}</td>
+                        <td className="py-3 px-3 text-right font-bold text-slate-900">Rs. {invoiced.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                        <td className="py-3 px-3 text-right font-bold text-emerald-600">Rs. {profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                        <td className="py-3 px-3 text-right text-emerald-600 font-bold">28.0%</td>
                       </tr>
                     );
                   })
                 ) : (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-zinc-500">No parties found.</td>
+                    <td colSpan={5} className="py-8 text-center text-slate-400">No parties found.</td>
                   </tr>
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Responsive Cards */}
+          <div className="grid gap-2.5 md:hidden">
+            {partyRows.length ? (
+              partyRows.map((party: any) => {
+                const invoiced = Math.abs(Number(party.currentBalance || 15000)) * 2.5;
+                const profit = invoiced * 0.28;
+                return (
+                  <div key={party.id} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-bold text-slate-900">{party.name}</span>
+                        <p className="text-[11px] text-slate-500">{party.phone || 'No phone'}</p>
+                      </div>
+                      <span className="text-xs font-mono font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                        28.0% margin
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-center pt-2 border-t border-slate-200 text-xs">
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-medium">Total Invoiced</p>
+                        <p className="font-mono font-bold text-slate-900">Rs. {invoiced.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-emerald-600 font-medium">Profit Contribution</p>
+                        <p className="font-mono font-bold text-emerald-600">Rs. {profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="p-8 text-center text-slate-400 bg-slate-50 rounded-2xl border border-slate-200">
+                No parties found.
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -739,21 +826,22 @@ export function VyaparPremiumReports({
       {/* 4. STOCK TRANSFER REPORT */}
       {/* ---------------------------------------------------- */}
       {tab === 'stock-transfer' && (
-        <div className="p-5 sm:p-6 rounded-3xl bg-zinc-900 border border-zinc-800 shadow-md space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+        <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-sm space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div>
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Boxes className="w-4 h-4 text-amber-400" />
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Boxes className="w-4 h-4 text-amber-500" />
                 Inter-Godown Stock Transfer Audit Report
               </h3>
-              <p className="text-xs text-zinc-400 mt-0.5">Warehouse-to-shop stock movements log.</p>
+              <p className="text-xs text-slate-500 mt-0.5">Warehouse-to-shop stock movements log.</p>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-zinc-800 text-[10px] uppercase font-bold text-zinc-400">
+                <tr className="border-b border-slate-200 text-[10px] uppercase font-bold text-slate-500 bg-slate-50">
                   <th className="py-2.5 px-3">Date</th>
                   <th className="py-2.5 px-3">Voucher #</th>
                   <th className="py-2.5 px-3">From Godown</th>
@@ -763,31 +851,66 @@ export function VyaparPremiumReports({
                   <th className="py-2.5 px-3">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/60 font-mono">
-                <tr className="hover:bg-zinc-800/40">
-                  <td className="py-3 px-3 text-zinc-400 font-sans">{new Date().toLocaleDateString()}</td>
-                  <td className="py-3 px-3 font-bold text-white">TRF-1001</td>
-                  <td className="py-3 px-3 font-sans text-zinc-300">Central Warehouse</td>
-                  <td className="py-3 px-3 font-sans text-emerald-400">→ Main Shop & Counter</td>
-                  <td className="py-3 px-3 font-sans font-bold text-white">Wireless Optical Mouse</td>
-                  <td className="py-3 px-3 text-right font-bold text-white">25 Pcs</td>
+              <tbody className="divide-y divide-slate-100 font-mono">
+                <tr className="hover:bg-slate-50/80">
+                  <td className="py-3 px-3 text-slate-500 font-sans">{new Date().toLocaleDateString()}</td>
+                  <td className="py-3 px-3 font-bold text-slate-900">TRF-1001</td>
+                  <td className="py-3 px-3 font-sans text-slate-600">Central Warehouse</td>
+                  <td className="py-3 px-3 font-sans text-emerald-700 font-medium">→ Main Shop & Counter</td>
+                  <td className="py-3 px-3 font-sans font-bold text-slate-900">Wireless Optical Mouse</td>
+                  <td className="py-3 px-3 text-right font-bold text-slate-900">25 Pcs</td>
                   <td className="py-3 px-3 font-sans">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400">Completed</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Completed</span>
                   </td>
                 </tr>
-                <tr className="hover:bg-zinc-800/40">
-                  <td className="py-3 px-3 text-zinc-400 font-sans">{new Date().toLocaleDateString()}</td>
-                  <td className="py-3 px-3 font-bold text-white">TRF-1002</td>
-                  <td className="py-3 px-3 font-sans text-zinc-300">Basement Godown 2</td>
-                  <td className="py-3 px-3 font-sans text-emerald-400">→ Main Shop & Counter</td>
-                  <td className="py-3 px-3 font-sans font-bold text-white">USB-C Fast Charging Cable</td>
-                  <td className="py-3 px-3 text-right font-bold text-white">50 Pcs</td>
+                <tr className="hover:bg-slate-50/80">
+                  <td className="py-3 px-3 text-slate-500 font-sans">{new Date().toLocaleDateString()}</td>
+                  <td className="py-3 px-3 font-bold text-slate-900">TRF-1002</td>
+                  <td className="py-3 px-3 font-sans text-slate-600">Basement Godown 2</td>
+                  <td className="py-3 px-3 font-sans text-emerald-700 font-medium">→ Main Shop & Counter</td>
+                  <td className="py-3 px-3 font-sans font-bold text-slate-900">USB-C Fast Charging Cable</td>
+                  <td className="py-3 px-3 text-right font-bold text-slate-900">50 Pcs</td>
                   <td className="py-3 px-3 font-sans">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400">Completed</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Completed</span>
                   </td>
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Responsive Cards */}
+          <div className="grid gap-2.5 md:hidden">
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-bold text-slate-900">TRF-1001</span>
+                  <p className="text-[11px] font-medium text-slate-800">Wireless Optical Mouse</p>
+                </div>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  Completed
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-200 text-slate-600">
+                <span>Central Warehouse → Main Shop</span>
+                <span className="font-mono font-bold text-slate-900">25 Pcs</span>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-bold text-slate-900">TRF-1002</span>
+                  <p className="text-[11px] font-medium text-slate-800">USB-C Fast Charging Cable</p>
+                </div>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  Completed
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-200 text-slate-600">
+                <span>Basement Godown 2 → Main Shop</span>
+                <span className="font-mono font-bold text-slate-900">50 Pcs</span>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -796,21 +919,22 @@ export function VyaparPremiumReports({
       {/* 5. ITEM BATCH & SERIAL REPORT */}
       {/* ---------------------------------------------------- */}
       {tab === 'item-batch' && (
-        <div className="p-5 sm:p-6 rounded-3xl bg-zinc-900 border border-zinc-800 shadow-md space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+        <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-sm space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div>
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Tag className="w-4 h-4 text-purple-400" />
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Tag className="w-4 h-4 text-purple-600" />
                 Item Batch & Serial Number Report
               </h3>
-              <p className="text-xs text-zinc-400 mt-0.5">Track expiry dates, batch lot numbers, and serial tracking.</p>
+              <p className="text-xs text-slate-500 mt-0.5">Track expiry dates, batch lot numbers, and serial tracking.</p>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-zinc-800 text-[10px] uppercase font-bold text-zinc-400">
+                <tr className="border-b border-slate-200 text-[10px] uppercase font-bold text-slate-500 bg-slate-50">
                   <th className="py-2.5 px-3">Item SKU</th>
                   <th className="py-2.5 px-3">Product Name</th>
                   <th className="py-2.5 px-3">Batch Number</th>
@@ -819,21 +943,49 @@ export function VyaparPremiumReports({
                   <th className="py-2.5 px-3 text-right">Available Stock</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/60 font-mono">
+              <tbody className="divide-y divide-slate-100 font-mono">
                 {itemRows.slice(0, 10).map((itm: any, idx: number) => (
-                  <tr key={itm.id} className="hover:bg-zinc-800/40">
-                    <td className="py-3 px-3 text-zinc-400">{itm.code || `SKU-${idx + 101}`}</td>
-                    <td className="py-3 px-3 font-sans font-bold text-white">{itm.name}</td>
-                    <td className="py-3 px-3 text-amber-400 font-bold">BATCH-2026/A{idx + 1}</td>
-                    <td className="py-3 px-3 text-zinc-400">2026-01-15</td>
-                    <td className="py-3 px-3 text-rose-400">2027-12-31</td>
-                    <td className="py-3 px-3 text-right font-bold text-white">
+                  <tr key={itm.id} className="hover:bg-slate-50/80">
+                    <td className="py-3 px-3 text-slate-500">{itm.code || `SKU-${idx + 101}`}</td>
+                    <td className="py-3 px-3 font-sans font-bold text-slate-900">{itm.name}</td>
+                    <td className="py-3 px-3 text-amber-600 font-bold">BATCH-2026/A{idx + 1}</td>
+                    <td className="py-3 px-3 text-slate-500">2026-01-15</td>
+                    <td className="py-3 px-3 text-rose-600 font-semibold">2027-12-31</td>
+                    <td className="py-3 px-3 text-right font-bold text-slate-900">
                       {Number(itm.currentStock || 0)} {itm.unit || 'Pcs'}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Responsive Cards */}
+          <div className="grid gap-2.5 md:hidden">
+            {itemRows.slice(0, 10).map((itm: any, idx: number) => (
+              <div key={itm.id} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-bold text-slate-900">{itm.name}</span>
+                    <p className="text-[11px] text-slate-500 font-mono">{itm.code || `SKU-${idx + 101}`}</p>
+                  </div>
+                  <span className="text-xs font-mono font-bold text-slate-900 bg-white px-2 py-0.5 rounded-md border border-slate-200 shadow-sm">
+                    {Number(itm.currentStock || 0)} {itm.unit || 'Pcs'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-200">
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-medium">Batch</span>
+                    <span className="font-mono font-bold text-amber-700">BATCH-2026/A{idx + 1}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-slate-400 block font-medium">Expiry</span>
+                    <span className="font-mono font-semibold text-rose-600">2027-12-31</span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -842,30 +994,30 @@ export function VyaparPremiumReports({
       {/* 6. EXPORT TO TALLY VIEW */}
       {/* ---------------------------------------------------- */}
       {tab === 'tally-export' && (
-        <div className="p-6 sm:p-8 rounded-3xl bg-zinc-900 border border-zinc-800 shadow-md space-y-6">
+        <div className="p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-sm space-y-5 sm:space-y-6">
           <div>
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <h3 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
               <FileSpreadsheet className="w-5 h-5 text-red-500" />
               Export Data to Tally ERP 9 / Tally Prime
             </h3>
-            <p className="text-xs text-zinc-400 mt-1">
+            <p className="text-xs text-slate-500 mt-1">
               Directly sync sales vouchers, purchase bills, and party ledgers with your accountant's Tally software.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             {/* Download XML */}
-            <div className="p-5 rounded-2xl bg-zinc-950 border border-zinc-800 space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-red-600/10 border border-red-500/20 text-red-400 flex items-center justify-center">
+            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-red-100 border border-red-200 text-red-600 flex items-center justify-center">
                 <FileSpreadsheet className="w-5 h-5" />
               </div>
-              <h4 className="text-sm font-bold text-white">Tally XML Vouchers</h4>
-              <p className="text-xs text-zinc-400 leading-relaxed">
+              <h4 className="text-sm font-bold text-slate-900">Tally XML Vouchers</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
                 Native Tally XML format containing Sales and Purchases ready for Import &gt; Vouchers.
               </p>
               <button
                 onClick={handleExportTallyXml}
-                className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-md flex items-center justify-center gap-2 transition-all active:scale-95"
+                className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95"
               >
                 <Download className="w-4 h-4" />
                 <span>Download Tally XML</span>
@@ -873,17 +1025,17 @@ export function VyaparPremiumReports({
             </div>
 
             {/* Download Sales Excel */}
-            <div className="p-5 rounded-2xl bg-zinc-950 border border-zinc-800 space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-600/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
+            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 border border-emerald-200 text-emerald-600 flex items-center justify-center">
                 <Download className="w-5 h-5" />
               </div>
-              <h4 className="text-sm font-bold text-white">Sales Ledger (CSV / Excel)</h4>
-              <p className="text-xs text-zinc-400 leading-relaxed">
+              <h4 className="text-sm font-bold text-slate-900">Sales Ledger (CSV)</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
                 Complete sales book formatted with PAN/VAT, party names, and bill totals.
               </p>
               <button
                 onClick={() => handleExportCsv('Tally_Sales_Register', salesRows)}
-                className="w-full py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs border border-zinc-700 flex items-center justify-center gap-2 transition-all active:scale-95"
+                className="w-full py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-800 font-bold text-xs border border-slate-300 shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95"
               >
                 <Download className="w-4 h-4" />
                 <span>Export Sales CSV</span>
@@ -891,17 +1043,17 @@ export function VyaparPremiumReports({
             </div>
 
             {/* Download Purchases Excel */}
-            <div className="p-5 rounded-2xl bg-zinc-950 border border-zinc-800 space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
+            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-100 border border-blue-200 text-blue-600 flex items-center justify-center">
                 <Download className="w-5 h-5" />
               </div>
-              <h4 className="text-sm font-bold text-white">Purchases Ledger (CSV / Excel)</h4>
-              <p className="text-xs text-zinc-400 leading-relaxed">
+              <h4 className="text-sm font-bold text-slate-900">Purchases Ledger (CSV)</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
                 Complete purchase register with supplier tax numbers and input tax credit.
               </p>
               <button
                 onClick={() => handleExportCsv('Tally_Purchases_Register', purchaseRows)}
-                className="w-full py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs border border-zinc-700 flex items-center justify-center gap-2 transition-all active:scale-95"
+                className="w-full py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-800 font-bold text-xs border border-slate-300 shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95"
               >
                 <Download className="w-4 h-4" />
                 <span>Export Purchases CSV</span>

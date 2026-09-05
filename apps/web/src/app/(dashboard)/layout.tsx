@@ -175,6 +175,14 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true);
     setMobileOpen(false);
+    
+    // Always scroll window to top (0, 0) on route change
+    if (typeof window !== 'undefined') {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+
     // Find if the current path belongs to any dropdown section
     const matchingSection = sidebarSections.find(
       (s) =>
@@ -191,7 +199,7 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
       // Auto close dropdowns when navigating to Home, Parties, Reports, etc.
       setOpenSections({});
     }
-  }, [pathname]);
+  }, [pathname, searchParams]);
 
   if (loading) {
     return (

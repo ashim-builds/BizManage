@@ -1001,19 +1001,19 @@ function SettingsPageContent() {
       case 'subscription':
         return (
           <div className="space-y-6">
-            <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="px-3 py-1 rounded-full bg-blue-600 text-white font-black text-xs uppercase tracking-wider">
+            <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 space-y-4 shadow-2xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <span className="w-fit px-3 py-1 rounded-full bg-blue-600 text-white font-black text-xs uppercase tracking-wider shadow-xs">
                   {selectedPlan || 'Free Starter / 14-Day Trial'}
                 </span>
                 <Link
                   href="/subscription"
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition-all min-h-[44px] flex items-center"
+                  className="w-fit sm:w-auto px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition-all min-h-[40px] flex items-center justify-center cursor-pointer"
                 >
                   Manage Plans &rarr;
                 </Link>
               </div>
-              <h3 className="text-lg font-black text-slate-900">
+              <h3 className="text-base sm:text-lg font-black text-slate-900">
                 {selectedPlan ? `${selectedPlan} Plan Active` : '14-Day Full Free Trial Active'}
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">

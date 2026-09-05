@@ -247,74 +247,73 @@ export default function StaffPayrollPage() {
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-1">
+      {/* KPI Cards - Compact Responsive Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4">
+        <div className="p-3.5 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-1">
           <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
-            <span>Total Staff Members</span>
-            <Users className="w-4 h-4 text-blue-600" />
+            <span className="truncate">Staff Members</span>
+            <Users className="w-4 h-4 text-blue-600 shrink-0" />
           </div>
-          <p className="text-2xl font-black text-slate-900">{staffList.length} Staff</p>
-          <p className="text-[11px] text-slate-500">
-            Base Monthly Payroll:{' '}
-            <strong className="text-slate-800 font-mono">Rs. {totalMonthlyBaseSalary.toLocaleString()}</strong>
+          <p className="text-lg sm:text-2xl font-black text-slate-900">{staffList.length} Staff</p>
+          <p className="text-[10px] sm:text-[11px] text-slate-500 truncate">
+            Payroll: <strong className="text-slate-800 font-mono">Rs. {totalMonthlyBaseSalary.toLocaleString()}</strong>
           </p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-1">
+        <div className="p-3.5 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-1">
           <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
-            <span>Active Clocked-In Shifts</span>
-            <Clock className="w-4 h-4 text-amber-600" />
+            <span className="truncate">Active Shifts</span>
+            <Clock className="w-4 h-4 text-amber-600 shrink-0" />
           </div>
-          <p className="text-2xl font-black text-amber-600">{activeShifts.length} Active</p>
-          <p className="text-[11px] text-slate-500">Cashiers currently at counter</p>
+          <p className="text-lg sm:text-2xl font-black text-amber-600">{activeShifts.length} Active</p>
+          <p className="text-[10px] sm:text-[11px] text-slate-500 truncate">Cashiers at counter</p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-1">
+        <div className="col-span-2 sm:col-span-1 p-3.5 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-1">
           <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
-            <span>Total Salary Disbursed</span>
-            <BadgeCheck className="w-4 h-4 text-emerald-600" />
+            <span className="truncate">Disbursed Salary</span>
+            <BadgeCheck className="w-4 h-4 text-emerald-600 shrink-0" />
           </div>
-          <p className="text-2xl font-black text-emerald-600 font-mono">Rs. {totalPaidPayrollThisMonth.toLocaleString()}</p>
-          <p className="text-[11px] text-slate-500">Issued payslips recorded</p>
+          <p className="text-lg sm:text-2xl font-black text-emerald-600 font-mono">Rs. {totalPaidPayrollThisMonth.toLocaleString()}</p>
+          <p className="text-[10px] sm:text-[11px] text-slate-500 truncate">Recorded payslips</p>
         </div>
       </div>
 
-      {/* Tab Switcher & Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-2 rounded-2xl bg-slate-100 border border-slate-200">
-        <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto">
+      {/* Tab Switcher & Search Bar - Wrap Cleanly */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-2 rounded-2xl bg-slate-100 border border-slate-200">
+        <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => setActiveTab('staff')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+            className={`px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'staff'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
             }`}
           >
-            <Users className="w-4 h-4" /> Staff Directory ({staffList.length})
+            <Users className="w-3.5 h-3.5" /> Staff Directory ({staffList.length})
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('shifts')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+            className={`px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'shifts'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
             }`}
           >
-            <Clock className="w-4 h-4" /> Shift Tracker ({activeShifts.length} Active)
+            <Clock className="w-3.5 h-3.5" /> Shift Tracker ({activeShifts.length})
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('payroll')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+            className={`px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'payroll'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
             }`}
           >
-            <DollarSign className="w-4 h-4" /> Salary Payroll ({payrollList.length})
+            <DollarSign className="w-3.5 h-3.5" /> Payroll ({payrollList.length})
           </button>
         </div>
 
@@ -326,7 +325,7 @@ export default function StaffPayrollPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search employee..."
-              className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs placeholder:text-slate-400 focus:outline-none focus:border-blue-600"
+              className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs placeholder:text-slate-400 focus:outline-none focus:border-blue-600 min-h-[38px]"
             />
           </div>
         )}

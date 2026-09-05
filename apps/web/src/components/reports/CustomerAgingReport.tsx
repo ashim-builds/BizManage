@@ -32,11 +32,11 @@ export function CustomerAgingReport({
 
     return partyBalances
       .filter((p) => {
-        const bal = Number(p.currentBalance || 0);
+        const bal = Number(p.currentBalance || p.balance || 0);
         return bal > 0; // Only debtors (receivable from customer)
       })
       .map((p) => {
-        const bal = Number(p.currentBalance || 0);
+        const bal = Number(p.currentBalance || p.balance || 0);
         const createdAt = p.updatedAt || p.createdAt ? new Date(p.updatedAt || p.createdAt).getTime() : now;
         const daysOld = Math.max(0, Math.floor((now - createdAt) / (1000 * 60 * 60 * 24)));
 
@@ -148,14 +148,14 @@ export function CustomerAgingReport({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header & Controls */}
-      <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-4 gap-4 print:hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 pb-4 gap-3 print:hidden">
         <div>
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            Accounts Receivable Aging Analysis (उधारो विश्लेषण)
+          <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+            <Clock className="w-5 h-5 text-blue-600" /> Accounts Receivable Aging Analysis (उधारो विश्लेषण)
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 mt-0.5">
             Segment outstanding customer balances by overdue duration.
           </p>
         </div>
@@ -163,137 +163,191 @@ export function CustomerAgingReport({
         <div className="flex items-center gap-2">
           <button
             onClick={exportCsv}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition-all"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-semibold transition-all cursor-pointer min-h-[36px]"
           >
-            <Download className="w-4 h-4" /> Export CSV
+            <Download className="w-3.5 h-3.5" /> Export CSV
           </button>
           <button
             onClick={() => window.print()}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-all shadow-md"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-all shadow-xs cursor-pointer min-h-[36px]"
           >
-            <Printer className="w-4 h-4" /> Print Aging Report
+            <Printer className="w-3.5 h-3.5" /> Print Aging Report
           </button>
         </div>
       </div>
 
-      {/* AGING SUMMARY METRIC CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
-          <p className="text-[10px] font-bold text-slate-400 uppercase">Total Receivables</p>
-          <h3 className="text-xl font-bold font-mono text-white mt-1">
-            Rs. {totals.totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+      {/* AGING SUMMARY METRIC CARDS - Compact Responsive Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3.5">
+        <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-0.5">
+          <p className="text-[10px] font-bold text-slate-500 uppercase truncate">Total Receivables</p>
+          <h3 className="text-base sm:text-lg font-bold font-mono text-slate-900 truncate">
+            Rs. {totals.totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 0 })}
           </h3>
-          <p className="text-[11px] text-slate-500 mt-1">{totals.debtorsCount} Customers with Balance</p>
+          <p className="text-[10px] text-slate-400">{totals.debtorsCount} Debtors</p>
         </div>
 
-        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
-          <p className="text-[10px] font-bold text-emerald-400 uppercase">0 – 30 Days (Current)</p>
-          <h3 className="text-xl font-bold font-mono text-emerald-400 mt-1">
-            Rs. {totals.b0_30.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+        <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-0.5">
+          <p className="text-[10px] font-bold text-emerald-600 uppercase truncate">0 – 30 Days (Current)</p>
+          <h3 className="text-base sm:text-lg font-bold font-mono text-emerald-600 truncate">
+            Rs. {totals.b0_30.toLocaleString(undefined, { minimumFractionDigits: 0 })}
           </h3>
-          <p className="text-[11px] text-slate-500 mt-1">Within regular credit period</p>
+          <p className="text-[10px] text-slate-400">Regular credit</p>
         </div>
 
-        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
-          <p className="text-[10px] font-bold text-blue-400 uppercase">31 – 60 Days</p>
-          <h3 className="text-xl font-bold font-mono text-blue-400 mt-1">
-            Rs. {totals.b31_60.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+        <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-0.5">
+          <p className="text-[10px] font-bold text-blue-600 uppercase truncate">31 – 60 Days</p>
+          <h3 className="text-base sm:text-lg font-bold font-mono text-blue-600 truncate">
+            Rs. {totals.b31_60.toLocaleString(undefined, { minimumFractionDigits: 0 })}
           </h3>
-          <p className="text-[11px] text-slate-500 mt-1">First reminder stage</p>
+          <p className="text-[10px] text-slate-400">First reminder</p>
         </div>
 
-        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
-          <p className="text-[10px] font-bold text-amber-400 uppercase">61 – 90 Days</p>
-          <h3 className="text-xl font-bold font-mono text-amber-400 mt-1">
-            Rs. {totals.b61_90.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+        <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-0.5">
+          <p className="text-[10px] font-bold text-amber-600 uppercase truncate">61 – 90 Days</p>
+          <h3 className="text-base sm:text-lg font-bold font-mono text-amber-600 truncate">
+            Rs. {totals.b61_90.toLocaleString(undefined, { minimumFractionDigits: 0 })}
           </h3>
-          <p className="text-[11px] text-slate-500 mt-1">Follow-up needed</p>
+          <p className="text-[10px] text-slate-400">Follow-up needed</p>
         </div>
 
-        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
-          <p className="text-[10px] font-bold text-rose-400 uppercase">90+ Days (Critical)</p>
-          <h3 className="text-xl font-bold font-mono text-rose-400 mt-1">
-            Rs. {totals.b90_plus.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+        <div className="col-span-2 sm:col-span-1 p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-0.5">
+          <p className="text-[10px] font-bold text-rose-600 uppercase truncate">90+ Days (Critical)</p>
+          <h3 className="text-base sm:text-lg font-bold font-mono text-rose-600 truncate">
+            Rs. {totals.b90_plus.toLocaleString(undefined, { minimumFractionDigits: 0 })}
           </h3>
-          <p className="text-[11px] text-rose-400/80 mt-1">High risk of default</p>
+          <p className="text-[10px] text-rose-500">High risk of default</p>
         </div>
       </div>
 
       {/* FILTER BUTTONS & SEARCH */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900 border border-slate-800 print:hidden">
-        <div className="relative flex-1 min-w-[240px]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs print:hidden">
+        <div className="relative flex-1 w-full">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <input
             type="text"
-            placeholder="Search debtor customer by name or phone..."
+            placeholder="Search debtor by name or phone..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full px-3.5 py-2 bg-slate-800/80 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+            className="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-blue-600 transition-colors min-h-[38px]"
           />
         </div>
 
-        <div className="flex items-center gap-1.5 p-1 bg-slate-900 border border-slate-800 rounded-xl text-xs">
+        <div className="flex flex-wrap items-center gap-1 text-xs">
           <button
+            type="button"
             onClick={() => setSelectedBucket('all')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
-              selectedBucket === 'all' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+            className={`px-2.5 py-1.5 rounded-lg font-bold transition-all text-xs cursor-pointer ${
+              selectedBucket === 'all' ? 'bg-blue-600 text-white shadow-2xs' : 'bg-slate-100 text-slate-600 hover:text-slate-900'
             }`}
           >
-            All Overdue
+            All
           </button>
           <button
+            type="button"
             onClick={() => setSelectedBucket('0-30')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
-              selectedBucket === '0-30' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
+            className={`px-2.5 py-1.5 rounded-lg font-bold transition-all text-xs cursor-pointer ${
+              selectedBucket === '0-30' ? 'bg-emerald-600 text-white shadow-2xs' : 'bg-slate-100 text-slate-600 hover:text-slate-900'
             }`}
           >
-            0-30 Days
+            0-30d
           </button>
           <button
+            type="button"
             onClick={() => setSelectedBucket('31-60')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
-              selectedBucket === '31-60' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+            className={`px-2.5 py-1.5 rounded-lg font-bold transition-all text-xs cursor-pointer ${
+              selectedBucket === '31-60' ? 'bg-blue-600 text-white shadow-2xs' : 'bg-slate-100 text-slate-600 hover:text-slate-900'
             }`}
           >
-            31-60 Days
+            31-60d
           </button>
           <button
+            type="button"
             onClick={() => setSelectedBucket('61-90')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
-              selectedBucket === '61-90' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white'
+            className={`px-2.5 py-1.5 rounded-lg font-bold transition-all text-xs cursor-pointer ${
+              selectedBucket === '61-90' ? 'bg-amber-600 text-white shadow-2xs' : 'bg-slate-100 text-slate-600 hover:text-slate-900'
             }`}
           >
-            61-90 Days
+            61-90d
           </button>
           <button
+            type="button"
             onClick={() => setSelectedBucket('90+')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
-              selectedBucket === '90+' ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-white'
+            className={`px-2.5 py-1.5 rounded-lg font-bold transition-all text-xs cursor-pointer ${
+              selectedBucket === '90+' ? 'bg-rose-600 text-white shadow-2xs' : 'bg-slate-100 text-slate-600 hover:text-slate-900'
             }`}
           >
-            90+ Days
+            90+d
           </button>
         </div>
       </div>
 
-      {/* AGING DATA TABLE */}
-      <div className="border border-slate-800 rounded-2xl overflow-x-auto bg-slate-900 shadow-xl print:bg-white print:border-black">
-        <table className="w-full text-left text-xs min-w-[950px]">
-          <thead className="bg-slate-800/80 print:bg-gray-100 text-slate-300 print:text-black font-bold border-b border-slate-800 print:border-black">
+      {/* MOBILE CARDS VIEW (< md) */}
+      <div className="grid gap-2.5 md:hidden">
+        {filteredRows.length === 0 ? (
+          <div className="p-6 bg-white rounded-2xl border border-slate-200 text-center text-xs text-slate-400">
+            No overdue customer receivables matching criteria.
+          </div>
+        ) : (
+          filteredRows.map((row) => {
+            const riskBadge =
+              row.bucket === '90+'
+                ? 'bg-rose-50 text-rose-700 border-rose-200'
+                : row.bucket === '61-90'
+                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                : row.bucket === '31-60'
+                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                : 'bg-emerald-50 text-emerald-700 border-emerald-200';
+
+            return (
+              <div key={row.id} className="p-3.5 bg-white border border-slate-200 rounded-2xl space-y-2.5 shadow-2xs text-xs">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <div>
+                    <Link href={`/parties/${row.id}`} className="font-bold text-slate-900 hover:text-blue-600 text-xs">
+                      {row.name}
+                    </Link>
+                    {row.phone && <p className="text-[10px] text-slate-500 font-mono mt-0.5">{row.phone}</p>}
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider border ${riskBadge}`}>
+                    {row.bucket === '0-30' ? 'Current' : `${row.bucket} Days`}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <div>
+                    <span className="text-[10px] text-slate-500 block">Total Due:</span>
+                    <strong className="font-mono text-slate-900 text-sm">
+                      Rs. {row.currentBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
+                    </strong>
+                  </div>
+                  <div className="text-right text-[11px] text-slate-500">
+                    <span>Overdue: <strong className="text-slate-800 font-mono">{row.daysOld} days</strong></span>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* DESKTOP TABLE VIEW (>= md) */}
+      <div className="hidden md:block border border-slate-200 rounded-2xl overflow-x-auto bg-white shadow-xs print:border-black">
+        <table className="w-full text-left text-xs min-w-[850px]">
+          <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 print:border-black">
             <tr>
               <th className="px-4 py-3">Customer Party</th>
               <th className="px-4 py-3">Phone</th>
               <th className="px-4 py-3 text-right">Total Due (Rs.)</th>
-              <th className="px-4 py-3 text-right text-emerald-400 print:text-black">0-30 Days</th>
-              <th className="px-4 py-3 text-right text-blue-400 print:text-black">31-60 Days</th>
-              <th className="px-4 py-3 text-right text-amber-400 print:text-black">61-90 Days</th>
-              <th className="px-4 py-3 text-right text-rose-400 print:text-black">90+ Days</th>
+              <th className="px-4 py-3 text-right text-emerald-700">0-30 Days</th>
+              <th className="px-4 py-3 text-right text-blue-700">31-60 Days</th>
+              <th className="px-4 py-3 text-right text-amber-700">61-90 Days</th>
+              <th className="px-4 py-3 text-right text-rose-700">90+ Days</th>
               <th className="px-4 py-3 text-center">Aging Risk</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60 print:divide-gray-300 text-slate-300 print:text-black">
+          <tbody className="divide-y divide-slate-100 text-slate-800">
             {filteredRows.length === 0 ? (
               <tr>
-                <td colSpan={8} className="text-center py-8 text-slate-500">
+                <td colSpan={8} className="text-center py-8 text-slate-400">
                   No overdue customer receivables matching criteria.
                 </td>
               </tr>
@@ -301,40 +355,40 @@ export function CustomerAgingReport({
               filteredRows.map((row) => {
                 const riskColor =
                   row.bucket === '90+'
-                    ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                    ? 'bg-rose-50 text-rose-700 border-rose-200'
                     : row.bucket === '61-90'
-                    ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                    ? 'bg-amber-50 text-amber-700 border-amber-200'
                     : row.bucket === '31-60'
-                    ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
-                    : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30';
+                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                    : 'bg-emerald-50 text-emerald-700 border-emerald-200';
 
                 return (
-                  <tr key={row.id} className="hover:bg-slate-800/30 transition-colors">
-                    <td className="px-4 py-3 font-semibold text-white print:text-black">
-                      <Link href={`/parties/${row.id}`} className="hover:text-blue-400 transition-colors">
+                  <tr key={row.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="px-4 py-3 font-semibold text-slate-900">
+                      <Link href={`/parties/${row.id}`} className="hover:text-blue-600 transition-colors">
                         {row.name}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 font-mono text-slate-400 print:text-black">
+                    <td className="px-4 py-3 font-mono text-slate-500">
                       {row.phone || '-'}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono font-bold text-white print:text-black">
-                      Rs. {row.currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    <td className="px-4 py-3 text-right font-mono font-bold text-slate-900">
+                      Rs. {row.currentBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-emerald-400">
+                    <td className="px-4 py-3 text-right font-mono text-emerald-700">
                       {row.b0_30 > 0 ? `Rs. ${row.b0_30.toLocaleString()}` : '-'}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-blue-400">
+                    <td className="px-4 py-3 text-right font-mono text-blue-700">
                       {row.b31_60 > 0 ? `Rs. ${row.b31_60.toLocaleString()}` : '-'}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-amber-400">
+                    <td className="px-4 py-3 text-right font-mono text-amber-700">
                       {row.b61_90 > 0 ? `Rs. ${row.b61_90.toLocaleString()}` : '-'}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono font-bold text-rose-400">
+                    <td className="px-4 py-3 text-right font-mono font-bold text-rose-700">
                       {row.b90_plus > 0 ? `Rs. ${row.b90_plus.toLocaleString()}` : '-'}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${riskColor}`}>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${riskColor}`}>
                         {row.bucket === '0-30' ? 'Normal' : `${row.bucket} Days`}
                       </span>
                     </td>
@@ -343,25 +397,25 @@ export function CustomerAgingReport({
               })
             )}
           </tbody>
-          <tfoot className="bg-slate-800/90 print:bg-gray-100 font-bold border-t-2 border-slate-700 text-white print:text-black">
+          <tfoot className="bg-slate-50 font-bold border-t-2 border-slate-200 text-slate-900">
             <tr>
               <td colSpan={2} className="px-4 py-3 text-right uppercase">
                 TOTAL:
               </td>
               <td className="px-4 py-3 text-right font-mono">
-                Rs. {totals.totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                Rs. {totals.totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 0 })}
               </td>
-              <td className="px-4 py-3 text-right font-mono text-emerald-400">
-                Rs. {totals.b0_30.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              <td className="px-4 py-3 text-right font-mono text-emerald-700">
+                Rs. {totals.b0_30.toLocaleString(undefined, { minimumFractionDigits: 0 })}
               </td>
-              <td className="px-4 py-3 text-right font-mono text-blue-400">
-                Rs. {totals.b31_60.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              <td className="px-4 py-3 text-right font-mono text-blue-700">
+                Rs. {totals.b31_60.toLocaleString(undefined, { minimumFractionDigits: 0 })}
               </td>
-              <td className="px-4 py-3 text-right font-mono text-amber-400">
-                Rs. {totals.b61_90.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              <td className="px-4 py-3 text-right font-mono text-amber-700">
+                Rs. {totals.b61_90.toLocaleString(undefined, { minimumFractionDigits: 0 })}
               </td>
-              <td className="px-4 py-3 text-right font-mono text-rose-400">
-                Rs. {totals.b90_plus.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              <td className="px-4 py-3 text-right font-mono text-rose-700">
+                Rs. {totals.b90_plus.toLocaleString(undefined, { minimumFractionDigits: 0 })}
               </td>
               <td></td>
             </tr>
