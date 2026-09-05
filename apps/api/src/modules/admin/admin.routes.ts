@@ -292,7 +292,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
   fastify.put('/businesses/:id/subscription', async (request, reply) => {
     const paramsSchema = z.object({ id: z.string().uuid() });
     const bodySchema = z.object({
-      subscriptionPackageId: z.string().uuid().nullable(),
+      subscriptionPackageId: z.string().min(1).nullable(),
     });
 
     const { id } = paramsSchema.parse(request.params);
