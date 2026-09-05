@@ -28,6 +28,7 @@ import { UAParser } from 'ua-parser-js';
 const isProduction = process.env.NODE_ENV === 'production';
 const cookieSameSite: 'none' | 'lax' = isProduction ? 'none' : 'lax';
 
+
 const verifyEmailSchema = z.object({
   email: z.string().email(),
   otp: z.string().length(6),
@@ -831,7 +832,10 @@ export async function authRoutes(fastify: FastifyInstance) {
     });
 
     if (!user) {
-      throw new AppError('User not found', 404, 'NOT_FOUND');
+      // User deleted (e.g. after DB wipe) but JWT is still valid — clear cookies and return null gracefully
+      reply.clearCookie('refreshToken', { path: '/api/v1/auth' });
+      reply.clearCookie('accessToken', { path: '/' });
+      return reply.send({ success: true, data: null });
     }
 
     const formattedUser = {

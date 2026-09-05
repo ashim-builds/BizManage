@@ -5,7 +5,7 @@ import { AppError } from '../../plugins/error-handler.js';
 import { z } from 'zod';
 
 const subscribeRequestSchema = z.object({
-  packageId: z.string().uuid(),
+  packageId: z.string().min(1, 'Package ID is required'),
   referenceId: z.string().min(3, 'Transaction reference number is required'),
   senderName: z.string().min(2, 'Sender name or mobile is required'),
   notes: z.string().optional(),
