@@ -33,6 +33,7 @@ export function useItems(params?: ItemsQueryParams) {
       });
       return res.data;
     },
+    placeholderData: (previousData) => previousData,
   });
 }
 
@@ -56,6 +57,7 @@ export function useInfiniteItems(params?: ItemsQueryParams) {
       if (!meta) return undefined;
       return meta.hasMore ? meta.page + 1 : undefined;
     },
+    placeholderData: (previousData) => previousData,
   });
 }
 

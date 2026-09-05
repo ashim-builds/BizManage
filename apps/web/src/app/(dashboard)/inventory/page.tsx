@@ -141,7 +141,7 @@ function InventoryPageContent() {
   const [txSearch, setTxSearch] = useState('');
   const [txTypeFilter, setTxTypeFilter] = useState<'ALL' | 'SELL' | 'BUY' | 'STOCK'>('ALL');
 
-  // Sync with searchParams ?filter=low_stock / ?stock=low
+  // Sync with searchParams ?filter=low_stock / ?stock=low / ?search=...
   useEffect(() => {
     const filterParam = searchParams.get('filter') || searchParams.get('stock');
     if (filterParam === 'low_stock' || filterParam === 'low') {
@@ -152,6 +152,11 @@ function InventoryPageContent() {
       setActiveTab('products');
     } else if (filterParam === 'in_stock') {
       setStockFilter('IN_STOCK');
+      setActiveTab('products');
+    }
+    const searchParam = searchParams.get('search') || searchParams.get('q');
+    if (searchParam) {
+      setProductSearch(searchParam);
       setActiveTab('products');
     }
   }, [searchParams]);
@@ -938,8 +943,8 @@ function InventoryPageContent() {
     });
   };
 
-  const isInitialLoading = (productsLoading && products.length === 0) || (servicesLoading && services.length === 0);
-  const hasInitialError = (productsError && products.length === 0) && (servicesError && services.length === 0);
+  const isInitialLoading = !productsInfiniteData && !servicesInfiniteData && productsLoading && servicesLoading;
+  const hasInitialError = !productsInfiniteData && !servicesInfiniteData && productsError && servicesError;
 
   if (isInitialLoading) {
     return <LoadingState message="Loading inventory catalog..." />;
@@ -1075,7 +1080,9 @@ function InventoryPageContent() {
                   onChange={(e) => setProductSearch(e.target.value)}
                   className="w-full pl-9 pr-8 py-2.5 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs transition-all"
                 />
-                {productSearch && (
+                {productsLoading && debouncedProductSearch ? (
+                  <Loader2 className="w-3.5 h-3.5 text-blue-500 animate-spin absolute right-3 top-3 pointer-events-none" />
+                ) : productSearch ? (
                   <button
                     type="button"
                     onClick={() => setProductSearch('')}
@@ -1083,7 +1090,7 @@ function InventoryPageContent() {
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
-                )}
+                ) : null}
               </div>
               <button
                 type="button"
@@ -1307,8 +1314,19 @@ function InventoryPageContent() {
                     placeholder="Search Products..."
                     value={productSearch}
                     onChange={(e) => setProductSearch(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
+                    className="w-full pl-8 pr-7 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
                   />
+                  {productsLoading && debouncedProductSearch ? (
+                    <Loader2 className="w-3 h-3 text-blue-500 animate-spin absolute right-2.5 top-2 pointer-events-none" />
+                  ) : productSearch ? (
+                    <button
+                      type="button"
+                      onClick={() => setProductSearch('')}
+                      className="absolute right-2 top-1.5 p-0.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-200/60"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  ) : null}
                 </div>
 
                 <button
