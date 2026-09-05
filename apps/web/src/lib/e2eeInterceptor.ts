@@ -3,15 +3,25 @@ import { api } from './api';
 
 // Cache the fetched business keys
 let cachedPublicKeys: { userId: string, publicKey: string }[] | null = null;
+let publicKeysRequest: Promise<{ userId: string, publicKey: string }[]> | null = null;
 
 export async function fetchBusinessPublicKeys() {
   if (cachedPublicKeys) return cachedPublicKeys;
-  const res = await api.get('/businesses/current/keys');
-  if (res.data?.success) {
-    cachedPublicKeys = res.data.data;
-    return cachedPublicKeys;
+
+  if (!publicKeysRequest) {
+    publicKeysRequest = api.get('/businesses/current/keys')
+      .then((res) => {
+        if (res.data?.success) {
+          cachedPublicKeys = res.data.data;
+        }
+        return cachedPublicKeys || [];
+      })
+      .finally(() => {
+        publicKeysRequest = null;
+      });
   }
-  return [];
+
+  return publicKeysRequest;
 }
 
 /**
