@@ -113,8 +113,8 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
   const currentBiz = (userBusinesses.find((b: any) => b.id === activeBusinessId) || userBusinesses[0]) as any;
   const createdAt = currentBiz?.createdAt ? new Date(currentBiz.createdAt) : new Date();
   const trialDays = 14;
-  const trialEndDate = currentBiz?.trialEndsAt 
-    ? new Date(currentBiz.trialEndsAt) 
+  const trialEndDate = currentBiz?.trialEndsAt
+    ? new Date(currentBiz.trialEndsAt)
     : new Date(createdAt.getTime() + trialDays * 24 * 60 * 60 * 1000);
 
   const now = new Date();
@@ -134,16 +134,19 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
   const hasSelectedPlan = isTrialActive || Boolean(currentBiz?.subscriptionPackage);
 
   // Global feature lock calculation - 100% unlocked during trial
-  const currentSection = sidebarSections.find(s => {
+  const currentSection = sidebarSections.find((s) => {
     const [sHref] = (s.href || '').split('?');
-    return sHref === pathname || s.children?.some(c => {
-      const [cHref] = c.href.split('?');
-      return cHref === pathname;
-    });
+    return (
+      sHref === pathname ||
+      s.children?.some((c) => {
+        const [cHref] = c.href.split('?');
+        return cHref === pathname;
+      })
+    );
   });
   let requiredFeature = currentSection?.requiredFeature;
   if (!requiredFeature && currentSection?.children) {
-    const child = currentSection.children.find(c => {
+    const child = currentSection.children.find((c) => {
       const [cHref] = c.href.split('?');
       return cHref === pathname;
     });
@@ -152,10 +155,9 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
     }
   }
 
-  const isFeatureLocked = isTrialActive ? false : Boolean(
-    requiredFeature &&
-    !(currentBiz?.subscriptionPackage?.features || []).includes(requiredFeature)
-  );
+  const isFeatureLocked = isTrialActive
+    ? false
+    : Boolean(requiredFeature && !(currentBiz?.subscriptionPackage?.features || []).includes(requiredFeature));
 
   const [mounted, setMounted] = useState(false);
 
@@ -175,7 +177,7 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true);
     setMobileOpen(false);
-    
+
     // Always scroll window to top (0, 0) on route change
     if (typeof window !== 'undefined') {
       window.scrollTo(0, 0);
@@ -221,14 +223,21 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
           </div>
 
           <div className="text-center space-y-2">
-            <h2 className="text-xl font-black text-slate-900 tracking-tight">
-              Initializing BizManage
-            </h2>
+            <h2 className="text-xl font-black text-slate-900 tracking-tight">Initializing BizManage</h2>
             <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-slate-500 font-medium">
               <span className="flex gap-1 items-center">
-                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
-                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
-                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+                <span
+                  className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce"
+                  style={{ animationDelay: '0s' }}
+                ></span>
+                <span
+                  className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce"
+                  style={{ animationDelay: '0.2s' }}
+                ></span>
+                <span
+                  className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce"
+                  style={{ animationDelay: '0.4s' }}
+                ></span>
               </span>
               <span>Loading your workspace</span>
             </div>
@@ -290,7 +299,9 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
           mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'
         } ${sidebarCollapsed ? 'w-[60px] overflow-visible' : 'w-64'}`}
       >
-        <div className={`py-4 border-b border-[#222744] flex items-center min-h-[68px] ${sidebarCollapsed ? 'px-2 justify-center' : 'px-5 justify-between'}`}>
+        <div
+          className={`py-4 border-b border-[#222744] flex items-center min-h-[68px] ${sidebarCollapsed ? 'px-2 justify-center' : 'px-5 justify-between'}`}
+        >
           {!sidebarCollapsed && (
             <Link href="/" className="flex items-center gap-2.5 group">
               <img
@@ -317,11 +328,7 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
               title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               className="hidden lg:flex items-center justify-center w-7 h-7 rounded-lg text-slate-400 hover:text-white hover:bg-[#212646] transition-all"
             >
-              {sidebarCollapsed ? (
-                <ChevronsRight className="w-4 h-4" />
-              ) : (
-                <ChevronsLeft className="w-4 h-4" />
-              )}
+              {sidebarCollapsed ? <ChevronsRight className="w-4 h-4" /> : <ChevronsLeft className="w-4 h-4" />}
             </button>
             <button
               onClick={() => setMobileOpen(false)}
@@ -332,7 +339,9 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        <nav className={`flex-1 p-2 space-y-0.5 ${sidebarCollapsed ? 'overflow-visible' : 'overflow-y-auto scrollbar-thin scrollbar-thumb-[#222744]'}`}>
+        <nav
+          className={`flex-1 p-2 space-y-0.5 ${sidebarCollapsed ? 'overflow-visible' : 'overflow-y-auto scrollbar-thin scrollbar-thumb-[#222744]'}`}
+        >
           {sidebarSections.map((section) => {
             const Icon = section.icon;
             const isActive = pathname === section.href || (section.href === '/dashboard' && pathname === '/');
@@ -392,10 +401,7 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
             // In collapsed mode, render group as icon-only button with rich floating flyout menu on hover
             if (sidebarCollapsed) {
               return (
-                <div
-                  key={section.name}
-                  className="relative group/collapsed"
-                >
+                <div key={section.name} className="relative group/collapsed">
                   <div
                     className={`flex items-center justify-center w-full py-2 rounded-xl transition-all cursor-pointer ${
                       isGroupActive
@@ -418,7 +424,9 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
                         const ChildIcon = child.icon;
                         const [childPath, childQuery] = child.href.split('?');
                         const isChildActive = childQuery
-                          ? pathname === childPath && (currentTab === new URLSearchParams(childQuery).get('tab') || (!currentTab && new URLSearchParams(childQuery).get('tab') === 'sync-share'))
+                          ? pathname === childPath &&
+                            (currentTab === new URLSearchParams(childQuery).get('tab') ||
+                              (!currentTab && new URLSearchParams(childQuery).get('tab') === 'sync-share'))
                           : pathname === child.href;
                         return (
                           <Link
@@ -431,7 +439,9 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
                             }`}
                           >
                             {ChildIcon && (
-                              <ChildIcon className={`w-3.5 h-3.5 shrink-0 ${isChildActive ? 'text-[#EF4444]' : 'text-slate-400'}`} />
+                              <ChildIcon
+                                className={`w-3.5 h-3.5 shrink-0 ${isChildActive ? 'text-[#EF4444]' : 'text-slate-400'}`}
+                              />
                             )}
                             <span className="truncate">{child.name}</span>
                           </Link>
@@ -469,9 +479,7 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
 
                 <div
                   className={`grid transition-[grid-template-rows,opacity] duration-250 ease-in-out ${
-                    isSectionOpen
-                      ? 'grid-rows-[1fr] opacity-100'
-                      : 'grid-rows-[0fr] opacity-0 pointer-events-none'
+                    isSectionOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
                   }`}
                 >
                   <div className="overflow-hidden">
@@ -480,7 +488,9 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
                         const ChildIcon = child.icon;
                         const [childPath, childQuery] = child.href.split('?');
                         const isChildActive = childQuery
-                          ? pathname === childPath && (currentTab === new URLSearchParams(childQuery).get('tab') || (!currentTab && new URLSearchParams(childQuery).get('tab') === 'sync-share'))
+                          ? pathname === childPath &&
+                            (currentTab === new URLSearchParams(childQuery).get('tab') ||
+                              (!currentTab && new URLSearchParams(childQuery).get('tab') === 'sync-share'))
                           : pathname === child.href;
                         return (
                           <Link
@@ -493,11 +503,7 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
                             }`}
                           >
                             {ChildIcon && (
-                              <ChildIcon
-                                className={`w-3.5 h-3.5 ${
-                                  isChildActive ? 'text-white' : 'text-slate-400'
-                                }`}
-                              />
+                              <ChildIcon className={`w-3.5 h-3.5 ${isChildActive ? 'text-white' : 'text-slate-400'}`} />
                             )}
                             <span className="truncate">{child.name}</span>
                           </Link>
@@ -519,12 +525,14 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
                   <h4 className="font-extrabold text-xs text-[#1E293B]">
                     {daysLeftInTrial} {daysLeftInTrial === 1 ? 'day' : 'days'} Free Trial left
                   </h4>
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">All Free</span>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
+                    All Free
+                  </span>
                 </div>
                 <div className="w-full bg-[#FFE6A8] h-2 rounded-full overflow-hidden">
-                  <div 
-                    className="bg-[#10B981] h-full rounded-full transition-all duration-500" 
-                    style={{ width: `${trialProgressPercent}%` }} 
+                  <div
+                    className="bg-[#10B981] h-full rounded-full transition-all duration-500"
+                    style={{ width: `${trialProgressPercent}%` }}
                   />
                 </div>
               </div>
@@ -550,20 +558,20 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
             <div className="rounded-2xl overflow-hidden border border-rose-500/40 shadow-md">
               <div className="p-3.5 bg-gradient-to-b from-rose-50 to-rose-100 text-rose-900 space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-extrabold text-xs text-rose-900">
-                    14-Day Free Trial Expired
-                  </h4>
-                  <span className="text-[9px] font-bold text-rose-700 bg-rose-200/80 px-1.5 py-0.5 rounded">Expired</span>
+                  <h4 className="font-extrabold text-xs text-rose-900">14-Day Free Trial Expired</h4>
+                  <span className="text-[9px] font-bold text-rose-700 bg-rose-200/80 px-1.5 py-0.5 rounded">
+                    Expired
+                  </span>
                 </div>
-                <p className="text-[10px] text-rose-700 font-medium">Please choose a subscription plan to unlock all premium features.</p>
+                <p className="text-[10px] text-rose-700 font-medium">
+                  Please choose a subscription plan to unlock all premium features.
+                </p>
               </div>
               <Link
                 href="/subscription"
                 className="flex items-center justify-between px-3.5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white transition-colors group"
               >
-                <span className="font-extrabold text-xs">
-                  Choose Plan Now &rarr;
-                </span>
+                <span className="font-extrabold text-xs">Choose Plan Now &rarr;</span>
               </Link>
             </div>
           )}
@@ -575,7 +583,9 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                   {currentBiz?.subscriptionPackage?.name || 'Active Subscription'}
                 </span>
-                <span className="text-[9px] font-bold text-emerald-300 bg-emerald-950/80 border border-emerald-800/50 px-1.5 py-0.5 rounded">PRO</span>
+                <span className="text-[9px] font-bold text-emerald-300 bg-emerald-950/80 border border-emerald-800/50 px-1.5 py-0.5 rounded">
+                  PRO
+                </span>
               </div>
               <Link
                 href="/subscription"
@@ -607,7 +617,11 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
             <div className={`flex items-center min-w-0 ${sidebarCollapsed ? '' : 'gap-2.5'}`}>
               <div className="w-8 h-8 rounded-xl bg-white border border-slate-200/20 flex items-center justify-center shrink-0 shadow-xs overflow-hidden p-0.5">
                 {currentBiz?.logoUrl ? (
-                  <img src={currentBiz.logoUrl} alt={currentBiz?.name || 'Business Logo'} className="w-full h-full object-contain" />
+                  <img
+                    src={currentBiz.logoUrl}
+                    alt={currentBiz?.name || 'Business Logo'}
+                    className="w-full h-full object-contain"
+                  />
                 ) : (
                   <span className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">
                     {(currentBusiness?.name || 'RB').substring(0, 2).toUpperCase()}
@@ -615,9 +629,7 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
                 )}
               </div>
               {!sidebarCollapsed && (
-                <span className="font-bold text-white text-xs truncate">
-                  {currentBusiness?.name || 'RB Hardware'}
-                </span>
+                <span className="font-bold text-white text-xs truncate">{currentBusiness?.name || 'RB Hardware'}</span>
               )}
             </div>
             {!sidebarCollapsed && <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />}
@@ -626,7 +638,9 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main Content Shell (Clean Light Workspace) */}
-      <main className={`flex-1 min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col pb-20 lg:pb-0 print:pl-0 print:bg-white print:min-h-0 print:pb-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-[60px]' : 'lg:pl-64'}`}>
+      <main
+        className={`flex-1 min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col pb-20 lg:pb-0 print:pl-0 print:bg-white print:min-h-0 print:pb-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-[60px]' : 'lg:pl-64'}`}
+      >
         {/* Header Bar */}
         <header className="h-16 border-b border-slate-200 px-3 sm:px-6 flex items-center justify-between sticky top-0 bg-white backdrop-blur-md z-30 print:hidden gap-2 shadow-xs">
           {/* Mobile View: Logo (< lg) */}
@@ -635,13 +649,8 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
               <img
                 src="/icon-192x192.png"
                 alt="BizManage"
-                className="h-8 w-8 object-contain drop-shadow-xs group-hover:scale-105 transition-transform shrink-0"
+                className="h-8 w-8 object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.28)] group-hover:scale-105 transition-transform shrink-0"
               />
-              <div className="flex flex-col justify-center">
-                <span className="text-base font-black tracking-tight text-slate-900 leading-none">
-                  Biz<span className="text-blue-600">Manage</span>
-                </span>
-              </div>
             </Link>
           </div>
 
@@ -675,7 +684,11 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
               >
                 <div className="w-6 h-6 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden p-0.5">
                   {currentBiz?.logoUrl ? (
-                    <img src={currentBiz.logoUrl} alt={currentBiz?.name || 'Business Logo'} className="w-full h-full object-contain" />
+                    <img
+                      src={currentBiz.logoUrl}
+                      alt={currentBiz?.name || 'Business Logo'}
+                      className="w-full h-full object-contain"
+                    />
                   ) : (
                     <span className="w-full h-full bg-blue-600 rounded-md flex items-center justify-center font-black text-[9px] text-white">
                       {(currentBiz?.name || 'RB').substring(0, 2).toUpperCase()}
@@ -697,7 +710,11 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
               >
                 <div className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden p-0.5">
                   {currentBiz?.logoUrl ? (
-                    <img src={currentBiz.logoUrl} alt={currentBiz?.name || 'Business Logo'} className="w-full h-full object-contain" />
+                    <img
+                      src={currentBiz.logoUrl}
+                      alt={currentBiz?.name || 'Business Logo'}
+                      className="w-full h-full object-contain"
+                    />
                   ) : (
                     <span className="w-full h-full bg-blue-600 rounded-md flex items-center justify-center font-bold text-[10px] text-white">
                       {(user?.name || 'U').substring(0, 2).toUpperCase()}
@@ -744,7 +761,11 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
         </header>
 
         <div className="p-1.5 sm:p-4 md:p-6 lg:p-8 flex-1">
-          {mounted && !hasSelectedPlan && pathname !== '/subscription' && pathname !== '/settings' && pathname !== '/dashboard' ? (
+          {mounted &&
+          !hasSelectedPlan &&
+          pathname !== '/subscription' &&
+          pathname !== '/settings' &&
+          pathname !== '/dashboard' ? (
             <div className="max-w-xl mx-auto my-12 p-8 rounded-3xl bg-slate-900 border border-amber-500/30 text-center space-y-6 shadow-2xl font-sans">
               <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto">
                 <Crown className="w-8 h-8" />
@@ -752,7 +773,8 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
               <div>
                 <h2 className="text-xl font-extrabold text-white">14-Day Free Trial Ended</h2>
                 <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                  Your 14-day full free trial has concluded. To continue using all billing features, godowns, WhatsApp, and accounting reports, please select a subscription plan.
+                  Your 14-day full free trial has concluded. To continue using all billing features, godowns, WhatsApp,
+                  and accounting reports, please select a subscription plan.
                 </p>
               </div>
               <Link
@@ -762,7 +784,11 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
                 <Crown className="w-4 h-4" /> Go to Subscription Page & Choose Plan
               </Link>
             </div>
-          ) : mounted && isFeatureLocked && pathname !== '/subscription' && pathname !== '/settings' && pathname !== '/dashboard' ? (
+          ) : mounted &&
+            isFeatureLocked &&
+            pathname !== '/subscription' &&
+            pathname !== '/settings' &&
+            pathname !== '/dashboard' ? (
             <div className="max-w-xl mx-auto my-12 p-8 rounded-3xl bg-slate-900 border border-red-500/30 text-center space-y-6 shadow-2xl font-sans">
               <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 flex items-center justify-center mx-auto">
                 <Crown className="w-8 h-8" />
@@ -770,7 +796,9 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
               <div>
                 <h2 className="text-xl font-extrabold text-white">Feature Locked</h2>
                 <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                  Your current subscription plan (<span className="font-bold text-blue-400">{currentBiz?.subscriptionPackage?.name}</span>) does not include access to this feature. Please upgrade your plan to unlock it.
+                  Your current subscription plan (
+                  <span className="font-bold text-blue-400">{currentBiz?.subscriptionPackage?.name}</span>) does not
+                  include access to this feature. Please upgrade your plan to unlock it.
                 </p>
               </div>
               <Link
