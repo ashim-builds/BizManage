@@ -213,6 +213,11 @@ export function ThermalReceiptModal({
             >
               {/* Business Header */}
               <div className="text-center space-y-0.5 border-b border-dashed border-slate-400 pb-2.5">
+                {business.logoUrl && (
+                  <div className="flex justify-center mb-1">
+                    <img src={business.logoUrl} alt={business.name || 'Logo'} className="max-h-12 max-w-[120px] object-contain" />
+                  </div>
+                )}
                 <h2 className="text-base font-black uppercase tracking-tight text-slate-900">
                   {business.name || 'BizManage Store'}
                 </h2>

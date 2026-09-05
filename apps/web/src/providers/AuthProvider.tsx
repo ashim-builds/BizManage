@@ -30,6 +30,8 @@ export interface UserProfile {
       currentPeriodEnd?: string | null;
       planOverrides: any | null;
       subscriptionPackage: any | null;
+      createdAt?: string | null;
+      trialEndsAt?: string | null;
     };
   }>;
 }

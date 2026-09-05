@@ -134,6 +134,8 @@ export async function authRoutes(fastify: FastifyInstance) {
         },
       });
 
+      const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+
       const business = await tx.business.create({
         data: {
           name: body.businessName || `${body.name}'s Workspace`,
@@ -141,6 +143,7 @@ export async function authRoutes(fastify: FastifyInstance) {
           phone: body.phone || null,
           subscriptionPackageId: freePkg?.id || null,
           subscriptionStatus: 'ACTIVE',
+          trialEndsAt,
           settings: { create: {} },
         },
       });
@@ -818,6 +821,8 @@ export async function authRoutes(fastify: FastifyInstance) {
                 currentPeriodEnd: true,
                 planOverrides: true,
                 subscriptionPackage: true,
+                createdAt: true,
+                trialEndsAt: true,
               },
             },
           },

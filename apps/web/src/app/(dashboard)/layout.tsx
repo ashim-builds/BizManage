@@ -109,7 +109,8 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
     };
   }, [userMenuOpen]);
 
-  const currentBiz = user?.memberships?.[0]?.business as any;
+  const userBusinesses = (user?.memberships || []).map((m: any) => m.business).filter(Boolean);
+  const currentBiz = (userBusinesses.find((b: any) => b.id === activeBusinessId) || userBusinesses[0]) as any;
   const createdAt = currentBiz?.createdAt ? new Date(currentBiz.createdAt) : new Date();
   const trialDays = 14;
   const trialEndDate = currentBiz?.trialEndsAt 
@@ -118,10 +119,18 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
 
   const now = new Date();
   const isTrialActive = now < trialEndDate;
-  const daysLeftInTrial = Math.max(0, Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
-  const trialProgressPercent = Math.min(100, Math.max(5, (daysLeftInTrial / trialDays) * 100));
+  const msLeft = Math.max(0, trialEndDate.getTime() - now.getTime());
+  const daysLeftInTrial = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
+  const totalTrialMs = trialDays * 24 * 60 * 60 * 1000;
+  const trialProgressPercent = Math.min(100, Math.max(0, Math.round((msLeft / totalTrialMs) * 100)));
 
-  // During 14-day trial, user has access to everything without needing to select any package
+  const isPaidPlan = Boolean(
+    currentBiz?.subscriptionPackage &&
+    !currentBiz?.subscriptionPackage?.name?.toLowerCase().includes('starter') &&
+    !currentBiz?.subscriptionPackage?.name?.toLowerCase().includes('free')
+  );
+
+  // During 14-day trial or with paid plan, user has full/subscribed access
   const hasSelectedPlan = isTrialActive || Boolean(currentBiz?.subscriptionPackage);
 
   // Global feature lock calculation - 100% unlocked during trial
@@ -253,8 +262,7 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
     );
   }
 
-  const userBusinesses = (user.memberships || []).map((m) => m.business).filter(Boolean);
-  const currentBusiness = userBusinesses.find((b) => b.id === activeBusinessId) || userBusinesses[0];
+  const currentBusiness = currentBiz;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans antialiased selection:bg-blue-500 selection:text-white">
@@ -530,13 +538,16 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
             </div>
           )}
 
-          {!sidebarCollapsed && !isTrialActive && !currentBiz?.subscriptionPackage && (
+          {!sidebarCollapsed && !isTrialActive && !isPaidPlan && (
             <div className="rounded-2xl overflow-hidden border border-rose-500/40 shadow-md">
               <div className="p-3.5 bg-gradient-to-b from-rose-50 to-rose-100 text-rose-900 space-y-1.5">
-                <h4 className="font-extrabold text-xs text-rose-900">
-                  14-Day Free Trial Expired
-                </h4>
-                <p className="text-[10px] text-rose-700 font-medium">Please choose a subscription plan to continue.</p>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-extrabold text-xs text-rose-900">
+                    14-Day Free Trial Expired
+                  </h4>
+                  <span className="text-[9px] font-bold text-rose-700 bg-rose-200/80 px-1.5 py-0.5 rounded">Expired</span>
+                </div>
+                <p className="text-[10px] text-rose-700 font-medium">Please choose a subscription plan to unlock all premium features.</p>
               </div>
               <Link
                 href="/subscription"
@@ -545,6 +556,25 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
                 <span className="font-extrabold text-xs">
                   Choose Plan Now &rarr;
                 </span>
+              </Link>
+            </div>
+          )}
+
+          {!sidebarCollapsed && !isTrialActive && isPaidPlan && (
+            <div className="rounded-2xl overflow-hidden border border-emerald-500/30 bg-[#212646] p-3 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-xs text-emerald-400 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  {currentBiz?.subscriptionPackage?.name || 'Active Subscription'}
+                </span>
+                <span className="text-[9px] font-bold text-emerald-300 bg-emerald-950/80 border border-emerald-800/50 px-1.5 py-0.5 rounded">PRO</span>
+              </div>
+              <Link
+                href="/subscription"
+                className="text-[10px] text-slate-400 hover:text-white flex items-center justify-between pt-1 transition-colors"
+              >
+                <span>Manage Plan & Invoices</span>
+                <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
           )}
@@ -567,8 +597,14 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
             title="Business Profile & Settings"
           >
             <div className={`flex items-center min-w-0 ${sidebarCollapsed ? '' : 'gap-2.5'}`}>
-              <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
-                {(currentBusiness?.name || 'RB').substring(0, 2).toUpperCase()}
+              <div className="w-8 h-8 rounded-xl bg-white border border-slate-200/20 flex items-center justify-center shrink-0 shadow-xs overflow-hidden p-0.5">
+                {currentBiz?.logoUrl ? (
+                  <img src={currentBiz.logoUrl} alt={currentBiz?.name || 'Business Logo'} className="w-full h-full object-contain" />
+                ) : (
+                  <span className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">
+                    {(currentBusiness?.name || 'RB').substring(0, 2).toUpperCase()}
+                  </span>
+                )}
               </div>
               {!sidebarCollapsed && (
                 <span className="font-bold text-white text-xs truncate">
@@ -587,18 +623,12 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
         <header className="h-16 border-b border-slate-200 px-3 sm:px-6 flex items-center justify-between sticky top-0 bg-white backdrop-blur-md z-30 print:hidden gap-2 shadow-xs">
           {/* Mobile View: Logo (< lg) */}
           <div className="flex items-center gap-2 lg:hidden">
-            <Link href="/dashboard" className="flex items-center gap-1.5 shrink-0">
-              <div className="w-7 h-7 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-xs">
-                <Building2 className="w-4 h-4" />
-              </div>
-              <div className="leading-none">
-                <span className="text-sm font-black text-slate-900 tracking-tight">
-                  Biz<span className="text-blue-600">Manage</span>
-                </span>
-                <span className="block text-[8px] font-bold text-slate-400 tracking-wider uppercase">
-                  MANAGE. TRACK. GROW.
-                </span>
-              </div>
+            <Link href="/dashboard" className="flex items-center shrink-0 group">
+              <img
+                src="/logo-transparent.png"
+                alt="BizManage"
+                className="h-8 w-auto max-w-[135px] sm:max-w-[150px] object-contain drop-shadow-xs group-hover:scale-105 transition-transform"
+              />
             </Link>
           </div>
 
@@ -630,8 +660,14 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
                 onClick={() => setUserMenuOpen((prev) => !prev)}
                 className="flex items-center gap-1.5 p-1 pl-1.5 pr-2 rounded-full border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-all shadow-2xs cursor-pointer"
               >
-                <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center font-black text-[9px] text-white shrink-0">
-                  {(currentBiz?.name || 'RB').substring(0, 2).toUpperCase()}
+                <div className="w-6 h-6 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden p-0.5">
+                  {currentBiz?.logoUrl ? (
+                    <img src={currentBiz.logoUrl} alt={currentBiz?.name || 'Business Logo'} className="w-full h-full object-contain" />
+                  ) : (
+                    <span className="w-full h-full bg-blue-600 rounded-md flex items-center justify-center font-black text-[9px] text-white">
+                      {(currentBiz?.name || 'RB').substring(0, 2).toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 <span className="text-[11px] font-bold text-slate-800 max-w-[85px] sm:max-w-[120px] truncate">
                   {currentBiz?.name || 'RB Hardware'}
@@ -646,8 +682,14 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
                 onClick={() => setUserMenuOpen((prev) => !prev)}
                 className="flex items-center gap-2 p-1.5 pl-2 pr-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all shadow-xs cursor-pointer"
               >
-                <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center font-bold text-[10px] text-white shrink-0">
-                  {(user?.name || 'U').substring(0, 2).toUpperCase()}
+                <div className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden p-0.5">
+                  {currentBiz?.logoUrl ? (
+                    <img src={currentBiz.logoUrl} alt={currentBiz?.name || 'Business Logo'} className="w-full h-full object-contain" />
+                  ) : (
+                    <span className="w-full h-full bg-blue-600 rounded-md flex items-center justify-center font-bold text-[10px] text-white">
+                      {(user?.name || 'U').substring(0, 2).toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 <span className="text-xs font-semibold text-slate-800 max-w-[120px] truncate">
                   {user?.name || 'Account'}
@@ -726,7 +768,46 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
               </Link>
             </div>
           ) : (
-            children
+            <>
+              {children}
+
+              {/* Mobile Bottom Free Trial Card (Visible on mobile during active free trial) */}
+              {mounted && isTrialActive && pathname !== '/subscription' && (
+                <div className="lg:hidden mt-6 mb-3 rounded-2xl overflow-hidden border border-[#FDE047]/40 shadow-sm bg-[#16192E]">
+                  <div className="p-3.5 bg-gradient-to-b from-[#FFFDF0] to-[#FFF1CD] text-[#1E293B] space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-extrabold text-xs text-[#1E293B]">
+                        {daysLeftInTrial} {daysLeftInTrial === 1 ? 'day' : 'days'} Free Trial left
+                      </h4>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
+                        All Free
+                      </span>
+                    </div>
+                    <div className="w-full bg-[#FFE6A8] h-2 rounded-full overflow-hidden">
+                      <div
+                        className="bg-[#10B981] h-full rounded-full transition-all duration-500"
+                        style={{ width: `${trialProgressPercent}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <Link
+                    href="/subscription"
+                    className="flex items-center justify-between px-3.5 py-2.5 bg-[#212646] hover:bg-[#282E55] active:bg-[#1c203b] transition-colors group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-slate-950 font-black text-[10px] shadow-xs">
+                        ★
+                      </div>
+                      <span className="font-extrabold text-xs text-[#FDE047] group-hover:text-yellow-200 transition-colors">
+                        Get BizManage Premium
+                      </span>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-white group-hover:translate-x-0.5 transition-transform" />
+                  </Link>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>

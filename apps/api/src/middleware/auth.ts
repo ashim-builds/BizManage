@@ -132,17 +132,51 @@ export async function requireBusinessTenant(request: FastifyRequest, _reply: Fas
   }
 
   const allFeatures = [
-    'SALES_INVOICE', 'POS', 'PAYMENT_IN', 'SALES_RETURN',
+    'SALES_INVOICE', 'POS', 'POS_BILLING', 'PAYMENT_IN', 'SALES_RETURN',
     'PURCHASE_BILL', 'PAYMENT_OUT', 'EXPENSES', 'PURCHASE_RETURN',
-    'INVENTORY', 'INVENTORY_TRACKING', 'GODOWNS', 'BARCODE', 'MANUFACTURING',
-    'PARTIES', 'MARKETING_WHATSAPP', 'ONLINE_STORE', 'EXPLORE_STORES',
-    'ACCOUNTS', 'CASHFLOW', 'PROFIT_LOSS', 'REPORTS', 'STAFF', 'SETTINGS',
+    'INVENTORY', 'INVENTORY_TRACKING', 'GODOWNS', 'MULTI_GODOWN', 'BARCODE', 'BARCODE_PRINTING', 'MANUFACTURING',
+    'PARTIES', 'MARKETING_WHATSAPP', 'WHATSAPP_MARKETING', 'ONLINE_STORE', 'EXPLORE_STORES',
+    'ACCOUNTS', 'CASHFLOW', 'PROFIT_LOSS', 'REPORTS', 'ADVANCED_REPORTS', 'STAFF', 'MULTI_USER_ROLES', 'SETTINGS',
     'CUSTOM_BRANDING', 'CUSTOM_LOGO'
   ];
 
+  const defaultStarterFeatures = [
+    'COMPLETE_ACCOUNTING',
+    'INVENTORY_TRACKING',
+    'AUTO_LEDGER',
+    'WALLET_SYNC',
+    'E2E_ENCRYPTION',
+    'SALES_INVOICE',
+    'PAYMENT_IN',
+    'PURCHASE_BILL',
+    'PAYMENT_OUT',
+    'EXPENSES',
+    'PARTIES',
+    'ACCOUNTS',
+    'SETTINGS'
+  ];
+
+  let activeFeatures: string[] = [];
+  if (isTrialActive) {
+    activeFeatures = allFeatures;
+  } else {
+    const rawPkgFeatures = membership.business.subscriptionPackage?.features;
+    if (typeof rawPkgFeatures === 'string') {
+      try {
+        activeFeatures = JSON.parse(rawPkgFeatures);
+      } catch {
+        activeFeatures = defaultStarterFeatures;
+      }
+    } else if (Array.isArray(rawPkgFeatures)) {
+      activeFeatures = rawPkgFeatures.map(String);
+    } else {
+      activeFeatures = defaultStarterFeatures;
+    }
+  }
+
   request.tenant = { 
     businessId,
-    features: isTrialActive ? allFeatures : ((membership.business.subscriptionPackage?.features as string[]) || allFeatures),
+    features: activeFeatures,
     isExpired
   };
   request.membership = { role: membership.role as Role };

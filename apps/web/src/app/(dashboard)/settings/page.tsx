@@ -134,7 +134,7 @@ export default function SettingsPage() {
 }
 
 function SettingsPageContent() {
-  const { user, logout } = useAuth();
+  const { user, refreshUser, logout } = useAuth();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
   const [isMobileSectionDrawerOpen, setIsMobileSectionDrawerOpen] = useState(false);
@@ -233,14 +233,13 @@ function SettingsPageContent() {
 
   const canCustomBranding =
     isTrialActive ||
-    !business?.subscriptionPackage ||
-    userFeatures.length === 0 ||
     userFeatures.includes('CUSTOM_BRANDING') ||
     userFeatures.includes('CUSTOM_LOGO') ||
+    pkgName.includes('gold') ||
+    pkgName.includes('platinum') ||
+    pkgName.includes('pro') ||
     pkgName.includes('premium') ||
     pkgName.includes('enterprise') ||
-    pkgName.includes('standard') ||
-    pkgName.includes('starter') ||
     userFeatures.some((f: string) => f.toLowerCase().includes('logo') || f.toLowerCase().includes('branding'));
   const [profileSuccess, setProfileSuccess] = useState('');
   const [profileError, setProfileError] = useState('');
@@ -362,6 +361,7 @@ function SettingsPageContent() {
       const cleanTaxNumber = taxNumber ? taxNumber.trim() : '';
       const isProfileCompleted = Boolean(name && address && phone && cleanTaxNumber);
       await updateBusiness.mutateAsync({ name, phone, email, address, taxNumber: cleanTaxNumber, currency: 'NPR', logoUrl, profileCompleted: isProfileCompleted });
+      await refreshUser();
       await updateSettings.mutateAsync({
         invoicePrefix: 'INV-',
         purchasePrefix: 'PUR-',

@@ -85,8 +85,14 @@ export default function ExecutiveDashboardPage() {
 
       {/* 2. STORE / BUSINESS PROFILE HEADER CARD */}
       <div className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs">
-        <div className="w-10 h-10 rounded-full border border-slate-300 bg-slate-50 flex items-center justify-center font-bold text-slate-800 text-sm shrink-0">
-          {(currentBiz?.name || 'R').substring(0, 1).toUpperCase()}
+        <div className="w-12 h-12 rounded-2xl border border-slate-200 bg-white flex items-center justify-center font-bold text-slate-800 text-base shrink-0 shadow-2xs overflow-hidden p-0.5">
+          {currentBiz?.logoUrl ? (
+            <img src={currentBiz.logoUrl} alt={currentBiz?.name || 'Business Logo'} className="w-full h-full object-contain" />
+          ) : (
+            <span className="w-full h-full rounded-xl bg-slate-100 flex items-center justify-center text-slate-800 font-extrabold text-sm">
+              {(currentBiz?.name || 'R').substring(0, 1).toUpperCase()}
+            </span>
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <h1 className="font-extrabold text-slate-900 text-sm sm:text-base truncate">

@@ -71,8 +71,8 @@ export function BarcodeStickerModal({
   businessName = 'BizManage Store',
   item,
 }: BarcodeStickerModalProps) {
-  const { user } = useAuth();
-  const currentBiz = user?.memberships?.[0]?.business as any;
+  const { user, activeBusinessId } = useAuth();
+  const currentBiz = (user?.memberships?.find((m: any) => m.business?.id === activeBusinessId)?.business || user?.memberships?.[0]?.business) as any;
   const rawFeatures = currentBiz?.subscriptionPackage?.features;
   const userFeatures = typeof rawFeatures === 'string' ? JSON.parse(rawFeatures) : (rawFeatures || []);
 

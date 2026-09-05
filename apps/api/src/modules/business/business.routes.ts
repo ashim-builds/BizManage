@@ -40,6 +40,8 @@ export async function businessRoutes(fastify: FastifyInstance) {
         orderBy: { displayOrder: 'asc' },
       });
 
+      const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+
       const biz = await tx.business.create({
         data: {
           name: body.name,
@@ -49,6 +51,7 @@ export async function businessRoutes(fastify: FastifyInstance) {
           currency: body.currency,
           subscriptionPackageId: freePkg?.id || null,
           subscriptionStatus: 'ACTIVE',
+          trialEndsAt,
           settings: { create: {} },
         },
       });
