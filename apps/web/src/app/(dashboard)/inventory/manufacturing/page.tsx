@@ -30,6 +30,7 @@ import {
   ProductionRunRecord,
 } from '@/services/manufacturingService';
 import { ResponsiveDataTable, Column } from '@/components/common/ResponsiveDataTable';
+import { ModalPortal } from '@/components/common/ModalPortal';
 import toast from 'react-hot-toast';
 
 export default function ManufacturingPage() {
@@ -469,7 +470,8 @@ export default function ManufacturingPage() {
 
       {/* ── CREATE BOM MODAL ────────────────────────────────────────────── */}
       {bomModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <ModalPortal>
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
@@ -649,11 +651,13 @@ export default function ManufacturingPage() {
             </form>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* ── EXECUTE PRODUCTION RUN MODAL ────────────────────────────────── */}
       {runModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <ModalPortal>
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
@@ -786,6 +790,7 @@ export default function ManufacturingPage() {
             </form>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

@@ -688,7 +688,7 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <div className="p-6 md:p-8 flex-1">
+        <div className="p-1.5 sm:p-4 md:p-6 lg:p-8 flex-1">
           {mounted && !hasSelectedPlan && pathname !== '/subscription' && pathname !== '/settings' && pathname !== '/dashboard' ? (
             <div className="max-w-xl mx-auto my-12 p-8 rounded-3xl bg-slate-900 border border-amber-500/30 text-center space-y-6 shadow-2xl font-sans">
               <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto">

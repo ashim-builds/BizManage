@@ -179,6 +179,61 @@ export default function ExpensesPage() {
     },
   ];
 
+  const renderMobileCard = (e: any) => (
+    <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
+      {/* Top Header: Category/Title + Amount */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 border border-rose-100 flex items-center justify-center shrink-0">
+            <Receipt className="w-4 h-4" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h4 className="font-bold text-slate-900 text-sm truncate">
+              {e.category || 'General Expense'}
+            </h4>
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
+              <Clock className="w-3 h-3 shrink-0" />
+              <span>{new Date(e.date).toLocaleDateString()}</span>
+            </div>
+          </div>
+        </div>
+        <div className="text-right shrink-0">
+          <span className="font-mono font-black text-sm text-rose-600 block">
+            - Rs. {Number(e.amount || 0).toLocaleString()}
+          </span>
+        </div>
+      </div>
+
+      {/* Middle Metadata Badges */}
+      <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100/80 text-xs">
+        <span className="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 font-bold uppercase text-[10px]">
+          {e.paymentMode || 'CASH'}
+        </span>
+        <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-medium truncate max-w-[150px]">
+          {e.account?.accountName || 'Cash Drawer'}
+        </span>
+      </div>
+
+      {e.description && (
+        <p className="text-[11px] text-slate-500 italic bg-slate-50 rounded-xl p-2 border border-slate-100 truncate">
+          {e.description}
+        </p>
+      )}
+
+      {/* Bottom Actions */}
+      <div className="flex items-center justify-end pt-2 border-t border-slate-100">
+        <button
+          type="button"
+          onClick={() => handleDelete(e.id, e.category, Number(e.amount || 0))}
+          className="px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 text-[11px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+          <span>Delete</span>
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="max-w-7xl mx-auto space-y-6 px-3 sm:px-6 py-4">
       {/* Header */}
@@ -195,7 +250,7 @@ export default function ExpensesPage() {
 
         <button
           onClick={() => setIsCreateOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-bold transition-all shadow-md shadow-rose-600/20 active:scale-95 cursor-pointer"
+          className="hidden sm:inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-bold transition-all shadow-md shadow-rose-600/20 active:scale-95 cursor-pointer"
         >
           <Plus className="w-4 h-4" /> Record Expense
         </button>
@@ -376,6 +431,7 @@ export default function ExpensesPage() {
         data={expenses}
         keyExtractor={(e) => e.id}
         isLoading={expensesLoading}
+        renderMobileCard={renderMobileCard}
         emptyTitle="No Expense Logged"
         emptyDescription="Keep track of office rent, utilities, tea & snacks, salaries, and daily business spending."
         emptyAction={
@@ -522,6 +578,18 @@ export default function ExpensesPage() {
           onClose={() => setDeletingExpenseInfo(null)}
         />
       )}
+
+      {/* Floating Bottom Center Action Button (Mobile) */}
+      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-30 lg:hidden pointer-events-auto">
+        <button
+          type="button"
+          onClick={() => setIsCreateOpen(true)}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black text-xs shadow-lg shadow-rose-600/40 border border-rose-500/40 transition-all cursor-pointer whitespace-nowrap"
+        >
+          <Plus className="w-4 h-4 stroke-[3]" />
+          <span>Add Expense (खर्च)</span>
+        </button>
+      </div>
     </div>
   );
 }

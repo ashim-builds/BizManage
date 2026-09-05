@@ -39,6 +39,7 @@ import {
   X,
   BanknoteIcon,
   QrCode,
+  ShoppingBag,
 } from 'lucide-react';
 
 export default function SalesPage() {
@@ -285,7 +286,7 @@ export default function SalesPage() {
         </div>
         <Link
           href="/transactions/sales/new"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-md shadow-blue-600/20 active:scale-95"
+          className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-md shadow-blue-600/20 active:scale-95"
         >
           <Plus className="w-4 h-4" />
           Create Sale Invoice
@@ -1226,6 +1227,21 @@ export default function SalesPage() {
             : []),
         ]}
       />
+
+      {/* Floating Bottom Center Action Button (Mobile) */}
+      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-30 lg:hidden pointer-events-auto">
+        <button
+          type="button"
+          onClick={() => {
+            form.reset();
+            setIsCreateOpen(true);
+          }}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black text-xs shadow-lg shadow-blue-600/40 border border-blue-500/40 transition-all cursor-pointer whitespace-nowrap"
+        >
+          <Plus className="w-4 h-4 stroke-[3]" />
+          <span>Add Sale (बिक्री)</span>
+        </button>
+      </div>
     </div>
   );
 }
@@ -1250,21 +1266,34 @@ function MobileSaleCard({ sale: s, onLongPress, onPay }: MobileSaleCardProps) {
   return (
     <div
       {...longPressHandlers}
-      className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-3 select-text"
+      className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-3 select-text active:scale-[0.99] transition-transform"
     >
-      {/* Top Row */}
-      <div className="flex items-center justify-between">
-        <div>
-          <a
-            href={`/transactions/sales/${s.id}`}
-            className="font-bold text-slate-900 font-mono text-sm hover:text-blue-600"
-          >
-            {s.invoiceNumber}
-          </a>
-          <p className="text-[10px] text-slate-400">{new Date(s.date).toLocaleDateString()}</p>
+      {/* Top Header */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shrink-0">
+            <ShoppingBag className="w-4 h-4" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <Link
+                href={`/transactions/sales/${s.id}`}
+                className="font-mono font-bold text-xs text-blue-600 hover:text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded-md border border-blue-100"
+              >
+                {s.invoiceNumber}
+              </Link>
+              <span className="text-[11px] text-slate-400">
+                {new Date(s.date).toLocaleDateString()}
+              </span>
+            </div>
+            <h4 className="font-bold text-slate-900 text-sm truncate mt-0.5">
+              {s.party?.name || 'Walk-in Customer'}
+            </h4>
+          </div>
         </div>
+
         <span
-          className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+          className={`shrink-0 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
             s.status === 'PAID'
               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
               : s.status === 'PARTIAL'
@@ -1278,16 +1307,15 @@ function MobileSaleCard({ sale: s, onLongPress, onPay }: MobileSaleCardProps) {
         </span>
       </div>
 
-      {/* Body */}
-      <div className="flex justify-between items-center">
+      {/* Middle Amount & Items Summary */}
+      <div className="flex justify-between items-center pt-2 border-t border-slate-100/80 text-xs">
         <div>
-          <p className="text-sm font-bold text-slate-800">{s.party?.name || 'Walk-in Customer'}</p>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-semibold border border-slate-200">
             {totalQty} {totalQty === 1 ? 'Pc' : 'Pcs'} ({lineCount} {lineCount === 1 ? 'item' : 'items'})
-          </p>
+          </span>
         </div>
         <div className="text-right">
-          <p className="font-mono font-bold text-slate-900 text-base">Rs. {total.toLocaleString()}</p>
+          <p className="font-mono font-black text-slate-900 text-base">Rs. {total.toLocaleString()}</p>
           {due > 0 ? (
             <p className="font-mono text-[10px] text-amber-600 font-bold mt-0.5">Due: Rs. {due.toLocaleString()}</p>
           ) : (
@@ -1297,24 +1325,27 @@ function MobileSaleCard({ sale: s, onLongPress, onPay }: MobileSaleCardProps) {
       </div>
 
       {/* Quick Actions */}
-      <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
-        {due > 0 && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onPay(s.id, due);
-            }}
-            className="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-bold flex items-center gap-1.5 hover:bg-emerald-100"
+      <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+        <span className="text-[10px] text-slate-400">Hold card for options</span>
+        <div className="flex items-center gap-1.5">
+          {due > 0 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onPay(s.id, due);
+              }}
+              className="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-bold flex items-center gap-1.5 hover:bg-emerald-100 cursor-pointer"
+            >
+              <BanknoteIcon className="w-3.5 h-3.5" /> Pay
+            </button>
+          )}
+          <Link
+            href={`/transactions/sales/${s.id}`}
+            className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-[11px] font-bold flex items-center gap-1.5 transition-colors"
           >
-            <BanknoteIcon className="w-3.5 h-3.5" /> Pay
-          </button>
-        )}
-        <a
-          href={`/transactions/sales/${s.id}`}
-          className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-[11px] font-bold flex items-center gap-1.5"
-        >
-          <Eye className="w-3.5 h-3.5" /> View
-        </a>
+            <Eye className="w-3.5 h-3.5" /> View
+          </Link>
+        </div>
       </div>
     </div>
   );

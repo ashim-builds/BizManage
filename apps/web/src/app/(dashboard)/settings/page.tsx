@@ -12,6 +12,7 @@ import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { UserGuide } from '@/components/guide/UserGuide';
 import { SaveConfirmModal } from '@/components/common/SaveConfirmModal';
+import { ModalPortal } from '@/components/ui/ModalPortal';
 import { toast } from 'react-hot-toast';
 import {
   Settings,
@@ -42,6 +43,10 @@ import {
   Database,
   FileCheck,
   Layers,
+  ChevronDown,
+  ChevronRight,
+  SlidersHorizontal,
+  X,
 } from 'lucide-react';
 
 type SettingsTab =
@@ -55,6 +60,71 @@ type SettingsTab =
   | 'calculators'
   | 'about';
 
+const SETTINGS_SECTIONS: {
+  id: SettingsTab;
+  label: string;
+  shortLabel: string;
+  description: string;
+  icon: any;
+}[] = [
+  {
+    id: 'profile',
+    label: 'GENERAL & PROFILE',
+    shortLabel: 'General',
+    description: 'Business identity, VAT/PAN & prefixes',
+    icon: Building2,
+  },
+  {
+    id: 'account',
+    label: 'SECURITY & SESSIONS',
+    shortLabel: 'Security',
+    description: 'Password, active devices & logins',
+    icon: User,
+  },
+  {
+    id: 'subscription',
+    label: 'SUBSCRIPTION',
+    shortLabel: 'Billing',
+    description: 'Plans, features & package upgrade',
+    icon: Crown,
+  },
+  {
+    id: 'import',
+    label: 'IMPORT DATA',
+    shortLabel: 'Import',
+    description: 'Bulk upload items & party data',
+    icon: Upload,
+  },
+  {
+    id: 'backup',
+    label: 'BACKUP & RESTORE',
+    shortLabel: 'Backup',
+    description: 'Download encrypted database dump',
+    icon: Download,
+  },
+  {
+    id: 'calculators',
+    label: 'TOOLS & EMI',
+    shortLabel: 'Tools & EMI',
+    description: 'Loan EMI, interest & tax calculators',
+    icon: Calculator,
+  },
+  {
+    id: 'guide',
+    label: 'GUIDE / निर्देशिका',
+    shortLabel: 'User Guide',
+    description: 'Step-by-step user handbook & manual',
+    icon: BookOpen,
+  },
+  {
+    id: 'about',
+    label: 'ABOUT',
+    shortLabel: 'About',
+    description: 'System info, E2EE security & version',
+    icon: HelpCircle,
+  },
+];
+
 export default function SettingsPage() {
   return (
     <Suspense fallback={<LoadingState message="Loading settings..." />}>
@@ -67,6 +137,7 @@ function SettingsPageContent() {
   const { user, logout } = useAuth();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+  const [isMobileSectionDrawerOpen, setIsMobileSectionDrawerOpen] = useState(false);
   const [isSaveProfileConfirmOpen, setIsSaveProfileConfirmOpen] = useState(false);
 
   useEffect(() => {
@@ -492,122 +563,119 @@ function SettingsPageContent() {
   return (
     <div className="space-y-4 font-sans pb-12">
       {/* Main Settings Container */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden flex flex-col md:flex-row min-h-[calc(100vh-140px)]">
-        {/* Left Category Sidebar (Dark Navy matching Vyapar desktop) */}
-        <div className="w-full md:w-60 lg:w-64 shrink-0 bg-[#16192E] text-slate-300 p-2 sm:p-3 border-r border-slate-800 flex md:flex-col overflow-x-auto md:overflow-x-visible no-scrollbar gap-1">
-          <div className="hidden md:flex items-center justify-between px-3 py-2 mb-1 border-b border-slate-800/80">
-            <span className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-1.5">
+      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden flex flex-col md:flex-row h-auto md:h-[calc(100vh-130px)] md:max-h-[calc(100vh-130px)]">
+        
+        {/* MOBILE NAVIGATION HUB (< md): Clean, Scroll-Free Modern Hub */}
+        <div className="md:hidden bg-slate-900 text-white p-3 border-b border-slate-800 space-y-2.5 shrink-0">
+          {/* Active Section Header & Dropdown Trigger */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0">
+                {(() => {
+                  const curr = SETTINGS_SECTIONS.find((s) => s.id === activeTab) || SETTINGS_SECTIONS[0];
+                  const Icon = curr.icon;
+                  return <Icon className="w-4 h-4" />;
+                })()}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-black uppercase text-white truncate">
+                  {SETTINGS_SECTIONS.find((s) => s.id === activeTab)?.shortLabel || 'Settings'}
+                </p>
+                <p className="text-[10px] text-slate-400 truncate">
+                  {SETTINGS_SECTIONS.find((s) => s.id === activeTab)?.description || ''}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsMobileSectionDrawerOpen(true)}
+              className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold flex items-center gap-1.5 border border-slate-700 transition-all shrink-0 cursor-pointer"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5 text-blue-400" />
+              <span>All ({SETTINGS_SECTIONS.length})</span>
+              <ChevronDown className="w-3 h-3 text-slate-400" />
+            </button>
+          </div>
+
+          {/* Quick-Switch 4x2 Grid (100% Scroll-Free, Perfectly Responsive) */}
+          <div className="grid grid-cols-4 gap-1.5 pt-1 border-t border-slate-800/80">
+            {SETTINGS_SECTIONS.map((sec) => {
+              const Icon = sec.icon;
+              const isActive = activeTab === sec.id;
+              return (
+                <button
+                  key={sec.id}
+                  type="button"
+                  onClick={() => setActiveTab(sec.id)}
+                  className={`py-1.5 px-1 rounded-xl text-center transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
+                    isActive
+                      ? 'bg-blue-600 text-white font-bold shadow-xs'
+                      : 'bg-slate-800/70 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-700/50'
+                  }`}
+                  title={sec.label}
+                >
+                  <Icon className="w-3.5 h-3.5 shrink-0" />
+                  <span className="text-[9px] font-bold leading-tight truncate max-w-full">
+                    {sec.shortLabel}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* DESKTOP SIDEBAR (>= md): Fixed Height with Independent Dedicated Scrollbar */}
+        <div className="hidden md:flex w-60 lg:w-68 shrink-0 bg-[#16192E] text-slate-300 border-r border-slate-800 flex-col h-full overflow-hidden">
+          {/* Sidebar Header */}
+          <div className="p-4 border-b border-slate-800/80 flex items-center justify-between shrink-0">
+            <span className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
               <Settings className="w-4 h-4 text-blue-400" /> Settings
+            </span>
+            <span className="text-[10px] font-bold text-slate-400 bg-slate-800/90 px-2 py-0.5 rounded-md border border-slate-700/60">
+              {SETTINGS_SECTIONS.length} Sections
             </span>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('profile')}
-            className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wide text-left transition-all flex items-center gap-2.5 shrink-0 ${
-              activeTab === 'profile'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <Building2 className="w-4 h-4 shrink-0" />
-            <span>GENERAL</span>
-          </button>
+          {/* Independent Scrollable Nav List */}
+          <div className="flex-1 overflow-y-auto p-2.5 space-y-1 overscroll-contain">
+            {SETTINGS_SECTIONS.map((sec) => {
+              const Icon = sec.icon;
+              const isActive = activeTab === sec.id;
+              return (
+                <button
+                  key={sec.id}
+                  type="button"
+                  onClick={() => setActiveTab(sec.id)}
+                  className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wide text-left transition-all flex items-center gap-2.5 cursor-pointer ${
+                    isActive
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                  }`}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{sec.label}</span>
+                </button>
+              );
+            })}
+          </div>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('account')}
-            className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wide text-left transition-all flex items-center gap-2.5 shrink-0 ${
-              activeTab === 'account'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <User className="w-4 h-4 shrink-0" />
-            <span>SECURITY & SESSIONS</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('subscription')}
-            className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wide text-left transition-all flex items-center gap-2.5 shrink-0 ${
-              activeTab === 'subscription'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <Crown className="w-4 h-4 shrink-0" />
-            <span>SUBSCRIPTION</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('import')}
-            className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wide text-left transition-all flex items-center gap-2.5 shrink-0 ${
-              activeTab === 'import'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <Upload className="w-4 h-4 shrink-0" />
-            <span>IMPORT DATA</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('backup')}
-            className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wide text-left transition-all flex items-center gap-2.5 shrink-0 ${
-              activeTab === 'backup'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <Download className="w-4 h-4 shrink-0" />
-            <span>BACKUP</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('calculators')}
-            className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wide text-left transition-all flex items-center gap-2.5 shrink-0 ${
-              activeTab === 'calculators'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <Calculator className="w-4 h-4 shrink-0" />
-            <span>TOOLS & EMI</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('guide')}
-            className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wide text-left transition-all flex items-center gap-2.5 shrink-0 ${
-              activeTab === 'guide'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <BookOpen className="w-4 h-4 shrink-0" />
-            <span>GUIDE / निर्देशिका</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('about')}
-            className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wide text-left transition-all flex items-center gap-2.5 shrink-0 ${
-              activeTab === 'about'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <HelpCircle className="w-4 h-4 shrink-0" />
-            <span>ABOUT</span>
-          </button>
+          {/* Sidebar Footer */}
+          <div className="p-3 border-t border-slate-800/80 shrink-0 bg-[#121426]">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center shrink-0 font-bold text-xs">
+                {business?.name?.charAt(0) || 'B'}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-white truncate">{business?.name || 'BizManage'}</p>
+                <p className="text-[10px] text-slate-400 truncate">{business?.subscriptionPackage?.name || 'Free Tier'}</p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Right Content Area (Clean White ERP Paper Theme) */}
-        <div className="flex-1 p-4 sm:p-6 lg:p-8 bg-white overflow-y-auto">
+        {/* Right Content Area: Independent Vertical Scroll (Clean White ERP Paper Theme) */}
+        <div className="flex-1 p-4 sm:p-6 lg:p-8 bg-white overflow-y-auto h-auto md:h-full overscroll-contain">
           {/* TAB 1: GENERAL SETTINGS */}
           {activeTab === 'profile' && (
             <div className="space-y-6 max-w-4xl">
@@ -1209,6 +1277,79 @@ function SettingsPageContent() {
           )}
         </div>
       </div>
+
+      {/* Mobile Settings Section Sheet Modal */}
+      {isMobileSectionDrawerOpen && (
+        <ModalPortal>
+          <div
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[100] flex items-end justify-center p-0 md:hidden font-sans animate-in fade-in duration-150"
+            onClick={() => setIsMobileSectionDrawerOpen(false)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="w-full bg-white rounded-t-3xl border-t border-slate-200 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-in slide-in-from-bottom duration-200"
+            >
+              {/* Sheet Header */}
+              <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                    <Settings className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900">Settings Sections</h3>
+                    <p className="text-[11px] text-slate-500">Choose configuration module</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsMobileSectionDrawerOpen(false)}
+                  className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Sheet List */}
+              <div className="p-3 space-y-1.5 overflow-y-auto max-h-[60vh]">
+                {SETTINGS_SECTIONS.map((sec) => {
+                  const Icon = sec.icon;
+                  const isSelected = activeTab === sec.id;
+                  return (
+                    <button
+                      key={sec.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveTab(sec.id);
+                        setIsMobileSectionDrawerOpen(false);
+                      }}
+                      className={`w-full p-3 rounded-2xl flex items-center justify-between text-left transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-blue-50 border border-blue-200 text-blue-900 shadow-2xs font-bold'
+                          : 'bg-slate-50/50 hover:bg-slate-100 border border-transparent text-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div
+                          className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                            isSelected ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 border border-slate-200'
+                          }`}
+                        >
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-black text-slate-900 truncate">{sec.label}</p>
+                          <p className="text-[11px] text-slate-400 truncate">{sec.description}</p>
+                        </div>
+                      </div>
+                      {isSelected && <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 ml-2" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
 
       {/* Save Settings Confirmation Modal */}
       <SaveConfirmModal

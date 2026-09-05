@@ -2647,7 +2647,7 @@ function InventoryPageContent() {
           >
             <div
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-5xl bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto"
+              className="w-full max-w-5xl bg-white border border-slate-200/90 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto"
             >
               {/* Type Switch Segment */}
               <div className="flex p-1 bg-slate-100/90 rounded-2xl max-w-sm">
@@ -2701,7 +2701,7 @@ function InventoryPageContent() {
                     {createType === ItemType.SERVICE ? <Wrench className="w-5 h-5" /> : <Package className="w-5 h-5" />}
                   </div>
                   <div>
-                    <h3 className="text-lg font-black text-slate-900">
+                    <h3 className="text-base sm:text-lg font-black text-slate-900">
                       Add New {createType === ItemType.SERVICE ? 'Service (सेवा)' : 'Product (सामान)'}
                     </h3>
                     <p className="text-xs text-slate-500">
@@ -2738,7 +2738,7 @@ function InventoryPageContent() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">SAC / Service Code</label>
                         <input
@@ -2844,7 +2844,7 @@ function InventoryPageContent() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">SKU / Item Code</label>
                         <input
@@ -2869,7 +2869,7 @@ function InventoryPageContent() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">Sale Price (Rs.) *</label>
                         <input
@@ -2896,7 +2896,7 @@ function InventoryPageContent() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">Opening Stock</label>
                         <input
@@ -2990,7 +2990,7 @@ function InventoryPageContent() {
       {editingItem && (
         <ModalPortal>
           <div
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[120] flex items-center justify-center p-4 font-sans"
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[120] flex items-center justify-center p-2 sm:p-4 font-sans"
             onClick={() =>
               promptDiscardConfirmation(
                 () => setEditingItem(null),
@@ -3001,7 +3001,7 @@ function InventoryPageContent() {
           >
             <div
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-lg bg-white border border-slate-200/90 rounded-3xl p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto"
+              className="w-full max-w-lg bg-white border border-slate-200/90 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2.5">
@@ -3042,7 +3042,7 @@ function InventoryPageContent() {
                 </button>
               </div>
 
-              <form onSubmit={editForm.handleSubmit(handleEditSaveRequest)} className="p-6 space-y-4">
+              <form onSubmit={editForm.handleSubmit(handleEditSaveRequest)} className="space-y-4 pt-1">
                 {/* ----------------- SERVICE EDIT FORM ----------------- */}
                 {editingItem.type === ItemType.SERVICE ? (
                   <>
@@ -3055,7 +3055,7 @@ function InventoryPageContent() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">SAC / Service Code</label>
                         <input
@@ -3157,7 +3157,7 @@ function InventoryPageContent() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">SKU / Item Code</label>
                         <input
@@ -3181,7 +3181,7 @@ function InventoryPageContent() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">Sale Price (Rs.)</label>
                         <input
@@ -3218,7 +3218,7 @@ function InventoryPageContent() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">Category</label>
                         <select
@@ -4206,30 +4206,54 @@ function MobileItemCard({ item, stock, onClick, onLongPress }: MobileItemCardPro
     <div
       {...longPressHandlers}
       onClick={onClick}
-      className="p-3.5 bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md active:scale-[0.99] transition-all cursor-pointer space-y-2 select-text"
+      className="p-3.5 bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md active:scale-[0.99] transition-all cursor-pointer space-y-2.5 select-text"
     >
       <div className="flex items-start justify-between gap-2">
-        <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">{item.name}</h3>
-        {item.code && <span className="text-[10px] text-slate-400 font-mono shrink-0">SKU: {item.code}</span>}
+        <div className="min-w-0 flex-1">
+          <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug truncate">{item.name}</h3>
+          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+            {item.category?.name && (
+              <span className="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-semibold border border-blue-100">
+                {item.category.name}
+              </span>
+            )}
+            {item.code && (
+              <span className="text-[10px] text-slate-400 font-mono">
+                SKU: {item.code}
+              </span>
+            )}
+          </div>
+        </div>
+        <span
+          className={`px-2 py-0.5 rounded-full text-[10px] font-black shrink-0 ${
+            isOut
+              ? 'bg-rose-100 text-rose-700 border border-rose-200'
+              : isLow
+              ? 'bg-amber-100 text-amber-800 border border-amber-200'
+              : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+          }`}
+        >
+          {isOut ? 'Out of Stock' : isLow ? 'Low Stock' : 'In Stock'}
+        </span>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 text-left pt-1 border-t border-slate-100">
+      <div className="grid grid-cols-3 gap-2 text-left pt-2 border-t border-slate-100">
         <div>
           <span className="text-[10px] text-slate-400 block font-medium">Sale Price</span>
-          <span className="text-xs font-bold text-slate-900 font-mono">
-            Rs {Number(item.salePrice || 0).toFixed(2)}
+          <span className="text-xs font-black text-slate-900 font-mono">
+            Rs. {Number(item.salePrice || 0).toFixed(2)}
           </span>
         </div>
         <div>
-          <span className="text-[10px] text-slate-400 block font-medium">Purchase Price</span>
-          <span className="text-xs font-bold text-slate-900 font-mono">
-            Rs {Number(item.purchasePrice || 0).toFixed(2)}
+          <span className="text-[10px] text-slate-400 block font-medium">Purchase Cost</span>
+          <span className="text-xs font-black text-slate-700 font-mono">
+            Rs. {Number(item.purchasePrice || 0).toFixed(2)}
           </span>
         </div>
-        <div>
+        <div className="text-right sm:text-left">
           <span className="text-[10px] text-slate-400 block font-medium">Stock</span>
           <span
-            className={`text-xs font-bold font-mono ${
+            className={`text-xs font-black font-mono ${
               isOut ? 'text-rose-600' : isLow ? 'text-amber-600' : 'text-emerald-600'
             }`}
           >
@@ -4254,22 +4278,34 @@ function MobileServiceCard({ item, onClick, onLongPress }: MobileServiceCardProp
     <div
       {...longPressHandlers}
       onClick={onClick}
-      className="p-4 bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md active:scale-[0.99] transition-all cursor-pointer space-y-2.5 select-text"
+      className="p-3.5 sm:p-4 bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md active:scale-[0.99] transition-all cursor-pointer space-y-2.5 select-text"
     >
       <div className="flex items-start justify-between gap-2">
-        <h3 className="text-sm font-bold text-slate-900 leading-snug">{item.name}</h3>
-        {item.code && <span className="text-[10px] text-slate-400 font-mono shrink-0">SAC: {item.code}</span>}
+        <div className="min-w-0 flex-1">
+          <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug truncate">{item.name}</h3>
+          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+            {item.category?.name && (
+              <span className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded font-semibold border border-amber-200">
+                {item.category.name}
+              </span>
+            )}
+            {item.code && <span className="text-[10px] text-slate-400 font-mono shrink-0">SAC: {item.code}</span>}
+          </div>
+        </div>
+        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
+          Service
+        </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 text-left pt-1">
+      <div className="grid grid-cols-2 gap-2 text-left pt-2 border-t border-slate-100">
         <div>
-          <span className="text-[11px] text-slate-400 block font-medium">Charge / Rate</span>
-          <span className="text-xs sm:text-sm font-bold text-slate-900 font-mono">
-            Rs {Number(item.salePrice || 0).toFixed(2)}
+          <span className="text-[10px] text-slate-400 block font-medium">Charge / Rate</span>
+          <span className="text-xs sm:text-sm font-black text-slate-900 font-mono">
+            Rs. {Number(item.salePrice || 0).toFixed(2)}
           </span>
         </div>
-        <div>
-          <span className="text-[11px] text-slate-400 block font-medium">Unit</span>
+        <div className="text-right">
+          <span className="text-[10px] text-slate-400 block font-medium">Billing Unit</span>
           <span className="text-xs sm:text-sm font-bold text-slate-700 font-mono">{item.unit || 'Hrs'}</span>
         </div>
       </div>

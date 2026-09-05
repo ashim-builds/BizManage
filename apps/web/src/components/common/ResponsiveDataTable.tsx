@@ -23,6 +23,7 @@ export interface ResponsiveDataTableProps<T> {
   emptyDescription?: string;
   emptyAction?: ReactNode;
   onRowClick?: (item: T) => void;
+  renderMobileCard?: (item: T, index: number) => ReactNode;
   renderMobileCardHeader?: (item: T) => ReactNode;
   renderMobileCardExtra?: (item: T) => ReactNode;
   pagination?: {
@@ -43,6 +44,7 @@ export function ResponsiveDataTable<T>({
   emptyDescription = 'There are no items to display at this time.',
   emptyAction,
   onRowClick,
+  renderMobileCard,
   renderMobileCardHeader,
   renderMobileCardExtra,
   pagination,
@@ -144,25 +146,37 @@ export function ResponsiveDataTable<T>({
       <div className="md:hidden space-y-3">
         {data.map((item, index) => {
           const cardKey = keyExtractor(item, index);
-          const isExpanded = !!expandedCards[cardKey];
 
+          // If custom mobile card renderer is provided, use it
+          if (renderMobileCard) {
+            return (
+              <div key={cardKey}>
+                {renderMobileCard(item, index)}
+              </div>
+            );
+          }
+
+          const isExpanded = !!expandedCards[cardKey];
           const primaryCol = columns.find((c) => c.isPrimaryTitle);
           const statusCol = columns.find((c) => c.isStatusBadge);
-          const detailCols = columns.filter((c) => !c.mobileHidden && !c.isPrimaryTitle && !c.isStatusBadge);
+          const actionsCol = columns.find((c) => c.key === 'actions' || c.header.toLowerCase() === 'actions');
+          const detailCols = columns.filter(
+            (c) => !c.mobileHidden && !c.isPrimaryTitle && !c.isStatusBadge && c.key !== 'actions' && c.header.toLowerCase() !== 'actions'
+          );
 
           return (
             <div
               key={cardKey}
               onClick={() => onRowClick && onRowClick(item)}
-              className={`bg-white rounded-2xl border border-slate-200 p-4 shadow-xs transition-all ${
+              className={`bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs transition-all ${
                 onRowClick ? 'active:scale-[0.99] cursor-pointer' : ''
               }`}
             >
-              {/* Card Header: Main identifier & Status/Action */}
+              {/* Card Header: Main identifier & Status/Amount */}
               {renderMobileCardHeader ? (
                 renderMobileCardHeader(item)
               ) : (
-                <div className="flex items-start justify-between gap-2 pb-3 border-b border-slate-100">
+                <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-100">
                   <div className="min-w-0 flex-1">
                     {primaryCol ? (
                       <div className="font-bold text-slate-900 text-sm truncate">
@@ -183,18 +197,27 @@ export function ResponsiveDataTable<T>({
               )}
 
               {/* Key-Value Details Grid */}
-              <div className="grid grid-cols-2 gap-2.5 pt-3 text-xs">
-                {detailCols.map((col) => (
-                  <div key={col.key} className={col.align === 'right' ? 'text-right' : 'text-left'}>
-                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
-                      {col.header}
-                    </span>
-                    <span className="font-semibold text-slate-800 break-words">
-                      {col.render ? col.render(item, index) : (item as any)[col.key] ?? '—'}
-                    </span>
-                  </div>
-                ))}
-              </div>
+              {detailCols.length > 0 && (
+                <div className="grid grid-cols-2 gap-2.5 pt-3 text-xs">
+                  {detailCols.map((col) => (
+                    <div key={col.key} className={col.align === 'right' ? 'text-right' : 'text-left'}>
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+                        {col.header}
+                      </span>
+                      <span className="font-semibold text-slate-800 break-words">
+                        {col.render ? col.render(item, index) : (item as any)[col.key] ?? '—'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Dedicated Actions Row */}
+              {actionsCol && (
+                <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-end">
+                  {actionsCol.render ? actionsCol.render(item, index) : (item as any)[actionsCol.key]}
+                </div>
+              )}
 
               {/* Extra expandable mobile section */}
               {renderMobileCardExtra && (

@@ -42,6 +42,11 @@
     -webkit-touch-callout: default;
   }
 
+  html[data-modal-open="true"],
+  body[data-modal-open="true"] {
+    overflow: hidden !important;
+  }
+
   body {
     @apply bg-[#F4F6F9] text-slate-900 font-sans antialiased selection:bg-red-500 selection:text-white;
     -webkit-user-select: text;

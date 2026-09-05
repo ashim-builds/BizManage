@@ -194,7 +194,7 @@ export default function IncomePage() {
 
         <button
           onClick={() => setIsCreateOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold transition-all shadow-md shadow-emerald-600/20 active:scale-95 cursor-pointer"
+          className="hidden sm:inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold transition-all shadow-md shadow-emerald-600/20 active:scale-95 cursor-pointer"
         >
           <Plus className="w-4 h-4" /> Record Other Income
         </button>
@@ -521,6 +521,18 @@ export default function IncomePage() {
           onClose={() => setDeletingIncomeInfo(null)}
         />
       )}
+
+      {/* Floating Bottom Center Action Button (Mobile) */}
+      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-30 lg:hidden pointer-events-auto">
+        <button
+          type="button"
+          onClick={() => setIsCreateOpen(true)}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs shadow-lg shadow-emerald-600/40 border border-emerald-500/40 transition-all cursor-pointer whitespace-nowrap"
+        >
+          <Plus className="w-4 h-4 stroke-[3]" />
+          <span>Add Income (अन्य आम्दानी)</span>
+        </button>
+      </div>
     </div>
   );
 }
