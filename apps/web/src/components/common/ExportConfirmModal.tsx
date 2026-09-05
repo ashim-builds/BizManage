@@ -10,7 +10,7 @@ interface ExportConfirmModalProps {
   title: string;
   description?: string;
   recordCount: number;
-  onConfirm: (format: 'csv' | 'json') => void;
+  onConfirm: (format: 'csv' | 'json') => void | Promise<void>;
 }
 
 export function ExportConfirmModal({
@@ -26,10 +26,10 @@ export function ExportConfirmModal({
 
   if (!isOpen) return null;
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     setIsExporting(true);
     try {
-      onConfirm(selectedFormat);
+      await onConfirm(selectedFormat);
       onClose();
     } finally {
       setIsExporting(false);

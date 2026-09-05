@@ -830,8 +830,27 @@ function InventoryPageContent() {
       isOpen: true,
       title: 'Inventory Products & Services',
       description: 'Export complete catalog of products, services, stock levels, and pricing.',
-      recordCount: rawItems.length,
-      onConfirm: (format) => {
+      recordCount: summary?.totalItems ?? rawItems.length,
+      onConfirm: async (format) => {
+        const allItems: any[] = [];
+        let page = 1;
+        let hasMore = true;
+
+        while (hasMore) {
+          const response = await api.get('/items', {
+            params: { page, limit: 500 },
+          });
+          const pageItems = response.data?.data || response.data?.items || [];
+          allItems.push(...pageItems);
+          hasMore = Boolean(response.data?.meta?.hasMore || response.data?.pagination?.hasMore);
+          page += 1;
+        }
+
+        if (allItems.length === 0) {
+          toast.error('No items to export.');
+          return;
+        }
+
         const dateStr = new Date().toISOString().split('T')[0];
         if (format === 'csv') {
           const headers = [
@@ -847,7 +866,7 @@ function InventoryPageContent() {
             'Min Stock Alert',
             'Description',
           ];
-          const rows = rawItems.map((i) => [
+          const rows = allItems.map((i) => [
             i.name,
             i.code || '',
             i.type,
@@ -862,9 +881,9 @@ function InventoryPageContent() {
           ]);
           downloadCsv(`bizmanage_inventory_${dateStr}.csv`, headers, rows);
         } else {
-          downloadJson(`bizmanage_inventory_${dateStr}.json`, rawItems);
+          downloadJson(`bizmanage_inventory_${dateStr}.json`, allItems);
         }
-        toast.success(`Exported ${rawItems.length} items to ${format.toUpperCase()}!`);
+        toast.success(`Exported ${allItems.length} items to ${format.toUpperCase()}!`);
       },
     });
   };
