@@ -623,12 +623,20 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
         <header className="h-16 border-b border-slate-200 px-3 sm:px-6 flex items-center justify-between sticky top-0 bg-white backdrop-blur-md z-30 print:hidden gap-2 shadow-xs">
           {/* Mobile View: Logo (< lg) */}
           <div className="flex items-center gap-2 lg:hidden">
-            <Link href="/dashboard" className="flex items-center shrink-0 group">
+            <Link href="/dashboard" className="flex items-center gap-2 shrink-0 group">
               <img
-                src="/logo-transparent.png"
+                src="/icon-192x192.png"
                 alt="BizManage"
-                className="h-8 w-auto max-w-[135px] sm:max-w-[150px] object-contain drop-shadow-xs group-hover:scale-105 transition-transform"
+                className="h-8 w-8 object-contain drop-shadow-xs group-hover:scale-105 transition-transform shrink-0"
               />
+              <div className="flex flex-col justify-center">
+                <span className="text-base font-black tracking-tight text-slate-900 leading-none">
+                  Biz<span className="text-blue-600">Manage</span>
+                </span>
+                <span className="text-[8px] font-extrabold tracking-wider text-slate-400 uppercase mt-0.5 leading-none">
+                  MANAGE. TRACK. GROW.
+                </span>
+              </div>
             </Link>
           </div>
 
