@@ -61,9 +61,7 @@ export default function SalesReturnPage() {
   // Mutations
   const createSaleReturn = useCreateSaleReturn();
 
-  const customers = (partiesData?.data || []).filter(
-    (p: any) => p.type === 'CUSTOMER' || p.type === 'BOTH'
-  );
+  const customers = (partiesData?.data || []).filter((p: any) => p.type === 'CUSTOMER' || p.type === 'BOTH');
   const salesList = salesData?.data || [];
   const accountsList = accountsData?.data || [];
   const returnsList = (returnsData as any[]) || [];
@@ -194,31 +192,26 @@ export default function SalesReturnPage() {
           <span className="font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-100">
             {r.returnNumber}
           </span>
-          <div className="text-[10px] text-slate-500 mt-0.5">
-            {new Date(r.date).toLocaleDateString()}
-          </div>
+          <div className="text-[10px] text-slate-500 mt-0.5">{new Date(r.date).toLocaleDateString()}</div>
         </div>
       ),
     },
     {
       key: 'party',
       header: 'Customer Party',
-      render: (r) => (
-        <span className="font-bold text-slate-900">{r.party?.name || 'Cash Customer'}</span>
-      ),
+      render: (r) => <span className="font-bold text-slate-900">{r.party?.name || 'Cash Customer'}</span>,
     },
     {
       key: 'sale',
       header: 'Original Invoice',
-      render: (r) => (
+      render: (r) =>
         r.sale?.invoiceNumber ? (
           <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-bold border border-blue-100 text-xs">
             {r.sale.invoiceNumber}
           </span>
         ) : (
           <span className="text-slate-400">—</span>
-        )
-      ),
+        ),
     },
     {
       key: 'items',
@@ -244,7 +237,7 @@ export default function SalesReturnPage() {
       key: 'settlement',
       header: 'Settlement',
       align: 'center',
-      render: (r) => (
+      render: (r) =>
         Number(r.refundAmount || 0) > 0 ? (
           <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
             Cash Refund: Rs. {Number(r.refundAmount).toLocaleString()}
@@ -253,8 +246,7 @@ export default function SalesReturnPage() {
           <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
             Ledger Adjusted
           </span>
-        )
-      ),
+        ),
     },
     {
       key: 'actions',
@@ -282,9 +274,7 @@ export default function SalesReturnPage() {
               <RotateCcw className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <h4 className="font-bold text-slate-900 text-sm truncate">
-                {r.party?.name || 'Cash Customer'}
-              </h4>
+              <h4 className="font-bold text-slate-900 text-sm truncate">{r.party?.name || 'Cash Customer'}</h4>
               <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
                 <span>{new Date(r.date).toLocaleDateString()}</span>
                 <span>•</span>
@@ -336,7 +326,9 @@ export default function SalesReturnPage() {
         {/* Items summary */}
         {r.items && r.items.length > 0 && (
           <div className="bg-slate-50 rounded-xl p-2 text-[11px] text-slate-600 flex items-center justify-between">
-            <span className="font-medium text-slate-500">{r.items.length} returned product{r.items.length > 1 ? 's' : ''}</span>
+            <span className="font-medium text-slate-500">
+              {r.items.length} returned product{r.items.length > 1 ? 's' : ''}
+            </span>
             <span className="font-semibold text-slate-700 truncate max-w-[180px]">
               {r.items.map((i: any) => i.item?.name || 'Item').join(', ')}
             </span>
@@ -366,7 +358,8 @@ export default function SalesReturnPage() {
             Sales Returns (Credit Notes)
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Issue Credit Notes for returned items from customers. Restores inventory stock & adjusts customer receivable or processes cash refund.
+            Issue Credit Notes for returned items from customers. Restores inventory stock & adjusts customer receivable
+            or processes cash refund.
           </p>
         </div>
         <button
@@ -376,7 +369,8 @@ export default function SalesReturnPage() {
           }}
           className="hidden sm:inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold transition-all shadow-md shadow-indigo-600/20 active:scale-95 cursor-pointer"
         >
-          <Plus className="w-4 h-4" /> Issue Credit Note (Sales Return)
+          <Plus className="w-4 h-4" />
+          Sales Return
         </button>
       </div>
 
@@ -390,9 +384,7 @@ export default function SalesReturnPage() {
             <p className="text-base font-black font-mono text-slate-900 mt-0.5 whitespace-nowrap">
               Rs. {totalReturnAmount.toLocaleString()}
             </p>
-            <p className="text-[10px] text-slate-500 font-medium mt-0.5">
-              {returnsList.length} Credit notes issued
-            </p>
+            <p className="text-[10px] text-slate-500 font-medium mt-0.5">{returnsList.length} Credit notes issued</p>
           </div>
           <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
             <RotateCcw className="w-4 h-4 stroke-[2.5]" />
@@ -447,7 +439,9 @@ export default function SalesReturnPage() {
         <div className="p-5 lg:p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Return Value</p>
-            <h3 className="text-2xl font-black text-indigo-600 mt-1 font-mono">Rs. {totalReturnAmount.toLocaleString()}</h3>
+            <h3 className="text-2xl font-black text-indigo-600 mt-1 font-mono">
+              Rs. {totalReturnAmount.toLocaleString()}
+            </h3>
             <p className="text-[11px] text-indigo-600/80 mt-1 font-medium">Refunds & ledger adjustments</p>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-xs">
@@ -491,33 +485,31 @@ export default function SalesReturnPage() {
       {/* Create Sales Return Modal */}
       {isCreateOpen && (
         <ModalPortal>
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
-            <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95">
-              
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+            <div className="bg-white border border-slate-200 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-4xl h-[100dvh] sm:h-auto sm:max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95">
               {/* Modal Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+              <div className="flex items-center justify-between px-5 py-4 sm:px-6 sm:py-4.5 border-b border-indigo-100 bg-indigo-50/70 shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100">
-                    <RotateCcw className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/20 shrink-0">
+                    <RotateCcw className="w-5 h-5 stroke-[2.5]" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="text-base sm:text-lg font-bold text-slate-900">
-                        New Sales Return
-                      </h3>
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200">
-                        Credit Note
+                      <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">New Sales Return</h3>
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-indigo-100 text-indigo-800 border border-indigo-200">
+                        Credit Note (बिक्री फिर्ता)
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5 hidden sm:block">
+                    <p className="text-xs text-slate-500 font-medium hidden sm:block">
                       Restores inventory stock and adjusts customer receivable balance or gives instant refund.
                     </p>
                   </div>
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => setIsCreateOpen(false)}
-                  className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all active:scale-95"
+                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-indigo-100/60 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
                   title="Close modal"
                 >
                   <X className="w-5 h-5" />
@@ -525,7 +517,7 @@ export default function SalesReturnPage() {
               </div>
 
               {/* Modal Scrollable Body */}
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
                 {errorBanner && (
                   <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2.5 animate-in fade-in">
                     <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
@@ -533,8 +525,7 @@ export default function SalesReturnPage() {
                   </div>
                 )}
 
-                <form id="sales-return-form" onSubmit={form.handleSubmit(handleCreateSubmit)} className="space-y-6">
-                  
+                <form id="sales-return-form" onSubmit={form.handleSubmit(handleCreateSubmit)} className="space-y-5">
                   {/* Step 1: Customer & Invoice Details Card */}
                   <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
                     <div className="flex items-center gap-2 text-xs font-bold text-indigo-700 uppercase tracking-wider">
@@ -543,10 +534,12 @@ export default function SalesReturnPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Customer Party *</label>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                          Customer Party <span className="text-rose-500">*</span>
+                        </label>
                         <select
                           {...form.register('partyId')}
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 shadow-2xs min-h-[44px] cursor-pointer"
                         >
                           <option value="">Select Customer</option>
                           {customers.map((c: any) => {
@@ -559,18 +552,18 @@ export default function SalesReturnPage() {
                           })}
                         </select>
                         {form.formState.errors.partyId && (
-                          <p className="text-xs text-rose-500 mt-1">{form.formState.errors.partyId.message}</p>
+                          <p className="text-xs font-semibold text-rose-600 mt-1">{form.formState.errors.partyId.message}</p>
                         )}
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                          Original Invoice <span className="text-slate-400 font-normal">(Autofills items)</span>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                          Original Invoice <span className="text-slate-400 font-normal lowercase">(autofills)</span>
                         </label>
                         <select
                           value={selectedSaleId}
                           onChange={(e) => handleSelectSale(e.target.value)}
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 shadow-2xs min-h-[44px] cursor-pointer"
                         >
                           <option value="">Select Invoice to Autofill</option>
                           {customerSales.map((s: any) => (
@@ -589,7 +582,7 @@ export default function SalesReturnPage() {
                           onChange={(d) => form.setValue('date', d)}
                         />
                         {form.formState.errors.date && (
-                          <p className="text-xs text-rose-500 mt-1">{form.formState.errors.date.message}</p>
+                          <p className="text-xs font-semibold text-rose-600 mt-1">{form.formState.errors.date.message}</p>
                         )}
                       </div>
                     </div>
@@ -624,42 +617,44 @@ export default function SalesReturnPage() {
                         <ShoppingBag className="w-8 h-8 text-slate-400 mx-auto" />
                         <p className="text-xs font-bold text-slate-700">No items selected for return</p>
                         <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
-                          Select a sales invoice above to automatically load billed items, or use the dropdown to add individual products.
+                          Select a sales invoice above to automatically load billed items, or use the search above to add individual products.
                         </p>
                       </div>
                     ) : (
-                      <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white">
-                        <table className="w-full text-left text-xs">
-                          <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
-                            <tr>
-                              <th className="px-4 py-3">Product / Item</th>
-                              <th className="px-4 py-3 text-center w-36">Return Qty</th>
-                              <th className="px-4 py-3 text-right w-32">Rate (Rs.)</th>
-                              <th className="px-4 py-3 text-right w-36">Line Total</th>
-                              <th className="px-3 py-3 text-center w-12"></th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {fields.map((field, idx) => {
-                              const itemObj = itemsMap.get(field.itemId);
-                              const currentQty = form.watch(`items.${idx}.quantity`) || 0;
-                              const currentRate = form.watch(`items.${idx}.unitPrice`) || 0;
-                              const lineTotal = currentQty * currentRate;
+                      <>
+                        {/* Mobile Line Items (Cards) */}
+                        <div className="space-y-2.5 sm:hidden">
+                          {fields.map((field, idx) => {
+                            const itemObj = itemsMap.get(field.itemId);
+                            const currentQty = form.watch(`items.${idx}.quantity`) || 0;
+                            const currentRate = form.watch(`items.${idx}.unitPrice`) || 0;
+                            const lineTotal = currentQty * currentRate;
 
-                              return (
-                                <tr key={field.id} className="hover:bg-slate-50/60 transition-colors">
-                                  <td className="px-4 py-3">
-                                    <div className="font-bold text-slate-900">
+                            return (
+                              <div key={field.id} className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-3">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="min-w-0 flex-1">
+                                    <h4 className="font-bold text-slate-900 text-sm truncate">
                                       {itemObj?.name || `Product (${field.itemId.slice(0, 8)})`}
-                                    </div>
+                                    </h4>
                                     <div className="text-[10px] text-slate-500 flex items-center gap-2 mt-0.5">
                                       {itemObj?.code && <span className="font-mono">SKU: {itemObj.code}</span>}
                                       <span>Unit: {itemObj?.unit || 'Pcs'}</span>
                                     </div>
-                                  </td>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => remove(idx)}
+                                    className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg min-h-[36px] min-w-[36px] flex items-center justify-center"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
 
-                                  <td className="px-4 py-3 text-center">
-                                    <div className="inline-flex items-center gap-1 bg-white border border-slate-300 rounded-xl p-1 shadow-2xs">
+                                <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-slate-100 items-center">
+                                  <div>
+                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Return Qty</label>
+                                    <div className="flex items-center gap-1 bg-slate-50 border border-slate-300 rounded-xl p-1">
                                       <button
                                         type="button"
                                         onClick={() => {
@@ -667,56 +662,144 @@ export default function SalesReturnPage() {
                                             form.setValue(`items.${idx}.quantity`, currentQty - 1);
                                           }
                                         }}
-                                        className="p-1 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                                        className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-200 min-h-[32px] min-w-[32px] flex items-center justify-center"
                                       >
-                                        <Minus className="w-3 h-3" />
+                                        <Minus className="w-3.5 h-3.5" />
                                       </button>
                                       <input
                                         type="number"
                                         step="any"
                                         min="0.01"
                                         {...form.register(`items.${idx}.quantity`, { valueAsNumber: true })}
-                                        className="w-14 text-center bg-transparent text-slate-900 font-mono text-xs font-bold focus:outline-none"
+                                        className="w-full text-center bg-transparent text-slate-900 font-mono text-xs font-bold focus:outline-none"
                                       />
                                       <button
                                         type="button"
                                         onClick={() => form.setValue(`items.${idx}.quantity`, currentQty + 1)}
-                                        className="p-1 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                                        className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-200 min-h-[32px] min-w-[32px] flex items-center justify-center"
                                       >
-                                        <Plus className="w-3 h-3" />
+                                        <Plus className="w-3.5 h-3.5" />
                                       </button>
                                     </div>
-                                  </td>
+                                  </div>
 
-                                  <td className="px-4 py-3 text-right">
+                                  <div>
+                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Rate (Rs.)</label>
                                     <input
                                       type="number"
                                       step="any"
                                       {...form.register(`items.${idx}.unitPrice`, { valueAsNumber: true })}
-                                      className="w-24 px-2 py-1 rounded-lg bg-white border border-slate-300 text-right text-slate-900 font-mono text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                      className="w-full px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-300 text-right text-slate-900 font-mono text-xs font-bold focus:outline-none min-h-[36px]"
                                     />
-                                  </td>
+                                  </div>
+                                </div>
 
-                                  <td className="px-4 py-3 text-right font-mono font-bold text-slate-900 text-xs">
+                                <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                                  <span className="text-slate-500 font-medium">Line Total:</span>
+                                  <span className="font-mono font-black text-indigo-700">
                                     Rs. {lineTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                  </td>
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
 
-                                  <td className="px-3 py-3 text-center">
-                                    <button
-                                      type="button"
-                                      onClick={() => remove(idx)}
-                                      className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
-                                      title="Remove item"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
+                        {/* Desktop Line Items (Table) */}
+                        <div className="hidden sm:block border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-2xs">
+                          <table className="w-full text-left text-xs">
+                            <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                              <tr>
+                                <th className="px-4 py-3">Product / Item</th>
+                                <th className="px-4 py-3 text-center w-36">Return Qty</th>
+                                <th className="px-4 py-3 text-right w-32">Rate (Rs.)</th>
+                                <th className="px-4 py-3 text-right w-36">Line Total</th>
+                                <th className="px-3 py-3 text-center w-12"></th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {fields.map((field, idx) => {
+                                const itemObj = itemsMap.get(field.itemId);
+                                const currentQty = form.watch(`items.${idx}.quantity`) || 0;
+                                const currentRate = form.watch(`items.${idx}.unitPrice`) || 0;
+                                const lineTotal = currentQty * currentRate;
+
+                                return (
+                                  <tr key={field.id} className="hover:bg-slate-50/60 transition-colors">
+                                    <td className="px-4 py-3">
+                                      <div className="font-bold text-slate-900">
+                                        {itemObj?.name || `Product (${field.itemId.slice(0, 8)})`}
+                                      </div>
+                                      <div className="text-[10px] text-slate-500 flex items-center gap-2 mt-0.5">
+                                        {itemObj?.code && <span className="font-mono">SKU: {itemObj.code}</span>}
+                                        <span>Unit: {itemObj?.unit || 'Pcs'}</span>
+                                      </div>
+                                    </td>
+
+                                    <td className="px-4 py-3 text-center">
+                                      <div className="inline-flex items-center gap-1 bg-white border border-slate-300 rounded-xl p-1 shadow-2xs">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            if (currentQty > 1) {
+                                              form.setValue(`items.${idx}.quantity`, currentQty - 1);
+                                            }
+                                          }}
+                                          className="p-1 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                                        >
+                                          <Minus className="w-3 h-3" />
+                                        </button>
+                                        <input
+                                          type="number"
+                                          step="any"
+                                          min="0.01"
+                                          {...form.register(`items.${idx}.quantity`, { valueAsNumber: true })}
+                                          className="w-14 text-center bg-transparent text-slate-900 font-mono text-xs font-bold focus:outline-none"
+                                        />
+                                        <button
+                                          type="button"
+                                          onClick={() => form.setValue(`items.${idx}.quantity`, currentQty + 1)}
+                                          className="p-1 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                                        >
+                                          <Plus className="w-3 h-3" />
+                                        </button>
+                                      </div>
+                                    </td>
+
+                                    <td className="px-4 py-3 text-right">
+                                      <input
+                                        type="number"
+                                        step="any"
+                                        {...form.register(`items.${idx}.unitPrice`, { valueAsNumber: true })}
+                                        className="w-24 px-2 py-1 rounded-lg bg-white border border-slate-300 text-right text-slate-900 font-mono text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                      />
+                                    </td>
+
+                                    <td className="px-4 py-3 text-right font-mono font-bold text-slate-900 text-xs">
+                                      Rs.{' '}
+                                      {lineTotal.toLocaleString(undefined, {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2,
+                                      })}
+                                    </td>
+
+                                    <td className="px-3 py-3 text-center">
+                                      <button
+                                        type="button"
+                                        onClick={() => remove(idx)}
+                                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
+                                        title="Remove item"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </>
                     )}
                   </div>
 
@@ -728,7 +811,9 @@ export default function SalesReturnPage() {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Instant Cash Refund (Rs.)</label>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                          Instant Cash Refund (Rs.)
+                        </label>
                         <input
                           type="number"
                           step="any"
@@ -736,7 +821,7 @@ export default function SalesReturnPage() {
                           max={totals.totalAmount}
                           {...form.register('refundAmount', { valueAsNumber: true })}
                           placeholder="0.00"
-                          className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono text-xs sm:text-sm font-semibold focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 shadow-2xs min-h-[44px]"
                         />
                         <p className="text-[11px] text-slate-500 mt-1">
                           Leave 0 to credit the customer's balance ledger.
@@ -745,10 +830,10 @@ export default function SalesReturnPage() {
 
                       {watchRefundAmount > 0 && (
                         <div>
-                          <label className="block text-xs font-bold text-slate-700 mb-1">Refund Payment Mode</label>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Refund Payment Mode</label>
                           <select
                             {...form.register('paymentMode')}
-                            className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 shadow-2xs min-h-[44px] cursor-pointer"
                           >
                             <option value={PaymentMode.CASH}>Cash Drawer</option>
                             <option value={PaymentMode.BANK}>Bank Account</option>
@@ -760,26 +845,38 @@ export default function SalesReturnPage() {
                     </div>
 
                     <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5 text-xs">
-                      <div className="flex justify-between text-slate-600">
+                      <div className="flex justify-between text-slate-600 font-medium">
                         <span>Items Subtotal:</span>
                         <span className="font-mono font-bold text-slate-900">
-                          Rs. {totals.subTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          Rs.{' '}
+                          {totals.subTotal.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
                         </span>
                       </div>
 
                       {isVatBill && (
-                        <div className="flex justify-between text-blue-700">
+                        <div className="flex justify-between text-blue-700 font-medium">
                           <span>VAT (13%):</span>
                           <span className="font-mono font-bold">
-                            Rs. {totals.taxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            Rs.{' '}
+                            {totals.taxAmount.toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
                           </span>
                         </div>
                       )}
 
-                      <div className="flex justify-between text-sm font-black text-slate-900 pt-2 border-t border-slate-200">
+                      <div className="flex justify-between text-sm sm:text-base font-black text-slate-900 pt-2 border-t border-slate-200">
                         <span>Total Credit Note Value:</span>
                         <span className="font-mono text-indigo-600">
-                          Rs. {totals.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          Rs.{' '}
+                          {totals.totalAmount.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
                         </span>
                       </div>
                     </div>
@@ -788,11 +885,11 @@ export default function SalesReturnPage() {
               </div>
 
               {/* Modal Footer */}
-              <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-slate-50">
+              <div className="flex items-center justify-between px-5 py-3.5 sm:px-6 sm:py-4 border-t border-slate-200 bg-slate-50 shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsCreateOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-200"
+                  className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:bg-slate-200 min-h-[44px] transition-colors"
                 >
                   Cancel
                 </button>
@@ -800,7 +897,7 @@ export default function SalesReturnPage() {
                   type="submit"
                   form="sales-return-form"
                   disabled={createSaleReturn.isPending}
-                  className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/20 disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs sm:text-sm font-bold shadow-md shadow-indigo-600/20 disabled:opacity-50 min-h-[44px] transition-all cursor-pointer"
                 >
                   {createSaleReturn.isPending ? 'Issuing Credit Note...' : 'Save Credit Note'}
                 </button>

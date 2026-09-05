@@ -486,128 +486,161 @@ export default function PaymentInPage() {
       {/* Record Payment In Modal */}
       {isCreateOpen && (
         <ModalPortal>
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <ArrowDownLeft className="w-5 h-5 text-emerald-600" /> Record Payment In
-                </h3>
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 animate-in fade-in">
+            <div className="w-full h-[100dvh] sm:h-auto sm:max-h-[92vh] sm:max-w-lg rounded-t-3xl sm:rounded-3xl flex flex-col bg-white overflow-hidden shadow-2xl animate-in zoom-in-95">
+              {/* Modal Header */}
+              <div className="px-5 py-4 sm:px-6 sm:py-4.5 bg-emerald-50/70 border-b border-emerald-100/80 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/20 shrink-0">
+                    <ArrowDownLeft className="w-5 h-5 stroke-[2.5]" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">Record Payment In</h3>
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        रकम प्राप्त
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 font-medium">Record customer dues settlement & ledger deposit</p>
+                  </div>
+                </div>
                 <button
+                  type="button"
                   onClick={() => setIsCreateOpen(false)}
-                  className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-emerald-100/60 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
+                  title="Close modal"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <form onSubmit={form.handleSubmit(onSubmitInitiate)} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Customer Party *</label>
-                  <select
-                    {...form.register('partyId')}
-                    className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none"
-                  >
-                    <option value="">-- Choose Customer --</option>
-                    {parties.map((p: any) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} ({getPartyBalanceDisplay(p.currentBalance, 'CUSTOMER')})
-                      </option>
-                    ))}
-                  </select>
-                  {form.formState.errors.partyId && (
-                    <p className="text-xs text-rose-500 mt-1">{form.formState.errors.partyId.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Amount Received (Rs.) *</label>
-                  <input
-                    type="number"
-                    step="any"
-                    min="0.01"
-                    {...form.register('amount', { valueAsNumber: true })}
-                    className="w-full px-3.5 py-2.5 rounded-xl font-mono text-sm font-bold focus:outline-none"
-                    placeholder="0.00"
-                  />
-                  {form.formState.errors.amount && (
-                    <p className="text-xs text-rose-500 mt-1">{form.formState.errors.amount.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <DatePicker
-                    label="Payment Date"
-                    required
-                    value={form.watch('date')}
-                    onChange={(d) => form.setValue('date', d)}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Scrollable Form Body */}
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+                <form id="payment-in-form" onSubmit={form.handleSubmit(onSubmitInitiate)} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Payment Mode</label>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Customer Party <span className="text-rose-500">*</span>
+                    </label>
                     <select
-                      {...form.register('mode')}
-                      className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none"
+                      {...form.register('partyId')}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-2xs min-h-[44px] cursor-pointer"
                     >
-                      <option value={PaymentMode.CASH}>Cash</option>
-                      <option value={PaymentMode.BANK}>Bank</option>
-                      <option value={PaymentMode.ONLINE}>Online</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Deposit Account</label>
-                    <select
-                      {...form.register('accountId')}
-                      className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none"
-                    >
-                      <option value="">Default Account</option>
-                      {accounts.map((acc: any) => (
-                        <option key={acc.id} value={acc.id}>
-                          {acc.accountName}
+                      <option value="">-- Choose Customer --</option>
+                      {parties.map((p: any) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} ({getPartyBalanceDisplay(p.currentBalance, 'CUSTOMER')})
                         </option>
                       ))}
                     </select>
+                    {form.formState.errors.partyId && (
+                      <p className="text-xs font-semibold text-rose-600 mt-1">{form.formState.errors.partyId.message}</p>
+                    )}
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Reference / Cheque No</label>
-                  <input
-                    type="text"
-                    {...form.register('referenceNumber')}
-                    placeholder="e.g. TXN987654 or Cheque #1234"
-                    className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Amount Received (Rs.) <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs sm:text-sm">Rs.</span>
+                      <input
+                        type="number"
+                        step="any"
+                        min="0.01"
+                        {...form.register('amount', { valueAsNumber: true })}
+                        onKeyDown={onNumericKeyDown}
+                        onFocus={onNumericFocus}
+                        onBlur={onNumericBlur}
+                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono text-base font-black focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-2xs min-h-[44px]"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    {form.formState.errors.amount && (
+                      <p className="text-xs font-semibold text-rose-600 mt-1">{form.formState.errors.amount.message}</p>
+                    )}
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Notes (Optional)</label>
-                  <textarea
-                    rows={2}
-                    {...form.register('notes')}
-                    placeholder="e.g. Cleared bill INV-0042 balance"
-                    className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none resize-none"
-                  />
-                </div>
+                  <div>
+                    <DatePicker
+                      label="Payment Date"
+                      required
+                      value={form.watch('date')}
+                      onChange={(d) => form.setValue('date', d)}
+                    />
+                    {form.formState.errors.date && (
+                      <p className="text-xs font-semibold text-rose-600 mt-1">{form.formState.errors.date.message}</p>
+                    )}
+                  </div>
 
-                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={() => setIsCreateOpen(false)}
-                    className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20"
-                  >
-                    Record Payment
-                  </button>
-                </div>
-              </form>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Payment Mode</label>
+                      <select
+                        {...form.register('mode')}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-2xs min-h-[44px] cursor-pointer"
+                      >
+                        <option value={PaymentMode.CASH}>Cash (नगद)</option>
+                        <option value={PaymentMode.BANK}>Bank (बैंक)</option>
+                        <option value={PaymentMode.ONLINE}>Online (डिजिटल)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Deposit Account</label>
+                      <select
+                        {...form.register('accountId')}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-2xs min-h-[44px] cursor-pointer"
+                      >
+                        <option value="">Default Account</option>
+                        {accounts.map((acc: any) => (
+                          <option key={acc.id} value={acc.id}>
+                            {acc.accountName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Reference / Cheque No</label>
+                    <input
+                      type="text"
+                      {...form.register('referenceNumber')}
+                      placeholder="e.g. TXN987654 or Cheque #1234"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-2xs min-h-[44px]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Notes (Optional)</label>
+                    <textarea
+                      rows={2}
+                      {...form.register('notes')}
+                      placeholder="e.g. Cleared bill INV-0042 balance"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-medium focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-2xs resize-none"
+                    />
+                  </div>
+                </form>
+              </div>
+
+              {/* Sticky Footer */}
+              <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateOpen(false)}
+                  className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:bg-slate-200 min-h-[44px] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  form="payment-in-form"
+                  disabled={createPaymentIn.isPending}
+                  className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs sm:text-sm font-bold shadow-md shadow-emerald-600/20 disabled:opacity-50 min-h-[44px] transition-all cursor-pointer"
+                >
+                  {createPaymentIn.isPending ? 'Recording...' : 'Record Payment'}
+                </button>
+              </div>
             </div>
           </div>
         </ModalPortal>

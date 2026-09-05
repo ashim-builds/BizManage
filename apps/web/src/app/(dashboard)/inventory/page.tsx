@@ -3,7 +3,7 @@ import { onNumericKeyDown, onNumericFocus, onNumericBlur } from '@/lib/numericIn
 import { useLongPress } from '@/hooks/useLongPress';
 import { LongPressActionSheet } from '@/components/ui/LongPressActionSheet';
 
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -18,6 +18,7 @@ import {
 import { ItemType } from '@bizmanage/types';
 import {
   useItems,
+  useInfiniteItems,
   useItem,
   useItemsSummary,
   useCreateItem,
@@ -69,6 +70,8 @@ import {
   FolderInput,
   Check,
   AlertTriangle,
+  Loader2,
+  RotateCw,
 } from 'lucide-react';
 
 const DEFAULT_UNITS = [
@@ -253,90 +256,133 @@ function InventoryPageContent() {
     return () => window.removeEventListener('open-create-item', handleOpenCreateItem);
   }, []);
 
+  // Search Debouncing (300ms)
+  const [debouncedProductSearch, setDebouncedProductSearch] = useState('');
+  const [debouncedServiceSearch, setDebouncedServiceSearch] = useState('');
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedProductSearch(productSearch);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [productSearch]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedServiceSearch(serviceSearch);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [serviceSearch]);
+
   // Queries
-  const { data: summary } = useItemsSummary();
+  const { data: summary, refetch: refetchSummary } = useItemsSummary();
   const { data: categories = [], refetch: refetchCategories } = useItemCategories();
-  const { data: itemsResponse, isLoading: itemsLoading, isError, refetch: refetchItems } = useItems({ limit: 1000 });
 
-  const rawItems: any[] = itemsResponse?.data || [];
+  // Infinite Query for Products
+  const {
+    data: productsInfiniteData,
+    isLoading: productsLoading,
+    isFetchingNextPage: productsFetchingNext,
+    hasNextPage: productsHasNext,
+    fetchNextPage: fetchNextProducts,
+    isError: productsError,
+    refetch: refetchProducts,
+  } = useInfiniteItems({
+    search: debouncedProductSearch.trim() || undefined,
+    status: stockFilter === 'ALL' ? undefined : stockFilter,
+    type: ItemType.PRODUCT,
+    limit: 25,
+  });
 
-  // Split items into Products and Services
+  // Infinite Query for Services
+  const {
+    data: servicesInfiniteData,
+    isLoading: servicesLoading,
+    isFetchingNextPage: servicesFetchingNext,
+    hasNextPage: servicesHasNext,
+    fetchNextPage: fetchNextServices,
+    isError: servicesError,
+    refetch: refetchServices,
+  } = useInfiniteItems({
+    search: debouncedServiceSearch.trim() || undefined,
+    type: ItemType.SERVICE,
+    limit: 25,
+  });
+
+  const refetchItems = () => {
+    refetchProducts();
+    refetchServices();
+    refetchSummary();
+  };
+
   const products = useMemo(() => {
-    return rawItems.filter((i) => i.type !== ItemType.SERVICE);
-  }, [rawItems]);
+    return productsInfiniteData?.pages.flatMap((page) => page.data || page.items || []) ?? [];
+  }, [productsInfiniteData]);
 
   const services = useMemo(() => {
-    return rawItems.filter((i) => i.type === ItemType.SERVICE);
-  }, [rawItems]);
+    return servicesInfiniteData?.pages.flatMap((page) => page.data || page.items || []) ?? [];
+  }, [servicesInfiniteData]);
 
-  // Stock count metrics
-  const lowStockCount = useMemo(() => {
-    return products.filter((p) => {
-      const stock = Number(p.currentStock || 0);
-      const minAlert = Number(p.minStockAlert || 0);
-      return stock <= 0 || (minAlert > 0 && stock <= minAlert);
-    }).length;
-  }, [products]);
+  const rawItems: any[] = useMemo(() => [...products, ...services], [products, services]);
+  const filteredProducts = products;
+  const filteredServices = services;
 
-  const outOfStockCount = useMemo(() => {
-    return products.filter((p) => Number(p.currentStock || 0) <= 0).length;
-  }, [products]);
-
-  // Filtered Products
-  const filteredProducts = useMemo(() => {
-    let list = products;
-
-    // Apply stock status filter
-    if (stockFilter === 'LOW') {
-      list = list.filter((p) => {
-        const stock = Number(p.currentStock || 0);
-        const minAlert = Number(p.minStockAlert || 0);
-        return stock <= 0 || (minAlert > 0 && stock <= minAlert);
-      });
-    } else if (stockFilter === 'OUT_OF_STOCK') {
-      list = list.filter((p) => Number(p.currentStock || 0) <= 0);
-    } else if (stockFilter === 'IN_STOCK') {
-      list = list.filter((p) => {
-        const stock = Number(p.currentStock || 0);
-        const minAlert = Number(p.minStockAlert || 0);
-        return stock > 0 && (minAlert === 0 || stock > minAlert);
-      });
-    }
-
-    if (!productSearch.trim()) return list;
-    const q = productSearch.toLowerCase();
-    return list.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        (p.code && p.code.toLowerCase().includes(q)) ||
-        (p.category?.name && p.category.name.toLowerCase().includes(q))
-    );
-  }, [products, productSearch, stockFilter]);
-
-  // Filtered Services
-  const filteredServices = useMemo(() => {
-    if (!serviceSearch.trim()) return services;
-    const q = serviceSearch.toLowerCase();
-    return services.filter((s) => s.name.toLowerCase().includes(q));
-  }, [services, serviceSearch]);
+  // Stock count metrics directly from database summary
+  const totalProductsCount = summary?.totalItems ?? products.length;
+  const lowStockCount = summary?.lowStockCount ?? 0;
+  const outOfStockCount = summary?.outOfStockCount ?? 0;
 
   // Auto-select first product when tab active
   useEffect(() => {
-    if (filteredProducts.length > 0) {
-      if (!selectedProductId || !filteredProducts.some((p) => p.id === selectedProductId)) {
-        setSelectedProductId(filteredProducts[0].id);
+    if (products.length > 0) {
+      if (!selectedProductId || !products.some((p) => p.id === selectedProductId)) {
+        setSelectedProductId(products[0].id);
       }
     }
-  }, [filteredProducts, selectedProductId]);
+  }, [products, selectedProductId]);
 
   // Auto-select first service when tab active
   useEffect(() => {
-    if (filteredServices.length > 0) {
-      if (!selectedServiceId || !filteredServices.some((s) => s.id === selectedServiceId)) {
-        setSelectedServiceId(filteredServices[0].id);
+    if (services.length > 0) {
+      if (!selectedServiceId || !services.some((s) => s.id === selectedServiceId)) {
+        setSelectedServiceId(services[0].id);
       }
     }
-  }, [filteredServices, selectedServiceId]);
+  }, [services, selectedServiceId]);
+
+  // Infinite Scroll Sentinels (Mobile & Desktop)
+  const mobileSentinelRef = useRef<HTMLDivElement>(null);
+  const desktopSentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = mobileSentinelRef.current;
+    if (!el || !productsHasNext || productsFetchingNext) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && productsHasNext && !productsFetchingNext) {
+          fetchNextProducts();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [productsHasNext, productsFetchingNext, fetchNextProducts]);
+
+  useEffect(() => {
+    const el = desktopSentinelRef.current;
+    if (!el || !productsHasNext || productsFetchingNext) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && productsHasNext && !productsFetchingNext) {
+          fetchNextProducts();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [productsHasNext, productsFetchingNext, fetchNextProducts]);
 
   // Selected item details (queries relations: saleItems, purchaseItems, stockMovements)
   const activeItemId = activeTab === 'products' ? selectedProductId : selectedServiceId;
@@ -862,11 +908,14 @@ function InventoryPageContent() {
     });
   };
 
-  if (itemsLoading && !itemsResponse) {
+  const isInitialLoading = (productsLoading && products.length === 0) || (servicesLoading && services.length === 0);
+  const hasInitialError = (productsError && products.length === 0) && (servicesError && services.length === 0);
+
+  if (isInitialLoading) {
     return <LoadingState message="Loading inventory catalog..." />;
   }
 
-  if (isError && !itemsResponse) {
+  if (hasInitialError) {
     return <ErrorState title="Failed to load inventory" onRetry={refetchItems} />;
   }
 
@@ -1083,21 +1132,50 @@ function InventoryPageContent() {
                 )}
               </div>
             ) : (
-              <div className="space-y-2.5">
-                {filteredProducts.map((p) => {
-                  const stock = Number(p.currentStock || 0);
-                  return (
-                    <MobileItemCard
-                      key={p.id}
-                      item={p}
-                      stock={stock}
-                      onClick={() => router.push(`/inventory/${p.id}`)}
-                      onLongPress={() => setLongPressItem(p)}
-                    />
-                  );
-                })}
-              </div>
-            )}
+                <div className="space-y-2.5">
+                  {filteredProducts.map((p) => {
+                    const stock = Number(p.currentStock || 0);
+                    return (
+                      <MobileItemCard
+                        key={p.id}
+                        item={p}
+                        stock={stock}
+                        onClick={() => router.push(`/inventory/${p.id}`)}
+                        onLongPress={() => setLongPressItem(p)}
+                      />
+                    );
+                  })}
+
+                  {/* Infinite scroll sentinel & loader for mobile */}
+                  <div ref={mobileSentinelRef} className="h-4 w-full" />
+
+                  {productsFetchingNext && (
+                    <div className="p-3 text-center text-xs font-semibold text-slate-600 flex items-center justify-center gap-2 bg-white rounded-xl border border-slate-200">
+                      <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                      <span>Loading more items...</span>
+                    </div>
+                  )}
+
+                  {productsError && (
+                    <div className="p-3 text-center text-xs text-rose-600 bg-rose-50 rounded-xl border border-rose-200 space-y-1.5">
+                      <p className="font-semibold">Failed to load more items</p>
+                      <button
+                        type="button"
+                        onClick={() => fetchNextProducts()}
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-white text-rose-700 font-bold rounded-lg border border-rose-300 shadow-2xs text-xs cursor-pointer"
+                      >
+                        <RotateCw className="w-3 h-3" /> Retry
+                      </button>
+                    </div>
+                  )}
+
+                  {!productsHasNext && products.length > 0 && (
+                    <div className="py-2.5 text-center text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      Showing all {products.length} items
+                    </div>
+                  )}
+                </div>
+              )}
 
             {/* Floating Bottom Center Add Item Button (Red) */}
             <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-30 lg:hidden pointer-events-auto">
@@ -1256,6 +1334,39 @@ function InventoryPageContent() {
                       </div>
                     );
                   })
+                )}
+
+                {/* Infinite scroll sentinel & loader for desktop */}
+                {filteredProducts.length > 0 && (
+                  <>
+                    <div ref={desktopSentinelRef} className="h-4 w-full" />
+
+                    {productsFetchingNext && (
+                      <div className="p-3 text-center text-xs font-semibold text-slate-600 flex items-center justify-center gap-2 bg-slate-50 border-t border-slate-100">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                        <span>Loading more items...</span>
+                      </div>
+                    )}
+
+                    {productsError && (
+                      <div className="p-3 text-center text-xs text-rose-600 bg-rose-50 border-t border-rose-100 space-y-1">
+                        <p className="font-semibold">Failed to load more items</p>
+                        <button
+                          type="button"
+                          onClick={() => fetchNextProducts()}
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-white text-rose-700 font-bold rounded-md border border-rose-300 shadow-2xs text-[11px] cursor-pointer"
+                        >
+                          <RotateCw className="w-3 h-3" /> Retry
+                        </button>
+                      </div>
+                    )}
+
+                    {!productsHasNext && (
+                      <div className="py-2.5 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50 border-t border-slate-100">
+                        Showing all {products.length} products
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>

@@ -40,6 +40,7 @@ import {
   BanknoteIcon,
   QrCode,
   ShoppingBag,
+  Package,
 } from 'lucide-react';
 
 export default function SalesPage() {
@@ -609,106 +610,130 @@ export default function SalesPage() {
       {/* CREATE SALE INVOICE MODAL */}
       {isCreateOpen && (
         <ModalPortal>
-          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-            <div className="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
-              <div className="border-b border-slate-800 pb-4 flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    <Receipt className="w-5 h-5 text-blue-400" /> New Sales Invoice
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Stock availability will be validated and inventory decreased inside a transaction.
-                  </p>
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 animate-in fade-in">
+            <div className="w-full sm:max-w-5xl bg-white sm:border sm:border-slate-200 sm:rounded-3xl shadow-2xl flex flex-col h-[100dvh] sm:h-auto sm:max-h-[92vh] rounded-t-3xl sm:rounded-b-3xl overflow-hidden animate-in slide-in-from-bottom sm:zoom-in-95">
+              {/* Modal Header */}
+              <div className="px-5 py-4 sm:px-6 sm:py-4.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shrink-0">
+                    <Receipt className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-sm sm:text-base font-black text-slate-900 truncate flex items-center gap-2">
+                      New Sales Invoice
+                      <span className="hidden sm:inline-block px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200">
+                        Auto-Numbering
+                      </span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500 truncate">
+                      Validates inventory stock and decreases on issuance
+                    </p>
+                  </div>
                 </div>
-                <span className="text-xs text-slate-500 font-mono">Auto-Numbering Active</span>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => form.setValue('isVatBill', !watchIsVatBill)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                      watchIsVatBill
+                        ? 'bg-blue-600 border-blue-600 text-white shadow-xs'
+                        : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    VAT Bill (13%)
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsCreateOpen(false);
+                      form.setValue('isVatBill', false);
+                    }}
+                    className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all cursor-pointer"
+                    title="Close"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
-              <form onSubmit={form.handleSubmit(handleSaleSaveRequest)} className="space-y-6">
-                {/* Header Fields */}
-                <div className="grid grid-cols-1 md:grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs font-semibold text-slate-300">Customer Party</label>
-                      <button
-                        type="button"
-                        onClick={() => setIsQuickAddPartyOpen(true)}
-                        className="inline-flex items-center gap-1 text-[11px] text-blue-400 hover:text-blue-300 font-semibold bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 px-2 py-0.5 rounded-lg transition-all"
+              {/* Modal Body */}
+              <form onSubmit={form.handleSubmit(handleSaleSaveRequest)} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
+                {/* Header Fields Card */}
+                <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-bold text-slate-700">Customer Party *</label>
+                        <button
+                          type="button"
+                          onClick={() => setIsQuickAddPartyOpen(true)}
+                          className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-700 font-bold bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100 transition-all cursor-pointer"
+                        >
+                          <UserPlus className="w-3 h-3" /> + Quick Add
+                        </button>
+                      </div>
+                      <select
+                        {...form.register('partyId')}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs min-h-[44px]"
                       >
-                        <UserPlus className="w-3 h-3 text-blue-400" /> + Quick Add Customer
-                      </button>
+                        <option value="">Select Customer</option>
+                        {customers.map((c: any) => {
+                          const balLabel = getPartyBalanceDisplay(c.currentBalance, 'CUSTOMER');
+                          return (
+                            <option key={c.id} value={c.id}>
+                              {c.name} ({balLabel})
+                            </option>
+                          );
+                        })}
+                      </select>
+                      {form.formState.errors.partyId && (
+                        <p className="text-xs text-rose-500 mt-1 font-semibold">{form.formState.errors.partyId.message}</p>
+                      )}
                     </div>
-                    <select
-                      {...form.register('partyId')}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700/80 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
-                    >
-                      <option value="">Select Customer</option>
-                      {customers.map((c: any) => {
-                        const balLabel = getPartyBalanceDisplay(c.currentBalance, 'CUSTOMER');
-                        return (
-                          <option key={c.id} value={c.id}>
-                            {c.name} ({balLabel})
-                          </option>
-                        );
-                      })}
-                    </select>
-                    {form.formState.errors.partyId && (
-                      <p className="text-xs text-red-400 mt-1">{form.formState.errors.partyId.message}</p>
-                    )}
-                  </div>
 
-                  <div>
-                    <DatePicker
-                      label="Invoice Date"
-                      required
-                      value={form.watch('date')}
-                      onChange={(d) => form.setValue('date', d)}
-                    />
-                    {form.formState.errors.date && (
-                      <p className="text-xs text-red-400 mt-1">{form.formState.errors.date.message}</p>
-                    )}
-                  </div>
+                    <div>
+                      <DatePicker
+                        label="Invoice Date"
+                        required
+                        value={form.watch('date')}
+                        onChange={(d) => form.setValue('date', d)}
+                      />
+                      {form.formState.errors.date && (
+                        <p className="text-xs text-rose-500 mt-1 font-semibold">{form.formState.errors.date.message}</p>
+                      )}
+                    </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">Bill Type *</label>
-                    <select
-                      {...form.register('isVatBill', { setValueAs: (v) => v === 'true' || v === true })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700/80 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
-                    >
-                      <option value="false">Normal Bill (No VAT)</option>
-                      <option value="true">VAT / Tax Invoice</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">Invoice No. (Optional)</label>
-                    <input
-                      type="text"
-                      {...form.register('invoiceNumber')}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700/80 text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
-                      placeholder="Auto-generated if left blank"
-                    />
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Invoice No. (Optional)</label>
+                      <input
+                        type="text"
+                        {...form.register('invoiceNumber')}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-mono font-bold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs min-h-[44px]"
+                        placeholder="Auto-generated if left blank"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {/* Line Items Editor */}
+                {/* Line Items Section */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                      Invoice Line Items
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Package className="w-4 h-4 text-blue-600" /> Invoice Line Items
                     </h4>
                     <button
                       type="button"
                       onClick={() =>
                         append({ itemId: '', quantity: 1, unitPrice: 0, discountPercent: 0, discount: 0, taxAmount: 0 })
                       }
-                      className="text-xs text-blue-400 hover:text-blue-300 font-semibold bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5"
+                      className="text-xs text-blue-700 hover:text-blue-800 font-bold bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer min-h-[36px]"
                     >
-                      <Plus className="w-3.5 h-3.5" /> Add Line Item
+                      <Plus className="w-3.5 h-3.5" /> Add Row
                     </button>
                   </div>
 
-                  {/* Line Items Table Column Headers */}
-                  <div className="hidden md:grid grid-cols-12 gap-2 px-3.5 py-2 bg-slate-800/60 rounded-xl border border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  {/* Line Items Table Header (Desktop) */}
+                  <div className="hidden md:grid grid-cols-12 gap-2.5 px-4 py-2 bg-slate-100 rounded-xl border border-slate-200 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
                     <div className="col-span-4">Item & Available Stock</div>
                     <div className="col-span-2">Quantity</div>
                     <div className="col-span-2">Unit Price (Rs.)</div>
@@ -717,7 +742,8 @@ export default function SalesPage() {
                     <div className="col-span-1 text-right">Action</div>
                   </div>
 
-                  <div className="space-y-2.5">
+                  {/* Line Item Rows */}
+                  <div className="space-y-3">
                     {fields.map((field, idx) => {
                       const selectedItemId = form.watch(`items.${idx}.itemId`);
                       const selectedItem = availableItems.find((i: any) => i.id === selectedItemId);
@@ -740,14 +766,14 @@ export default function SalesPage() {
                       return (
                         <div
                           key={field.id}
-                          className={`grid grid-cols-12 gap-2.5 items-center p-3 rounded-xl border transition-all ${
+                          className={`grid grid-cols-12 gap-3 items-center p-3.5 rounded-2xl border transition-all ${
                             isOverStock
-                              ? 'bg-rose-500/10 border-rose-500/40'
-                              : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700/80'
+                              ? 'bg-rose-50/70 border-rose-300'
+                              : 'bg-white border-slate-200 shadow-2xs hover:border-slate-300'
                           }`}
                         >
                           <div className="col-span-12 md:col-span-4">
-                            <label className="block md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                            <label className="block md:hidden text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                               Item & Available Stock
                             </label>
                             <ItemSearchSelect
@@ -765,38 +791,36 @@ export default function SalesPage() {
                                 <span
                                   className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
                                     curStock <= 0
-                                      ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                                      ? 'bg-rose-50 text-rose-700 border border-rose-200'
                                       : curStock <= Number(selectedItem.minStockAlert)
-                                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                        : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                        ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                   }`}
                                 >
                                   {curStock <= 0
                                     ? `Out of Stock (0 ${selectedItem.unit})`
                                     : `Stock: ${curStock} ${selectedItem.unit}`}
                                 </span>
-                                <span className="text-[10px] text-slate-400 font-mono">
+                                <span className="text-[10px] text-slate-500 font-mono">
                                   MRP: Rs. {Number(selectedItem.salePrice)}
                                 </span>
                               </div>
                             )}
                             {isOutOfStock && (
-                              <p className="text-[10px] text-rose-400 font-semibold flex items-center gap-1 mt-1">
-                                <AlertCircle className="w-3 h-3 shrink-0" /> Out of stock! Available: 0{' '}
-                                {selectedItem?.unit}. Cannot bill.
+                              <p className="text-xs text-rose-600 font-bold flex items-center gap-1 mt-1">
+                                <AlertCircle className="w-3.5 h-3.5 shrink-0" /> Out of stock! Cannot bill.
                               </p>
                             )}
                             {isInsufficientStock && (
-                              <p className="text-[10px] text-rose-400 font-semibold flex items-center gap-1 mt-1">
-                                <AlertCircle className="w-3 h-3 shrink-0" /> Insufficient stock ({curStock}{' '}
-                                {selectedItem?.unit} available, {lineQty} requested)
+                              <p className="text-xs text-rose-600 font-bold flex items-center gap-1 mt-1">
+                                <AlertCircle className="w-3.5 h-3.5 shrink-0" /> Insufficient stock ({curStock} available, {lineQty} requested)
                               </p>
                             )}
                           </div>
 
                           <div className="col-span-4 md:col-span-2">
-                            <label className="block md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                              Quantity
+                            <label className="block md:hidden text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                              Qty
                             </label>
                             <input
                               type="text"
@@ -808,66 +832,34 @@ export default function SalesPage() {
                                 valueAsNumber: true,
                                 onBlur: onNumericBlur,
                               })}
-                              className={`w-full px-3 py-2 rounded-xl bg-slate-800/90 border text-white text-xs font-mono focus:outline-none focus:ring-2 transition-all ${
+                              className={`w-full px-3.5 py-2.5 rounded-xl bg-white border text-slate-900 text-xs sm:text-sm font-mono font-bold focus:outline-none focus:ring-1 transition-all min-h-[44px] shadow-2xs ${
                                 isOverStock
-                                  ? 'border-rose-500/80 focus:ring-rose-500/40 focus:border-rose-500'
-                                  : 'border-slate-700/80 focus:ring-blue-500/40 focus:border-blue-500'
+                                  ? 'border-rose-500 focus:ring-rose-500 focus:border-rose-500'
+                                  : 'border-slate-300 focus:ring-blue-600 focus:border-blue-600'
                               }`}
                             />
                           </div>
 
                           <div className="col-span-4 md:col-span-2">
-                            <label className="block md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                              Unit Price (Rs.)
+                            <label className="block md:hidden text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                              Unit Price
                             </label>
                             <input
                               type="text"
                               inputMode="decimal"
                               onKeyDown={onNumericKeyDown}
                               onFocus={onNumericFocus}
-                              placeholder="Unit Price"
+                              placeholder="Rate"
                               {...form.register(`items.${idx}.unitPrice`, {
                                 valueAsNumber: true,
                                 onBlur: onNumericBlur,
                               })}
-                              className="w-full px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700/80 text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+                              className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-mono font-bold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 min-h-[44px] shadow-2xs"
                             />
-                            {Number(selectedItem?.wholesalePrice || 0) > 0 && (
-                              <div className="flex items-center gap-1 mt-1.5 flex-wrap">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    form.setValue(`items.${idx}.unitPrice`, Number(selectedItem.salePrice || 0))
-                                  }
-                                  className={`text-[9px] px-1.5 py-0.5 rounded font-bold transition-all cursor-pointer ${
-                                    Number(linePrice) === Number(selectedItem.salePrice)
-                                      ? 'bg-blue-500 text-white shadow-xs'
-                                      : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
-                                  }`}
-                                  title={`Set Retail Price (Rs. ${Number(selectedItem.salePrice)})`}
-                                >
-                                  Retail
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    form.setValue(`items.${idx}.unitPrice`, Number(selectedItem.wholesalePrice || 0))
-                                  }
-                                  className={`text-[9px] px-1.5 py-0.5 rounded font-bold transition-all cursor-pointer ${
-                                    Number(linePrice) === Number(selectedItem.wholesalePrice)
-                                      ? 'bg-purple-600 text-white shadow-xs'
-                                      : 'bg-slate-800 text-purple-300 hover:text-white border border-slate-700'
-                                  }`}
-                                  title={`Set Wholesale Rate: Rs. ${Number(selectedItem.wholesalePrice)}`}
-                                >
-                                  Wholesale
-                                </button>
-                              </div>
-                            )}
                           </div>
 
                           <div className="col-span-4 md:col-span-2">
-                            <label className="block md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                            <label className="block md:hidden text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                               Disc (%)
                             </label>
                             <input
@@ -880,12 +872,12 @@ export default function SalesPage() {
                                 valueAsNumber: true,
                                 onBlur: onNumericBlur,
                               })}
-                              className="w-full px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700/80 text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+                              className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-mono font-bold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 min-h-[44px] shadow-2xs"
                             />
                           </div>
 
-                          <div className="col-span-8 md:col-span-1 text-left md:text-right font-mono font-bold text-white text-xs pt-1 md:pt-0">
-                            <span className="block md:hidden text-[10px] text-slate-400 font-semibold mb-0.5">
+                          <div className="col-span-8 md:col-span-1 text-left md:text-right font-mono font-black text-slate-900 text-xs sm:text-sm pt-1 md:pt-0">
+                            <span className="block md:hidden text-[10px] text-slate-500 font-semibold mb-0.5">
                               Line Total
                             </span>
                             Rs. {formatCurrency(totals.items[idx]?.total ?? lineTotal)}
@@ -896,11 +888,11 @@ export default function SalesPage() {
                               <button
                                 type="button"
                                 onClick={() => remove(idx)}
-                                className="p-1.5 text-rose-400 hover:text-white hover:bg-rose-500/20 rounded-xl transition-all flex items-center gap-1 text-xs"
+                                className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl transition-all flex items-center gap-1 text-xs cursor-pointer"
                                 title="Remove item"
                               >
                                 <Trash2 className="w-4 h-4" />
-                                <span className="md:hidden">Remove</span>
+                                <span className="md:hidden font-bold">Delete</span>
                               </button>
                             )}
                           </div>
@@ -910,30 +902,30 @@ export default function SalesPage() {
                   </div>
                 </div>
 
-                {/* Totals & Payment Section */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 pt-4 border-t border-slate-800">
-                  <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-800 space-y-3">
-                    <h4 className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                      <Wallet className="w-4 h-4 text-emerald-400" /> Immediate Payment Collection
+                {/* Totals & Immediate Payment Settlement Section */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                  <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3.5">
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Wallet className="w-4 h-4 text-emerald-600" /> Immediate Payment Collection
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[11px] text-slate-400 mb-1">Received Amount (Rs.)</label>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Received Amount (Rs.)</label>
                         <input
                           type="text"
                           inputMode="decimal"
                           onKeyDown={onNumericKeyDown}
                           onFocus={onNumericFocus}
                           {...form.register('paidAmount', { valueAsNumber: true, onBlur: onNumericBlur })}
-                          className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-emerald-700 text-xs sm:text-sm font-mono font-black focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 min-h-[44px] shadow-2xs"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-[11px] text-slate-400 mb-1">Payment Mode</label>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Payment Mode</label>
                         <select
                           {...form.register('paymentMode')}
-                          className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 min-h-[44px] shadow-2xs"
                         >
                           <option value={PaymentMode.CASH}>Cash</option>
                           <option value={PaymentMode.BANK}>Bank Transfer</option>
@@ -942,11 +934,11 @@ export default function SalesPage() {
                         </select>
                       </div>
 
-                      <div className="col-span-2">
-                        <label className="block text-[11px] text-slate-400 mb-1">Deposit To Account</label>
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Deposit To Account</label>
                         <select
                           {...form.register('accountId')}
-                          className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 min-h-[44px] shadow-2xs"
                         >
                           <option value="">Default Account</option>
                           {filteredAccounts.map((a: any) => (
@@ -959,46 +951,46 @@ export default function SalesPage() {
                     </div>
                   </div>
 
-                  {/* Totals Summary */}
-                  <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2 text-xs">
-                    <div className="flex justify-between text-slate-400">
+                  {/* Bill Totals Summary */}
+                  <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs sm:text-sm">
+                    <div className="flex justify-between text-slate-600 font-semibold">
                       <span>Subtotal</span>
-                      <span className="font-mono">Rs. {formatCurrency(subTotal)}</span>
+                      <span className="font-mono font-bold text-slate-900">Rs. {formatCurrency(subTotal)}</span>
                     </div>
                     {discount > 0 && (
-                      <div className="flex justify-between text-rose-400">
+                      <div className="flex justify-between text-rose-600 font-semibold">
                         <span>Total Discount</span>
-                        <span className="font-mono">- Rs. {formatCurrency(discount)}</span>
+                        <span className="font-mono font-bold">- Rs. {formatCurrency(discount)}</span>
                       </div>
                     )}
 
                     {watchIsVatBill && (
                       <>
-                        <div className="flex justify-between text-slate-400 pt-1 border-t border-slate-800/60">
+                        <div className="flex justify-between text-slate-600 font-semibold pt-1 border-t border-slate-200">
                           <span>Taxable Amount</span>
-                          <span className="font-mono">Rs. {formatCurrency(taxableAmount)}</span>
+                          <span className="font-mono font-bold text-slate-900">Rs. {formatCurrency(taxableAmount)}</span>
                         </div>
-                        <div className="flex justify-between text-blue-400">
+                        <div className="flex justify-between text-blue-700 font-semibold">
                           <span>VAT (13%)</span>
-                          <span className="font-mono">+ Rs. {formatCurrency(taxAmount)}</span>
+                          <span className="font-mono font-bold">+ Rs. {formatCurrency(taxAmount)}</span>
                         </div>
                       </>
                     )}
 
-                    <div className="flex justify-between text-base font-bold text-white pt-2 border-t border-slate-800">
+                    <div className="flex justify-between text-base font-black text-slate-900 pt-3 border-t border-slate-300">
                       <span>Grand Total</span>
-                      <span className="font-mono text-blue-400">Rs. {formatCurrency(totalAmount)}</span>
+                      <span className="font-mono text-blue-700">Rs. {formatCurrency(totalAmount)}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Stock Warning Banner */}
                 {stockErrors.length > 0 && (
-                  <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5 shadow-sm">
-                    <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                  <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2.5 shadow-sm">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold text-white text-xs">Cannot Create Bill: Stock Unavailable</p>
-                      <ul className="list-disc list-inside text-[11px] text-rose-300/90 mt-1 space-y-0.5">
+                      <p className="font-bold text-rose-900 text-xs">Cannot Issue Invoice: Stock Unavailable</p>
+                      <ul className="list-disc list-inside text-[11px] text-rose-700 mt-1 space-y-0.5">
                         {stockErrors.map((err, i) => (
                           <li key={i}>{err}</li>
                         ))}
@@ -1007,26 +999,21 @@ export default function SalesPage() {
                   </div>
                 )}
 
-                {/* Actions */}
-                <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                {/* Bottom Actions Sticky */}
+                <div className="sticky bottom-0 bg-white/95 backdrop-blur-md pt-4 pb-2 border-t border-slate-200 flex items-center justify-end gap-3 shrink-0">
                   <button
                     type="button"
                     onClick={() => setIsCreateOpen(false)}
-                    className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-all"
+                    className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all min-h-[44px] cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={createSale.isPending || stockErrors.length > 0}
-                    className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                    title={
-                      stockErrors.length > 0
-                        ? 'Cannot issue bill: One or more products are out of stock or exceed inventory.'
-                        : ''
-                    }
+                    className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold transition-all shadow-md shadow-blue-600/20 active:scale-95 disabled:opacity-50 cursor-pointer min-h-[44px]"
                   >
-                    {createSale.isPending ? 'Processing Transaction...' : 'Save & Issue Sales Invoice'}
+                    {createSale.isPending ? 'Processing...' : 'Save & Issue Sales Invoice'}
                   </button>
                 </div>
               </form>
@@ -1038,37 +1025,37 @@ export default function SalesPage() {
       {/* QUICK ADD CUSTOMER MODAL */}
       {isQuickAddPartyOpen && (
         <ModalPortal>
-          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[110] flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3.5">
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <UserPlus className="w-4 h-4 text-blue-400" /> Quick Add New Customer
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[110] flex items-center justify-center p-4 animate-in fade-in">
+            <div className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-6 shadow-2xl space-y-5 animate-in zoom-in-95">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                  <UserPlus className="w-4 h-4 text-blue-600" /> Quick Add Customer
                 </h3>
                 <button
                   type="button"
                   onClick={() => setIsQuickAddPartyOpen(false)}
-                  className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-xs font-bold transition-all"
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all cursor-pointer"
                 >
-                  ✕
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <form onSubmit={handleQuickAddPartySubmit} className="space-y-4">
+              <form onSubmit={handleQuickAddPartySubmit} className="space-y-4 text-xs sm:text-sm">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Customer / Party Name *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Customer / Party Name *</label>
                   <input
                     type="text"
                     required
                     value={quickPartyName}
                     onChange={(e) => setQuickPartyName(e.target.value)}
                     placeholder="e.g. Ram Bahadur or Acme Traders"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700/80 text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 font-bold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 min-h-[44px] shadow-2xs"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                    Phone Number (10 Digits starting with 97/98)
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Phone Number (10 Digits)
                   </label>
                   <input
                     type="tel"
@@ -1076,24 +1063,24 @@ export default function SalesPage() {
                     value={quickPartyPhone}
                     onChange={(e) => setQuickPartyPhone(e.target.value)}
                     placeholder="e.g. 9841234567"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700/80 text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all font-mono"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono font-bold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 min-h-[44px] shadow-2xs"
                   />
                 </div>
 
-                <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-800/80">
+                <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() => setIsQuickAddPartyOpen(false)}
-                    className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-all"
+                    className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold min-h-[44px] cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={createParty.isPending}
-                    className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-lg shadow-blue-600/20 disabled:opacity-50 transition-all"
+                    className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 disabled:opacity-50 min-h-[44px] cursor-pointer"
                   >
-                    {createParty.isPending ? 'Saving Customer...' : 'Save & Select Customer'}
+                    {createParty.isPending ? 'Saving...' : 'Save & Select'}
                   </button>
                 </div>
               </form>
@@ -1105,29 +1092,29 @@ export default function SalesPage() {
       {/* PAY DUE MODAL */}
       {payDueId && (
         <ModalPortal>
-          <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-            <div className="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[100] flex items-center justify-center p-4 animate-in fade-in">
+            <div className="w-full max-w-sm bg-white border border-slate-200 rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                    <BanknoteIcon className="w-4 h-4 text-emerald-400" />
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center">
+                    <BanknoteIcon className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-white">Settle Invoice Due</h3>
-                    <p className="text-[11px] text-slate-400">Outstanding: Rs. {payDueAmount.toLocaleString()}</p>
+                    <h3 className="text-sm font-black text-slate-900">Settle Invoice Due</h3>
+                    <p className="text-[11px] text-slate-500 font-mono font-bold">Due: Rs. {payDueAmount.toLocaleString()}</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setPayDueId(null)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <div className="p-5 space-y-4">
+              <div className="p-5 space-y-4 text-xs sm:text-sm">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Amount to Pay (Rs.)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Amount to Pay (Rs.)</label>
                   <input
                     type="text"
                     inputMode="decimal"
@@ -1138,39 +1125,37 @@ export default function SalesPage() {
                     placeholder={`Full due: Rs. ${payDueAmount.toLocaleString()}`}
                     value={payDueCustomAmount}
                     onChange={(e) => setPayDueCustomAmount(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono font-black text-sm focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 min-h-[44px] shadow-2xs"
                   />
-                  <p className="text-[10px] text-slate-500 mt-1">Leave blank to pay full outstanding amount</p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Payment Mode</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Payment Mode</label>
                   <select
                     value={payDueMode}
                     onChange={(e) => setPayDueMode(e.target.value as PaymentMode)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 font-semibold focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 min-h-[44px] shadow-2xs"
                   >
                     <option value={PaymentMode.CASH}>Cash</option>
                     <option value={PaymentMode.BANK}>Bank Transfer</option>
-                    <option value={PaymentMode.ONLINE}>Mobile Wallet / Online</option>
                     <option value={PaymentMode.CHEQUE}>Cheque</option>
+                    <option value={PaymentMode.ONLINE}>Mobile Wallet</option>
                   </select>
                 </div>
 
-                <div className="flex gap-2 pt-1">
+                <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
                   <button
                     onClick={() => setPayDueId(null)}
-                    className="flex-1 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-all"
+                    className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold min-h-[44px] cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handlePayDue}
                     disabled={paySale.isPending}
-                    className="flex-1 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-lg shadow-emerald-600/20 disabled:opacity-50 flex items-center justify-center gap-1.5"
+                    className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 disabled:opacity-50 min-h-[44px] cursor-pointer"
                   >
-                    <BanknoteIcon className="w-3.5 h-3.5" />
-                    {paySale.isPending ? 'Processing...' : 'Confirm Payment'}
+                    {paySale.isPending ? 'Processing...' : 'Confirm Settle'}
                   </button>
                 </div>
               </div>

@@ -210,12 +210,12 @@ export default function StaffPayrollPage() {
   return (
     <div className="space-y-6 font-sans max-w-7xl mx-auto">
       {/* Top Header & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
-          <h1 className="text-2xl font-black text-white flex items-center gap-2">
-            Staff &amp; Cashier Payroll <Users className="w-6 h-6 text-blue-400" />
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center gap-2">
+            Staff &amp; Cashier Payroll <Users className="w-6 h-6 text-blue-600" />
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
             Manage employee directory, cashier shift clock-ins/outs, and monthly salary payslips.
           </p>
         </div>
@@ -224,23 +224,23 @@ export default function StaffPayrollPage() {
           <button
             type="button"
             onClick={() => setIsClockInOpen(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all border border-slate-700 shadow-sm"
+            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all border border-slate-200 shadow-xs active:scale-95 cursor-pointer min-h-[44px]"
           >
-            <Clock className="w-4 h-4 text-amber-400" /> Clock In Shift
+            <Clock className="w-4 h-4 text-amber-600" /> Clock In Shift
           </button>
 
           <button
             type="button"
             onClick={() => setIsCreatePayOpen(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all border border-slate-700 shadow-sm"
+            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all border border-slate-200 shadow-xs active:scale-95 cursor-pointer min-h-[44px]"
           >
-            <DollarSign className="w-4 h-4 text-emerald-400" /> Issue Salary
+            <DollarSign className="w-4 h-4 text-emerald-600" /> Issue Salary
           </button>
 
           <button
             type="button"
             onClick={() => setIsAddStaffOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-extrabold transition-all shadow-lg shadow-blue-600/25 active:scale-95"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-md shadow-blue-600/20 active:scale-95 cursor-pointer min-h-[44px]"
           >
             <Plus className="w-4 h-4" /> Add Employee
           </button>
@@ -249,48 +249,47 @@ export default function StaffPayrollPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-          <div className="flex items-center justify-between text-slate-400 text-xs">
+        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-1">
+          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
             <span>Total Staff Members</span>
-            <Users className="w-4 h-4 text-blue-400" />
+            <Users className="w-4 h-4 text-blue-600" />
           </div>
-          <p className="text-2xl font-black text-white">{staffList.length} Staff</p>
-          <p className="text-[11px] text-slate-400">
-            Base Monthly Payroll: <strong className="text-slate-200">Rs. {totalMonthlyBaseSalary.toLocaleString()}</strong>
+          <p className="text-2xl font-black text-slate-900">{staffList.length} Staff</p>
+          <p className="text-[11px] text-slate-500">
+            Base Monthly Payroll:{' '}
+            <strong className="text-slate-800 font-mono">Rs. {totalMonthlyBaseSalary.toLocaleString()}</strong>
           </p>
         </div>
 
-        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-          <div className="flex items-center justify-between text-slate-400 text-xs">
+        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-1">
+          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
             <span>Active Clocked-In Shifts</span>
-            <Clock className="w-4 h-4 text-amber-400" />
+            <Clock className="w-4 h-4 text-amber-600" />
           </div>
-          <p className="text-2xl font-black text-amber-400">{activeShifts.length} Active</p>
-          <p className="text-[11px] text-slate-400">Cashiers currently at counter</p>
+          <p className="text-2xl font-black text-amber-600">{activeShifts.length} Active</p>
+          <p className="text-[11px] text-slate-500">Cashiers currently at counter</p>
         </div>
 
-        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-          <div className="flex items-center justify-between text-slate-400 text-xs">
+        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-1">
+          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
             <span>Total Salary Disbursed</span>
-            <BadgeCheck className="w-4 h-4 text-emerald-400" />
+            <BadgeCheck className="w-4 h-4 text-emerald-600" />
           </div>
-          <p className="text-2xl font-black text-emerald-400">
-            Rs. {totalPaidPayrollThisMonth.toLocaleString()}
-          </p>
-          <p className="text-[11px] text-slate-400">Issued payslips recorded</p>
+          <p className="text-2xl font-black text-emerald-600 font-mono">Rs. {totalPaidPayrollThisMonth.toLocaleString()}</p>
+          <p className="text-[11px] text-slate-500">Issued payslips recorded</p>
         </div>
       </div>
 
       {/* Tab Switcher & Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-2 rounded-2xl bg-slate-900 border border-slate-800">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-2 rounded-2xl bg-slate-100 border border-slate-200">
         <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto">
           <button
             type="button"
             onClick={() => setActiveTab('staff')}
-            className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all whitespace-nowrap flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
               activeTab === 'staff'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
             }`}
           >
             <Users className="w-4 h-4" /> Staff Directory ({staffList.length})
@@ -298,10 +297,10 @@ export default function StaffPayrollPage() {
           <button
             type="button"
             onClick={() => setActiveTab('shifts')}
-            className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all whitespace-nowrap flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
               activeTab === 'shifts'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
             }`}
           >
             <Clock className="w-4 h-4" /> Shift Tracker ({activeShifts.length} Active)
@@ -309,10 +308,10 @@ export default function StaffPayrollPage() {
           <button
             type="button"
             onClick={() => setActiveTab('payroll')}
-            className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all whitespace-nowrap flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
               activeTab === 'payroll'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
             }`}
           >
             <DollarSign className="w-4 h-4" /> Salary Payroll ({payrollList.length})
@@ -321,13 +320,13 @@ export default function StaffPayrollPage() {
 
         {activeTab === 'staff' && (
           <div className="relative w-full sm:w-64">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search employee..."
-              className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+              className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs placeholder:text-slate-400 focus:outline-none focus:border-blue-600"
             />
           </div>
         )}
@@ -339,16 +338,16 @@ export default function StaffPayrollPage() {
           {filteredStaff.map((staff) => (
             <div
               key={staff.id}
-              className="p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all space-y-4 shadow-sm"
+              className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 transition-all space-y-4 shadow-xs"
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold flex items-center justify-center text-base">
+                  <div className="w-11 h-11 rounded-2xl bg-blue-50 text-blue-600 border border-blue-100 font-black flex items-center justify-center text-base">
                     {staff.name.charAt(0)}
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-white leading-tight">{staff.name}</h3>
-                    <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-slate-800 text-blue-400 text-[10px] font-bold border border-slate-700">
+                    <h3 className="text-sm font-bold text-slate-900 leading-tight">{staff.name}</h3>
+                    <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px] font-bold border border-slate-200">
                       {staff.role}
                     </span>
                   </div>
@@ -357,34 +356,34 @@ export default function StaffPayrollPage() {
                 <span
                   className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${
                     staff.status === 'ACTIVE'
-                      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                      : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : 'bg-amber-50 text-amber-700 border-amber-200'
                   }`}
                 >
                   {staff.status}
                 </span>
               </div>
 
-              <div className="space-y-1.5 text-xs text-slate-400 pt-2 border-t border-slate-800/80">
+              <div className="space-y-1.5 text-xs text-slate-600 pt-2 border-t border-slate-100">
                 <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-slate-500" /> Phone:
+                  <span className="flex items-center gap-1.5 text-slate-500">
+                    <Phone className="w-3.5 h-3.5 text-slate-400" /> Phone:
                   </span>
-                  <strong className="text-slate-200">{staff.phone}</strong>
+                  <strong className="text-slate-900 font-mono">{staff.phone}</strong>
                 </div>
                 {staff.email && (
                   <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5">
-                      <Mail className="w-3.5 h-3.5 text-slate-500" /> Email:
+                    <span className="flex items-center gap-1.5 text-slate-500">
+                      <Mail className="w-3.5 h-3.5 text-slate-400" /> Email:
                     </span>
-                    <span className="text-slate-300 truncate max-w-[150px]">{staff.email}</span>
+                    <span className="text-slate-700 truncate max-w-[150px] font-mono">{staff.email}</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <DollarSign className="w-3.5 h-3.5 text-emerald-400" /> Base Salary:
+                  <span className="flex items-center gap-1.5 text-slate-500">
+                    <DollarSign className="w-3.5 h-3.5 text-emerald-600" /> Base Salary:
                   </span>
-                  <strong className="text-emerald-400 font-mono text-xs">
+                  <strong className="text-emerald-700 font-mono text-xs">
                     Rs. {Number(staff.baseSalary).toLocaleString()}/mo
                   </strong>
                 </div>
@@ -399,7 +398,7 @@ export default function StaffPayrollPage() {
         <div className="space-y-6">
           {/* Active Shifts */}
           <div className="space-y-3">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
               <span className="relative flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
@@ -408,13 +407,13 @@ export default function StaffPayrollPage() {
             </h3>
 
             {activeShifts.length === 0 ? (
-              <div className="p-8 rounded-2xl bg-slate-900 border border-slate-800 text-center text-slate-400 text-xs space-y-2">
-                <Clock className="w-8 h-8 text-slate-600 mx-auto" />
+              <div className="p-8 rounded-2xl bg-white border border-slate-200 text-center text-slate-500 text-xs space-y-2 shadow-xs">
+                <Clock className="w-8 h-8 text-slate-300 mx-auto" />
                 <p>No cashier shifts currently clocked in.</p>
                 <button
                   type="button"
                   onClick={() => setIsClockInOpen(true)}
-                  className="px-3.5 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-500 transition-all inline-block mt-2"
+                  className="px-3.5 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-all inline-block mt-2 shadow-xs cursor-pointer"
                 >
                   Clock In New Shift
                 </button>
@@ -424,17 +423,19 @@ export default function StaffPayrollPage() {
                 {activeShifts.map((shift) => (
                   <div
                     key={shift.id}
-                    className="p-5 rounded-2xl bg-slate-900 border border-amber-500/30 space-y-4 shadow-lg shadow-amber-500/5"
+                    className="p-5 rounded-2xl bg-white border border-amber-300 space-y-4 shadow-xs ring-1 ring-amber-500/10"
                   >
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                        <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                           {shift.staffName}
-                          <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 text-[10px] font-extrabold border border-amber-500/20">
+                          <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[10px] font-extrabold border border-amber-200">
                             ON SHIFT
                           </span>
                         </h4>
-                        <p className="text-xs text-slate-400">{shift.role} • Date: {shift.date}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {shift.role} • Date: {shift.date}
+                        </p>
                       </div>
                       <button
                         type="button"
@@ -442,20 +443,20 @@ export default function StaffPayrollPage() {
                           setClockOutTarget(shift);
                           setClockOutClosingCash('');
                         }}
-                        className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md active:scale-95"
+                        className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer"
                       >
                         Clock Out &amp; Close Shift
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-xs bg-slate-950 p-3 rounded-xl border border-slate-800">
+                    <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-3 rounded-xl border border-slate-200">
                       <div>
-                        <span className="text-[10px] text-slate-400 block">Clocked In At:</span>
-                        <strong className="text-white font-mono">{shift.clockInTime}</strong>
+                        <span className="text-[10px] text-slate-500 block">Clocked In At:</span>
+                        <strong className="text-slate-900 font-mono">{shift.clockInTime}</strong>
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-400 block">Opening Counter Cash:</span>
-                        <strong className="text-emerald-400 font-mono">
+                        <span className="text-[10px] text-slate-500 block">Opening Float:</span>
+                        <strong className="text-emerald-700 font-mono">
                           Rs. {Number(shift.openingCash).toLocaleString()}
                         </strong>
                       </div>
@@ -467,12 +468,40 @@ export default function StaffPayrollPage() {
           </div>
 
           {/* Shift History Log */}
-          <div className="space-y-3 pt-4 border-t border-slate-800">
-            <h3 className="text-sm font-bold text-slate-300">Shift History Log ({closedShifts.length})</h3>
-            <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-300">
+          <div className="space-y-3 pt-4 border-t border-slate-200">
+            <h3 className="text-sm font-bold text-slate-900">Shift History Log ({closedShifts.length})</h3>
+
+            {/* Mobile Cards (< md) */}
+            <div className="grid gap-3 md:hidden">
+              {closedShifts.length === 0 ? (
+                <div className="p-6 bg-white rounded-2xl border border-slate-200 text-center text-xs text-slate-400">
+                  No shift history logs found.
+                </div>
+              ) : (
+                closedShifts.map((shift) => (
+                  <div key={shift.id} className="p-4 bg-white border border-slate-200 rounded-2xl space-y-2.5 shadow-xs text-xs">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                      <strong className="text-slate-900 font-bold">{shift.staffName}</strong>
+                      <span className="text-[10px] text-slate-500">{shift.date}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600">
+                      <div>Clock In: <span className="font-mono font-semibold text-slate-900">{shift.clockInTime}</span></div>
+                      <div>Clock Out: <span className="font-mono font-semibold text-slate-900">{shift.clockOutTime || '—'}</span></div>
+                    </div>
+                    <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 text-xs">
+                      <span>Opening: <strong className="font-mono text-slate-800">Rs. {Number(shift.openingCash).toLocaleString()}</strong></span>
+                      <span>Closing: <strong className="font-mono text-emerald-700">Rs. {Number(shift.closingCash || 0).toLocaleString()}</strong></span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Desktop Table (>= md) */}
+            <div className="hidden md:block bg-white rounded-2xl border border-slate-200 overflow-x-auto shadow-xs">
+              <table className="w-full text-left text-xs text-slate-800">
                 <thead>
-                  <tr className="border-b border-slate-800 text-slate-400 bg-slate-950/50">
+                  <tr className="border-b border-slate-200 text-slate-600 bg-slate-50 font-bold">
                     <th className="p-3.5">Staff Member</th>
                     <th className="p-3.5">Date</th>
                     <th className="p-3.5">Clock In</th>
@@ -482,21 +511,21 @@ export default function StaffPayrollPage() {
                     <th className="p-3.5 text-center">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-slate-100">
                   {closedShifts.map((shift) => (
-                    <tr key={shift.id} className="hover:bg-slate-800/30 transition-colors">
-                      <td className="p-3.5 font-bold text-white">{shift.staffName}</td>
-                      <td className="p-3.5">{shift.date}</td>
-                      <td className="p-3.5 font-mono">{shift.clockInTime}</td>
-                      <td className="p-3.5 font-mono">{shift.clockOutTime || '-'}</td>
-                      <td className="p-3.5 text-right font-mono text-slate-300">
+                    <tr key={shift.id} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="p-3.5 font-bold text-slate-900">{shift.staffName}</td>
+                      <td className="p-3.5 text-slate-600">{shift.date}</td>
+                      <td className="p-3.5 font-mono text-slate-600">{shift.clockInTime}</td>
+                      <td className="p-3.5 font-mono text-slate-600">{shift.clockOutTime || '-'}</td>
+                      <td className="p-3.5 text-right font-mono text-slate-800">
                         Rs. {Number(shift.openingCash).toLocaleString()}
                       </td>
-                      <td className="p-3.5 text-right font-mono font-bold text-emerald-400">
+                      <td className="p-3.5 text-right font-mono font-bold text-emerald-700">
                         Rs. {Number(shift.closingCash || 0).toLocaleString()}
                       </td>
                       <td className="p-3.5 text-center">
-                        <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 text-[10px] font-bold border border-slate-700">
+                        <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold border border-slate-200">
                           CLOSED
                         </span>
                       </td>
@@ -512,10 +541,63 @@ export default function StaffPayrollPage() {
       {/* TAB 3: SALARY PAYROLL */}
       {activeTab === 'payroll' && (
         <div className="space-y-4">
-          <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-300">
+          {/* Mobile Cards (< md) */}
+          <div className="grid gap-3.5 md:hidden">
+            {payrollList.length === 0 ? (
+              <div className="p-8 bg-white border border-slate-200 rounded-2xl text-center text-xs text-slate-400">
+                No salary vouchers recorded.
+              </div>
+            ) : (
+              payrollList.map((pay) => (
+                <div key={pay.id} className="p-4 bg-white border border-slate-200 rounded-2xl space-y-3 shadow-xs text-xs">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <div>
+                      <span className="font-mono font-bold text-blue-600">{pay.voucherNo}</span>
+                      <strong className="block text-slate-900 text-xs font-bold">{pay.staffName}</strong>
+                    </div>
+                    <span className="text-[11px] text-slate-500 font-medium">{pay.monthYear}</span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-1.5 text-[11px] bg-slate-50 p-2.5 rounded-xl border border-slate-200/70">
+                    <div>
+                      <span className="text-slate-500 block text-[10px]">Base:</span>
+                      <strong className="font-mono text-slate-800">Rs. {pay.baseSalary.toLocaleString()}</strong>
+                    </div>
+                    <div>
+                      <span className="text-emerald-700 block text-[10px]">+ Bonus:</span>
+                      <strong className="font-mono text-emerald-700">Rs. {pay.bonusCommission.toLocaleString()}</strong>
+                    </div>
+                    <div>
+                      <span className="text-rose-700 block text-[10px]">- Deduct:</span>
+                      <strong className="font-mono text-rose-700">Rs. {pay.advanceDeduction.toLocaleString()}</strong>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] text-slate-500 block">Net Salary Paid</span>
+                      <span className="font-mono font-black text-sm text-slate-900">
+                        Rs. {pay.netPaidAmount.toLocaleString()}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPayslip(pay)}
+                      className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold border border-blue-200 inline-flex items-center gap-1 shadow-2xs"
+                    >
+                      <Printer className="w-3.5 h-3.5" /> Payslip
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table (>= md) */}
+          <div className="hidden md:block bg-white rounded-2xl border border-slate-200 overflow-x-auto shadow-xs">
+            <table className="w-full text-left text-xs text-slate-800">
               <thead>
-                <tr className="border-b border-slate-800 text-slate-400 bg-slate-950/50">
+                <tr className="border-b border-slate-200 text-slate-600 bg-slate-50 font-bold">
                   <th className="p-3.5">Voucher #</th>
                   <th className="p-3.5">Employee Name</th>
                   <th className="p-3.5">Month</th>
@@ -527,30 +609,30 @@ export default function StaffPayrollPage() {
                   <th className="p-3.5 text-center">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-slate-100">
                 {payrollList.map((pay) => (
-                  <tr key={pay.id} className="hover:bg-slate-800/30 transition-colors">
-                    <td className="p-3.5 font-mono font-bold text-blue-400">{pay.voucherNo}</td>
-                    <td className="p-3.5 font-bold text-white">{pay.staffName}</td>
-                    <td className="p-3.5">{pay.monthYear}</td>
-                    <td className="p-3.5">{pay.paymentDate}</td>
-                    <td className="p-3.5 text-right font-mono">Rs. {pay.baseSalary.toLocaleString()}</td>
-                    <td className="p-3.5 text-right font-mono text-emerald-400">
+                  <tr key={pay.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="p-3.5 font-mono font-bold text-blue-600">{pay.voucherNo}</td>
+                    <td className="p-3.5 font-bold text-slate-900">{pay.staffName}</td>
+                    <td className="p-3.5 text-slate-600">{pay.monthYear}</td>
+                    <td className="p-3.5 text-slate-600">{pay.paymentDate}</td>
+                    <td className="p-3.5 text-right font-mono text-slate-800">Rs. {pay.baseSalary.toLocaleString()}</td>
+                    <td className="p-3.5 text-right font-mono text-emerald-700">
                       +Rs. {pay.bonusCommission.toLocaleString()}
                     </td>
-                    <td className="p-3.5 text-right font-mono text-rose-400">
+                    <td className="p-3.5 text-right font-mono text-rose-700">
                       -Rs. {pay.advanceDeduction.toLocaleString()}
                     </td>
-                    <td className="p-3.5 text-right font-mono font-extrabold text-white">
+                    <td className="p-3.5 text-right font-mono font-black text-slate-900">
                       Rs. {pay.netPaidAmount.toLocaleString()}
                     </td>
                     <td className="p-3.5 text-center">
                       <button
                         type="button"
                         onClick={() => setSelectedPayslip(pay)}
-                        className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold border border-slate-700 inline-flex items-center gap-1"
+                        className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold border border-slate-200 inline-flex items-center gap-1 cursor-pointer"
                       >
-                        <Printer className="w-3 h-3 text-blue-400" /> Payslip
+                        <Printer className="w-3.5 h-3.5 text-blue-600" /> Payslip
                       </button>
                     </td>
                   </tr>
@@ -564,19 +646,19 @@ export default function StaffPayrollPage() {
       {/* MODAL 1: ADD NEW EMPLOYEE */}
       {isAddStaffOpen && (
         <ModalPortal>
-          <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[100] flex items-center justify-center p-4">
             <form
               onSubmit={handleAddStaffSubmit}
-              className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4 font-sans"
+              className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-6 shadow-2xl space-y-4 font-sans"
             >
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <UserCheck className="w-5 h-5 text-blue-400" /> Add New Staff Member
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <UserCheck className="w-5 h-5 text-blue-600" /> Add New Staff Member
                 </h3>
                 <button
                   type="button"
                   onClick={() => setIsAddStaffOpen(false)}
-                  className="text-slate-400 hover:text-white p-1 rounded-lg"
+                  className="text-slate-400 hover:text-slate-700 p-1 rounded-lg"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -584,24 +666,24 @@ export default function StaffPayrollPage() {
 
               <div className="space-y-3 text-xs">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Full Name</label>
+                  <label className="block text-slate-700 font-bold mb-1">Full Name *</label>
                   <input
                     type="text"
                     required
                     value={newStaff.name}
                     onChange={(e) => setNewStaff({ ...newStaff, name: e.target.value })}
                     placeholder="e.g. Ramesh Sharma"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-blue-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-600 min-h-[44px]"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">Designation / Role</label>
+                    <label className="block text-slate-700 font-bold mb-1">Role *</label>
                     <select
                       value={newStaff.role}
                       onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value as any })}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-blue-500"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-600 min-h-[44px]"
                     >
                       <option value="Cashier">Cashier</option>
                       <option value="Store Manager">Store Manager</option>
@@ -612,43 +694,46 @@ export default function StaffPayrollPage() {
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">Phone Number</label>
+                    <label className="block text-slate-700 font-bold mb-1">Phone Number *</label>
                     <input
-                      type="text"
+                      type="tel"
+                      maxLength={10}
                       required
                       value={newStaff.phone}
-                      onChange={(e) => setNewStaff({ ...newStaff, phone: e.target.value })}
+                      onChange={(e) => setNewStaff({ ...newStaff, phone: e.target.value.replace(/[^0-9]/g, '') })}
                       placeholder="9841XXXXXX"
-                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-blue-500"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-blue-600 min-h-[44px]"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Base Monthly Salary (Rs.)</label>
+                  <label className="block text-slate-700 font-bold mb-1">Base Monthly Salary (Rs.) *</label>
                   <input
-                    type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                    type="text"
+                    inputMode="decimal"
+                    onKeyDown={onNumericKeyDown}
                     onFocus={onNumericFocus}
                     onBlur={onNumericBlur}
                     required
                     value={newStaff.baseSalary}
                     onChange={(e) => setNewStaff({ ...newStaff, baseSalary: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono focus:outline-none focus:border-blue-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 font-mono font-bold focus:bg-white focus:outline-none focus:border-blue-600 min-h-[44px]"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsAddStaffOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold"
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold min-h-[44px]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-600/30"
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 active:scale-95 min-h-[44px]"
                 >
                   Save Employee
                 </button>
@@ -661,19 +746,19 @@ export default function StaffPayrollPage() {
       {/* MODAL 2: CLOCK IN SHIFT */}
       {isClockInOpen && (
         <ModalPortal>
-          <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[100] flex items-center justify-center p-4">
             <form
               onSubmit={handleClockInSubmit}
-              className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4 font-sans"
+              className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-6 shadow-2xl space-y-4 font-sans"
             >
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-amber-400" /> Cashier Shift Clock In
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-amber-600" /> Cashier Shift Clock In
                 </h3>
                 <button
                   type="button"
                   onClick={() => setIsClockInOpen(false)}
-                  className="text-slate-400 hover:text-white p-1 rounded-lg"
+                  className="text-slate-400 hover:text-slate-700 p-1 rounded-lg"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -681,12 +766,12 @@ export default function StaffPayrollPage() {
 
               <div className="space-y-3 text-xs">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Select Staff Member</label>
+                  <label className="block text-slate-700 font-bold mb-1">Select Staff Member *</label>
                   <select
                     required
                     value={newShift.staffId}
                     onChange={(e) => setNewShift({ ...newShift, staffId: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-blue-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-600 min-h-[44px]"
                   >
                     <option value="">-- Choose Employee --</option>
                     {staffList.map((s) => (
@@ -698,41 +783,43 @@ export default function StaffPayrollPage() {
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Opening Cash in Counter Float (Rs.)</label>
+                  <label className="block text-slate-700 font-bold mb-1">Opening Cash Float (Rs.) *</label>
                   <input
-                    type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                    type="text"
+                    inputMode="decimal"
+                    onKeyDown={onNumericKeyDown}
                     onFocus={onNumericFocus}
                     onBlur={onNumericBlur}
                     required
                     value={newShift.openingCash}
                     onChange={(e) => setNewShift({ ...newShift, openingCash: Number(e.target.value) })}
                     placeholder="e.g. 5000"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono focus:outline-none focus:border-blue-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 font-mono font-bold focus:bg-white focus:outline-none focus:border-blue-600 min-h-[44px]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Shift Notes / Counter #</label>
+                  <label className="block text-slate-700 font-bold mb-1">Shift Notes / Counter #</label>
                   <input
                     type="text"
                     value={newShift.notes}
                     onChange={(e) => setNewShift({ ...newShift, notes: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-blue-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-600 min-h-[44px]"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsClockInOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold"
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold min-h-[44px]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-md shadow-amber-600/30"
+                  className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-md shadow-amber-600/20 active:scale-95 min-h-[44px]"
                 >
                   Clock In Now
                 </button>
@@ -745,69 +832,76 @@ export default function StaffPayrollPage() {
       {/* MODAL 3: CLOCK OUT SHIFT */}
       {clockOutTarget && (
         <ModalPortal>
-          <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[100] flex items-center justify-center p-4">
             <form
               onSubmit={handleClockOutSubmit}
-              className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4 font-sans"
+              className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-6 shadow-2xl space-y-4 font-sans"
             >
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-rose-400" /> Clock Out &amp; Close Shift
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-rose-600" /> Clock Out &amp; Close Shift
                 </h3>
                 <button
                   type="button"
                   onClick={() => setClockOutTarget(null)}
-                  className="text-slate-400 hover:text-white p-1 rounded-lg"
+                  className="text-slate-400 hover:text-slate-700 p-1 rounded-lg"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-1">
-                <p className="font-bold text-white">{clockOutTarget.staffName} ({clockOutTarget.role})</p>
-                <p className="text-slate-400">
-                  Clocked in at: <strong className="text-slate-200">{clockOutTarget.clockInTime}</strong> | Opening Cash: <strong className="text-emerald-400">Rs. {clockOutTarget.openingCash.toLocaleString()}</strong>
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-1">
+                <p className="font-bold text-slate-900">
+                  {clockOutTarget.staffName} ({clockOutTarget.role})
+                </p>
+                <p className="text-slate-500">
+                  Clocked in at: <strong className="text-slate-800">{clockOutTarget.clockInTime}</strong> | Opening
+                  Float: <strong className="text-emerald-700 font-mono">Rs. {clockOutTarget.openingCash.toLocaleString()}</strong>
                 </p>
               </div>
 
               <div className="space-y-3 text-xs">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Final Counter Closing Cash Count (Rs.)</label>
+                  <label className="block text-slate-700 font-bold mb-1">
+                    Final Drawer Closing Cash Count (Rs.) *
+                  </label>
                   <input
-                    type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                    type="text"
+                    inputMode="decimal"
+                    onKeyDown={onNumericKeyDown}
                     onFocus={onNumericFocus}
                     onBlur={onNumericBlur}
                     required
                     value={clockOutClosingCash}
                     onChange={(e) => setClockOutClosingCash(e.target.value)}
                     placeholder="Enter cash amount in drawer"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono focus:outline-none focus:border-blue-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 font-mono font-bold focus:bg-white focus:outline-none focus:border-blue-600 min-h-[44px]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Handover Notes</label>
+                  <label className="block text-slate-700 font-bold mb-1">Handover Notes</label>
                   <input
                     type="text"
                     value={clockOutNotes}
                     onChange={(e) => setClockOutNotes(e.target.value)}
                     placeholder="e.g. All drawer cash balanced cleanly"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-blue-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-600 min-h-[44px]"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setClockOutTarget(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold"
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold min-h-[44px]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-md shadow-rose-600/30"
+                  className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20 active:scale-95 min-h-[44px]"
                 >
                   Close Shift Now
                 </button>
@@ -820,19 +914,19 @@ export default function StaffPayrollPage() {
       {/* MODAL 4: ISSUE SALARY PAYROLL */}
       {isCreatePayOpen && (
         <ModalPortal>
-          <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[100] flex items-center justify-center p-4">
             <form
               onSubmit={handleCreatePaySubmit}
-              className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4 font-sans"
+              className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-6 shadow-2xl space-y-4 font-sans"
             >
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-emerald-400" /> Issue Monthly Salary Voucher
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-emerald-600" /> Issue Monthly Salary Voucher
                 </h3>
                 <button
                   type="button"
                   onClick={() => setIsCreatePayOpen(false)}
-                  className="text-slate-400 hover:text-white p-1 rounded-lg"
+                  className="text-slate-400 hover:text-slate-700 p-1 rounded-lg"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -840,7 +934,7 @@ export default function StaffPayrollPage() {
 
               <div className="space-y-3 text-xs">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Select Employee</label>
+                  <label className="block text-slate-700 font-bold mb-1">Select Employee *</label>
                   <select
                     required
                     value={newPayroll.staffId}
@@ -853,7 +947,7 @@ export default function StaffPayrollPage() {
                         baseSalary: staff ? staff.baseSalary : 20000,
                       });
                     }}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-blue-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-600 min-h-[44px]"
                   >
                     <option value="">-- Choose Employee --</option>
                     {staffList.map((s) => (
@@ -866,22 +960,22 @@ export default function StaffPayrollPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">Salary Month/Year</label>
+                    <label className="block text-slate-700 font-bold mb-1">Salary Month/Year *</label>
                     <input
                       type="text"
                       required
                       value={newPayroll.monthYear}
                       onChange={(e) => setNewPayroll({ ...newPayroll, monthYear: e.target.value })}
                       placeholder="e.g. August 2026"
-                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-blue-500"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-600 min-h-[44px]"
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">Payment Mode</label>
+                    <label className="block text-slate-700 font-bold mb-1">Payment Mode</label>
                     <select
                       value={newPayroll.paymentMode}
                       onChange={(e) => setNewPayroll({ ...newPayroll, paymentMode: e.target.value as any })}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-blue-500"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-600 min-h-[44px]"
                     >
                       <option value="CASH">Cash Counter</option>
                       <option value="BANK">Bank Account</option>
@@ -892,44 +986,50 @@ export default function StaffPayrollPage() {
 
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">Base Salary</label>
+                    <label className="block text-slate-700 font-bold mb-1">Base Salary</label>
                     <input
-                      type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                      type="text"
+                      inputMode="decimal"
+                      onKeyDown={onNumericKeyDown}
                       onFocus={onNumericFocus}
                       onBlur={onNumericBlur}
                       required
                       value={newPayroll.baseSalary}
                       onChange={(e) => setNewPayroll({ ...newPayroll, baseSalary: Number(e.target.value) })}
-                      className="w-full px-2.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono focus:outline-none focus:border-blue-500"
+                      className="w-full px-2.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 font-mono font-bold focus:bg-white focus:outline-none focus:border-blue-600 min-h-[44px]"
                     />
                   </div>
                   <div>
-                    <label className="block text-emerald-400 font-semibold mb-1">+ Bonus</label>
+                    <label className="block text-emerald-700 font-bold mb-1">+ Bonus</label>
                     <input
-                      type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                      type="text"
+                      inputMode="decimal"
+                      onKeyDown={onNumericKeyDown}
                       onFocus={onNumericFocus}
                       onBlur={onNumericBlur}
                       value={newPayroll.bonusCommission}
                       onChange={(e) => setNewPayroll({ ...newPayroll, bonusCommission: Number(e.target.value) })}
-                      className="w-full px-2.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-emerald-400 font-mono focus:outline-none focus:border-blue-500"
+                      className="w-full px-2.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-emerald-700 font-mono font-bold focus:bg-white focus:outline-none focus:border-blue-600 min-h-[44px]"
                     />
                   </div>
                   <div>
-                    <label className="block text-rose-400 font-semibold mb-1">- Deduction</label>
+                    <label className="block text-rose-700 font-bold mb-1">- Deduct</label>
                     <input
-                      type="text" inputMode="decimal" onKeyDown={onNumericKeyDown}
+                      type="text"
+                      inputMode="decimal"
+                      onKeyDown={onNumericKeyDown}
                       onFocus={onNumericFocus}
                       onBlur={onNumericBlur}
                       value={newPayroll.advanceDeduction}
                       onChange={(e) => setNewPayroll({ ...newPayroll, advanceDeduction: Number(e.target.value) })}
-                      className="w-full px-2.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-rose-400 font-mono focus:outline-none focus:border-blue-500"
+                      className="w-full px-2.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-rose-700 font-mono font-bold focus:bg-white focus:outline-none focus:border-blue-600 min-h-[44px]"
                     />
                   </div>
                 </div>
 
-                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center font-bold">
-                  <span className="text-slate-300">Net Payable Amount:</span>
-                  <span className="text-emerald-400 font-mono text-sm">
+                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex justify-between items-center font-bold">
+                  <span className="text-slate-700">Net Payable:</span>
+                  <span className="text-emerald-700 font-mono text-sm font-black">
                     Rs.{' '}
                     {(
                       Number(newPayroll.baseSalary || 0) +
@@ -940,17 +1040,17 @@ export default function StaffPayrollPage() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsCreatePayOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold"
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold min-h-[44px]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/30"
+                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 active:scale-95 min-h-[44px]"
                 >
                   Confirm &amp; Pay Salary
                 </button>
@@ -978,16 +1078,16 @@ export default function StaffPayrollPage() {
             }
           `}</style>
 
-          <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-            <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4 font-sans">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Printer className="w-5 h-5 text-blue-400" /> Salary Payslip Voucher
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[100] flex items-center justify-center p-4">
+            <div className="w-full max-w-lg bg-white border border-slate-200 rounded-3xl p-6 shadow-2xl space-y-4 font-sans">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Printer className="w-5 h-5 text-blue-600" /> Salary Payslip Voucher
                 </h3>
                 <button
                   type="button"
                   onClick={() => setSelectedPayslip(null)}
-                  className="text-slate-400 hover:text-white p-1 rounded-lg"
+                  className="text-slate-400 hover:text-slate-700 p-1 rounded-lg"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -996,57 +1096,59 @@ export default function StaffPayrollPage() {
               {/* Printable Area */}
               <div
                 id="printable-payslip"
-                className="p-6 bg-white text-slate-950 rounded-xl border border-slate-300 space-y-4 font-sans text-xs select-text shadow-inner"
+                className="p-6 bg-white text-slate-950 rounded-2xl border border-slate-200 space-y-4 font-sans text-xs select-text shadow-xs"
               >
-                <div className="text-center border-b border-slate-300 pb-3 space-y-1">
+                <div className="text-center border-b border-slate-200 pb-3 space-y-1">
                   <h2 className="text-lg font-black uppercase text-slate-900">{business?.name || 'BizManage Store'}</h2>
-                  <p className="text-[11px] text-slate-600">{business?.address || 'Kathmandu, Nepal'}</p>
-                  <p className="text-xs font-bold text-blue-900 uppercase tracking-widest pt-1">EMPLOYEE SALARY PAYSLIP</p>
+                  <p className="text-[11px] text-slate-500">{business?.address || 'Kathmandu, Nepal'}</p>
+                  <p className="text-xs font-bold text-blue-600 uppercase tracking-widest pt-1">
+                    EMPLOYEE SALARY PAYSLIP
+                  </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-[11px] border-b border-slate-200 pb-3">
+                <div className="grid grid-cols-2 gap-2 text-[11px] border-b border-slate-100 pb-3">
                   <div>
-                    <span className="text-slate-500 block">Voucher Number:</span>
+                    <span className="text-slate-400 block">Voucher Number:</span>
                     <strong className="font-mono text-slate-900">{selectedPayslip.voucherNo}</strong>
                   </div>
                   <div>
-                    <span className="text-slate-500 block">Payment Date:</span>
+                    <span className="text-slate-400 block">Payment Date:</span>
                     <strong className="text-slate-900">{selectedPayslip.paymentDate}</strong>
                   </div>
                   <div>
-                    <span className="text-slate-500 block">Employee Name:</span>
+                    <span className="text-slate-400 block">Employee Name:</span>
                     <strong className="text-slate-900">{selectedPayslip.staffName}</strong>
                   </div>
                   <div>
-                    <span className="text-slate-500 block">Designation:</span>
+                    <span className="text-slate-400 block">Designation:</span>
                     <strong className="text-slate-900">{selectedPayslip.role}</strong>
                   </div>
                 </div>
 
                 <table className="w-full text-left border-collapse text-[11px]">
                   <thead>
-                    <tr className="border-b border-slate-300 bg-slate-100 text-slate-800">
+                    <tr className="border-b border-slate-200 bg-slate-50 text-slate-700">
                       <th className="p-2 font-bold">Earnings &amp; Deductions Breakdown</th>
                       <th className="p-2 text-right font-bold">Amount (Rs.)</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200">
+                  <tbody className="divide-y divide-slate-100">
                     <tr>
                       <td className="p-2">Basic Monthly Salary</td>
                       <td className="p-2 text-right font-mono">Rs. {selectedPayslip.baseSalary.toLocaleString()}</td>
                     </tr>
                     {selectedPayslip.bonusCommission > 0 && (
                       <tr>
-                        <td className="p-2 text-emerald-800 font-semibold">+ Performance Bonus / Allowance</td>
-                        <td className="p-2 text-right font-mono text-emerald-800 font-semibold">
+                        <td className="p-2 text-emerald-700 font-semibold">+ Performance Bonus / Allowance</td>
+                        <td className="p-2 text-right font-mono text-emerald-700 font-semibold">
                           +Rs. {selectedPayslip.bonusCommission.toLocaleString()}
                         </td>
                       </tr>
                     )}
                     {selectedPayslip.advanceDeduction > 0 && (
                       <tr>
-                        <td className="p-2 text-rose-800 font-semibold">- Advance Salary / Deductions</td>
-                        <td className="p-2 text-right font-mono text-rose-800 font-semibold">
+                        <td className="p-2 text-rose-700 font-semibold">- Advance Salary / Deductions</td>
+                        <td className="p-2 text-right font-mono text-rose-700 font-semibold">
                           -Rs. {selectedPayslip.advanceDeduction.toLocaleString()}
                         </td>
                       </tr>
@@ -1054,19 +1156,19 @@ export default function StaffPayrollPage() {
                   </tbody>
                   <tfoot>
                     <tr className="border-t-2 border-slate-900 font-bold bg-slate-50">
-                      <td className="p-2 text-sm">NET SALARY PAID ({selectedPayslip.paymentMode})</td>
-                      <td className="p-2 text-right font-mono text-sm text-slate-900">
+                      <td className="p-2 text-xs">NET SALARY PAID ({selectedPayslip.paymentMode})</td>
+                      <td className="p-2 text-right font-mono text-xs text-slate-900">
                         Rs. {selectedPayslip.netPaidAmount.toLocaleString()}
                       </td>
                     </tr>
                   </tfoot>
                 </table>
 
-                <div className="pt-6 flex justify-between text-[10px] text-slate-500">
-                  <div className="text-center pt-4 border-t border-slate-300 w-32">
+                <div className="pt-6 flex justify-between text-[10px] text-slate-400">
+                  <div className="text-center pt-4 border-t border-slate-200 w-32">
                     <p>Employee Signature</p>
                   </div>
-                  <div className="text-center pt-4 border-t border-slate-300 w-32">
+                  <div className="text-center pt-4 border-t border-slate-200 w-32">
                     <p>Employer Signature</p>
                   </div>
                 </div>
@@ -1076,14 +1178,14 @@ export default function StaffPayrollPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedPayslip(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold"
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold min-h-[44px]"
                 >
                   Close
                 </button>
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-extrabold shadow-md flex items-center gap-2"
+                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 flex items-center gap-2 min-h-[44px]"
                 >
                   <Printer className="w-4 h-4" /> Print Payslip
                 </button>

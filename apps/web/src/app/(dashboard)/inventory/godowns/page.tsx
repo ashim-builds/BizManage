@@ -352,35 +352,59 @@ export default function GodownsPage() {
               No inventory records present in this godown yet. Transfer items in to view balances.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
-                    <th className="px-3 py-2">Item Name</th>
-                    <th className="px-3 py-2">Code</th>
-                    <th className="px-3 py-2 text-right">In-Godown Qty</th>
-                    <th className="px-3 py-2 text-right">Total Business Stock</th>
-                    <th className="px-3 py-2 text-right">Estimated Value</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
-                  {godownStockData.stocks.map((st) => (
-                    <tr key={st.id} className="hover:bg-slate-50/60">
-                      <td className="px-3 py-2.5 font-bold text-slate-900">{st.itemName}</td>
-                      <td className="px-3 py-2.5 font-mono text-slate-500">{st.itemCode || '—'}</td>
-                      <td className="px-3 py-2.5 text-right font-mono font-bold text-blue-600">
+            <div>
+              {/* Mobile Card Layout */}
+              <div className="grid gap-2.5 sm:hidden">
+                {godownStockData.stocks.map((st) => (
+                  <div key={st.id} className="p-3.5 bg-slate-50 border border-slate-200/90 rounded-xl space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h4 className="font-bold text-slate-900 text-xs">{st.itemName}</h4>
+                        {st.itemCode && <p className="text-[10px] text-slate-500 font-mono">Code: {st.itemCode}</p>}
+                      </div>
+                      <span className="font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded text-xs border border-blue-100">
                         {st.quantity} {st.unit}
-                      </td>
-                      <td className="px-3 py-2.5 text-right font-mono text-slate-600">
-                        {st.totalItemStock} {st.unit}
-                      </td>
-                      <td className="px-3 py-2.5 text-right font-mono font-semibold text-slate-800">
-                        Rs. {st.stockValue.toLocaleString()}
-                      </td>
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-slate-200 text-slate-600">
+                      <span>Total Stock: <strong className="text-slate-900 font-mono">{st.totalItemStock} {st.unit}</strong></span>
+                      <span>Value: <strong className="text-slate-900 font-mono">Rs. {st.stockValue.toLocaleString()}</strong></span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table */}
+              <div className="hidden sm:block overflow-x-auto border border-slate-200 rounded-xl">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                      <th className="px-3.5 py-2.5">Item Name</th>
+                      <th className="px-3.5 py-2.5">Code</th>
+                      <th className="px-3.5 py-2.5 text-right">In-Godown Qty</th>
+                      <th className="px-3.5 py-2.5 text-right">Total Business Stock</th>
+                      <th className="px-3.5 py-2.5 text-right">Estimated Value</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
+                    {godownStockData.stocks.map((st) => (
+                      <tr key={st.id} className="hover:bg-slate-50/60">
+                        <td className="px-3.5 py-2.5 font-bold text-slate-900">{st.itemName}</td>
+                        <td className="px-3.5 py-2.5 font-mono text-slate-500">{st.itemCode || '—'}</td>
+                        <td className="px-3.5 py-2.5 text-right font-mono font-bold text-blue-600">
+                          {st.quantity} {st.unit}
+                        </td>
+                        <td className="px-3.5 py-2.5 text-right font-mono text-slate-600">
+                          {st.totalItemStock} {st.unit}
+                        </td>
+                        <td className="px-3.5 py-2.5 text-right font-mono font-semibold text-slate-800">
+                          Rs. {st.stockValue.toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>

@@ -40,6 +40,7 @@ import {
   PackagePlus,
   CheckCircle2,
   AlertCircle,
+  ArrowLeft,
 } from 'lucide-react';
 
 export type QuickEntryType =
@@ -57,6 +58,23 @@ interface QuickEntryModalProps {
   onClose: () => void;
   defaultType?: QuickEntryType;
 }
+
+const TAB_CONFIG: {
+  id: QuickEntryType;
+  label: string;
+  icon: any;
+  activeColor: string;
+  badgeBg: string;
+}[] = [
+  { id: 'sale', label: 'Sale', icon: ShoppingCart, activeColor: 'bg-blue-600 text-white shadow-xs', badgeBg: 'bg-blue-50 text-blue-700 border-blue-200' },
+  { id: 'purchase', label: 'Purchase', icon: Receipt, activeColor: 'bg-indigo-600 text-white shadow-xs', badgeBg: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+  { id: 'payment_in', label: 'Pay In', icon: ArrowDownRight, activeColor: 'bg-emerald-600 text-white shadow-xs', badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  { id: 'payment_out', label: 'Pay Out', icon: ArrowUpRight, activeColor: 'bg-rose-600 text-white shadow-xs', badgeBg: 'bg-rose-50 text-rose-700 border-rose-200' },
+  { id: 'expense', label: 'Expense', icon: DollarSign, activeColor: 'bg-amber-600 text-white shadow-xs', badgeBg: 'bg-amber-50 text-amber-700 border-amber-200' },
+  { id: 'income', label: 'Income', icon: TrendingUp, activeColor: 'bg-teal-600 text-white shadow-xs', badgeBg: 'bg-teal-50 text-teal-700 border-teal-200' },
+  { id: 'add_party', label: 'Party', icon: UserPlus, activeColor: 'bg-slate-900 text-white shadow-xs', badgeBg: 'bg-slate-100 text-slate-800 border-slate-300' },
+  { id: 'add_item', label: 'Item', icon: PackagePlus, activeColor: 'bg-cyan-600 text-white shadow-xs', badgeBg: 'bg-cyan-50 text-cyan-700 border-cyan-200' },
+];
 
 export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: QuickEntryModalProps) {
   const [activeType, setActiveType] = useState<QuickEntryType>(defaultType);
@@ -83,7 +101,6 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
 
   // Global Keyboard ShortCut (Escape to close)
   useEffect(() => {
-    // Click outside to close QuickEntryModal
     function handleClickOutside(event: MouseEvent | TouchEvent) {
       if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
         onClose();
@@ -97,9 +114,8 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
     };
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
-  // Existing useEffect for keyboard (Escape)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
@@ -122,7 +138,7 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
   const customers = parties.filter((p: any) => p.type === 'CUSTOMER' || p.type === 'BOTH');
   const suppliers = parties.filter((p: any) => p.type === 'SUPPLIER' || p.type === 'BOTH');
 
-  // Shared Mutations (Reusing exact same business logic services)
+  // Shared Mutations
   const createSale = useCreateSale();
   const createPurchase = useCreatePurchase();
   const createPaymentIn = useCreatePaymentIn();
@@ -228,25 +244,33 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
   const saleWatchIsVatBill = saleForm.watch('isVatBill');
 
   const saleTotals = calculateInvoiceTotals(
-    saleWatchItems.map((i) => ({ unitPrice: Number(i.unitPrice) || 0, quantity: Number(i.quantity) || 0, discountPercent: Number(i.discountPercent) || 0 })),
+    saleWatchItems.map((i) => ({
+      unitPrice: Number(i.unitPrice) || 0,
+      quantity: Number(i.quantity) || 0,
+      discountPercent: Number(i.discountPercent) || 0,
+    })),
     saleWatchIsVatBill
   );
 
   useEffect(() => {
     if (activeType === 'sale') saleForm.setValue('paidAmount', saleTotals.totalAmount);
-  }, [saleTotals.totalAmount, activeType]);
+  }, [saleTotals.totalAmount, activeType, saleForm]);
 
   const purchaseWatchItems = purchaseForm.watch('items');
   const purchaseWatchIsVatBill = purchaseForm.watch('isVatBill');
 
   const purchaseTotals = calculateInvoiceTotals(
-    purchaseWatchItems.map((i) => ({ unitPrice: Number(i.unitPrice) || 0, quantity: Number(i.quantity) || 0, discountPercent: Number(i.discountPercent) || 0 })),
+    purchaseWatchItems.map((i) => ({
+      unitPrice: Number(i.unitPrice) || 0,
+      quantity: Number(i.quantity) || 0,
+      discountPercent: Number(i.discountPercent) || 0,
+    })),
     purchaseWatchIsVatBill
   );
 
   useEffect(() => {
     if (activeType === 'purchase') purchaseForm.setValue('paidAmount', purchaseTotals.totalAmount);
-  }, [purchaseTotals.totalAmount, activeType]);
+  }, [purchaseTotals.totalAmount, activeType, purchaseForm]);
 
   const getAccountType = (mode: string) => {
     return mode === PaymentMode.BANK || mode === PaymentMode.CHEQUE
@@ -276,11 +300,11 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
           const stock = Number(sel.currentStock || 0);
           const reqQty = Number(line.quantity || 0);
           if (stock <= 0) {
-            toast.error(`"${sel.name}" is out of stock (Available: 0 ${sel.unit}). Cannot record sale.`);
+            toast.error(`"${sel.name}" is out of stock (Available: 0 ${sel.unit}).`);
             return;
           }
           if (reqQty > stock) {
-            toast.error(`Insufficient stock for "${sel.name}". Available: ${stock} ${sel.unit}, Requested: ${reqQty} ${sel.unit}.`);
+            toast.error(`Insufficient stock for "${sel.name}". Available: ${stock} ${sel.unit}.`);
             return;
           }
         }
@@ -393,120 +417,417 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
   return (
     <ModalPortal>
       <div
-        className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-4"
+        className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in"
         onClick={onClose}
       >
         <div
           onClick={(e) => e.stopPropagation()}
           ref={modalRef}
-          className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden space-y-0 max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800"
+          className="w-full sm:max-w-2xl bg-white sm:border sm:border-slate-200 sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[92vh] sm:h-auto sm:max-h-[90vh] rounded-t-3xl sm:rounded-b-3xl animate-in slide-in-from-bottom sm:zoom-in-95"
         >
-        {/* MODAL HEADER WITH TYPE SWITCHER */}
-        <div className="p-6 bg-slate-800/60 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center border border-blue-500/30">
-              <Zap className="w-5 h-5" />
+          {/* MODAL HEADER WITH CLEAN LIGHT STYLING */}
+          <div className="p-4 sm:p-5 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shrink-0">
+                <Zap className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-sm sm:text-base font-black text-slate-900 truncate">Quick Entry Voucher</h3>
+                <p className="text-[11px] text-slate-500 truncate">Fast bookkeeping entry with automated ledger balance sync</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-base font-bold text-white">Quick Transaction Entry</h3>
-              <p className="text-xs text-slate-400">Fast, minimal-click entry powered by standard accounting engine.</p>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all cursor-pointer shrink-0"
+              title="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* SUCCESS NOTIFICATION BAR */}
+          {successMsg && (
+            <div className="bg-emerald-50 border-b border-emerald-200 px-5 py-2 flex items-center gap-2 text-emerald-800 text-xs font-bold shrink-0">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" /> {successMsg}
             </div>
+          )}
+
+          {/* 8 ACTION TABS GRID */}
+          <div className="grid grid-cols-4 sm:grid-cols-8 gap-1 p-2 bg-slate-100/70 border-b border-slate-200 text-xs font-bold shrink-0">
+            {TAB_CONFIG.map((t) => {
+              const Icon = t.icon;
+              const isActive = activeType === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setActiveType(t.id)}
+                  className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all cursor-pointer min-h-[44px] justify-center ${
+                    isActive
+                      ? t.activeColor
+                      : 'bg-white hover:bg-slate-50 text-slate-600 border border-slate-200/80'
+                  }`}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span className="text-[10px] font-bold leading-tight truncate">{t.label}</span>
+                </button>
+              );
+            })}
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
 
-        {/* SUCCESS NOTIFICATION BAR */}
-        {successMsg && (
-          <div className="bg-emerald-500/20 border-b border-emerald-500/30 px-6 py-2.5 flex items-center gap-2 text-emerald-400 text-xs font-semibold">
-            <CheckCircle2 className="w-4 h-4" /> {successMsg}
-          </div>
-        )}
+          {/* MODAL FORM BODY */}
+          <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4 font-sans">
+            {/* 1. QUICK SALE */}
+            {activeType === 'sale' && (
+              <form onSubmit={saleForm.handleSubmit(handleSaleSubmit)} className="space-y-4 text-xs sm:text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Customer Party *</label>
+                    <select
+                      {...saleForm.register('partyId')}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs min-h-[44px]"
+                    >
+                      <option value="">Select Customer</option>
+                      {customers.map((c: any) => {
+                        const balLabel = getPartyBalanceDisplay(c.currentBalance, 'CUSTOMER');
+                        return (
+                          <option key={c.id} value={c.id}>
+                            {c.name} ({balLabel})
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Date *</label>
+                    <input
+                      type="date"
+                      {...saleForm.register('date')}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs min-h-[44px]"
+                    />
+                  </div>
+                </div>
 
-        {/* 8 ACTION TABS */}
-        <div className="grid grid-cols-4 md:grid-cols-8 gap-1 p-2 bg-slate-950/50 border-b border-slate-800 text-[11px] font-semibold">
-          <button
-            onClick={() => setActiveType('sale')}
-            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${activeType === 'sale' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
-              }`}
-          >
-            <ShoppingCart className="w-4 h-4" /> Sale
-          </button>
+                {(() => {
+                  const selectedQuickSaleItemId = saleForm.watch('items.0.itemId');
+                  const selectedQuickSaleItem = items.find((i: any) => i.id === selectedQuickSaleItemId);
+                  const quickSaleQty = Number(saleForm.watch('items.0.quantity') || 0);
+                  const quickSaleStock = Number(selectedQuickSaleItem?.currentStock || 0);
+                  const isQuickSaleProduct = selectedQuickSaleItem?.type === 'PRODUCT';
+                  const isQuickSaleOutOfStock = isQuickSaleProduct && quickSaleStock <= 0;
+                  const isQuickSaleInsufficient = isQuickSaleProduct && quickSaleStock > 0 && quickSaleQty > quickSaleStock;
+                  const isQuickSaleOverStock = isQuickSaleOutOfStock || isQuickSaleInsufficient;
 
-          <button
-            onClick={() => setActiveType('purchase')}
-            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${activeType === 'purchase' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'
-              }`}
-          >
-            <Receipt className="w-4 h-4" /> Purchase
-          </button>
+                  return (
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Item & Quantity *</label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <ItemSearchSelect
+                          items={items}
+                          value={selectedQuickSaleItemId || ''}
+                          onChange={(id) => {
+                            saleForm.setValue('items.0.itemId', id);
+                            const sel = items.find((i: any) => i.id === id);
+                            if (sel) saleForm.setValue('items.0.unitPrice', Number(sel.salePrice || 0));
+                          }}
+                          placeholder="Search product…"
+                          priceField="salePrice"
+                          className="sm:col-span-2"
+                        />
+                        <input
+                          type="number"
+                          step="any"
+                          placeholder="Qty"
+                          {...saleForm.register('items.0.quantity', { valueAsNumber: true })}
+                          className={`px-3.5 py-2.5 rounded-xl bg-white border text-slate-900 font-mono font-bold text-xs sm:text-sm focus:outline-none focus:ring-1 transition-all min-h-[44px] shadow-2xs ${
+                            isQuickSaleOverStock
+                              ? 'border-rose-500 focus:ring-rose-500 focus:border-rose-500'
+                              : 'border-slate-300 focus:ring-blue-600 focus:border-blue-600'
+                          }`}
+                        />
+                      </div>
+                      {selectedQuickSaleItem && (
+                        <div className="flex items-center gap-2 mt-1.5 px-0.5">
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                              quickSaleStock <= 0
+                                ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                : quickSaleStock <= Number(selectedQuickSaleItem.minStockAlert)
+                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            }`}
+                          >
+                            {quickSaleStock <= 0
+                              ? `Out of Stock (0 ${selectedQuickSaleItem.unit})`
+                              : `Stock: ${quickSaleStock} ${selectedQuickSaleItem.unit}`}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-mono">
+                            MRP: Rs. {Number(selectedQuickSaleItem.salePrice)}
+                          </span>
+                        </div>
+                      )}
+                      {isQuickSaleOutOfStock && (
+                        <p className="text-xs text-rose-600 font-bold flex items-center gap-1 mt-1">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0" /> Out of stock! Cannot record sale.
+                        </p>
+                      )}
+                      {isQuickSaleInsufficient && (
+                        <p className="text-xs text-rose-600 font-bold flex items-center gap-1 mt-1">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0" /> Insufficient stock ({quickSaleStock} available, {quickSaleQty} requested)
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
 
-          <button
-            onClick={() => setActiveType('payment_in')}
-            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${activeType === 'payment_in' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
-              }`}
-          >
-            <ArrowDownRight className="w-4 h-4" /> Pay In
-          </button>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Unit Price (Rs.) *</label>
+                    <input
+                      type="number"
+                      step="any"
+                      {...saleForm.register('items.0.unitPrice', { valueAsNumber: true })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono font-bold text-xs sm:text-sm min-h-[44px] shadow-2xs focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Discount %</label>
+                    <input
+                      type="number"
+                      step="any"
+                      {...saleForm.register('items.0.discountPercent', { valueAsNumber: true })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono font-bold text-xs sm:text-sm min-h-[44px] shadow-2xs focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Line Total</label>
+                    <div className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-emerald-700 font-mono font-black text-xs sm:text-sm flex items-center min-h-[44px]">
+                      Rs. {formatCurrency(saleTotals.items[0]?.total || 0)}
+                    </div>
+                  </div>
+                </div>
 
-          <button
-            onClick={() => setActiveType('payment_out')}
-            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${activeType === 'payment_out' ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-white'
-              }`}
-          >
-            <ArrowUpRight className="w-4 h-4" /> Pay Out
-          </button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="flex items-center gap-2 mt-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <input
+                      type="checkbox"
+                      id="saleIsVatBill"
+                      {...saleForm.register('isVatBill')}
+                      className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600 cursor-pointer"
+                    />
+                    <label htmlFor="saleIsVatBill" className="text-xs font-bold text-slate-800 cursor-pointer select-none">
+                      Generate 13% VAT Bill
+                    </label>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Paid Amount (Rs.)
+                      <span className="text-[10px] text-slate-500 font-normal ml-2">Total: Rs. {formatCurrency(saleTotals.totalAmount)}</span>
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      {...saleForm.register('paidAmount', { valueAsNumber: true })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-emerald-700 font-mono font-black text-xs sm:text-sm min-h-[44px] shadow-2xs focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                    />
+                  </div>
+                </div>
 
-          <button
-            onClick={() => setActiveType('expense')}
-            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${activeType === 'expense' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white'
-              }`}
-          >
-            <DollarSign className="w-4 h-4" /> Expense
-          </button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Payment Mode</label>
+                    <select
+                      {...saleForm.register('paymentMode')}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold min-h-[44px] shadow-2xs focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                    >
+                      <option value={PaymentMode.CASH}>Cash</option>
+                      <option value={PaymentMode.BANK}>Bank</option>
+                      <option value={PaymentMode.ONLINE}>Online Wallet</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Account</label>
+                    <select
+                      {...saleForm.register('accountId' as any)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold min-h-[44px] shadow-2xs focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                    >
+                      <option value="">Default Account</option>
+                      {saleAccounts.map((a: any) => (
+                        <option key={a.id} value={a.id}>
+                          {a.bankName || a.accountName} — Rs. {formatCurrency(a.balance)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
 
-          <button
-            onClick={() => setActiveType('income')}
-            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${activeType === 'income' ? 'bg-teal-600 text-white' : 'text-slate-400 hover:text-white'
-              }`}
-          >
-            <TrendingUp className="w-4 h-4" /> Income
-          </button>
+                <button
+                  type="submit"
+                  disabled={createSale.isPending}
+                  className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm transition-all shadow-md shadow-blue-600/20 active:scale-95 disabled:opacity-50 cursor-pointer min-h-[44px]"
+                >
+                  {createSale.isPending ? 'Processing...' : 'Confirm Quick Sale'}
+                </button>
+              </form>
+            )}
 
-          <button
-            onClick={() => setActiveType('add_party')}
-            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${activeType === 'add_party' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
-              }`}
-          >
-            <UserPlus className="w-4 h-4" /> Party
-          </button>
+            {/* 2. QUICK PURCHASE */}
+            {activeType === 'purchase' && (
+              <form onSubmit={purchaseForm.handleSubmit(handlePurchaseSubmit)} className="space-y-4 text-xs sm:text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Supplier Party *</label>
+                    <select
+                      {...purchaseForm.register('partyId')}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 shadow-2xs min-h-[44px]"
+                    >
+                      <option value="">Select Supplier</option>
+                      {suppliers.map((s: any) => {
+                        const balLabel = getPartyBalanceDisplay(s.currentBalance, 'SUPPLIER');
+                        return (
+                          <option key={s.id} value={s.id}>
+                            {s.name} ({balLabel})
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Date *</label>
+                    <input
+                      type="date"
+                      {...purchaseForm.register('date')}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 shadow-2xs min-h-[44px]"
+                    />
+                  </div>
+                </div>
 
-          <button
-            onClick={() => setActiveType('add_item')}
-            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-1 transition-all ${activeType === 'add_item' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'
-              }`}
-          >
-            <PackagePlus className="w-4 h-4" /> Item
-          </button>
-        </div>
-
-        {/* MODAL FORM BODY */}
-        <div className="p-6">
-          {/* 1. QUICK SALE */}
-          {activeType === 'sale' && (
-            <form onSubmit={saleForm.handleSubmit(handleSaleSubmit)} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Customer Party *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Item & Quantity *</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <ItemSearchSelect
+                      items={items}
+                      value={purchaseForm.watch('items.0.itemId') || ''}
+                      onChange={(id) => {
+                        purchaseForm.setValue('items.0.itemId', id);
+                        const sel = items.find((i: any) => i.id === id);
+                        if (sel) purchaseForm.setValue('items.0.unitPrice', Number(sel.purchasePrice || 0));
+                      }}
+                      placeholder="Search item…"
+                      priceField="purchasePrice"
+                      className="sm:col-span-2"
+                    />
+                    <input
+                      type="number"
+                      step="any"
+                      placeholder="Qty"
+                      {...purchaseForm.register('items.0.quantity', { valueAsNumber: true })}
+                      className="px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono font-bold text-xs sm:text-sm focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 min-h-[44px] shadow-2xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Purchase Cost (Rs.) *</label>
+                    <input
+                      type="number"
+                      step="any"
+                      {...purchaseForm.register('items.0.unitPrice', { valueAsNumber: true })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono font-bold text-xs sm:text-sm min-h-[44px] shadow-2xs focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Discount %</label>
+                    <input
+                      type="number"
+                      step="any"
+                      {...purchaseForm.register('items.0.discountPercent', { valueAsNumber: true })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono font-bold text-xs sm:text-sm min-h-[44px] shadow-2xs focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Line Total</label>
+                    <div className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-indigo-700 font-mono font-black text-xs sm:text-sm flex items-center min-h-[44px]">
+                      Rs. {formatCurrency(purchaseTotals.items[0]?.total || 0)}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="flex items-center gap-2 mt-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <input
+                      type="checkbox"
+                      id="purchaseIsVatBill"
+                      {...purchaseForm.register('isVatBill')}
+                      className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer"
+                    />
+                    <label htmlFor="purchaseIsVatBill" className="text-xs font-bold text-slate-800 cursor-pointer select-none">
+                      Generate 13% VAT Bill
+                    </label>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Paid Amount (Rs.)
+                      <span className="text-[10px] text-slate-500 font-normal ml-2">Total: Rs. {formatCurrency(purchaseTotals.totalAmount)}</span>
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      {...purchaseForm.register('paidAmount', { valueAsNumber: true })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-rose-700 font-mono font-black text-xs sm:text-sm min-h-[44px] shadow-2xs focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Payment Mode</label>
+                    <select
+                      {...purchaseForm.register('paymentMode')}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold min-h-[44px] shadow-2xs focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
+                    >
+                      <option value={PaymentMode.CASH}>Cash</option>
+                      <option value={PaymentMode.BANK}>Bank</option>
+                      <option value={PaymentMode.ONLINE}>Online Wallet</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Account</label>
+                    <select
+                      {...purchaseForm.register('accountId' as any)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold min-h-[44px] shadow-2xs focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
+                    >
+                      <option value="">Default Account</option>
+                      {purchaseAccounts.map((a: any) => (
+                        <option key={a.id} value={a.id}>
+                          {a.bankName || a.accountName} — Rs. {formatCurrency(a.balance)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={createPurchase.isPending}
+                  className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm transition-all shadow-md shadow-indigo-600/20 active:scale-95 disabled:opacity-50 cursor-pointer min-h-[44px]"
+                >
+                  {createPurchase.isPending ? 'Processing...' : 'Confirm Quick Purchase'}
+                </button>
+              </form>
+            )}
+
+            {/* 3. QUICK PAYMENT IN */}
+            {activeType === 'payment_in' && (
+              <form onSubmit={paymentInForm.handleSubmit(handlePaymentInSubmit)} className="space-y-4 text-xs sm:text-sm">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Customer Party *</label>
                   <select
-                    {...saleForm.register('partyId')}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
+                    {...paymentInForm.register('partyId')}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-2xs min-h-[44px]"
                   >
-                    <option value="">Select Customer</option>
+                    <option value="">Select Customer Party</option>
                     {customers.map((c: any) => {
                       const balLabel = getPartyBalanceDisplay(c.currentBalance, 'CUSTOMER');
                       return (
@@ -517,188 +838,66 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
                     })}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Date *</label>
-                  <input
-                    type="date"
-                    {...saleForm.register('date')}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
-                  />
-                </div>
-              </div>
 
-              {(() => {
-                const selectedQuickSaleItemId = saleForm.watch('items.0.itemId');
-                const selectedQuickSaleItem = items.find((i: any) => i.id === selectedQuickSaleItemId);
-                const quickSaleQty = Number(saleForm.watch('items.0.quantity') || 0);
-                const quickSaleStock = Number(selectedQuickSaleItem?.currentStock || 0);
-                const isQuickSaleProduct = selectedQuickSaleItem?.type === 'PRODUCT';
-                const isQuickSaleOutOfStock = isQuickSaleProduct && quickSaleStock <= 0;
-                const isQuickSaleInsufficient = isQuickSaleProduct && quickSaleStock > 0 && quickSaleQty > quickSaleStock;
-                const isQuickSaleOverStock = isQuickSaleOutOfStock || isQuickSaleInsufficient;
-
-                return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">Item & Quantity *</label>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <ItemSearchSelect
-                        items={items}
-                        value={selectedQuickSaleItemId || ''}
-                        onChange={(id) => {
-                          saleForm.setValue('items.0.itemId', id);
-                          const sel = items.find((i: any) => i.id === id);
-                          if (sel) saleForm.setValue('items.0.unitPrice', Number(sel.salePrice || 0));
-                        }}
-                        placeholder="Search product…"
-                        priceField="salePrice"
-                        className="col-span-2"
-                      />
-                      <input
-                        type="number"
-                        step="any"
-                        placeholder="Qty"
-                        {...saleForm.register('items.0.quantity', { valueAsNumber: true })}
-                        className={`px-3 py-2 rounded-xl bg-slate-800 border text-white font-mono font-bold focus:outline-none focus:ring-2 transition-all ${
-                          isQuickSaleOverStock
-                            ? 'border-rose-500 focus:ring-rose-500/40 focus:border-rose-500'
-                            : 'border-slate-700 focus:ring-blue-500/40 focus:border-blue-500'
-                        }`}
-                      />
-                    </div>
-                    {selectedQuickSaleItem && (
-                      <div className="flex items-center gap-2 mt-1.5 px-0.5">
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                            quickSaleStock <= 0
-                              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                              : quickSaleStock <= Number(selectedQuickSaleItem.minStockAlert)
-                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                              : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                          }`}
-                        >
-                          {quickSaleStock <= 0
-                            ? `Out of Stock (0 ${selectedQuickSaleItem.unit})`
-                            : `Stock: ${quickSaleStock} ${selectedQuickSaleItem.unit}`}
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-mono">
-                          MRP: Rs. {Number(selectedQuickSaleItem.salePrice)}
-                        </span>
-                      </div>
-                    )}
-                    {isQuickSaleOutOfStock && (
-                      <p className="text-[10px] text-rose-400 font-semibold flex items-center gap-1 mt-1">
-                        <AlertCircle className="w-3 h-3 shrink-0" /> Out of stock! Available: 0 {selectedQuickSaleItem?.unit}. Cannot record sale.
-                      </p>
-                    )}
-                    {isQuickSaleInsufficient && (
-                      <p className="text-[10px] text-rose-400 font-semibold flex items-center gap-1 mt-1">
-                        <AlertCircle className="w-3 h-3 shrink-0" /> Insufficient stock ({quickSaleStock} {selectedQuickSaleItem?.unit} available, {quickSaleQty} requested)
-                      </p>
-                    )}
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Amount Received (Rs.) *</label>
+                    <input
+                      type="number"
+                      step="any"
+                      {...paymentInForm.register('amount', { valueAsNumber: true })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-emerald-700 font-mono font-black text-xs sm:text-sm min-h-[44px] shadow-2xs focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
+                    />
                   </div>
-                );
-              })()}
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Unit Price (Rs.) *</label>
-                  <input
-                    type="number"
-                    step="any"
-                    {...saleForm.register('items.0.unitPrice', { valueAsNumber: true })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Discount %</label>
-                  <input
-                    type="number"
-                    step="any"
-                    {...saleForm.register('items.0.discountPercent', { valueAsNumber: true })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Item Line Total</label>
-                  <div className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-emerald-400 font-mono font-bold text-xs flex items-center h-[38px]">
-                    Rs. {formatCurrency(saleTotals.items[0]?.total || 0)}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Mode</label>
+                    <select
+                      {...paymentInForm.register('mode')}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold min-h-[44px] shadow-2xs focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
+                    >
+                      <option value={PaymentMode.CASH}>Cash</option>
+                      <option value={PaymentMode.BANK}>Bank</option>
+                      <option value={PaymentMode.ONLINE}>Online Wallet</option>
+                    </select>
                   </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center gap-2 mt-4">
-                  <input
-                    type="checkbox"
-                    id="saleIsVatBill"
-                    {...saleForm.register('isVatBill')}
-                    className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-blue-600 focus:ring-blue-500"
-                  />
-                  <label htmlFor="saleIsVatBill" className="text-slate-300 font-semibold">Generate VAT Bill (13%)</label>
-                </div>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">
-                    Paid Amount (Rs.)
-                    <span className="text-[10px] text-slate-500 font-normal ml-2">Total: Rs. {formatCurrency(saleTotals.totalAmount)}</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    {...saleForm.register('paidAmount', { valueAsNumber: true })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-emerald-400 font-mono font-bold"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Payment Mode</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Account</label>
                   <select
-                    {...saleForm.register('paymentMode')}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
-                  >
-                    <option value={PaymentMode.CASH}>Cash</option>
-                    <option value={PaymentMode.BANK}>Bank</option>
-                    <option value={PaymentMode.ONLINE}>Online Wallet</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Account</label>
-                  <select
-                    {...saleForm.register('accountId' as any)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
+                    {...paymentInForm.register('accountId' as any)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold min-h-[44px] shadow-2xs focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
                   >
                     <option value="">Default Account</option>
-                    {saleAccounts.map((a: any) => (
+                    {paymentInAccounts.map((a: any) => (
                       <option key={a.id} value={a.id}>
                         {a.bankName || a.accountName} — Rs. {formatCurrency(a.balance)}
                       </option>
                     ))}
                   </select>
                 </div>
-              </div>
 
-              <button
-                type="submit"
-                disabled={createSale.isPending}
-                className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold transition-all shadow-lg shadow-blue-600/20"
-              >
-                {createSale.isPending ? 'Processing...' : '⚡ Confirm Quick Sale'}
-              </button>
-            </form>
-          )}
+                <button
+                  type="submit"
+                  disabled={createPaymentIn.isPending}
+                  className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm transition-all shadow-md shadow-emerald-600/20 active:scale-95 disabled:opacity-50 cursor-pointer min-h-[44px]"
+                >
+                  {createPaymentIn.isPending ? 'Processing...' : 'Record Payment Received'}
+                </button>
+              </form>
+            )}
 
-          {/* 2. QUICK PURCHASE */}
-          {activeType === 'purchase' && (
-            <form onSubmit={purchaseForm.handleSubmit(handlePurchaseSubmit)} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* 4. QUICK PAYMENT OUT */}
+            {activeType === 'payment_out' && (
+              <form onSubmit={paymentOutForm.handleSubmit(handlePaymentOutSubmit)} className="space-y-4 text-xs sm:text-sm">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Supplier Party *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Supplier Party *</label>
                   <select
-                    {...purchaseForm.register('partyId')}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
+                    {...paymentOutForm.register('partyId')}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-rose-600 focus:ring-1 focus:ring-rose-600 shadow-2xs min-h-[44px]"
                   >
-                    <option value="">Select Supplier</option>
+                    <option value="">Select Supplier Party</option>
                     {suppliers.map((s: any) => {
                       const balLabel = getPartyBalanceDisplay(s.currentBalance, 'SUPPLIER');
                       return (
@@ -709,449 +908,236 @@ export function QuickEntryModal({ isOpen, onClose, defaultType = 'sale' }: Quick
                     })}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Date *</label>
-                  <input
-                    type="date"
-                    {...purchaseForm.register('date')}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
-                  />
-                </div>
-              </div>
 
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Item & Quantity *</label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <ItemSearchSelect
-                    items={items}
-                    value={purchaseForm.watch('items.0.itemId') || ''}
-                    onChange={(id) => {
-                      purchaseForm.setValue('items.0.itemId', id);
-                      const sel = items.find((i: any) => i.id === id);
-                      if (sel) purchaseForm.setValue('items.0.unitPrice', Number(sel.purchasePrice || 0));
-                    }}
-                    placeholder="Search item…"
-                    priceField="purchasePrice"
-                    className="col-span-2"
-                  />
-                  <input
-                    type="number"
-                    step="any"
-                    placeholder="Qty"
-                    {...purchaseForm.register('items.0.quantity', { valueAsNumber: true })}
-                    className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono font-bold"
-                  />
-                </div>
-              </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Amount Paid (Rs.) *</label>
+                    <input
+                      type="number"
+                      step="any"
+                      {...paymentOutForm.register('amount', { valueAsNumber: true })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-rose-700 font-mono font-black text-xs sm:text-sm min-h-[44px] shadow-2xs focus:border-rose-600 focus:ring-1 focus:ring-rose-600"
+                    />
+                  </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Purchase Cost (Rs.) *</label>
-                  <input
-                    type="number"
-                    step="any"
-                    {...purchaseForm.register('items.0.unitPrice', { valueAsNumber: true })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Discount %</label>
-                  <input
-                    type="number"
-                    step="any"
-                    {...purchaseForm.register('items.0.discountPercent', { valueAsNumber: true })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Item Line Total</label>
-                  <div className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-purple-400 font-mono font-bold text-xs flex items-center h-[38px]">
-                    Rs. {formatCurrency(purchaseTotals.items[0]?.total || 0)}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Mode</label>
+                    <select
+                      {...paymentOutForm.register('mode')}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold min-h-[44px] shadow-2xs focus:border-rose-600 focus:ring-1 focus:ring-rose-600"
+                    >
+                      <option value={PaymentMode.CASH}>Cash</option>
+                      <option value={PaymentMode.BANK}>Bank</option>
+                      <option value={PaymentMode.ONLINE}>Online Wallet</option>
+                    </select>
                   </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center gap-2 mt-4">
-                  <input
-                    type="checkbox"
-                    id="purchaseIsVatBill"
-                    {...purchaseForm.register('isVatBill')}
-                    className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-purple-600 focus:ring-purple-500"
-                  />
-                  <label htmlFor="purchaseIsVatBill" className="text-slate-300 font-semibold">Generate VAT Bill (13%)</label>
-                </div>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">
-                    Paid Amount (Rs.)
-                    <span className="text-[10px] text-slate-500 font-normal ml-2">Total: Rs. {formatCurrency(purchaseTotals.totalAmount)}</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    {...purchaseForm.register('paidAmount', { valueAsNumber: true })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-rose-400 font-mono font-bold"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Payment Mode</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Account</label>
                   <select
-                    {...purchaseForm.register('paymentMode')}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
-                  >
-                    <option value={PaymentMode.CASH}>Cash</option>
-                    <option value={PaymentMode.BANK}>Bank</option>
-                    <option value={PaymentMode.ONLINE}>Online Wallet</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Account</label>
-                  <select
-                    {...purchaseForm.register('accountId' as any)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
+                    {...paymentOutForm.register('accountId' as any)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold min-h-[44px] shadow-2xs focus:border-rose-600 focus:ring-1 focus:ring-rose-600"
                   >
                     <option value="">Default Account</option>
-                    {purchaseAccounts.map((a: any) => (
+                    {paymentOutAccounts.map((a: any) => (
                       <option key={a.id} value={a.id}>
                         {a.bankName || a.accountName} — Rs. {formatCurrency(a.balance)}
                       </option>
                     ))}
                   </select>
                 </div>
-              </div>
 
-              <button
-                type="submit"
-                disabled={createPurchase.isPending}
-                className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold transition-all shadow-lg shadow-purple-600/20"
-              >
-                {createPurchase.isPending ? 'Processing...' : '⚡ Confirm Quick Purchase'}
-              </button>
-            </form>
-          )}
-
-          {/* 3. QUICK PAYMENT IN */}
-          {activeType === 'payment_in' && (
-            <form onSubmit={paymentInForm.handleSubmit(handlePaymentInSubmit)} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Customer Party *</label>
-                <select
-                  {...paymentInForm.register('partyId')}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
+                <button
+                  type="submit"
+                  disabled={createPaymentOut.isPending}
+                  className="w-full py-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs sm:text-sm transition-all shadow-md shadow-rose-600/20 active:scale-95 disabled:opacity-50 cursor-pointer min-h-[44px]"
                 >
-                  <option value="">Select Party</option>
-                  {customers.map((c: any) => {
-                    const balLabel = getPartyBalanceDisplay(c.currentBalance, 'CUSTOMER');
-                    return (
-                      <option key={c.id} value={c.id}>
-                        {c.name} ({balLabel})
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
+                  {createPaymentOut.isPending ? 'Processing...' : 'Record Supplier Payout'}
+                </button>
+              </form>
+            )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* 5. QUICK EXPENSE */}
+            {activeType === 'expense' && (
+              <form onSubmit={expenseForm.handleSubmit(handleExpenseSubmit)} className="space-y-4 text-xs sm:text-sm">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Amount Received (Rs.) *</label>
-                  <input
-                    type="number"
-                    step="any"
-                    {...paymentInForm.register('amount', { valueAsNumber: true })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-emerald-400 font-mono font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Mode</label>
-                  <select
-                    {...paymentInForm.register('mode')}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
-                  >
-                    <option value={PaymentMode.CASH}>Cash</option>
-                    <option value={PaymentMode.BANK}>Bank</option>
-                    <option value={PaymentMode.ONLINE}>Online Wallet</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Account</label>
-                <select
-                  {...paymentInForm.register('accountId' as any)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
-                >
-                  <option value="">Default Account</option>
-                  {paymentInAccounts.map((a: any) => (
-                    <option key={a.id} value={a.id}>
-                      {a.bankName || a.accountName} — Rs. {formatCurrency(a.balance)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <button
-                type="submit"
-                disabled={createPaymentIn.isPending}
-                className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition-all shadow-lg shadow-emerald-600/20"
-              >
-                {createPaymentIn.isPending ? 'Processing...' : '⚡ Record Payment Received'}
-              </button>
-            </form>
-          )}
-
-          {/* 4. QUICK PAYMENT OUT */}
-          {activeType === 'payment_out' && (
-            <form onSubmit={paymentOutForm.handleSubmit(handlePaymentOutSubmit)} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Supplier Party *</label>
-                <select
-                  {...paymentOutForm.register('partyId')}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
-                >
-                  <option value="">Select Party</option>
-                  {suppliers.map((s: any) => {
-                    const balLabel = getPartyBalanceDisplay(s.currentBalance, 'SUPPLIER');
-                    return (
-                      <option key={s.id} value={s.id}>
-                        {s.name} ({balLabel})
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Amount Paid (Rs.) *</label>
-                  <input
-                    type="number"
-                    step="any"
-                    {...paymentOutForm.register('amount', { valueAsNumber: true })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-rose-400 font-mono font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Mode</label>
-                  <select
-                    {...paymentOutForm.register('mode')}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
-                  >
-                    <option value={PaymentMode.CASH}>Cash</option>
-                    <option value={PaymentMode.BANK}>Bank</option>
-                    <option value={PaymentMode.ONLINE}>Online Wallet</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Account</label>
-                <select
-                  {...paymentOutForm.register('accountId' as any)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
-                >
-                  <option value="">Default Account</option>
-                  {paymentOutAccounts.map((a: any) => (
-                    <option key={a.id} value={a.id}>
-                      {a.bankName || a.accountName} — Rs. {formatCurrency(a.balance)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <button
-                type="submit"
-                disabled={createPaymentOut.isPending}
-                className="w-full py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold transition-all shadow-lg shadow-rose-600/20"
-              >
-                {createPaymentOut.isPending ? 'Processing...' : '⚡ Record Supplier Payout'}
-              </button>
-            </form>
-          )}
-
-          {/* 5. QUICK EXPENSE */}
-          {activeType === 'expense' && (
-            <form onSubmit={expenseForm.handleSubmit(handleExpenseSubmit)} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Expense Category *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Office Rent, Utilities, Tea"
-                  {...expenseForm.register('category')}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Amount Spent (Rs.) *</label>
-                <input
-                  type="number"
-                  step="any"
-                  {...expenseForm.register('amount', { valueAsNumber: true })}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-rose-400 font-mono font-bold"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={createExpense.isPending}
-                className="w-full py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold transition-all shadow-lg shadow-amber-600/20"
-              >
-                {createExpense.isPending ? 'Processing...' : '⚡ Confirm Expense'}
-              </button>
-            </form>
-          )}
-
-          {/* 6. QUICK OTHER INCOME */}
-          {activeType === 'income' && (
-            <form onSubmit={incomeForm.handleSubmit(handleIncomeSubmit)} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Income Category *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Scrap Sale, Commission"
-                  {...incomeForm.register('category')}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Amount Received (Rs.) *</label>
-                <input
-                  type="number"
-                  step="any"
-                  {...incomeForm.register('amount', { valueAsNumber: true })}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-emerald-400 font-mono font-bold"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={createIncome.isPending}
-                className="w-full py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold transition-all shadow-lg shadow-teal-600/20"
-              >
-                {createIncome.isPending ? 'Processing...' : '⚡ Confirm Other Income'}
-              </button>
-            </form>
-          )}
-
-          {/* 7. QUICK ADD PARTY */}
-          {activeType === 'add_party' && (
-            <form onSubmit={partyForm.handleSubmit(handlePartySubmit)} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Party Name *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. John Doe Traders"
-                  {...partyForm.register('name')}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-bold"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Party Type *</label>
-                  <select
-                    {...partyForm.register('type')}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
-                  >
-                    <option value={PartyType.CUSTOMER}>Customer</option>
-                    <option value={PartyType.SUPPLIER}>Supplier</option>
-                    <option value={PartyType.BOTH}>Both (Customer & Supplier)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Opening Balance (Rs.)</label>
-                  <input
-                    type="number"
-                    step="any"
-                    {...partyForm.register('openingBalance', { valueAsNumber: true })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={createParty.isPending}
-                className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition-all shadow-lg shadow-indigo-600/20"
-              >
-                {createParty.isPending ? 'Processing...' : '⚡ Add Party Master'}
-              </button>
-            </form>
-          )}
-
-          {/* 8. QUICK ADD ITEM */}
-          {activeType === 'add_item' && (
-            <form onSubmit={itemForm.handleSubmit(handleItemSubmit)} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="col-span-2">
-                  <label className="block text-slate-300 font-semibold mb-1">Item Name *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Expense Category *</label>
                   <input
                     type="text"
-                    placeholder="e.g. Wireless Mouse"
-                    {...itemForm.register('name')}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-bold"
+                    placeholder="e.g. Office Rent, Utilities, Tea"
+                    {...expenseForm.register('category')}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold min-h-[44px] shadow-2xs focus:border-amber-600 focus:ring-1 focus:ring-amber-600"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Unit *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Amount Spent (Rs.) *</label>
+                  <input
+                    type="number"
+                    step="any"
+                    {...expenseForm.register('amount', { valueAsNumber: true })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-rose-700 font-mono font-black text-xs sm:text-sm min-h-[44px] shadow-2xs focus:border-amber-600 focus:ring-1 focus:ring-amber-600"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={createExpense.isPending}
+                  className="w-full py-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs sm:text-sm transition-all shadow-md shadow-amber-600/20 active:scale-95 disabled:opacity-50 cursor-pointer min-h-[44px]"
+                >
+                  {createExpense.isPending ? 'Processing...' : 'Confirm Expense'}
+                </button>
+              </form>
+            )}
+
+            {/* 6. QUICK OTHER INCOME */}
+            {activeType === 'income' && (
+              <form onSubmit={incomeForm.handleSubmit(handleIncomeSubmit)} className="space-y-4 text-xs sm:text-sm">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Income Category *</label>
                   <input
                     type="text"
-                    {...itemForm.register('unit')}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Sale Price (Rs.)</label>
-                  <input
-                    type="number"
-                    step="any"
-                    {...itemForm.register('salePrice', { valueAsNumber: true })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-emerald-400 font-mono font-bold"
+                    placeholder="e.g. Scrap Sale, Commission"
+                    {...incomeForm.register('category')}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold min-h-[44px] shadow-2xs focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Purchase Price (Rs.)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Amount Received (Rs.) *</label>
                   <input
                     type="number"
                     step="any"
-                    {...itemForm.register('purchasePrice', { valueAsNumber: true })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-blue-400 font-mono font-bold"
+                    {...incomeForm.register('amount', { valueAsNumber: true })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-emerald-700 font-mono font-black text-xs sm:text-sm min-h-[44px] shadow-2xs focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
                   />
                 </div>
 
+                <button
+                  type="submit"
+                  disabled={createIncome.isPending}
+                  className="w-full py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs sm:text-sm transition-all shadow-md shadow-teal-600/20 active:scale-95 disabled:opacity-50 cursor-pointer min-h-[44px]"
+                >
+                  {createIncome.isPending ? 'Processing...' : 'Confirm Other Income'}
+                </button>
+              </form>
+            )}
+
+            {/* 7. QUICK ADD PARTY */}
+            {activeType === 'add_party' && (
+              <form onSubmit={partyForm.handleSubmit(handlePartySubmit)} className="space-y-4 text-xs sm:text-sm">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Opening Stock</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Party Name *</label>
                   <input
-                    type="number"
-                    step="any"
-                    {...itemForm.register('openingStock', { valueAsNumber: true })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono"
+                    type="text"
+                    placeholder="e.g. John Doe Traders"
+                    {...partyForm.register('name')}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-bold min-h-[44px] shadow-2xs focus:border-slate-800 focus:ring-1 focus:ring-slate-800"
                   />
                 </div>
-              </div>
 
-              <button
-                type="submit"
-                disabled={createItem.isPending}
-                className="w-full py-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold transition-all shadow-lg shadow-cyan-600/20"
-              >
-                {createItem.isPending ? 'Processing...' : '⚡ Add Product Master'}
-              </button>
-            </form>
-          )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Party Type *</label>
+                    <select
+                      {...partyForm.register('type')}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold min-h-[44px] shadow-2xs focus:border-slate-800 focus:ring-1 focus:ring-slate-800"
+                    >
+                      <option value={PartyType.CUSTOMER}>Customer</option>
+                      <option value={PartyType.SUPPLIER}>Supplier</option>
+                      <option value={PartyType.BOTH}>Both (Customer & Supplier)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Opening Balance (Rs.)</label>
+                    <input
+                      type="number"
+                      step="any"
+                      {...partyForm.register('openingBalance', { valueAsNumber: true })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono font-bold text-xs sm:text-sm min-h-[44px] shadow-2xs focus:border-slate-800 focus:ring-1 focus:ring-slate-800"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={createParty.isPending}
+                  className="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm transition-all shadow-md shadow-slate-900/20 active:scale-95 disabled:opacity-50 cursor-pointer min-h-[44px]"
+                >
+                  {createParty.isPending ? 'Processing...' : 'Add Party Master'}
+                </button>
+              </form>
+            )}
+
+            {/* 8. QUICK ADD ITEM */}
+            {activeType === 'add_item' && (
+              <form onSubmit={itemForm.handleSubmit(handleItemSubmit)} className="space-y-4 text-xs sm:text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Item Name *</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Berger Paint 20L"
+                      {...itemForm.register('name')}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-bold min-h-[44px] shadow-2xs focus:border-cyan-600 focus:ring-1 focus:ring-cyan-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Unit *</label>
+                    <input
+                      type="text"
+                      {...itemForm.register('unit')}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold min-h-[44px] shadow-2xs focus:border-cyan-600 focus:ring-1 focus:ring-cyan-600"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Sale Price (Rs.)</label>
+                    <input
+                      type="number"
+                      step="any"
+                      {...itemForm.register('salePrice', { valueAsNumber: true })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-emerald-700 font-mono font-bold text-xs sm:text-sm min-h-[44px] shadow-2xs focus:border-cyan-600 focus:ring-1 focus:ring-cyan-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Purchase Price (Rs.)</label>
+                    <input
+                      type="number"
+                      step="any"
+                      {...itemForm.register('purchasePrice', { valueAsNumber: true })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-blue-700 font-mono font-bold text-xs sm:text-sm min-h-[44px] shadow-2xs focus:border-cyan-600 focus:ring-1 focus:ring-cyan-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Opening Stock</label>
+                    <input
+                      type="number"
+                      step="any"
+                      {...itemForm.register('openingStock', { valueAsNumber: true })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono font-bold text-xs sm:text-sm min-h-[44px] shadow-2xs focus:border-cyan-600 focus:ring-1 focus:ring-cyan-600"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={createItem.isPending}
+                  className="w-full py-3 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs sm:text-sm transition-all shadow-md shadow-cyan-600/20 active:scale-95 disabled:opacity-50 cursor-pointer min-h-[44px]"
+                >
+                  {createItem.isPending ? 'Processing...' : 'Add Product Master'}
+                </button>
+              </form>
+            )}
+          </div>
         </div>
       </div>
-    </div></ModalPortal>
+    </ModalPortal>
   );
 }

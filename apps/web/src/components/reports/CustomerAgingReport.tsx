@@ -1,12 +1,9 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { WhatsAppShareModal } from '@/components/common/WhatsAppShareModal';
-import { generateCustomerDueReminderMessage } from '@/lib/whatsapp';
 import {
   Clock,
   AlertTriangle,
-  MessageSquare,
   Download,
   Printer,
   Search,
@@ -28,9 +25,6 @@ export function CustomerAgingReport({
 }: CustomerAgingReportProps) {
   const [search, setSearch] = useState('');
   const [selectedBucket, setSelectedBucket] = useState<'all' | '0-30' | '31-60' | '61-90' | '90+'>('all');
-  
-  // WhatsApp modal state
-  const [activePartyForReminder, setActivePartyForReminder] = useState<any | null>(null);
 
   // Compute aging data per party
   const agingData = useMemo(() => {
@@ -162,7 +156,7 @@ export function CustomerAgingReport({
             Accounts Receivable Aging Analysis (उधारो विश्लेषण)
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Segment outstanding customer balances by overdue duration and trigger 1-click WhatsApp payment reminders.
+            Segment outstanding customer balances by overdue duration.
           </p>
         </div>
 
@@ -228,63 +222,52 @@ export function CustomerAgingReport({
       {/* FILTER BUTTONS & SEARCH */}
       <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900 border border-slate-800 print:hidden">
         <div className="relative flex-1 min-w-[240px]">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
+            placeholder="Search debtor customer by name or phone..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search debtor customer by name or phone..."
-            className="w-full pl-10 pr-4 py-2 bg-slate-800/80 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+            className="w-full px-3.5 py-2 bg-slate-800/80 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5 text-xs font-semibold">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-900 border border-slate-800 rounded-xl text-xs">
           <button
             onClick={() => setSelectedBucket('all')}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              selectedBucket === 'all'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-800 text-slate-400 hover:text-white'
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+              selectedBucket === 'all' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
-            All Debtors ({agingData.length})
+            All Overdue
           </button>
           <button
             onClick={() => setSelectedBucket('0-30')}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              selectedBucket === '0-30'
-                ? 'bg-emerald-600 text-white'
-                : 'bg-slate-800 text-slate-400 hover:text-white'
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+              selectedBucket === '0-30' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
-            0–30 Days
+            0-30 Days
           </button>
           <button
             onClick={() => setSelectedBucket('31-60')}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              selectedBucket === '31-60'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-800 text-slate-400 hover:text-white'
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+              selectedBucket === '31-60' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
-            31–60 Days
+            31-60 Days
           </button>
           <button
             onClick={() => setSelectedBucket('61-90')}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              selectedBucket === '61-90'
-                ? 'bg-amber-600 text-white'
-                : 'bg-slate-800 text-slate-400 hover:text-white'
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+              selectedBucket === '61-90' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
-            61–90 Days
+            61-90 Days
           </button>
           <button
             onClick={() => setSelectedBucket('90+')}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              selectedBucket === '90+'
-                ? 'bg-rose-600 text-white'
-                : 'bg-slate-800 text-slate-400 hover:text-white'
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+              selectedBucket === '90+' ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
             90+ Days
@@ -305,13 +288,12 @@ export function CustomerAgingReport({
               <th className="px-4 py-3 text-right text-amber-400 print:text-black">61-90 Days</th>
               <th className="px-4 py-3 text-right text-rose-400 print:text-black">90+ Days</th>
               <th className="px-4 py-3 text-center">Aging Risk</th>
-              <th className="px-4 py-3 text-right print:hidden">1-Click Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60 print:divide-gray-300 text-slate-300 print:text-black">
             {filteredRows.length === 0 ? (
               <tr>
-                <td colSpan={9} className="text-center py-8 text-slate-500">
+                <td colSpan={8} className="text-center py-8 text-slate-500">
                   No overdue customer receivables matching criteria.
                 </td>
               </tr>
@@ -356,14 +338,6 @@ export function CustomerAgingReport({
                         {row.bucket === '0-30' ? 'Normal' : `${row.bucket} Days`}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right print:hidden">
-                      <button
-                        onClick={() => setActivePartyForReminder(row)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-400 border border-emerald-500/30 text-[11px] font-bold transition-all"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5" /> WhatsApp Reminder
-                      </button>
-                    </td>
                   </tr>
                 );
               })
@@ -389,29 +363,11 @@ export function CustomerAgingReport({
               <td className="px-4 py-3 text-right font-mono text-rose-400">
                 Rs. {totals.b90_plus.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </td>
-              <td colSpan={2}></td>
+              <td></td>
             </tr>
           </tfoot>
         </table>
       </div>
-
-      {/* WHATSAPP DUE REMINDER MODAL */}
-      {activePartyForReminder && (
-        <WhatsAppShareModal
-          isOpen={Boolean(activePartyForReminder)}
-          onClose={() => setActivePartyForReminder(null)}
-          title={`Send Payment Reminder to ${activePartyForReminder.name}`}
-          defaultPhone={activePartyForReminder.phone}
-          message={generateCustomerDueReminderMessage({
-            businessName,
-            businessPhone,
-            customerName: activePartyForReminder.name,
-            totalDue: activePartyForReminder.currentBalance,
-            agingStatus: activePartyForReminder.bucket === '0-30' ? '0–30 Days (Current)' : `${activePartyForReminder.bucket} Days Overdue`,
-            oldestInvoiceDate: activePartyForReminder.lastActivity,
-          })}
-        />
-      )}
     </div>
   );
 }

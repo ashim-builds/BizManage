@@ -6,6 +6,12 @@ import { AppError } from '../../plugins/error-handler.js';
 import crypto from 'crypto';
 import { z } from 'zod';
 
+import {
+  normalizeSearchQuery,
+  extractSearchTokens,
+  scoreItemRelevance,
+} from './item-search.service.js';
+
 export async function itemRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', requireBusinessTenant);
 
@@ -13,71 +19,97 @@ export async function itemRoutes(fastify: FastifyInstance) {
   // GET INVENTORY SUMMARY (Total Stock Valuation & Low Stock Count)
   // ----------------------------------------------------
   fastify.get('/summary', async (request, reply) => {
-    const items = await request.db!.item.findMany({
-      where: { type: ItemType.PRODUCT },
-      select: {
-        currentStock: true,
-        purchasePrice: true,
-        salePrice: true,
-        minStockAlert: true,
-      },
-    });
+    const businessId = request.tenant!.businessId;
 
-    let totalCostValuation = new Prisma.Decimal(0);
-    let totalSaleValuation = new Prisma.Decimal(0);
-    let lowStockCount = 0;
-    let outOfStockCount = 0;
+    try {
+      const [totalCount, outOfStockCount, lowStockResult, aggregates] = await Promise.all([
+        request.db!.item.count({
+          where: { businessId, type: ItemType.PRODUCT },
+        }),
+        request.db!.item.count({
+          where: { businessId, type: ItemType.PRODUCT, currentStock: { lte: 0 } },
+        }),
+        request.db!.$queryRaw<{ count: bigint }[]>`
+          SELECT COUNT(*) as count FROM Item 
+          WHERE businessId = ${businessId} 
+            AND type = 'PRODUCT' 
+            AND (currentStock <= minStockAlert OR currentStock <= 0)
+        `,
+        request.db!.$queryRaw<{ totalCostValuation: number | null; totalSaleValuation: number | null }[]>`
+          SELECT 
+            SUM(CASE WHEN currentStock > 0 THEN currentStock * purchasePrice ELSE 0 END) as totalCostValuation,
+            SUM(CASE WHEN currentStock > 0 THEN currentStock * salePrice ELSE 0 END) as totalSaleValuation
+          FROM Item 
+          WHERE businessId = ${businessId} AND type = 'PRODUCT'
+        `,
+      ]);
 
-    for (const item of items) {
-      const stock = new Prisma.Decimal(item.currentStock || 0);
-      const purchasePrice = new Prisma.Decimal(item.purchasePrice || 0);
-      const salePrice = new Prisma.Decimal(item.salePrice || 0);
+      const lowStockCount = Number(lowStockResult[0]?.count || 0);
+      const totalCostValuation = Number(aggregates[0]?.totalCostValuation || 0);
+      const totalSaleValuation = Number(aggregates[0]?.totalSaleValuation || 0);
 
-      if (stock.isPositive()) {
-        totalCostValuation = totalCostValuation.add(stock.mul(purchasePrice));
-        totalSaleValuation = totalSaleValuation.add(stock.mul(salePrice));
-      }
-
-      if (stock.lessThanOrEqualTo(0)) {
-        outOfStockCount++;
-      } else if (stock.lessThanOrEqualTo(item.minStockAlert)) {
-        lowStockCount++;
-      }
+      return reply.send({
+        success: true,
+        data: {
+          totalItems: totalCount,
+          totalCostValuation,
+          totalSaleValuation,
+          lowStockCount,
+          outOfStockCount,
+        },
+      });
+    } catch (err: any) {
+      request.log.error(err, 'Failed to fetch inventory summary');
+      return reply.send({
+        success: true,
+        data: {
+          totalItems: 0,
+          totalCostValuation: 0,
+          totalSaleValuation: 0,
+          lowStockCount: 0,
+          outOfStockCount: 0,
+        },
+      });
     }
-
-    return reply.send({
-      success: true,
-      data: {
-        totalItems: items.length,
-        totalCostValuation: totalCostValuation.toNumber(),
-        totalSaleValuation: totalSaleValuation.toNumber(),
-        lowStockCount,
-        outOfStockCount,
-      },
-    });
   });
 
   // ----------------------------------------------------
-  // LIST ITEMS WITH SEARCH & FILTERS
+  // LIST ITEMS WITH SMART SEARCH & SERVER-SIDE PAGINATION
   // ----------------------------------------------------
   fastify.get('/', async (request, reply) => {
-    const { search, categoryId, type, lowStock, page = '1', limit = '50', dateFrom, dateTo } = request.query as {
+    const {
+      search,
+      status,
+      categoryId,
+      type,
+      lowStock,
+      page = '1',
+      limit = '25',
+      sort = 'name',
+      order = 'asc',
+      dateFrom,
+      dateTo,
+    } = request.query as {
       search?: string;
+      status?: string;
       categoryId?: string;
       type?: ItemType;
       lowStock?: string;
       page?: string;
       limit?: string;
+      sort?: string;
+      order?: 'asc' | 'desc';
       dateFrom?: string;
       dateTo?: string;
     };
 
     const pageNum = Math.max(1, parseInt(page, 10));
-    const limitNum = Math.min(5000, Math.max(1, parseInt(limit, 10)));
+    const limitNum = Math.min(500, Math.max(1, parseInt(limit, 10)));
     const skip = (pageNum - 1) * limitNum;
+    const businessId = request.tenant!.businessId;
 
     const whereClause: Prisma.ItemWhereInput = {
-      businessId: request.tenant!.businessId,
+      businessId,
     };
 
     if (type) {
@@ -104,107 +136,171 @@ export async function itemRoutes(fastify: FastifyInstance) {
       }
     }
 
-    if (search && search.trim()) {
-      const rawSearch = search.replace(/[\r\n\t]/g, '').trim();
-      const cleanSku = rawSearch.replace(/^(sku|code)[-:\s]*/i, '').trim();
-      const cleanAlpha = rawSearch.replace(/[^a-zA-Z0-9]/g, '').trim();
-      const tokens = rawSearch.split(/\s+/).filter(Boolean);
+    // 1. Stock Status Filter (Processed at database level)
+    const normalizedStatus = (status || (lowStock === 'true' ? 'low_stock' : '')).toLowerCase();
+    if (normalizedStatus === 'low_stock' || normalizedStatus === 'low' || normalizedStatus === 'low-stock') {
+      whereClause.type = ItemType.PRODUCT;
+      try {
+        const lowStockRowIds: { id: string }[] = await request.db!.$queryRaw`
+          SELECT id FROM Item 
+          WHERE businessId = ${businessId} 
+            AND type = 'PRODUCT' 
+            AND (currentStock <= minStockAlert OR currentStock <= 0)
+        `;
+        whereClause.id = { in: lowStockRowIds.map((r) => r.id) };
+      } catch (e) {
+        whereClause.currentStock = { lte: 0 };
+      }
+    } else if (normalizedStatus === 'out' || normalizedStatus === 'out_of_stock' || normalizedStatus === 'zero') {
+      whereClause.type = ItemType.PRODUCT;
+      whereClause.currentStock = { lte: 0 };
+    } else if (normalizedStatus === 'in_stock') {
+      whereClause.type = ItemType.PRODUCT;
+      whereClause.currentStock = { gt: 0 };
+    }
+
+    // 2. Smart Search Query Filter
+    const hasSearch = Boolean(search && search.trim());
+    let tokensInfo: { primaryTokens: string[]; allCandidateTokens: string[] } = {
+      primaryTokens: [],
+      allCandidateTokens: [],
+    };
+
+    if (hasSearch) {
+      const rawSearch = search!.trim();
+      tokensInfo = extractSearchTokens(rawSearch);
+      const normalizedQuery = normalizeSearchQuery(rawSearch);
 
       const searchHmac = crypto
         .createHmac('sha256', 'bms_hmac_secret')
         .update(rawSearch.toLowerCase())
         .digest('base64');
 
-      const cleanSkuHmac = crypto
-        .createHmac('sha256', 'bms_hmac_secret')
-        .update(cleanSku.toLowerCase())
-        .digest('base64');
+      const candidateOrs: Prisma.ItemWhereInput[] = [
+        { hmacName: searchHmac },
+        { hmacCode: searchHmac },
+        { name: { contains: rawSearch } },
+        { code: { contains: rawSearch } },
+        { category: { name: { contains: rawSearch } } },
+      ];
 
-      const cleanAlphaHmac = crypto
-        .createHmac('sha256', 'bms_hmac_secret')
-        .update(cleanAlpha.toLowerCase())
-        .digest('base64');
-
-      if (tokens.length > 1) {
-        // Multi-word tokenized search
-        whereClause.AND = tokens.map((token) => {
-          const tokenAlpha = token.replace(/[^a-zA-Z0-9]/g, '');
-          const orList: any[] = [
-            { name: { contains: token } },
-            { code: { contains: token } },
-            { category: { name: { contains: token } } },
-          ];
-          if (tokenAlpha && tokenAlpha !== token) {
-            orList.push({ name: { contains: tokenAlpha } });
-            orList.push({ code: { contains: tokenAlpha } });
-          }
-          return { OR: orList };
-        });
-      } else {
-        const orConditions: any[] = [
-          // E2EE path — exact HMAC match (raw query, prefix-stripped SKU, or alpha SKU)
-          { hmacName: searchHmac },
-          { hmacCode: searchHmac },
-          { hmacCode: cleanSkuHmac },
-          { hmacCode: cleanAlphaHmac },
-          // Plaintext path — partial / case-insensitive match on name, code, clean SKU, category
-          { name: { contains: rawSearch } },
-          { code: { contains: rawSearch } },
-          // Category name always plaintext
-          { category: { name: { contains: rawSearch } } },
-        ];
-
-        if (cleanSku && cleanSku !== rawSearch) {
-          orConditions.push({ code: { contains: cleanSku } });
-        }
-        if (cleanAlpha && cleanAlpha !== rawSearch && cleanAlpha !== cleanSku) {
-          orConditions.push({ code: { contains: cleanAlpha } });
-          orConditions.push({ name: { contains: cleanAlpha } });
-        }
-
-        whereClause.OR = orConditions;
+      if (normalizedQuery && normalizedQuery !== rawSearch.toLowerCase()) {
+        candidateOrs.push({ name: { contains: normalizedQuery } });
       }
+
+      // Add token matches
+      for (const token of tokensInfo.allCandidateTokens) {
+        if (token.length >= 2) {
+          candidateOrs.push({ name: { contains: token } });
+          candidateOrs.push({ code: { contains: token } });
+        }
+      }
+
+      whereClause.OR = candidateOrs;
     }
 
+    // 3. Database Sorting Map
+    const sortField = sort === 'quantity' || sort === 'stock' ? 'currentStock' : sort === 'price' ? 'salePrice' : sort === 'createdAt' ? 'createdAt' : 'name';
+    const sortOrder: 'asc' | 'desc' = order === 'desc' ? 'desc' : 'asc';
+    const orderByClause: Prisma.ItemOrderByWithRelationInput = {
+      [sortField]: sortOrder,
+    };
+
     try {
-      const [items, total] = await Promise.all([
-        request.db!.item.findMany({
-          where: whereClause,
-          include: {
-            category: {
-              select: { id: true, name: true },
+      if (hasSearch) {
+        // Fetch matching candidate set for relevance ranking
+        const [candidateItems, totalCount] = await Promise.all([
+          request.db!.item.findMany({
+            where: whereClause,
+            include: {
+              category: {
+                select: { id: true, name: true },
+              },
             },
-          },
-          orderBy: { name: 'asc' },
-          skip,
-          take: limitNum,
-        }),
-        request.db!.item.count({ where: whereClause }),
-      ]);
+            take: 300, // Fetch top candidate pool for ranking
+          }),
+          request.db!.item.count({ where: whereClause }),
+        ]);
 
-      let filteredItems = items;
-      if (lowStock === 'true') {
-        filteredItems = items.filter(
-          (item) => item.type === ItemType.PRODUCT && Number(item.currentStock) <= Number(item.minStockAlert)
-        );
-      }
+        // Score and sort by relevance
+        const scoredItems = candidateItems.map((item) => ({
+          item,
+          score: scoreItemRelevance(item, search!, tokensInfo),
+        }));
 
-      return reply.send({
-        success: true,
-        data: filteredItems,
-        meta: {
+        scoredItems.sort((a, b) => {
+          if (b.score !== a.score) {
+            return b.score - a.score;
+          }
+          return a.item.name.localeCompare(b.item.name);
+        });
+
+        // Slice for requested page
+        const pagedItems = scoredItems.slice(skip, skip + limitNum).map((s) => s.item);
+        const total = totalCount;
+        const totalPages = Math.ceil(total / limitNum) || 1;
+        const hasMore = skip + pagedItems.length < total;
+
+        const paginationMeta = {
           page: pageNum,
           limit: limitNum,
           total,
-          totalPages: Math.ceil(total / limitNum) || 1,
-        },
-      });
+          totalPages,
+          hasMore,
+        };
+
+        return reply.send({
+          success: true,
+          data: pagedItems,
+          items: pagedItems,
+          meta: paginationMeta,
+          pagination: paginationMeta,
+        });
+      } else {
+        // Standard fast paginated database query
+        const [items, total] = await Promise.all([
+          request.db!.item.findMany({
+            where: whereClause,
+            include: {
+              category: {
+                select: { id: true, name: true },
+              },
+            },
+            orderBy: orderByClause,
+            skip,
+            take: limitNum,
+          }),
+          request.db!.item.count({ where: whereClause }),
+        ]);
+
+        const totalPages = Math.ceil(total / limitNum) || 1;
+        const hasMore = skip + items.length < total;
+
+        const paginationMeta = {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          totalPages,
+          hasMore,
+        };
+
+        return reply.send({
+          success: true,
+          data: items,
+          items,
+          meta: paginationMeta,
+          pagination: paginationMeta,
+        });
+      }
     } catch (err: any) {
       request.log.error(err, 'Failed to fetch items');
+      const emptyMeta = { page: pageNum, limit: limitNum, total: 0, totalPages: 1, hasMore: false };
       return reply.send({
         success: true,
         data: [],
-        meta: { page: pageNum, limit: limitNum, total: 0, totalPages: 1 },
+        items: [],
+        meta: emptyMeta,
+        pagination: emptyMeta,
       });
     }
   });

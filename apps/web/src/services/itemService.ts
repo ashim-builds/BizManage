@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { encryptPayload } from '@/lib/e2eeInterceptor';
 import { ItemInput, UpdateItemInput, StockAdjustmentInput } from '@bizmanage/validation';
@@ -8,11 +8,14 @@ const ITEM_ENCRYPTED_FIELDS = ['name', 'code'];
 
 export interface ItemsQueryParams {
   search?: string;
+  status?: 'ALL' | 'LOW' | 'OUT_OF_STOCK' | 'IN_STOCK' | 'all' | 'low_stock' | 'out_of_stock' | 'in_stock' | string;
   categoryId?: string;
   type?: ItemType;
   lowStock?: boolean;
   page?: number;
   limit?: number;
+  sort?: 'name' | 'quantity' | 'stock' | 'price' | 'createdAt' | string;
+  order?: 'asc' | 'desc';
   dateFrom?: string;
   dateTo?: string;
 }
@@ -23,12 +26,35 @@ export function useItems(params?: ItemsQueryParams) {
     queryFn: async () => {
       const res = await api.get('/items', {
         params: {
-          limit: 1000,
+          limit: 25,
           ...params,
           lowStock: params?.lowStock ? 'true' : undefined,
         },
       });
       return res.data;
+    },
+  });
+}
+
+export function useInfiniteItems(params?: ItemsQueryParams) {
+  return useInfiniteQuery({
+    queryKey: ['items', 'infinite', params],
+    queryFn: async ({ pageParam = 1 }) => {
+      const res = await api.get('/items', {
+        params: {
+          limit: 25,
+          ...params,
+          page: pageParam,
+          lowStock: params?.lowStock ? 'true' : undefined,
+        },
+      });
+      return res.data;
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const meta = lastPage?.meta || lastPage?.pagination;
+      if (!meta) return undefined;
+      return meta.hasMore ? meta.page + 1 : undefined;
     },
   });
 }

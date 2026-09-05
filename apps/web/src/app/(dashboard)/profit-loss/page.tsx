@@ -70,31 +70,31 @@ export default function ProfitLossPage() {
   const isProfitable = (metrics.netProfit ?? 0) >= 0;
 
   return (
-    <div className="space-y-8 font-sans">
-      {/* Top Header (Clean Mobile Responsive) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4 print:hidden">
+    <div className="space-y-6 font-sans">
+      {/* Top Header (Clean Mobile Responsive Light Theme) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4 print:hidden">
         <div className="flex items-center gap-3">
           <Link
             href="/dashboard"
-            className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 transition-all shrink-0"
+            className="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all shrink-0 shadow-xs"
             title="Back to Dashboard"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-bold text-black-500">Profit & Loss Statement</h1>
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Profit & Loss Statement</h1>
               <span
                 className={`px-2 py-0.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider border ${
                   isProfitable
-                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                    : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-rose-50 text-rose-700 border-rose-200'
                 }`}
               >
                 {isProfitable ? 'In Profit' : 'In Loss'}
               </span>
             </div>
-            <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">
+            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
               Sales Revenue, Cost of Goods Sold (COGS), Procurement, and Operational Net Earnings.
             </p>
           </div>
@@ -104,13 +104,13 @@ export default function ProfitLossPage() {
         <div className="flex items-center gap-2 self-end sm:self-auto">
           <Link
             href="/reports"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold border border-slate-800 transition-all"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold border border-slate-200 transition-all shadow-xs"
           >
             All Reports
           </Link>
           <button
             onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-md shadow-blue-600/20 active:scale-95"
           >
             Print / Export
           </button>

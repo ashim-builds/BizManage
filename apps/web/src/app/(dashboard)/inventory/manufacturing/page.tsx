@@ -413,58 +413,179 @@ export default function ManufacturingPage() {
 
       {/* ── TAB CONTENT ─────────────────────────────────────────────────── */}
       {activeTab === 'boms' ? (
-        <div className="space-y-3">
-          <ResponsiveDataTable
-            columns={bomColumns}
-            data={boms}
-            keyExtractor={(b) => b.id}
-            isLoading={bomsLoading}
-            emptyTitle="No Bill of Materials configured"
-            emptyDescription="Create a formula recipe that defines the raw ingredients required to produce a finished product."
-            emptyAction={
-              <button
-                onClick={() => setBomModalOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold"
-              >
-                <Plus className="w-4 h-4" /> Create First BOM
-              </button>
-            }
-          />
+        <div className="space-y-4">
+          {/* Mobile Card Layout (< md) */}
+          <div className="grid gap-3.5 md:hidden">
+            {bomsLoading ? (
+              <div className="p-8 text-center text-xs text-slate-400">Loading recipes…</div>
+            ) : boms.length === 0 ? (
+              <div className="p-8 bg-white border border-slate-200 rounded-2xl text-center space-y-3 shadow-xs">
+                <Layers className="w-10 h-10 text-slate-300 mx-auto" />
+                <p className="font-bold text-slate-700 text-sm">No Bill of Materials configured</p>
+                <p className="text-xs text-slate-400">Create a formula recipe that defines the raw ingredients required to produce a finished product.</p>
+                <button
+                  onClick={() => setBomModalOpen(true)}
+                  className="mt-2 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold"
+                >
+                  <Plus className="w-4 h-4" /> Create First BOM
+                </button>
+              </div>
+            ) : (
+              boms.map((b) => (
+                <div key={b.id} className="p-4 bg-white border border-slate-200/90 rounded-2xl space-y-3 shadow-xs">
+                  <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5">
+                    <div>
+                      <h3 className="font-bold text-slate-900 text-sm">{b.name}</h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Produces: <span className="font-bold text-slate-900">{Number(b.outputQuantity)} {b.finishedItem.unit}</span> of <span className="font-bold text-blue-600">{b.finishedItem.name}</span>
+                      </p>
+                    </div>
+                    <span className="font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded text-xs border border-blue-100 shrink-0">
+                      {b._count?.productionRuns || 0} Runs
+                    </span>
+                  </div>
+
+                  {/* Raw materials list */}
+                  <div className="p-2.5 bg-slate-50 border border-slate-200/70 rounded-xl space-y-1.5 text-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Raw Ingredients</p>
+                    {b.components.map((c, i) => (
+                      <div key={i} className="flex items-center justify-between text-slate-700">
+                        <span className="truncate">{c.item?.name || 'Item'}</span>
+                        <span className="font-mono font-bold text-slate-900 shrink-0 ml-2">
+                          {Number(c.quantity)} {c.item?.unit}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Est. Unit Cost</span>
+                      <span className="font-mono font-bold text-slate-900 text-xs">
+                        Rs. {Number(b.estimatedCost).toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteBOM(b.id, b.name)}
+                        className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                        title="Delete BOM"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedBOMId(b.id);
+                          setRunQty(String(Number(b.outputQuantity)));
+                          setRunModalOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 active:scale-95"
+                      >
+                        <Play className="w-3.5 h-3.5" /> Produce
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table (>= md) */}
+          <div className="hidden md:block">
+            <ResponsiveDataTable
+              columns={bomColumns}
+              data={boms}
+              keyExtractor={(b) => b.id}
+              isLoading={bomsLoading}
+              emptyTitle="No Bill of Materials configured"
+              emptyDescription="Create a formula recipe that defines the raw ingredients required to produce a finished product."
+              emptyAction={
+                <button
+                  onClick={() => setBomModalOpen(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold"
+                >
+                  <Plus className="w-4 h-4" /> Create First BOM
+                </button>
+              }
+            />
+          </div>
         </div>
       ) : (
-        <div className="space-y-3">
-          <ResponsiveDataTable
-            columns={runColumns}
-            data={runs}
-            keyExtractor={(r) => r.id}
-            isLoading={runsLoading}
-            emptyTitle="No production runs executed"
-            emptyDescription="When you run an assembly batch, raw ingredients are deducted and finished goods are added to stock."
-            emptyAction={
-              <button
-                onClick={() => {
-                  if (boms.length === 0) {
-                    toast.error('Create a BOM recipe first');
-                    return;
-                  }
-                  setRunModalOpen(true);
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold"
-              >
-                <Play className="w-4 h-4" /> Run Production
-              </button>
-            }
-            pagination={
-              runsPagination
-                ? {
-                    currentPage: runsPagination.page,
-                    totalPages: runsPagination.totalPages,
-                    totalItems: runsPagination.total,
-                    onPageChange: (p) => setRunsPage(p),
-                  }
-                : undefined
-            }
-          />
+        <div className="space-y-4">
+          {/* Mobile Card Layout for Runs (< md) */}
+          <div className="grid gap-3.5 md:hidden">
+            {runsLoading ? (
+              <div className="p-8 text-center text-xs text-slate-400">Loading production runs…</div>
+            ) : runs.length === 0 ? (
+              <div className="p-8 bg-white border border-slate-200 rounded-2xl text-center space-y-3 shadow-xs">
+                <Clock className="w-10 h-10 text-slate-300 mx-auto" />
+                <p className="font-bold text-slate-700 text-sm">No production runs executed</p>
+                <p className="text-xs text-slate-400">When you run an assembly batch, raw ingredients are deducted and finished goods are added to stock.</p>
+              </div>
+            ) : (
+              runs.map((r) => (
+                <div key={r.id} className="p-4 bg-white border border-slate-200/90 rounded-2xl space-y-2.5 shadow-xs text-xs">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <span className="font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100">
+                      {r.runNumber}
+                    </span>
+                    <span className="text-[11px] text-slate-500">
+                      {new Date(r.runDate).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div>
+                    <strong className="text-slate-900 block text-xs">{r.bom?.name || 'Recipe'}</strong>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Produced: <span className="font-bold text-emerald-700">+{Number(r.quantityProduced)} {r.finishedItem.unit}</span> ({r.finishedItem.name})
+                    </p>
+                  </div>
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-slate-500">Batch Raw Cost:</span>
+                    <span className="font-mono font-bold text-slate-900">Rs. {Number(r.totalCost).toLocaleString()}</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table for Runs (>= md) */}
+          <div className="hidden md:block">
+            <ResponsiveDataTable
+              columns={runColumns}
+              data={runs}
+              keyExtractor={(r) => r.id}
+              isLoading={runsLoading}
+              emptyTitle="No production runs executed"
+              emptyDescription="When you run an assembly batch, raw ingredients are deducted and finished goods are added to stock."
+              emptyAction={
+                <button
+                  onClick={() => {
+                    if (boms.length === 0) {
+                      toast.error('Create a BOM recipe first');
+                      return;
+                    }
+                    setRunModalOpen(true);
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold"
+                >
+                  <Play className="w-4 h-4" /> Run Production
+                </button>
+              }
+              pagination={
+                runsPagination
+                  ? {
+                      currentPage: runsPagination.page,
+                      totalPages: runsPagination.totalPages,
+                      totalItems: runsPagination.total,
+                      onPageChange: (p) => setRunsPage(p),
+                    }
+                  : undefined
+              }
+            />
+          </div>
         </div>
       )}
 

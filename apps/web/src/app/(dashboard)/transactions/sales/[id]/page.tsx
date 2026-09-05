@@ -6,14 +6,11 @@ import { useCurrentBusiness } from '@/services/businessService';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { ThermalReceiptModal } from '@/components/pos/ThermalReceiptModal';
-import { WhatsAppShareModal } from '@/components/common/WhatsAppShareModal';
-import { generateInvoiceWhatsAppMessage } from '@/lib/whatsapp';
 import { StandardMonochromeDocument } from '@/components/invoice/StandardMonochromeDocument';
 import {
   Printer,
   ArrowLeft,
   Receipt,
-  MessageSquare,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -22,7 +19,6 @@ export default function SaleInvoiceDetailsPage({ params }: { params: { id: strin
   const { data: business } = useCurrentBusiness();
 
   const [isThermalOpen, setIsThermalOpen] = useState(false);
-  const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
 
   if (isLoading) return <LoadingState message="Loading sales invoice document..." />;
   if (isError || !sale) return <ErrorState title="Failed to load sales invoice" onRetry={refetch} />;
@@ -34,28 +30,6 @@ export default function SaleInvoiceDetailsPage({ params }: { params: { id: strin
   const paidAmount = Number(sale.paidAmount || 0);
   const dueAmount = Number(sale.dueAmount || 0);
   const taxableAmount = sale.isVatBill && totalTax > 0 ? Math.max(0, subTotal - totalDiscount) : undefined;
-
-  const formattedWhatsAppMsg = generateInvoiceWhatsAppMessage({
-    businessName: business?.name || 'BizManage Store',
-    businessPhone: business?.phone,
-    invoiceNumber: sale.invoiceNumber,
-    invoiceDate: new Date(sale.date).toLocaleDateString(),
-    customerName: sale.party?.name || 'Customer',
-    items: (sale.items || []).map((it: any) => ({
-      name: it.item?.name || 'Item',
-      quantity: Number(it.quantity || 1),
-      unit: it.item?.unit || 'pcs',
-      price: Number(it.unitPrice || 0),
-      total: Number(it.total || 0),
-    })),
-    subTotal,
-    discount: totalDiscount,
-    taxAmount: totalTax,
-    totalAmount,
-    paidAmount,
-    dueAmount,
-    isVatBill: sale.isVatBill,
-  });
 
   const documentItems = (sale.items || []).map((it: any, index: number) => ({
     id: it.id,
@@ -100,13 +74,6 @@ export default function SaleInvoiceDetailsPage({ params }: { params: { id: strin
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => setIsWhatsAppOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 text-xs font-bold transition-all active:scale-95 shadow-xs"
-          >
-            <MessageSquare className="w-4 h-4 text-emerald-600" /> WhatsApp
-          </button>
-
           <button
             onClick={() => setIsThermalOpen(true)}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 text-xs font-bold transition-all active:scale-95 shadow-xs"
@@ -153,15 +120,6 @@ export default function SaleInvoiceDetailsPage({ params }: { params: { id: strin
           onClose={() => setIsThermalOpen(false)}
           sale={sale}
           business={business as any}
-        />
-      )}
-
-      {isWhatsAppOpen && (
-        <WhatsAppShareModal
-          isOpen={isWhatsAppOpen}
-          onClose={() => setIsWhatsAppOpen(false)}
-          phoneNumber={sale.party?.phone || ''}
-          defaultMessage={formattedWhatsAppMsg}
         />
       )}
     </div>

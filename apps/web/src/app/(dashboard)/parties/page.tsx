@@ -25,7 +25,6 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { ModalPortal } from '@/components/common/ModalPortal';
 import { AddCategoryModal } from '@/components/common/AddCategoryModal';
 import { ConfirmActionModal } from '@/components/common/ConfirmActionModal';
-import { WhatsAppShareModal } from '@/components/common/WhatsAppShareModal';
 import { ExportConfirmModal } from '@/components/common/ExportConfirmModal';
 import { ImportPartiesModal } from '@/components/common/ImportPartiesModal';
 import { DiscardConfirmModal } from '@/components/common/DiscardConfirmModal';
@@ -92,7 +91,6 @@ export default function PartiesPage() {
   const [pendingPartyEditData, setPendingPartyEditData] = useState<UpdatePartyInput | null>(null);
   const [deletingPartyInfo, setDeletingPartyInfo] = useState<{ id: string; name: string } | null>(null);
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
-  const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
   const [editError, setEditError] = useState('');
   const [isImportPartiesOpen, setIsImportPartiesOpen] = useState(false);
   const [exportModalConfig, setExportModalConfig] = useState<{
@@ -961,23 +959,6 @@ export default function PartiesPage() {
                             </span>
                           </div>
                         </div>
-
-                        {/* WhatsApp Action */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!activePartyInList.phone) {
-                              toast.error('This party does not have a phone number saved.');
-                              return;
-                            }
-                            setIsWhatsAppOpen(true);
-                          }}
-                          className="p-2 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-bold shadow-2xs"
-                          title="Send WhatsApp Reminder"
-                        >
-                          <MessageSquare className="w-4 h-4 text-emerald-600" />
-                          <span className="hidden sm:inline">WhatsApp</span>
-                        </button>
                       </div>
                     </div>
 
@@ -1472,21 +1453,6 @@ export default function PartiesPage() {
 
                   <button
                     type="button"
-                    onClick={() => {
-                      if (!activePartyInList.phone) {
-                        toast.error('This party does not have a phone number saved.');
-                        return;
-                      }
-                      setIsWhatsAppOpen(true);
-                    }}
-                    className="py-2.5 px-3 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
-                  >
-                    <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>WhatsApp</span>
-                  </button>
-
-                  <button
-                    type="button"
                     onClick={handleTriggerExportLedger}
                     className="py-2.5 px-3 rounded-xl bg-slate-50 text-slate-700 border border-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
                   >
@@ -1747,56 +1713,58 @@ export default function PartiesPage() {
 
               <form onSubmit={editForm.handleSubmit(handleEditSaveRequest)} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Party Name *</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Party Name <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     {...editForm.register('name')}
-                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-medium focus:bg-white focus:border-blue-500 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 min-h-[44px] shadow-2xs"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Phone Number</label>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Phone Number</label>
                     <input
                       type="tel"
                       {...editForm.register('phone')}
-                      className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white focus:border-blue-500 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono text-xs sm:text-sm font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 min-h-[44px] shadow-2xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">PAN / VAT</label>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">PAN / VAT</label>
                     <input
                       type="text"
                       {...editForm.register('taxNumber')}
-                      className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white focus:border-blue-500 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono text-xs sm:text-sm font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 min-h-[44px] shadow-2xs"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Email Address</label>
                     <input
                       type="email"
                       {...editForm.register('email')}
-                      className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white focus:border-blue-500 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 min-h-[44px] shadow-2xs"
                     />
                   </div>
                   <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-xs font-bold text-slate-700">Category</label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Category</label>
                       <button
                         type="button"
                         onClick={() => setIsAddCategoryOpen(true)}
-                        className="text-[10px] text-blue-600 font-bold hover:underline"
+                        className="text-[11px] text-blue-600 font-bold hover:underline cursor-pointer"
                       >
                         + New
                       </button>
                     </div>
                     <select
                       {...editForm.register('categoryId')}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none cursor-pointer"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 min-h-[44px] shadow-2xs cursor-pointer"
                     >
                       <option value="">No Category</option>
                       {categories?.map((cat: any) => (
@@ -1809,15 +1777,15 @@ export default function PartiesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Address</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Address</label>
                   <textarea
                     rows={2}
                     {...editForm.register('address')}
-                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white focus:border-blue-500 focus:outline-none resize-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-medium focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs resize-none"
                   />
                 </div>
 
-                <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+                <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() =>
@@ -1827,14 +1795,14 @@ export default function PartiesPage() {
                         'Are you sure you want to exit without saving party details?'
                       )
                     }
-                    className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 cursor-pointer"
+                    className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs sm:text-sm font-bold hover:bg-slate-50 cursor-pointer min-h-[44px]"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={updateParty.isPending}
-                    className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-xs disabled:opacity-50 cursor-pointer"
+                    className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs sm:text-sm font-bold shadow-md shadow-blue-600/20 disabled:opacity-50 cursor-pointer min-h-[44px] transition-all"
                   >
                     {updateParty.isPending ? 'Saving...' : 'Save Changes'}
                   </button>
@@ -1878,20 +1846,6 @@ export default function PartiesPage() {
           actionText={removeConfirmConfig.actionText || 'Yes, Remove'}
           isProcessing={isProcessingRemoval}
           variant="danger"
-        />
-      )}
-
-      {/* WhatsApp Share Reminder Modal */}
-      {activePartyInList && (
-        <WhatsAppShareModal
-          isOpen={isWhatsAppOpen}
-          onClose={() => setIsWhatsAppOpen(false)}
-          phoneNumber={activePartyInList.phone}
-          recipientName={activePartyInList.name}
-          balance={Number(activePartyInList.currentBalance || 0)}
-          businessName={business?.name || 'Our Business'}
-          businessPhone={business?.phone}
-          title="WhatsApp Statement & Reminder"
         />
       )}
 
@@ -2138,17 +2092,6 @@ export default function PartiesPage() {
                   onClick: () => {
                     if (longPressParty?.phone) {
                       window.open(`tel:${longPressParty.phone}`, '_self');
-                    }
-                    setLongPressParty(null);
-                  },
-                },
-                {
-                  label: 'Send WhatsApp Reminder',
-                  icon: <MessageSquare className="w-5 h-5 text-emerald-500" />,
-                  onClick: () => {
-                    if (longPressParty) {
-                      setSelectedPartyId(longPressParty.id);
-                      setIsWhatsAppOpen(true);
                     }
                     setLongPressParty(null);
                   },
