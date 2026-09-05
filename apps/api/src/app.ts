@@ -60,23 +60,20 @@ export function buildApp() {
 
   // ── CORS ────────────────────────────────────────────────────────────────────
   app.register(cors, {
-    // 'preHandler' ensures CORS headers are stamped on ALL responses —
-    // including rate-limit 429s and early plugin rejections — before they
-    // leave the server. Without this, the browser sees "No CORS header"
-    // instead of the actual error code.
-    hook: 'preHandler',
+    // Run before auth, rate limiting, and route handlers so error responses
+    // also receive the headers required by browsers.
+    hook: 'onRequest',
     origin: (origin, cb) => {
-      // In dev or if CORS_ORIGIN is '*', allow any requesting origin
-      if (!isProduction || !origin || env.CORS_ORIGIN === '*') {
+      if (!origin || !isProduction || env.CORS_ORIGIN === '*') {
         cb(null, true);
         return;
       }
-      const allowed = env.CORS_ORIGIN.split(',').map((o) => o.trim());
-      // Check exact match or trailing slash variations
-      const cleanOrigin = origin.replace(/\/$/, '');
-      const isAllowed = allowed.some((a) => a.replace(/\/$/, '') === cleanOrigin);
-      // Always allow — origin whitelist is informational; Render domains are dynamic
-      cb(null, true);
+      const cleanOrigin = origin.replace(/\/$/, '').toLowerCase();
+      const allowedOrigins = env.CORS_ORIGIN.split(',')
+        .map((value) => value.trim().replace(/\/$/, '').toLowerCase())
+        .filter(Boolean);
+
+      cb(null, allowedOrigins.includes(cleanOrigin));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
