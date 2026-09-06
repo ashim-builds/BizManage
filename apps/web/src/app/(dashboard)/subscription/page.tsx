@@ -23,6 +23,7 @@ import {
   Clock,
   Send,
   AlertTriangle,
+  ChevronDown,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useUpdateBusiness } from '@/services/businessService';
@@ -78,6 +79,7 @@ export default function SubscriptionPage() {
   const [senderName, setSenderName] = useState('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showRules, setShowRules] = useState(false);
 
   const [matrixTabId, setMatrixTabId] = useState<string>('');
 
@@ -1014,62 +1016,95 @@ export default function SubscriptionPage() {
                 </div>
               </div>
 
-              {/* RULE OPTION 3: NO REFUND / PLAN QUEUEING */}
-              <div className="p-3.5 sm:p-4 rounded-2xl bg-rose-50 border border-rose-200 text-slate-800 text-xs space-y-3 shadow-xs">
-                {/* 1. Headline */}
-                <div className="flex items-start gap-2.5 text-rose-700 font-bold text-xs sm:text-sm">
-                  <AlertTriangle className="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
-                  <div>
-                    <h4 className="text-rose-900 font-bold leading-tight">
-                      Upgrading to {qrModalPackage.billingPeriod === 'YEARLY' ? 'Yearly' : 'Premium'} Plan? Please Read
-                    </h4>
-                    <span className="text-[10.5px] sm:text-[11px] text-rose-700 font-normal">
-                      (मासिकबाट वार्षिक वा नयाँ प्लानमा अपग्रेड गर्दा ध्यान दिनुपर्ने जरुरी नियमहरू)
+              {/* RULE OPTION 3: NO REFUND / PLAN QUEUEING (COLLAPSIBLE / ACCORDION) */}
+              <div className="rounded-2xl bg-rose-50/80 border border-rose-200 text-slate-800 text-xs shadow-xs overflow-hidden transition-all">
+                {/* Collapsible Header Button */}
+                <button
+                  type="button"
+                  onClick={() => setShowRules((prev) => !prev)}
+                  className="w-full p-3.5 sm:p-4 flex items-center justify-between gap-3 text-left hover:bg-rose-100/60 active:bg-rose-100 transition-colors cursor-pointer"
+                  aria-expanded={showRules}
+                >
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    <AlertTriangle className="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
+                    <div>
+                      <h4 className="text-rose-950 font-bold text-xs sm:text-sm leading-tight">
+                        Upgrading to {qrModalPackage.billingPeriod === 'YEARLY' ? 'Yearly' : 'Premium'} Plan? Please Read
+                      </h4>
+                      <span className="text-[10.5px] sm:text-[11px] text-rose-700 font-medium block mt-0.5">
+                        (मासिकबाट वार्षिक वा नयाँ प्लानमा अपग्रेड गर्दा ध्यान दिनुपर्ने जरुरी नियमहरू)
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-[11px] font-bold text-rose-700 bg-white border border-rose-300 px-2.5 py-1 rounded-full shadow-2xs">
+                      {showRules ? 'Hide Rules' : 'Read Rules'}
                     </span>
+                    <ChevronDown
+                      className={`w-4 h-4 text-rose-600 transition-transform duration-200 ${
+                        showRules ? 'rotate-180' : ''
+                      }`}
+                    />
                   </div>
-                </div>
+                </button>
 
-                {/* 2. Key Bullets */}
-                <div className="space-y-2 text-[10.5px] sm:text-xs leading-relaxed">
-                  <div className="p-2.5 rounded-xl bg-white border border-rose-200 space-y-1">
-                    <p className="font-bold text-slate-900 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span> 1. No Cash Refunds (नगद फिर्ता नहुने):
-                    </p>
-                    <p className="text-slate-700 pl-3">
-                      🇳🇵 चालु मासिक प्लानका बाँकी दिनहरूको नगद फिर्ता हुने छैन।<br />
-                      <span className="text-slate-500">🇬🇧 Unused days left on your active monthly plan are not refunded in cash.</span>
-                    </p>
+                {/* Collapsible Content */}
+                {showRules && (
+                  <div className="px-3.5 sm:px-4 pb-4 pt-1 space-y-3 border-t border-rose-200/80 animate-in fade-in slide-in-from-top-1 duration-200">
+                    {/* Key Bullets */}
+                    <div className="space-y-2 text-[10.5px] sm:text-xs leading-relaxed pt-1">
+                      <div className="p-2.5 rounded-xl bg-white border border-rose-200 space-y-1 shadow-2xs">
+                        <p className="font-bold text-slate-900 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"></span> 1. No Cash Refunds (नगद फिर्ता नहुने):
+                        </p>
+                        <p className="text-slate-700 pl-3">
+                          🇳🇵 चालु मासिक प्लानका बाँकी दिनहरूको नगद फिर्ता हुने छैन।<br />
+                          <span className="text-slate-500">🇬🇧 Unused days left on your active monthly plan are not refunded in cash.</span>
+                        </p>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-white border border-rose-200 space-y-1 shadow-2xs">
+                        <p className="font-bold text-slate-900 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"></span> 2. Zero Days Lost & Plan Queueing (दिन खेर नजाने र पालोमा रहने):
+                        </p>
+                        <p className="text-slate-700 pl-3">
+                          🇳🇵 तपाईंका बाँकी दिनहरू १००% सुरक्षित रहन्छन्। नयाँ {qrModalPackage.name} प्लान अहिलेको अवधि सकिएपछि स्वतः पालो (Queue) बाट सुरु हुनेछ।<br />
+                          <span className="text-slate-500">🇬🇧 Zero days lost: Your remaining monthly days are 100% preserved. The new plan starts automatically right after your current plan expires.</span>
+                        </p>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-white border border-rose-200 space-y-1 shadow-2xs">
+                        <p className="font-bold text-slate-900 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"></span> 3. Accurate Verification Details Required (सहि विवरण अनिवार्य):
+                        </p>
+                        <p className="text-slate-700 pl-3">
+                          🇳🇵 यदि गलत Business Name, गलत Transaction Ref ID वा गलत पठाउनेको नाम पेश गर्नुभयो भने बैंक दाखिला रुजु गर्न सकिने छैन र प्लान सुरु हुने छैन।<br />
+                          <span className="text-slate-500">🇬🇧 If you enter a wrong Business Name, incorrect Transaction ID, or wrong Sender Name, we cannot verify your deposit and cannot activate your plan.</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* CTA & Instructions */}
+                    <div className="pt-2.5 border-t border-rose-200 text-[10.5px] sm:text-[11px] text-rose-800 flex items-start gap-1.5">
+                      <span className="text-sm leading-none">📸</span>
+                      <span>
+                        <strong>Next Step (अर्को चरण):</strong> After transferring funds, enter your <strong>Transaction ID</strong> and <strong>Sender Name/Mobile</strong> below to submit for instant Superadmin review.<br />
+                        <span className="text-slate-600">रकम ट्रान्सफर गरेपछि तल कारोबार नम्बर र पठाउनेको नाम भरेर प्रमाणीकरण अनुरोध पठाउनुहोस्।</span>
+                      </span>
+                    </div>
+
+                    {/* Close / Hide button at bottom */}
+                    <div className="flex justify-end pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowRules(false)}
+                        className="text-[11px] font-bold text-rose-700 hover:text-rose-900 underline flex items-center gap-1 cursor-pointer"
+                      >
+                        Close / Hide Guidelines &uarr;
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="p-2.5 rounded-xl bg-white border border-rose-200 space-y-1">
-                    <p className="font-bold text-slate-900 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span> 2. Zero Days Lost & Plan Queueing (दिन खेर नजाने र पालोमा रहने):
-                    </p>
-                    <p className="text-slate-700 pl-3">
-                      🇳🇵 तपाईंका बाँकी दिनहरू १००% सुरक्षित रहन्छन्। नयाँ {qrModalPackage.name} प्लान अहिलेको अवधि सकिएपछि स्वतः पालो (Queue) बाट सुरु हुनेछ।<br />
-                      <span className="text-slate-500">🇬🇧 Zero days lost: Your remaining monthly days are 100% preserved. The new plan starts automatically right after your current plan expires.</span>
-                    </p>
-                  </div>
-
-                  <div className="p-2.5 rounded-xl bg-white border border-rose-200 space-y-1">
-                    <p className="font-bold text-slate-900 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span> 3. Accurate Verification Details Required (सहि विवरण अनिवार्य):
-                    </p>
-                    <p className="text-slate-700 pl-3">
-                      🇳🇵 यदि गलत Business Name, गलत Transaction Ref ID वा गलत पठाउनेको नाम पेश गर्नुभयो भने बैंक दाखिला रुजु गर्न सकिने छैन र प्लान सुरु हुने छैन।<br />
-                      <span className="text-slate-500">🇬🇧 If you enter a wrong Business Name, incorrect Transaction ID, or wrong Sender Name, we cannot verify your deposit and cannot activate your plan.</span>
-                    </p>
-                  </div>
-                </div>
-
-                {/* 3. CTA & Instructions */}
-                <div className="pt-2 border-t border-rose-200 text-[10.5px] sm:text-[11px] text-rose-800 flex items-start gap-1.5">
-                  <span className="text-sm leading-none">📸</span>
-                  <span>
-                    <strong>Next Step (अर्को चरण):</strong> After transferring funds, enter your <strong>Transaction ID</strong> and <strong>Sender Name/Mobile</strong> below to submit for instant Superadmin review.<br />
-                    <span className="text-slate-600">रकम ट्रान्सफर गरेपछि तल कारोबार नम्बर र पठाउनेको नाम भरेर प्रमाणीकरण अनुरोध पठाउनुहोस्।</span>
-                  </span>
-                </div>
+                )}
               </div>
 
               {/* Transaction Verification Inputs */}
