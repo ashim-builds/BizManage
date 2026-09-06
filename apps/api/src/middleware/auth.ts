@@ -68,10 +68,13 @@ export async function requireBusinessTenant(request: FastifyRequest, _reply: Fas
           business: {
             select: { 
               isActive: true,
+              createdAt: true,
+              trialEndsAt: true,
+              subscriptionPackageId: true,
               subscriptionStatus: true,
               currentPeriodEnd: true,
               subscriptionPackage: {
-                select: { features: true }
+                select: { features: true, price: true, name: true }
               }
             },
           },
@@ -87,10 +90,13 @@ export async function requireBusinessTenant(request: FastifyRequest, _reply: Fas
         business: {
           select: { 
             isActive: true,
+            createdAt: true,
+            trialEndsAt: true,
+            subscriptionPackageId: true,
             subscriptionStatus: true,
             currentPeriodEnd: true,
             subscriptionPackage: {
-              select: { features: true }
+              select: { features: true, price: true, name: true }
             }
           },
         },
