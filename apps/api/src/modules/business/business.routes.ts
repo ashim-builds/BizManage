@@ -149,14 +149,20 @@ export async function businessRoutes(fastify: FastifyInstance) {
               ? Math.ceil((prevExpiry.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
               : 0;
 
-          // Free plan expiration
-          let addDays = 30;
-          if (pkg.billingPeriod === 'YEARLY') addDays = 365;
-          let trialDays = pkg.trialDays || 0;
+          const isFreePlan = Number(pkg.price || 0) === 0;
 
           const now = new Date();
-          const endDate = new Date(now);
-          endDate.setDate(endDate.getDate() + addDays + trialDays);
+          let endDate: Date;
+          if (isFreePlan) {
+            // Free plan has lifetime access (no renewal needed)
+            endDate = new Date(now.getFullYear() + 100, now.getMonth(), now.getDate());
+          } else {
+            let addDays = 30;
+            if (pkg.billingPeriod === 'YEARLY') addDays = 365;
+            let trialDays = pkg.trialDays || 0;
+            endDate = new Date(now);
+            endDate.setDate(endDate.getDate() + addDays + trialDays);
+          }
 
           await tx.subscription.create({
             data: {
@@ -171,7 +177,7 @@ export async function businessRoutes(fastify: FastifyInstance) {
           subUpdateData = {
             subscriptionPackageId: pkg.id,
             subscriptionStatus: 'ACTIVE',
-            currentPeriodEnd: endDate,
+            currentPeriodEnd: isFreePlan ? null : endDate,
             isActive: true,
           };
 
@@ -247,7 +253,8 @@ export async function businessRoutes(fastify: FastifyInstance) {
           const trialEndsAt = (currentBiz as any)?.trialEndsAt 
             ? new Date((currentBiz as any).trialEndsAt) 
             : new Date(createdAt.getTime() + 14 * 24 * 60 * 60 * 1000);
-          const isTrialActive = now < trialEndsAt;
+          const hasSelectedPackage = Boolean((currentBiz as any)?.subscriptionPackageId || (currentBiz as any)?.subscriptionPackage);
+          const isTrialActive = !hasSelectedPackage && (now < trialEndsAt);
 
           if (!isTrialActive) {
             const rawFeatures = currentBiz?.subscriptionPackage?.features;

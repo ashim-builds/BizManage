@@ -118,7 +118,10 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
     : new Date(createdAt.getTime() + trialDays * 24 * 60 * 60 * 1000);
 
   const now = new Date();
-  const isTrialActive = now < trialEndDate;
+  // If the user has selected any plan (Free Starter, Gold, Platinum, etc.), the 14-day free trial is disabled.
+  // The free trial only applies to fresh businesses before they have chosen any plan.
+  const hasSelectedPackage = Boolean(currentBiz?.subscriptionPackageId || currentBiz?.subscriptionPackage);
+  const isTrialActive = !hasSelectedPackage && (now < trialEndDate);
   const msLeft = Math.max(0, trialEndDate.getTime() - now.getTime());
   const daysLeftInTrial = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
   const totalTrialMs = trialDays * 24 * 60 * 60 * 1000;
@@ -130,10 +133,38 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
     !currentBiz?.subscriptionPackage?.name?.toLowerCase().includes('free')
   );
 
-  // During 14-day trial or with paid plan, user has full/subscribed access
-  const hasSelectedPlan = isTrialActive || Boolean(currentBiz?.subscriptionPackage);
+  // During 14-day trial (before choosing a plan) or with any selected plan, user has dashboard access
+  const hasSelectedPlan = isTrialActive || hasSelectedPackage;
 
-  // Global feature lock calculation - 100% unlocked during trial
+  // Parse raw package features
+  const rawFeatures = currentBiz?.subscriptionPackage?.features;
+  const userFeatures: string[] = Array.isArray(rawFeatures)
+    ? rawFeatures
+    : typeof rawFeatures === 'string'
+    ? (() => {
+        try {
+          return JSON.parse(rawFeatures);
+        } catch {
+          return [];
+        }
+      })()
+    : [];
+
+  const checkFeatureIncluded = (featureKey?: string) => {
+    if (!featureKey) return true;
+    if (isTrialActive) return true;
+    if (userFeatures.includes(featureKey)) return true;
+    // Feature aliases / compatibility mappings
+    if (featureKey === 'POS_BILLING' && userFeatures.includes('POS')) return true;
+    if (featureKey === 'BARCODE_PRINTING' && userFeatures.includes('BARCODE')) return true;
+    if (featureKey === 'GODOWN_MANAGEMENT' && (userFeatures.includes('GODOWNS') || userFeatures.includes('MULTI_GODOWN'))) return true;
+    if (featureKey === 'ONLINE_STOREFRONT' && (userFeatures.includes('ONLINE_STORE') || userFeatures.includes('EXPLORE_STORES'))) return true;
+    if (featureKey === 'MULTI_USER_ROLES' && (userFeatures.includes('STAFF') || userFeatures.includes('STAFF_PAYROLL'))) return true;
+    if (featureKey === 'ADVANCED_REPORTS' && (userFeatures.includes('REPORTS') || userFeatures.includes('PREMIUM_REPORTS'))) return true;
+    return false;
+  };
+
+  // Global feature lock calculation
   const currentSection = sidebarSections.find((s) => {
     const [sHref] = (s.href || '').split('?');
     return (
@@ -155,9 +186,7 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
     }
   }
 
-  const isFeatureLocked = isTrialActive
-    ? false
-    : Boolean(requiredFeature && !(currentBiz?.subscriptionPackage?.features || []).includes(requiredFeature));
+  const isFeatureLocked = !checkFeatureIncluded(requiredFeature);
 
   const [mounted, setMounted] = useState(false);
 
@@ -675,12 +704,15 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
               setReadNotifIds={setReadNotifIds}
             />
 
-            {/* Mobile Business Pill (< lg) */}
-            <div className="lg:hidden relative" ref={userMenuRef}>
+            {/* User Dropdown Menu (Mobile & Desktop) */}
+            <div className="relative" ref={userMenuRef}>
+              {/* Mobile Trigger (< lg) */}
               <button
                 type="button"
                 onClick={() => setUserMenuOpen((prev) => !prev)}
-                className="flex items-center gap-1.5 p-1 pl-1.5 pr-2 rounded-full border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-all shadow-2xs cursor-pointer"
+                className="flex lg:hidden items-center gap-1.5 p-1 pl-1.5 pr-2 rounded-full border border-slate-200 bg-slate-50 hover:bg-slate-100 active:scale-95 transition-all shadow-2xs cursor-pointer"
+                aria-expanded={userMenuOpen}
+                aria-label="Store menu"
               >
                 <div className="w-6 h-6 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden p-0.5">
                   {currentBiz?.logoUrl ? (
@@ -698,15 +730,16 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
                 <span className="text-[11px] font-bold text-slate-800 max-w-[85px] sm:max-w-[120px] truncate">
                   {currentBiz?.name || 'RB Hardware'}
                 </span>
-                <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
+                <ChevronDown className={`w-3 h-3 text-slate-400 shrink-0 transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} />
               </button>
-            </div>
 
-            {/* Desktop User Dropdown Menu (>= lg) */}
-            <div className="hidden lg:block relative" ref={userMenuRef}>
+              {/* Desktop Trigger (>= lg) */}
               <button
+                type="button"
                 onClick={() => setUserMenuOpen((prev) => !prev)}
-                className="flex items-center gap-2 p-1.5 pl-2 pr-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all shadow-xs cursor-pointer"
+                className="hidden lg:flex items-center gap-2 p-1.5 pl-2 pr-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 active:scale-98 transition-all shadow-xs cursor-pointer"
+                aria-expanded={userMenuOpen}
+                aria-label="Account menu"
               >
                 <div className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden p-0.5">
                   {currentBiz?.logoUrl ? (
@@ -724,32 +757,36 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
                 <span className="text-xs font-semibold text-slate-800 max-w-[120px] truncate">
                   {user?.name || 'Account'}
                 </span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {userMenuOpen && (
                 <>
                   {/* Backdrop for mobile closing */}
                   <div
-                    className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs z-40 sm:hidden"
+                    className="fixed inset-0 bg-slate-950/20 backdrop-blur-xs z-40 lg:hidden"
                     onClick={() => setUserMenuOpen(false)}
                   />
 
                   <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white border border-slate-200 shadow-xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                     <div className="px-3 py-2 border-b border-slate-100 mb-1">
-                      <p className="text-xs font-bold text-slate-900">{user.name}</p>
-                      <p className="text-[10px] text-slate-500 truncate">{user.email}</p>
+                      <p className="text-xs font-bold text-slate-900 truncate">{currentBiz?.name || user?.name || 'Business'}</p>
+                      <p className="text-[10px] text-slate-500 truncate">{user?.email || ''}</p>
                     </div>
                     <Link
                       href="/settings"
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-50"
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-50 transition-colors"
                       onClick={() => setUserMenuOpen(false)}
                     >
                       <Settings className="w-3.5 h-3.5 text-slate-500" /> Account Settings
                     </Link>
                     <button
-                      onClick={logout}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-red-600 hover:bg-red-50 transition-colors mt-1"
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        logout();
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-red-600 hover:bg-red-50 transition-colors mt-1 cursor-pointer"
                     >
                       <LogOut className="w-3.5 h-3.5" /> Sign Out
                     </button>

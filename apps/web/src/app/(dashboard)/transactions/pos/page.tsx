@@ -57,10 +57,11 @@ export default function POSPage() {
   const trialEndDate = currentBiz?.trialEndsAt 
     ? new Date(currentBiz.trialEndsAt) 
     : new Date(createdAt.getTime() + trialDays * 24 * 60 * 60 * 1000);
-  const isTrialActive = new Date() < trialEndDate;
+  const hasSelectedPackage = Boolean(currentBiz?.subscriptionPackageId || currentBiz?.subscriptionPackage);
+  const isTrialActive = !hasSelectedPackage && (new Date() < trialEndDate);
 
-  // Unlocked during 14-day free trial or if package includes POS_BILLING / Premium
-  const isUnlocked = isTrialActive || userFeatures.includes('POS_BILLING') || currentBiz?.subscriptionPackage?.name?.toLowerCase().includes('premium');
+  // Unlocked during 14-day free trial (before plan selection) or if package includes POS_BILLING / POS
+  const isUnlocked = isTrialActive || userFeatures.includes('POS_BILLING') || userFeatures.includes('POS') || currentBiz?.subscriptionPackage?.name?.toLowerCase().includes('premium') || currentBiz?.subscriptionPackage?.name?.toLowerCase().includes('gold') || currentBiz?.subscriptionPackage?.name?.toLowerCase().includes('platinum');
 
   const itemsList: any[] = useMemo(() => {
     return Array.isArray(itemsData) ? itemsData : (itemsData?.data || itemsData?.items || []);

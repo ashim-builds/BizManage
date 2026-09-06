@@ -292,13 +292,17 @@ export default function SubscriptionPage() {
                       Expired
                     </span>
                   ) : (
-                    <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[10px] border border-amber-200 font-bold">
-                      Trial Active
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] border border-emerald-200 font-bold">
+                      Active
                     </span>
                   )
                 ) : null}
               </p>
-              {currentBiz?.currentPeriodEnd && (
+              {activePackage && Number(activePackage.price || 0) === 0 ? (
+                <p className="text-[11px] text-emerald-600 font-semibold mt-0.5 flex items-center gap-1">
+                  <span>✨ Validity: Lifetime Free (Forever / No Renewal Needed)</span>
+                </p>
+              ) : currentBiz?.currentPeriodEnd ? (
                 <p className="text-[11px] text-slate-500 font-medium mt-0.5">
                   Valid until: <span className="text-slate-800 font-semibold">{new Date(currentBiz.currentPeriodEnd).toLocaleDateString()}</span>
                   {new Date(currentBiz.currentPeriodEnd).getTime() > Date.now() && (
@@ -307,7 +311,7 @@ export default function SubscriptionPage() {
                     </span>
                   )}
                 </p>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

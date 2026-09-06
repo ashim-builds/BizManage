@@ -53,7 +53,7 @@ export const sidebarSections: NavSection[] = [
     icon: Receipt,
     children: [
       { name: 'Sale Invoices', href: '/transactions/sales', icon: Receipt },
-      { name: 'POS Quick Billing', href: '/transactions/pos', icon: Zap },
+      { name: 'POS Quick Billing', href: '/transactions/pos', icon: Zap, requiredFeature: 'POS_BILLING' },
       { name: 'Payment In', href: '/transactions/payment-in', icon: ArrowDownLeft },
       { name: 'Sale Return', href: '/transactions/sales-return', icon: RotateCcw },
     ],
@@ -85,11 +85,11 @@ export const sidebarSections: NavSection[] = [
     href: '/storefront',
     icon: Store,
     children: [
-      { name: 'My Online Store', href: '/storefront', icon: Store },
-      { name: 'Explore Stores', href: '/explore-stores', icon: Store },
+      { name: 'My Online Store', href: '/storefront', icon: Store, requiredFeature: 'ONLINE_STOREFRONT' },
+      { name: 'Explore Stores', href: '/explore-stores', icon: Store, requiredFeature: 'ONLINE_STOREFRONT' },
     ],
   },
-  { name: 'Reports', href: '/reports', icon: FileBarChart },
+  { name: 'Reports', href: '/reports', icon: FileBarChart, requiredFeature: 'ADVANCED_REPORTS' },
   {
     name: 'Sync, Share & Backup',
     href: '/sync-backup',
@@ -105,10 +105,10 @@ export const sidebarSections: NavSection[] = [
     href: '/inventory/godowns',
     icon: Wrench,
     children: [
-      { name: 'Godowns & Transfer', href: '/inventory/godowns', icon: Building2 },
-      { name: 'Print Barcode Labels', href: '/inventory/labels', icon: Printer },
-      { name: 'Manufacturing (BOM)', href: '/manufacturing', icon: Boxes },
-      { name: 'Staff & Attendance', href: '/staff', icon: Users },
+      { name: 'Godowns & Transfer', href: '/inventory/godowns', icon: Building2, requiredFeature: 'GODOWN_MANAGEMENT' },
+      { name: 'Print Barcode Labels', href: '/inventory/labels', icon: Printer, requiredFeature: 'BARCODE_PRINTING' },
+      { name: 'Manufacturing (BOM)', href: '/manufacturing', icon: Boxes, requiredFeature: 'MANUFACTURING' },
+      { name: 'Staff & Attendance', href: '/staff', icon: Users, requiredFeature: 'MULTI_USER_ROLES' },
       { name: 'Activity & Audit Log', href: '/activity-log', icon: History },
     ],
   },

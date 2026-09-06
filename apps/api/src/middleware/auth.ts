@@ -120,14 +120,18 @@ export async function requireBusinessTenant(request: FastifyRequest, _reply: Fas
   const trialEndsAt = (membership.business as any).trialEndsAt 
     ? new Date((membership.business as any).trialEndsAt) 
     : new Date(createdAt.getTime() + 14 * 24 * 60 * 60 * 1000);
-  const isTrialActive = now < trialEndsAt;
+  const hasSelectedPackage = Boolean(membership.business.subscriptionPackageId || membership.business.subscriptionPackage);
+  const isTrialActive = !hasSelectedPackage && (now < trialEndsAt);
 
   let isExpired = false;
   if (!isTrialActive) {
-    if (membership.business.subscriptionStatus === 'EXPIRED') {
-      isExpired = true;
-    } else if (membership.business.currentPeriodEnd && new Date(membership.business.currentPeriodEnd) < now) {
-      isExpired = true;
+    const isFreePlan = Number(membership.business.subscriptionPackage?.price || 0) === 0;
+    if (!isFreePlan) {
+      if (membership.business.subscriptionStatus === 'EXPIRED') {
+        isExpired = true;
+      } else if (membership.business.currentPeriodEnd && new Date(membership.business.currentPeriodEnd) < now) {
+        isExpired = true;
+      }
     }
   }
 

@@ -74,9 +74,10 @@ export function BarcodeStickerModal({
   const trialEndDate = currentBiz?.trialEndsAt 
     ? new Date(currentBiz.trialEndsAt) 
     : new Date(createdAt.getTime() + trialDays * 24 * 60 * 60 * 1000);
-  const isTrialActive = new Date() < trialEndDate;
+  const hasSelectedPackage = Boolean(currentBiz?.subscriptionPackageId || currentBiz?.subscriptionPackage);
+  const isTrialActive = !hasSelectedPackage && (new Date() < trialEndDate);
 
-  const isUnlocked = isTrialActive || userFeatures.includes('BARCODE_PRINTING') || currentBiz?.subscriptionPackage?.name?.toLowerCase().includes('premium');
+  const isUnlocked = isTrialActive || userFeatures.includes('BARCODE_PRINTING') || userFeatures.includes('BARCODE') || currentBiz?.subscriptionPackage?.name?.toLowerCase().includes('premium') || currentBiz?.subscriptionPackage?.name?.toLowerCase().includes('gold') || currentBiz?.subscriptionPackage?.name?.toLowerCase().includes('platinum');
 
   const [labelCount, setLabelCount] = useState<number>(12);
   const [stickerType, setStickerType] = useState<'barcode' | 'qr' | 'both'>('barcode');
