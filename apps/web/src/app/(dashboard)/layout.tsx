@@ -38,6 +38,7 @@ import {
   ArrowRight,
   ChevronsLeft,
   ChevronsRight,
+  Lock,
 } from 'lucide-react';
 import { useNetworkStatus } from '@/services/offlineSyncService';
 
@@ -376,6 +377,8 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
             const isActive = pathname === section.href || (section.href === '/dashboard' && pathname === '/');
 
             if (!section.children) {
+              const isSectionLocked = Boolean(section.requiredFeature && !checkFeatureIncluded(section.requiredFeature));
+
               return (
                 <div
                   key={section.name}
@@ -387,18 +390,36 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
                 >
                   <Link
                     href={section.href!}
-                    className={`flex-1 flex items-center gap-3 py-2 text-xs font-medium min-w-0 ${
+                    className={`flex-1 flex items-center justify-between gap-2 py-2 text-xs font-medium min-w-0 ${
                       sidebarCollapsed ? 'px-3 justify-center' : 'px-3'
                     }`}
                   >
-                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-300'}`} />
-                    {!sidebarCollapsed && <span className="truncate">{section.name}</span>}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="relative shrink-0">
+                        <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-300'}`} />
+                        {sidebarCollapsed && isSectionLocked && (
+                          <Lock className="w-2.5 h-2.5 text-amber-400 absolute -top-1 -right-1" />
+                        )}
+                      </div>
+                      {!sidebarCollapsed && <span className="truncate">{section.name}</span>}
+                    </div>
+
+                    {!sidebarCollapsed && isSectionLocked && (
+                      <span className="flex items-center gap-1 text-[8.5px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded shrink-0">
+                        <Lock className="w-2.5 h-2.5" /> PRO
+                      </span>
+                    )}
                   </Link>
 
                   {/* Single Item Tooltip on Hover in Collapsed Mode */}
                   {sidebarCollapsed && (
-                    <div className="absolute left-[54px] top-1/2 -translate-y-1/2 hidden group-hover/nav:flex items-center bg-[#16192E] border border-[#2B3258] text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-2xl whitespace-nowrap z-50 animate-in fade-in zoom-in-95 duration-150 pointer-events-none before:content-[''] before:absolute before:-left-1.5 before:top-1/2 before:-translate-y-1/2 before:w-3 before:h-3 before:bg-[#16192E] before:border-l before:border-b before:border-[#2B3258] before:rotate-45">
-                      {section.name}
+                    <div className="absolute left-[54px] top-1/2 -translate-y-1/2 hidden group-hover/nav:flex items-center gap-2 bg-[#16192E] border border-[#2B3258] text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-2xl whitespace-nowrap z-50 animate-in fade-in zoom-in-95 duration-150 pointer-events-none before:content-[''] before:absolute before:-left-1.5 before:top-1/2 before:-translate-y-1/2 before:w-3 before:h-3 before:bg-[#16192E] before:border-l before:border-b before:border-[#2B3258] before:rotate-45">
+                      <span>{section.name}</span>
+                      {isSectionLocked && (
+                        <span className="flex items-center gap-1 text-[8.5px] font-black uppercase bg-amber-500/20 text-amber-300 px-1 py-0.2 rounded">
+                          <Lock className="w-2.5 h-2.5" /> PRO
+                        </span>
+                      )}
                     </div>
                   )}
 
@@ -426,27 +447,39 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
               return cPath === pathname;
             });
             const isSectionOpen = openSections[section.name] ?? false;
+            const isSectionLocked = Boolean(section.requiredFeature && !checkFeatureIncluded(section.requiredFeature));
+            const allChildrenLocked = section.children.length > 0 && section.children.every((c) => c.requiredFeature && !checkFeatureIncluded(c.requiredFeature));
 
             // In collapsed mode, render group as icon-only button with rich floating flyout menu on hover
             if (sidebarCollapsed) {
               return (
                 <div key={section.name} className="relative group/collapsed">
                   <div
-                    className={`flex items-center justify-center w-full py-2 rounded-xl transition-all cursor-pointer ${
+                    className={`flex items-center justify-center w-full py-2 rounded-xl transition-all cursor-pointer relative ${
                       isGroupActive
                         ? 'bg-[#212646] text-white border-l-4 border-[#EF4444]'
                         : 'text-slate-300 hover:text-white hover:bg-[#212646]/70'
                     }`}
                   >
-                    <Icon className={`w-4 h-4 ${isGroupActive ? 'text-white' : 'text-slate-300'}`} />
+                    <div className="relative">
+                      <Icon className={`w-4 h-4 ${isGroupActive ? 'text-white' : 'text-slate-300'}`} />
+                      {(allChildrenLocked || isSectionLocked) && (
+                        <Lock className="w-2.5 h-2.5 text-amber-400 absolute -top-1.5 -right-1.5" />
+                      )}
+                    </div>
                   </div>
 
                   {/* Floating Flyout Dropdown Menu on Hover */}
                   <div className="absolute left-[54px] top-0 hidden group-hover/collapsed:flex flex-col bg-[#16192E] border border-[#2B3258] rounded-xl shadow-2xl p-1.5 min-w-[210px] z-50 animate-in fade-in zoom-in-95 duration-150 before:content-[''] before:absolute before:-left-1.5 before:top-3.5 before:w-3 before:h-3 before:bg-[#16192E] before:border-l before:border-b before:border-[#2B3258] before:rotate-45">
-                    <div className="px-3 py-1.5 border-b border-[#222744] mb-1">
+                    <div className="px-3 py-1.5 border-b border-[#222744] mb-1 flex items-center justify-between">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                         {section.name}
                       </span>
+                      {(allChildrenLocked || isSectionLocked) && (
+                        <span className="flex items-center gap-0.5 text-[8px] font-black uppercase text-amber-400 bg-amber-500/10 px-1 py-0.2 rounded">
+                          <Lock className="w-2.5 h-2.5" /> PRO
+                        </span>
+                      )}
                     </div>
                     <div className="space-y-0.5">
                       {section.children.map((child) => {
@@ -457,22 +490,30 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
                             (currentTab === new URLSearchParams(childQuery).get('tab') ||
                               (!currentTab && new URLSearchParams(childQuery).get('tab') === 'sync-share'))
                           : pathname === child.href;
+                        const isChildLocked = Boolean(child.requiredFeature && !checkFeatureIncluded(child.requiredFeature));
                         return (
                           <Link
                             key={child.name}
                             href={child.href}
-                            className={`flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-lg transition-all ${
+                            className={`flex items-center justify-between gap-2 px-3 py-2 text-xs font-medium rounded-lg transition-all ${
                               isChildActive
                                 ? 'bg-[#212646] text-white font-bold border-l-2 border-[#EF4444]'
                                 : 'text-slate-300 hover:text-white hover:bg-[#212646]/80'
                             }`}
                           >
-                            {ChildIcon && (
-                              <ChildIcon
-                                className={`w-3.5 h-3.5 shrink-0 ${isChildActive ? 'text-[#EF4444]' : 'text-slate-400'}`}
-                              />
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              {ChildIcon && (
+                                <ChildIcon
+                                  className={`w-3.5 h-3.5 shrink-0 ${isChildActive ? 'text-[#EF4444]' : 'text-slate-400'}`}
+                                />
+                              )}
+                              <span className="truncate">{child.name}</span>
+                            </div>
+                            {isChildLocked && (
+                              <span className="flex items-center gap-1 text-[8.5px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded shrink-0">
+                                <Lock className="w-2.5 h-2.5" /> PRO
+                              </span>
                             )}
-                            <span className="truncate">{child.name}</span>
                           </Link>
                         );
                       })}
@@ -499,11 +540,18 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
                     <Icon className={`w-4 h-4 ${isGroupActive ? 'text-white' : 'text-slate-300'}`} />
                     <span className="truncate">{section.name}</span>
                   </div>
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-250 ease-in-out ${
-                      isSectionOpen ? 'rotate-180 text-white' : ''
-                    }`}
-                  />
+                  <div className="flex items-center gap-1.5">
+                    {(allChildrenLocked || isSectionLocked) && (
+                      <span className="flex items-center gap-0.5 text-[8.5px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded shrink-0">
+                        <Lock className="w-2.5 h-2.5" /> PRO
+                      </span>
+                    )}
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-250 ease-in-out ${
+                        isSectionOpen ? 'rotate-180 text-white' : ''
+                      }`}
+                    />
+                  </div>
                 </button>
 
                 <div
@@ -521,20 +569,28 @@ function DashboardLayoutContent({ children }: { children: ReactNode }) {
                             (currentTab === new URLSearchParams(childQuery).get('tab') ||
                               (!currentTab && new URLSearchParams(childQuery).get('tab') === 'sync-share'))
                           : pathname === child.href;
+                        const isChildLocked = Boolean(child.requiredFeature && !checkFeatureIncluded(child.requiredFeature));
                         return (
                           <Link
                             key={child.name}
                             href={child.href}
-                            className={`flex items-center gap-2.5 px-3 py-1.5 text-[11px] font-medium transition-all duration-150 ${
+                            className={`flex items-center justify-between gap-2 px-3 py-1.5 text-[11px] font-medium transition-all duration-150 ${
                               isChildActive
                                 ? 'bg-[#212646] text-white font-bold border-l-2 border-[#EF4444] rounded-r-lg'
                                 : 'text-slate-400 hover:text-white hover:bg-[#212646]/40 rounded-lg'
                             }`}
                           >
-                            {ChildIcon && (
-                              <ChildIcon className={`w-3.5 h-3.5 ${isChildActive ? 'text-white' : 'text-slate-400'}`} />
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              {ChildIcon && (
+                                <ChildIcon className={`w-3.5 h-3.5 shrink-0 ${isChildActive ? 'text-white' : 'text-slate-400'}`} />
+                              )}
+                              <span className="truncate">{child.name}</span>
+                            </div>
+                            {isChildLocked && (
+                              <span className="flex items-center gap-1 text-[8.5px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded shrink-0">
+                                <Lock className="w-2.5 h-2.5" /> PRO
+                              </span>
                             )}
-                            <span className="truncate">{child.name}</span>
                           </Link>
                         );
                       })}
